@@ -1,7 +1,6 @@
 import AppIntents
 import CoreSpotlight
 import SwiftUI
-import TipKit
 
 // Task Town's system add-ons (DESIGN.md §6): every mode and every building is a room Spotlight and Siri can open, Siri can say what the
 // session is doing and what waits, a widget carries the counts, a tip names the one thing that cannot be seen, and a deep link lands on any room.
@@ -107,10 +106,4 @@ struct TownStatusIntent: AppIntent {
                                          calls: f.live?.calls,
                                          updatedAt: .now))
     }
-}
-
-struct TownDragTip: Tip {
-    var title: Text { Text("Walk the street") }
-    var message: Text? { Text("Drag the town sideways to walk it. Tap anyone to hear what they are on, and tap a building to read it. Touch the mini-map to jump.") }
-    var image: Image? { Image(systemName: "hand.draw") }
 }
