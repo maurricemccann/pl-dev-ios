@@ -1,353 +1,165 @@
-import AVKit
+import AppIntents
+import CoreSpotlight
 import SwiftUI
-import TipKit
 import UserNotifications
 
 /// Curate: one card at a time; right = keep, left = cut, up = maybe, star = favourite (a keep with the note "fav").
-/// The deck order comes from PLDevCore's CurateQueue (the web's rules). Marks go to the gallery's /api/taste, the same store
-/// the web deck, the Library and the R1 write. A failed marks load deals no deck; a failed save is counted on screen.
+/// Every deck of the web picker is here (CurateMode), dealt by PLDevCore's CurateQueue (the web's rules) or built as the web builds
+/// it (categories, tags). Marks go to the gallery's /api/taste, the same store the web deck, the Library and the R1 write; offline a
+/// mark waits in the outbox. A failed marks load deals no deck; a failed save is counted on screen.
 @MainActor enum CurateSection: PLSection {
     static let manifest = SectionManifest(id: "curate", title: "Curate", symbol: "rectangle.stack", needsKeys: ["vault"], needsOrigins: ["gallery"])
     static let state = CurateModel()
 
     static func makeRoot(model: AppModel) -> AnyView { AnyView(CurateView(model: model, state: state)) }
     static func probes(model: AppModel) -> [ProbeModel.Item] { [] }
-    static func settingsRows(model: AppModel) -> AnyView? { nil }
+    static func settingsRows(model: AppModel) -> AnyView? {
+        AnyView(Group {
+            CurateSettingsRows()
+            Button { Task { await CurateSpotlight.index() } } label: {
+                SettingsLabel("Add the Curate decks to Spotlight again", "magnifyingglass", Color(uiColor: .systemGray))
+            }
+        })
+    }
+    /// Nothing arrives for Curate: a pass is something he starts, so there is no notification to give a button to (gap check).
     static func notificationCategories() -> Set<UNNotificationCategory> { [] }
     static func handle(link: DeepLink, model: AppModel) -> Bool {
-        if case .section(_, let path, _) = link, let d = path.first.flatMap(CurateDeck.init(rawValue:)) { state.deck = d }
+        if case .section(_, let path, _) = link, let m = path.first.flatMap(CurateMode.parse) { state.mode = m; state.linkTick += 1 }
         return true
     }
-    static func refresh(model: AppModel) async -> SectionRefresh { SectionRefresh(badge: nil, notify: []) }
-}
-
-@MainActor @Observable final class CurateModel {
-    struct Done { let item: LibraryItem; let dir: String; let prev: TasteMark? }
-
-    var deck: CurateDeck = .everything
-    var cls: String? = nil
-    var queue: [LibraryItem] = []
-    var index = 0
-    var marks: [String: TasteMark] {   // one store: a mark here shows in the Library at once
-        get { LibraryData.shared.marks }
-        set { LibraryData.shared.marks = newValue }
-    }
-    var loading = false
-    var loadFailed = false
-    var notSaved = 0
-    var kept = 0
-    var history: [Done] = []
-    var comment = ""
-    var tick = 0
-    var undoTick = 0
-    private var allItems: [LibraryItem] = []
-    private var seeds: [LibraryItem] = []   // /seed-index.json, loaded when the Seeds class is picked (as the web deck does)
-
-    var current: LibraryItem? { index < queue.count ? queue[index] : nil }
-
-    func load(model: AppModel, force: Bool = false) async {
-        guard !loading else { return }
-        loading = true; defer { loading = false }
-        do {
-            try await LibraryData.shared.load(model: model, force: force)
-            allItems = LibraryData.shared.items
-            loadFailed = false
-            deal()
-        } catch {
-            loadFailed = true; queue = []   // never deal a deck over marks that did not load
-        }
-    }
-
-    /// The seed phrases (3,346): their own index, read once.
-    func loadSeeds(model: AppModel) async {
-        guard seeds.isEmpty, let http = model.http else { return }
-        struct Index: Decodable { let items: [LibraryItem] }
-        if let d = try? await http.send(RequestPlan(origin: "gallery", path: "seed-index.json"), timeout: 60),
-           let i = try? JSONDecoder().decode(Index.self, from: d) { seeds = i.items }
-        deal()
-    }
-
-    func deal() {
-        let items = cls == "seed" ? seeds : allItems, marks = self.marks, deck = self.deck, cls = self.cls
-        queue = CurateQueue.build(deck, items: items, marks: marks, cls: cls)
-        index = 0; history = []; kept = 0
-        comment = current?.vaultComment(marks) ?? ""
-    }
-
-    private func post(_ body: [String: String], model: AppModel) async {
-        _ = await LibraryData.shared.post(body, model: model)
-        notSaved = LibraryData.shared.notSaved
-    }
-
-    func saveComment(model: AppModel) async {
-        guard let it = current else { return }
-        let t = comment.trimmingCharacters(in: .whitespacesAndNewlines)
-        guard t != (marks[it.vault_id]?.comment ?? "") else { return }
-        marks[it.vault_id, default: TasteMark(v: "")].comment = t
-        await post(["only": "comment", "id": it.vault_id, "comment": String(t.prefix(1000))], model: model)
-    }
-
-    /// keep / cut / maybe / fav. In the favs deck a keep posts nothing (it already is one).
-    private var committing = false
-
-    func commit(_ dir: String, model: AppModel) async {
-        guard !committing, let it = current else { return }
-        committing = true; defer { committing = false }
-        await saveComment(model: model)
-        let prev = marks[it.vault_id]
-        if dir == "fav" {
-            await post(["id": it.vault_id, "v": "keep", "note": "fav"], model: model)
-            marks[it.vault_id] = TasteMark(v: "keep", note: "fav", comment: prev?.comment)
-        } else if dir == "keep", prev?.v == "keep", [.repass, .cloud, .api, .all, .unseen].contains(deck) {
-            // re-pass rule: a keep on a keep (or favourite) leaves it as it was; the post only stamps the time so it leaves the re-pass
-            await post(["id": it.vault_id, "v": "keep"].merging(prev?.note.map { ["note": $0] } ?? [:]) { a, _ in a }, model: model)
-            marks[it.vault_id] = TasteMark(v: "keep", note: prev?.note, comment: prev?.comment)
-        } else if !(deck == .favs && dir == "keep") {
-            var body = ["id": it.vault_id, "v": dir]
-            if deck == .maybes, let n = prev?.note, !n.isEmpty, dir == "maybe" { body["note"] = n }
-            await post(body, model: model)
-            marks[it.vault_id] = TasteMark(v: dir, comment: prev?.comment)
-        }
-        if dir == "keep" || dir == "fav" { kept += 1 }
-        history.append(Done(item: it, dir: dir, prev: prev))
-        tick += 1
-        index += 1
-        comment = current?.vaultComment(marks) ?? ""
-    }
-
-    func undo(model: AppModel) async {
-        guard !committing, let last = history.popLast() else { return }
-        committing = true; defer { committing = false }
-        // one rule for every deck: put back the mark the card had before (with its note), or clear it if it had none
-        if let p = last.prev, !p.v.isEmpty {
-            await post(["id": last.item.vault_id, "v": p.v].merging(p.note.map { ["note": $0] } ?? [:]) { a, _ in a }, model: model)
-        } else {
-            await post(["id": last.item.vault_id, "v": "clear"], model: model)
-        }
-        marks[last.item.vault_id] = last.prev
-        if last.dir == "keep" || last.dir == "fav" { kept = max(0, kept - 1) }
-        index = max(0, index - 1)
-        undoTick += 1
-        comment = current?.vaultComment(marks) ?? ""
-    }
-
-    func media(_ it: LibraryItem, model: AppModel) -> (still: URL?, video: URL?) { LibraryData.shared.media(it, model: model) }
-}
-
-private extension LibraryItem {
-    func vaultComment(_ marks: [String: TasteMark]) -> String {
-        let c = marks[vault_id]?.comment ?? ""
-        return c.range(of: #"^(regenerated from your favourites|replaced by)"#, options: .regularExpression) != nil ? "" : c
+    static func refresh(model: AppModel) async -> SectionRefresh {
+        await CurateSpotlight.index()
+        return SectionRefresh(badge: nil, notify: [])
     }
 }
 
-/// A muted clip that loops, through the system player.
-struct LoopingClip: View {
-    let url: URL
-    @State private var player: AVQueuePlayer?
-    @State private var looper: AVPlayerLooper?
+/// Settings > Curate: the sound choice for clips and whether the deck opens on the last deck (the web resets to Unmarked).
+struct CurateSettingsRows: View {
+    @AppStorage("pl-curate-sound") private var sound = false
+    @AppStorage("curate.rememberDeck") private var remember = true
     var body: some View {
-        VideoPlayer(player: player)
-            .onAppear {
-                let p = AVQueuePlayer(); p.isMuted = true
-                looper = AVPlayerLooper(player: p, templateItem: AVPlayerItem(url: url))
-                player = p; p.play()
-            }
-            .onDisappear { player?.pause(); player = nil; looper = nil }
+        Toggle(isOn: $sound) { SettingsLabel("Curate clips play with sound", "speaker.wave.2", Color(hex: 0xc9a84c)) }
+        Toggle(isOn: $remember) { SettingsLabel("Open Curate on the last deck", "rectangle.stack", Color(hex: 0xc9a84c)) }
     }
 }
 
-struct CurateView: View {
+// MARK: the favourites viewer (web /library?v=fav)
+
+/// Every favourite he has starred, newest first, each with its comment box: the words he leaves for taste learning.
+struct CurateFavourites: View {
     let model: AppModel
-    @Bindable var state: CurateModel
-    @State private var drag: CGSize = .zero
-    @FocusState private var commentFocus: Bool
+    let state: CurateModel
+    @Environment(\.dismiss) private var dismiss
     @Environment(\.colorScheme) private var scheme
-    private let threshold: CGFloat = 110
-    private let classes: [(String?, String)] = [(nil, "Everything"), ("still", "Stills"), ("cinematic", "Shorts"), ("code-piece", "Code"), ("font", "Fonts"), ("essay", "Essays"), ("seed", "Seeds"), ("archive-work", "Archive")]
+
+    private var favs: [LibraryItem] { LibraryData.shared.items.filter { LibraryData.shared.marks[$0.vault_id]?.isFav == true }.reversed() }
 
     var body: some View {
-        VStack(spacing: 12) {
-            header
-            if state.loadFailed {
-                ContentUnavailableView("YOUR MARKS DID NOT LOAD", systemImage: "exclamationmark.triangle",
-                                       description: Text("No deck is dealt over marks that did not load. Pull to try again."))
-            } else if state.loading && state.queue.isEmpty {
-                ProgressView("Loading the library…").frame(maxHeight: .infinity)
-            } else if let it = state.current {
-                TipView(CurateSwipeTip())
-                TextField("A word about this piece", text: $state.comment, axis: .vertical)
-                    .lineLimit(1...3).focused($commentFocus)
-                    .gCard(padding: 14, radius: 22, active: commentFocus || !state.comment.isEmpty)
-                    .onChange(of: commentFocus) { _, f in if !f { Task { await state.saveComment(model: model) } } }
-                card(it).frame(maxHeight: .infinity)
-                VStack(spacing: 2) {
-                    Text(it.name ?? it.vault_id).gTitle(24).foregroundStyle(PLG.ink(scheme)).lineLimit(1)
-                    if let sub = it.sub, !sub.isEmpty { Text(sub).gEyebrow(9).foregroundStyle(PLG.dim(scheme)).lineLimit(1) }
+        NavigationStack {
+            Group {
+                if favs.isEmpty {
+                    ContentUnavailableView("No favourites yet", systemImage: "star", description: Text("Star a keep in the deck and it appears here with room for your words."))
+                } else {
+                    List(favs) { it in FavouriteRow(model: model, item: it) }
+                        .listStyle(.plain).scrollContentBackground(.hidden)
                 }
-                keys
-            } else {
-                ContentUnavailableView("Queue clear", systemImage: "checkmark.circle", description: Text("Pick another deck above."))
             }
+            .background { GalleryGround() }
+            .navigationTitle("Favourites").navigationBarTitleDisplayMode(.inline)
+            .toolbar { ToolbarItem(placement: .confirmationAction) { Button("Done") { dismiss() } } }
         }
-        .padding(.horizontal, PLSpace.margin)
-        .background { GalleryGround() }.tint(PLG.gold)
-        .toolbarBackground(.hidden, for: .navigationBar)
-        .navigationTitle("Curate").navigationBarTitleDisplayMode(.inline)
-        .task { if state.queue.isEmpty { await state.load(model: model) } }
-        .refreshable { await state.load(model: model, force: true) }
-        .sensoryFeedback(.impact(weight: .heavy), trigger: state.tick)
-        .sensoryFeedback(.impact(weight: .light), trigger: state.undoTick)
-        .focusable()
-        .onKeyPress { press in   // the R1 Remote types these, as on the web deck
-            guard !commentFocus else { return .ignored }
-            switch press.characters.lowercased() {
-            case "k": act("keep")
-            case "c": act("cut")
-            case "m": act("maybe")
-            case "f": act("fav")
-            case "z": Task { await state.undo(model: model) }
-            default: return .ignored
-            }
-            return .handled
-        }
-    }
-
-    private func act(_ dir: String) { Task { await state.commit(dir, model: model) }; drag = .zero }
-
-    private var header: some View {
-        HStack {
-            Menu {
-                Picker("Deck", selection: Binding(get: { state.deck }, set: { state.deck = $0; state.deal() })) {
-                    ForEach(CurateDeck.allCases, id: \.self) { Text($0.title).tag($0) }
-                }
-                Picker("Class", selection: Binding(get: { state.cls }, set: { state.cls = $0; state.deal(); if $0 == "seed" { Task { await state.loadSeeds(model: model) } } })) {
-                    ForEach(classes, id: \.1) { Text($0.1).tag($0.0) }
-                }
-            } label: {
-                HStack(spacing: 6) { Text(state.deck.title).gTitle(22).foregroundStyle(PLG.ink(scheme)); Image(systemName: "chevron.down").font(.system(size: 9, weight: .bold)).foregroundStyle(PLG.gold) }
-            }
-            Spacer()
-            VStack(alignment: .trailing, spacing: 2) {
-                Text("#\(min(state.index + 1, state.queue.count)) of \(state.queue.count) · \(max(0, state.queue.count - state.index)) left")
-                    .gEyebrow(9).foregroundStyle(PLG.dim(scheme))
-                if state.kept > 0 { Text("\(state.kept) kept").gEyebrow(9).foregroundStyle(PLG.teal) }
-                if state.notSaved > 0 { Text("\(state.notSaved) not saved").gEyebrow(9).foregroundStyle(PLG.red) }
-            }
-        }
-    }
-
-    private func stamp(_ text: String, _ color: Color, _ amount: CGFloat) -> some View {
-        Text(text).font(.system(size: 30, weight: .semibold)).tracking(6).foregroundStyle(color)
-            .padding(.horizontal, 10).overlay(RoundedRectangle(cornerRadius: 8).stroke(color, lineWidth: 4))
-            .opacity(Double(min(1, max(0, amount / threshold))))
-    }
-
-    private func card(_ it: LibraryItem) -> some View {
-        let m = state.media(it, model: model)
-        return ZStack {
-            RoundedRectangle(cornerRadius: PLRadius.card, style: .continuous).fill(Color(hex: 0xece7da))   // the web card's bone ground
-            if it.class == "code-piece" { LivePieceCard(model: model, pieceID: it.item_id, thumb: m.still).id(it.item_id) } else if let v = m.video {
-                LoopingClip(url: v).id(v)
-            } else if let s = m.still {
-                AsyncImage(url: s) { $0.resizable().scaledToFit() } placeholder: { ProgressView() }
-            } else if it.class == "essay", let src = it.src, let url = URL(string: LibraryData.shared.base(model) + src) {
-                EssayCard(url: url)
-            } else if it.class == "seed" {
-                SeedCard(phrase: it.name ?? "")
-            } else {
-                Text(it.name ?? it.vault_id).gTitle(22).foregroundStyle(Color(hex: 0x1a1510)).padding()
-            }
-            VStack {
-                HStack {
-                    stamp("KEEP", PLG.teal, drag.width).rotationEffect(.degrees(-8))
-                    Spacer()
-                    stamp("CUT", PLG.red, -drag.width).rotationEffect(.degrees(8))
-                }
-                stamp("MAYBE", PLG.amber, -drag.height)
-                Spacer()
-            }.padding(16)
-        }
-        .clipShape(RoundedRectangle(cornerRadius: PLRadius.card, style: .continuous))
-        .overlay { RoundedRectangle(cornerRadius: PLRadius.card, style: .continuous).strokeBorder(PLG.gold.opacity(0.28), lineWidth: 0.8) }
-        .offset(drag)
-        .rotationEffect(.degrees(Double(drag.width / 18)))
-        .gesture(DragGesture()
-            .onChanged { drag = $0.translation }
-            .onEnded { g in
-                let t = g.translation
-                if t.width > threshold { act("keep") }
-                else if t.width < -threshold { act("cut") }
-                else if t.height < -threshold { act("maybe") }
-                else { withAnimation(.spring(duration: 0.3)) { drag = .zero } }
-            })
-        .animation(.interactiveSpring, value: drag)
-        .id(it.vault_id)
-    }
-
-    /// His five keycaps, in the web deck's order (cut, maybe, keep, fav, undo), each pressing down under the finger.
-    private var keys: some View {
-        HStack(spacing: 8) {
-            KeyCap(model: model, name: "cut", label: "Cut") { act("cut") }
-            KeyCap(model: model, name: "maybe", label: "Maybe") { act("maybe") }
-            KeyCap(model: model, name: "keep", label: "Keep") { act("keep") }
-            KeyCap(model: model, name: "fav", label: "Favourite") { act("fav") }
-            KeyCap(model: model, name: "undo", label: "Undo") { Task { await state.undo(model: model) } }
-                .disabled(state.history.isEmpty).opacity(state.history.isEmpty ? 0.5 : 1)
-        }
-        .padding(.bottom, 8)
+        .tint(PLG.gold)
     }
 }
 
-/// One of his keycap pictures (gallery /remote/cap-<name>-up|down-t3.png): up at rest, down while pressed.
-struct KeyCap: View {
+private struct FavouriteRow: View {
     let model: AppModel
-    let name: String
-    let label: String
-    let action: () -> Void
-    var body: some View {
-        Button(action: action) { EmptyView() }
-            .buttonStyle(CapStyle(base: LibraryData.shared.base(model), name: name))
-            .accessibilityLabel(label)
-    }
-    struct CapStyle: ButtonStyle {
-        let base: String
-        let name: String
-        func makeBody(configuration: Configuration) -> some View {
-            AsyncImage(url: URL(string: "\(base)/remote/cap-\(name)-\(configuration.isPressed ? "down" : "up")-t3.png")) { $0.resizable().scaledToFit() }
-                placeholder: { RoundedRectangle(cornerRadius: 10, style: .continuous).fill(PLG.surface(.dark)) }
-                .frame(maxWidth: .infinity).frame(height: 64)
-                .contentShape(Rectangle())
-        }
-    }
-}
+    let item: LibraryItem
+    @State private var text = ""
+    @State private var saved = ""
+    @State private var state = ""
+    @FocusState private var focus: Bool
+    @Environment(\.colorScheme) private var scheme
 
-/// An essay card: its full text, scrolling inside the card (web: EssayCard).
-struct EssayCard: View {
-    let url: URL
-    @State private var text: String?
     var body: some View {
-        ScrollView { Text(text ?? "Loading…").font(.system(.body, design: .serif)).foregroundStyle(Color(hex: 0x1a1510)).frame(maxWidth: .infinity, alignment: .leading).padding(20) }
-            .task(id: url) {
-                if let (d, _) = try? await URLSession.shared.data(from: url) { text = String(decoding: d, as: UTF8.self) } else { text = "Could not load this essay." }
+        let m = LibraryData.shared.media(item, model: model)
+        HStack(alignment: .top, spacing: 12) {
+            AsyncImage(url: m.still) { $0.resizable().scaledToFit() } placeholder: { PLC.bone }
+                .frame(width: 96, height: 120).background(PLC.bone).clipShape(RoundedRectangle(cornerRadius: 10, style: .continuous))
+            VStack(alignment: .leading, spacing: 6) {
+                Text(item.class == "seed" ? (item.origin ?? "seed") : (item.name ?? item.item_id)).gTitle(17).foregroundStyle(PLG.ink(scheme)).lineLimit(2)
+                Text(item.item_id).gEyebrow(9).foregroundStyle(PLG.dim(scheme))
+                TextField("A word about this piece", text: $text, axis: .vertical).lineLimit(1...4).focused($focus)
+                    .padding(10).background(PLG.surface(scheme).opacity(0.6), in: RoundedRectangle(cornerRadius: 12, style: .continuous))
+                    .overlay { RoundedRectangle(cornerRadius: 12, style: .continuous).strokeBorder(PLG.line(scheme), lineWidth: 0.8) }
+                    .onChange(of: focus) { _, f in if !f { Task { await save() } } }
+                if !state.isEmpty { Text(state).gEyebrow(9).foregroundStyle(state.hasPrefix("NOT") ? PLG.red : PLG.dim(scheme)) }
             }
+        }
+        .listRowBackground(Color.clear).listRowSeparatorTint(PLG.line(scheme))
+        .onAppear { let c = LibraryData.shared.marks[item.vault_id]?.comment ?? ""; text = c; saved = c }
+    }
+
+    private func save() async {
+        let t = text.trimmingCharacters(in: .whitespacesAndNewlines)
+        guard t != saved else { return }
+        state = "saving…"
+        if await LibraryData.shared.post(["only": "comment", "id": item.vault_id, "comment": String(t.prefix(1000))], model: model) {
+            saved = t; state = "saved ✓"; LibraryData.shared.marks[item.vault_id, default: TasteMark(v: "")].comment = t
+        } else { state = "NOT SAVED: tap the box and tap away to retry" }
     }
 }
 
-/// A seed phrase as the web deck draws it: his hand, upper-cased, on the house ground (the font from the Design Kit).
-struct SeedCard: View {
-    let phrase: String
-    @State private var kit = HouseKit.shared
-    var body: some View {
-        ZStack {
-            kit.palette.groundColor
-            Text(phrase.uppercased())
-                .plHand(34, relativeTo: .title)
-                .foregroundStyle(kit.palette.textColor)
-                .multilineTextAlignment(.center)
-                .minimumScaleFactor(0.4)
-                .padding(28)
-        }
-        .accessibilityLabel(phrase)
+// MARK: Siri, Shortcuts, Spotlight (DESIGN.md §6)
+
+/// A Curate deck as Siri and Spotlight know it.
+struct CurateDeckEntity: IndexedEntity {
+    static let typeDisplayRepresentation: TypeDisplayRepresentation = "Curate Deck"
+    static let defaultQuery = CurateDeckQuery()
+    let id: String
+    let title: String
+    var displayRepresentation: DisplayRepresentation { DisplayRepresentation(title: "\(title)") }
+    static var all: [CurateDeckEntity] {
+        CurateMode.groups.flatMap(\.1).filter { $0.kind != .unseen && $0.kind != .all }.map { CurateDeckEntity(id: $0.id, title: $0.title) }
     }
+}
+
+struct CurateDeckQuery: EntityStringQuery {
+    func entities(for identifiers: [String]) async throws -> [CurateDeckEntity] { CurateDeckEntity.all.filter { identifiers.contains($0.id) } }
+    func entities(matching string: String) async throws -> [CurateDeckEntity] { CurateDeckEntity.all.filter { $0.title.localizedCaseInsensitiveContains(string) } }
+    func suggestedEntities() async throws -> [CurateDeckEntity] { CurateDeckEntity.all }
+}
+
+/// "Open the cloud batches in Curate": lands on the deck by name.
+struct OpenCurateDeckIntent: OpenIntent {
+    static let title: LocalizedStringResource = "Open a Curate Deck"
+    @Parameter(title: "Deck") var target: CurateDeckEntity
+    init() {}
+    init(target: CurateDeckEntity) { self.target = target }
+    @MainActor func perform() async throws -> some IntentResult {
+        try await IntentBridge.whenReady { IntentBridge.open?(.section(id: "curate", path: [target.id], query: [:])) }
+        return .result()
+    }
+}
+
+/// "How many cards wait in the new deck?": deals the deck in the app's process and says the count.
+struct CurateDeckCountIntent: AppIntent {
+    static let title: LocalizedStringResource = "Cards Waiting in a Curate Deck"
+    static let description: IntentDescription? = "Says how many cards a Curate deck holds right now."
+    static let supportedModes: IntentModes = .background
+    @Parameter(title: "Deck") var target: CurateDeckEntity
+
+    @MainActor func perform() async throws -> some IntentResult & ProvidesDialog {
+        let model = AppModel.shared
+        await model.restoreIfNeeded()
+        guard model.http != nil else { return .result(dialog: "PL DEV has no config loaded yet.") }
+        try await LibraryData.shared.load(model: model)
+        guard let m = CurateMode.parse(target.id), let deck = m.deck else { return .result(dialog: "That deck is dealt in the app. Open it to see its count.") }
+        let n = CurateQueue.build(deck, items: LibraryData.shared.items, marks: LibraryData.shared.marks, cls: m.cls).count
+        return .result(dialog: "\(n.formatted()) cards wait in \(target.title).")
+    }
+}
+
+enum CurateSpotlight {
+    static func index() async { try? await CSSearchableIndex(name: "curate").indexAppEntities(CurateDeckEntity.all) }
 }
