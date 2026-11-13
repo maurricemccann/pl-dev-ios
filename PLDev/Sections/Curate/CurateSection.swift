@@ -41,6 +41,7 @@ import UserNotifications
     var tick = 0
     var undoTick = 0
     private var allItems: [LibraryItem] = []
+    private var seeds: [LibraryItem] = []   // /seed-index.json, loaded when the Seeds class is picked (as the web deck does)
 
     var current: LibraryItem? { index < queue.count ? queue[index] : nil }
 
@@ -57,8 +58,17 @@ import UserNotifications
         }
     }
 
+    /// The seed phrases (3,346): their own index, read once.
+    func loadSeeds(model: AppModel) async {
+        guard seeds.isEmpty, let http = model.http else { return }
+        struct Index: Decodable { let items: [LibraryItem] }
+        if let d = try? await http.send(RequestPlan(origin: "gallery", path: "seed-index.json"), timeout: 60),
+           let i = try? JSONDecoder().decode(Index.self, from: d) { seeds = i.items }
+        deal()
+    }
+
     func deal() {
-        let items = allItems, marks = self.marks, deck = self.deck, cls = self.cls
+        let items = cls == "seed" ? seeds : allItems, marks = self.marks, deck = self.deck, cls = self.cls
         queue = CurateQueue.build(deck, items: items, marks: marks, cls: cls)
         index = 0; history = []; kept = 0
         comment = current?.vaultComment(marks) ?? ""
@@ -149,7 +159,7 @@ struct CurateView: View {
     @State private var drag: CGSize = .zero
     @FocusState private var commentFocus: Bool
     private let threshold: CGFloat = 110
-    private let classes: [(String?, String)] = [(nil, "Everything"), ("still", "Stills"), ("cinematic", "Shorts"), ("code-piece", "Code"), ("font", "Fonts"), ("essay", "Essays"), ("archive-work", "Archive")]
+    private let classes: [(String?, String)] = [(nil, "Everything"), ("still", "Stills"), ("cinematic", "Shorts"), ("code-piece", "Code"), ("font", "Fonts"), ("essay", "Essays"), ("seed", "Seeds"), ("archive-work", "Archive")]
 
     var body: some View {
         VStack(spacing: 12) {
@@ -203,7 +213,7 @@ struct CurateView: View {
                 Picker("Deck", selection: Binding(get: { state.deck }, set: { state.deck = $0; state.deal() })) {
                     ForEach(CurateDeck.allCases, id: \.self) { Text($0.title).tag($0) }
                 }
-                Picker("Class", selection: Binding(get: { state.cls }, set: { state.cls = $0; state.deal() })) {
+                Picker("Class", selection: Binding(get: { state.cls }, set: { state.cls = $0; state.deal(); if $0 == "seed" { Task { await state.loadSeeds(model: model) } } })) {
                     ForEach(classes, id: \.1) { Text($0.1).tag($0.0) }
                 }
             } label: { Label(state.deck.title, systemImage: "line.3.horizontal.decrease.circle") }
@@ -232,6 +242,8 @@ struct CurateView: View {
                 AsyncImage(url: s) { $0.resizable().scaledToFit() } placeholder: { ProgressView() }
             } else if it.class == "essay", let src = it.src, let url = URL(string: LibraryData.shared.base(model) + src) {
                 EssayCard(url: url)
+            } else if it.class == "seed" {
+                SeedCard(phrase: it.name ?? "")
             } else {
                 Text(it.name ?? it.vault_id).font(.title3).padding()
             }
@@ -307,5 +319,23 @@ struct EssayCard: View {
             .task(id: url) {
                 if let (d, _) = try? await URLSession.shared.data(from: url) { text = String(decoding: d, as: UTF8.self) } else { text = "Could not load this essay." }
             }
+    }
+}
+
+/// A seed phrase as the web deck draws it: his hand, upper-cased, on the house ground (the font from the Design Kit).
+struct SeedCard: View {
+    let phrase: String
+    @State private var kit = HouseKit.shared
+    var body: some View {
+        ZStack {
+            kit.palette.groundColor
+            Text(phrase.uppercased())
+                .font(kit.titleFont.map { Font.custom($0, size: 34, relativeTo: .title) } ?? .system(.title, design: .serif))
+                .foregroundStyle(kit.palette.textColor)
+                .multilineTextAlignment(.center)
+                .minimumScaleFactor(0.4)
+                .padding(28)
+        }
+        .accessibilityLabel(phrase)
     }
 }

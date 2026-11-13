@@ -102,5 +102,10 @@ struct GlyphBotView: View {
         }
         .navigationTitle("GlyphBot")
         .navigationBarTitleDisplayMode(.inline)
+        .toolbar {
+            // his own rigged GlyphGuy (the gallery's /lab/glyphbot, Three.js on his model): shown, never redrawn ("Not my model")
+            NavigationLink { GalleryCanvas(model: model, path: "lab/glyphbot", title: "GlyphGuy") } label: { Image(systemName: "figure.stand") }
+                .accessibilityLabel("See GlyphGuy")
+        }
     }
 }
