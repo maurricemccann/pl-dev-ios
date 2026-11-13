@@ -41,6 +41,12 @@ import UserNotifications
     }
 }
 
+struct HabitSwipeTip: Tip {
+    var title: Text { Text("Tick a habit with a swipe") }
+    var message: Text? { Text("Swipe a habit left to tick it. Swipe it back to undo.") }
+    var image: Image? { Image(systemName: "hand.draw") }
+}
+
 /// Every Practice destination, by name, so a link, Siri, Spotlight or a notification can land on it.
 enum PracticeRoom: String, CaseIterable, Identifiable, Hashable {
     case morning, evening, lesson, reframe, affirmations, coach, desires, habits, rehearsal, vision, notes, wins, review, trends

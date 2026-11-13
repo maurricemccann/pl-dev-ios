@@ -2,19 +2,10 @@ import ActivityKit
 import AppIntents
 import CoreSpotlight
 import SwiftUI
-import TipKit
 import UserNotifications
 
 // Practice's system add-ons, built the way House's are (DESIGN.md section 6): the evening notice with real buttons,
 // the rehearsal as a Live Activity, Siri and Shortcuts, Spotlight, one tip, and a deep link to every room.
-
-// MARK: - Tip (only for what cannot be seen)
-
-struct HabitSwipeTip: Tip {
-    var title: Text { Text("Tick a habit with a swipe") }
-    var message: Text? { Text("Swipe a habit left to tick it. Swipe it back to undo.") }
-    var image: Image? { Image(systemName: "hand.draw") }
-}
 
 // MARK: - The evening notice
 
