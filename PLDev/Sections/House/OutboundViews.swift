@@ -40,6 +40,7 @@ struct OutboundTab: View {
             Section {
                 NavigationLink { CalendarView(model: model) } label: { Label("Content calendar", systemImage: "calendar") }
                 NavigationLink { TempoView(model: model) } label: { Label("Tempo · this week", systemImage: "metronome") }
+                NavigationLink { NotionView(model: model) } label: { Label("Pipeline and briefing", systemImage: "list.bullet.indent") }
                 NavigationLink { FeedView(model: model) } label: { Label("PL feed", systemImage: "square.stack") }
                 NavigationLink { DripView(model: model) } label: { Label("In the drip", systemImage: "drop") }
                 NavigationLink { VaultView(model: model) } label: { Label("The vault", systemImage: "archivebox") }

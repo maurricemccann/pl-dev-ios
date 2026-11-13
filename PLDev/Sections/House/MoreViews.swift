@@ -12,8 +12,13 @@ struct MoreTab: View {
                 NavigationLink { CouncilView(model: model) } label: { Label("Council", systemImage: "person.3.sequence") }
                 NavigationLink { OpsView(model: model) } label: { Label("Ops", systemImage: "questionmark.bubble") }
                 NavigationLink { CorpusView(model: model) } label: { Label("Search the corpus", systemImage: "text.magnifyingglass") }
+                NavigationLink { CraftView(model: model) } label: { Label("Craft", systemImage: "wand.and.stars") }
+                NavigationLink { CodexToolView(model: model) } label: { Label("Codex", systemImage: "book.closed") }
+                NavigationLink { SourceInterviewView(model: model) } label: { Label("Source interview", systemImage: "quote.bubble") }
+                NavigationLink { CommentsView(model: model) } label: { Label("Comments to post", systemImage: "text.bubble") }
                 NavigationLink { MerchView(model: model) } label: { Label("Merch calendar", systemImage: "tshirt") }
-                NavigationLink { CatalogQueueView(model: model) } label: { Label("Catalog build queue", systemImage: "square.grid.3x3") }
+                NavigationLink { CatalogMatrixView(model: model) } label: { Label("Catalog", systemImage: "square.grid.3x3") }
+                NavigationLink { AtlasView(model: model) } label: { Label("Atlas", systemImage: "map") }
                 NavigationLink { PrecedentView(model: model) } label: { Label("Precedent", systemImage: "photo.on.rectangle.angled") }
                 NavigationLink { CrewView(model: model) } label: { Label("Crew", systemImage: "figure.2") }
                 Link(destination: URL(string: "https://pl-academy.psychedluxuries.workers.dev")!) { Label("Academy", systemImage: "graduationcap") }
