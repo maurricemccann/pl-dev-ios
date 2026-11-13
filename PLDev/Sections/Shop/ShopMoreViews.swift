@@ -214,7 +214,11 @@ struct SitePagesView: View {
             ForEach(groups) { group in
                 Section(group.name) {
                     ForEach(group.links) { l in
-                        Button { if let url = Site.page(l.path) { web = WebPage(url) } } label: { Label(l.title, systemImage: l.symbol) }
+                        if ["contact", "gift-card"].contains(l.path) {   // a form behind the human check, and Square's gift cards: these stay on the site
+                            Button { if let url = Site.page(l.path) { web = WebPage(url) } } label: { Label(l.title, systemImage: l.symbol) }
+                        } else {
+                            NavigationLink { SiteReaderView(path: l.path, title: l.title) } label: { Label(l.title, systemImage: l.symbol) }
+                        }
                     }
                 }
             }

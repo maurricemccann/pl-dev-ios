@@ -298,6 +298,7 @@ struct WinsView: View {
 struct ReviewView: View {
     let model: AppModel
     @State private var reviews: [PracticeReview] = []
+    @State private var reviewsFailed = false
     @State private var worked = ""
     @State private var adjust = ""
     @State private var celebrate = ""
@@ -321,6 +322,7 @@ struct ReviewView: View {
                 Button("Seal the week") { Task { await seal() } }
                 ResultLine(text: result)
             }
+            if reviewsFailed && reviews.isEmpty { Text("Your past reviews did not load. Pull to try again.").foregroundStyle(.secondary) }
             if !reviews.isEmpty {
                 Section("Sealed") {
                     ForEach(reviews.filter(\.hasText)) { r in
@@ -341,7 +343,7 @@ struct ReviewView: View {
         .refreshable { await load() }
     }
 
-    private func load() async { if let l = try? await Practice.get("reviews", [PracticeReview].self, model: model) { reviews = l } }
+    private func load() async { if let l = try? await Practice.get("reviews", [PracticeReview].self, model: model) { reviews = l; reviewsFailed = false } else { reviewsFailed = true } }
 
     private func read() async {
         reading = true; defer { reading = false }
@@ -426,6 +428,7 @@ struct TrendsView: View {
 struct VisionView: View {
     let model: AppModel
     @State private var pins: [PracticePin] = []
+    @State private var pinsFailed = false
     @State private var more: [PracticeBoardImages.Image] = []
     @State private var picking = false
     @State private var photo: PhotosPickerItem?
@@ -435,7 +438,8 @@ struct VisionView: View {
     var body: some View {
         List {
             Section {
-                if pins.isEmpty { Text("Nothing chosen yet. Tap a picture below to keep it.").foregroundStyle(.secondary) }
+                if pinsFailed && pins.isEmpty { Text("Your board did not load. Pull to try again.").foregroundStyle(.secondary) }
+                else if pins.isEmpty { Text("Nothing chosen yet. Tap a picture below to keep it.").foregroundStyle(.secondary) }
                 else { grid(pins.map { ($0.url, $0.alt, true) }) }
             } header: { Text("Chosen") } footer: { Text("Tap a chosen picture to let it go. Chosen pictures stay.") }
             Section {
@@ -475,7 +479,7 @@ struct VisionView: View {
     }
 
     private func load(refreshMore: Bool) async {
-        if let p = try? await Practice.get("pins", [PracticePin].self, model: model) { pins = p }
+        if let p = try? await Practice.get("pins", [PracticePin].self, model: model) { pins = p; pinsFailed = false } else { pinsFailed = true }
         if refreshMore, let m = try? await Practice.get("vision-board", PracticeBoardImages.self, model: model, query: ["source": "house"]) { more = m.images }
     }
 

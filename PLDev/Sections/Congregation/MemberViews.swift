@@ -57,6 +57,7 @@ struct MembersTabView: View {
     @Bindable var state: CongregationModel
     @State private var query = ""
     @State private var found: [DirectoryMember]?
+    @State private var searchFailed = false
     private let account = SiteAccount.shared
 
     private struct SearchReply: Decodable { let members: [DirectoryMember] }
@@ -66,7 +67,8 @@ struct MembersTabView: View {
             List {
                 let shown = found ?? members
                 Section {
-                    if shown.isEmpty { Text(found == nil ? "No members listed yet." : "No member by that name.").foregroundStyle(.secondary) }
+                    if searchFailed { Text("The search did not answer. Try again in a moment.").foregroundStyle(.secondary) }
+                    else if shown.isEmpty { Text(found == nil ? "No members listed yet." : "No member by that name.").foregroundStyle(.secondary) }
                     ForEach(shown) { m in
                         Button { state.memberHandle = m.handle } label: {
                             HStack(spacing: PLSpace.pad) {
@@ -92,8 +94,8 @@ struct MembersTabView: View {
 
     private func search() async {
         let q = query.trimmingCharacters(in: .whitespaces)
-        guard q.count >= 2 else { found = nil; return }
-        found = (try? await Site.get("api/search", SearchReply.self, query: ["q": q]))?.members
+        guard q.count >= 2 else { found = nil; searchFailed = false; return }
+        if let r = try? await Site.get("api/search", SearchReply.self, query: ["q": q]) { found = r.members ?? []; searchFailed = false } else { found = []; searchFailed = true }
     }
 }
 

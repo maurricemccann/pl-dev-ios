@@ -141,6 +141,7 @@ struct ReframeView: View {
     @State private var busy = false
     @State private var result: String?
     @State private var saved: [PracticeReframe] = []
+    @State private var savedFailed = false
 
     var body: some View {
         List {
@@ -156,6 +157,7 @@ struct ReframeView: View {
                     ResultLine(text: result)
                 } header: { Text("The reframe") } footer: { Text("Edit it before you keep it. It should sound like you.") }
             }
+            if savedFailed && saved.isEmpty { Text("Your kept reframes did not load. Pull to try again.").foregroundStyle(.secondary) }
             if !saved.isEmpty {
                 Section("Kept") {
                     ForEach(saved) { r in
@@ -174,7 +176,7 @@ struct ReframeView: View {
         .refreshable { await load() }
     }
 
-    private func load() async { saved = (try? await Practice.get("reframes", [PracticeReframe].self, model: model)) ?? saved }
+    private func load() async { if let l = try? await Practice.get("reframes", [PracticeReframe].self, model: model) { saved = l; savedFailed = false } else { savedFailed = true } }
 
     private func make() async {
         busy = true; defer { busy = false }
