@@ -46,7 +46,7 @@ import UserNotifications
     struct PlanTask: Decodable, Identifiable, Equatable {
         let id: String; let slot: String?; let time_pt: String?; let title: String?; let why: String?; var status: String?; let kind: String?; let action_label: String?
     }
-    struct Plan: Decodable { let plan_date: String?; let tasks: [PlanTask]? }
+    struct Plan: Decodable { let plan_date: String?; var tasks: [PlanTask]? }
     struct Day: Decodable, Identifiable { let date: String; let dow: Int?; let work: Bool?; let exception: Bool?; var id: String { date } }
     struct Schedule: Decodable { let days: [Day]? }
     struct Record: Decodable { let days: Int?; let total: Int?; let done: Int?; let skipped: Int?; let since: String?; let streak: Int? }

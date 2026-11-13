@@ -433,7 +433,7 @@ struct LogView: View {
                     case .captures:
                         HStack { Text((r.status ?? "").capitalized).font(.caption.bold()); Spacer(); Ago(text: r.created_at).font(.caption) }
                         Text(r.payload ?? "").lineLimit(3)
-                        Text([r.type, r.source, r.pool_key.map { "in the research pool" }].compactMap { $0 }.joined(separator: " · ")).font(.caption).foregroundStyle(.secondary)
+                        Text([r.type, r.source, r.pool_key.map { _ in "in the research pool" }].compactMap { $0 }.joined(separator: " · ")).font(.caption).foregroundStyle(.secondary)
                     }
                 }
                 .textSelection(.enabled)

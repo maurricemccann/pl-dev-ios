@@ -21,8 +21,7 @@ import SwiftUI
 
     /// A D1 read from the PL DEV door: { ok, data }.
     static func q<T: Decodable>(_ name: String, _ type: T.Type, model: AppModel) async throws -> T {
-        struct Wrap: Decodable { let data: T }
-        return try await get("api/pldev/q/\(name)", Wrap.self, model: model).data
+        try await get("api/pldev/q/\(name)", DataWrap<T>.self, model: model).data
     }
 
     /// A write. Throws with the server's own sentence when it says no.
@@ -55,6 +54,9 @@ import SwiftUI
         } catch { return "It did not run: \(error.localizedDescription)" }
     }
 }
+
+/// The PL DEV door's reply shape, { ok, data }.
+struct DataWrap<T: Decodable>: Decodable { let data: T }
 
 /// Shared bits for the console screens.
 extension Date {
