@@ -132,8 +132,8 @@ struct HomeDashboard: View {
 }
 
 /// His heart model, gold, swaying slowly and breathing (the web's pulse: 1 ± 3 %). Not a control: no gestures, it is the room's centre.
-/// The face is found, not assumed: of the six ways the model can lie, the one whose thinnest side points at the camera wins, so his
-/// heart always shows its face (his screenshot 11-13: it showed only its edge). Motion runs on RealityKit's own frame clock (120 Hz).
+/// The pose is read off the mesh itself (HeartPose), so his heart stands point down with its face to the camera whatever axes the
+/// file came with (his reports 11-13: first only its edge showed, then it stood the wrong way). Motion runs on RealityKit's own frame clock (120 Hz).
 struct HomeHeart: View {
     @State private var sub: EventSubscription?
     @Environment(\.accessibilityReduceMotion) private var reduce
@@ -142,17 +142,7 @@ struct HomeHeart: View {
             content.camera = .virtual
             guard let e = await ThreeDModels.load("heart1") else { return }
             ThreeDModels.paint(e, ThreeDModels.goldMaterial(rough: 0.28))
-            let turns: [simd_quatf] = [simd_quatf(angle: 0, axis: [1, 0, 0]), simd_quatf(angle: .pi / 2, axis: [1, 0, 0]), simd_quatf(angle: -.pi / 2, axis: [1, 0, 0]),
-                                       simd_quatf(angle: .pi / 2, axis: [0, 1, 0]), simd_quatf(angle: .pi / 2, axis: [0, 0, 1]), simd_quatf(angle: .pi, axis: [1, 0, 0])]
-            var best = turns[0], thinnest = Float.greatestFiniteMagnitude
-            for q in turns {
-                e.orientation = q
-                let b = e.visualBounds(relativeTo: nil)
-                // thinnest toward the camera, and standing taller than wide is a tie-break toward the heart standing up
-                let score = b.extents.z - 0.001 * b.extents.y
-                if score < thinnest { thinnest = score; best = q }
-            }
-            e.orientation = best
+            e.orientation = HeartPose.upright(e)
             let f = ThreeDModels.fitted(e, longest: 1.1)
             f.position = [0, -0.55, -1.5]
             content.add(f)
@@ -167,5 +157,40 @@ struct HomeHeart: View {
             }
         }
         .allowsHitTesting(false)
+    }
+}
+
+
+/// Stands a heart up from its own shape: the longest side is up, the thinnest side faces the camera, and the up direction is the
+/// side where the shape's mass sits (the two lobes outweigh the point). Pure geometry, so it holds for any export's axes.
+@MainActor enum HeartPose {
+    static func upright(_ root: Entity) -> simd_quatf {
+        var pts: [SIMD3<Float>] = []
+        func walk(_ e: Entity) {
+            if let m = e.components[ModelComponent.self] {
+                for model in m.mesh.contents.models {
+                    for part in model.parts {
+                        let all = part.positions.elements
+                        let step = max(1, all.count / 4000)
+                        for i in stride(from: 0, to: all.count, by: step) { pts.append(e.convert(position: all[i], to: root)) }
+                    }
+                }
+            }
+            e.children.forEach(walk)
+        }
+        walk(root)
+        guard pts.count > 10 else { return simd_quatf(angle: .pi / 2, axis: [1, 0, 0]) }   // the web's turn when the mesh cannot be read
+        var lo = pts[0], hi = pts[0], sum = SIMD3<Float>(repeating: 0)
+        for p in pts { lo = simd_min(lo, p); hi = simd_max(hi, p); sum += p }
+        let ext = hi - lo, centre = (lo + hi) / 2, mean = sum / Float(pts.count)
+        let axes: [SIMD3<Float>] = [[1, 0, 0], [0, 1, 0], [0, 0, 1]]
+        let order = [0, 1, 2].sorted { ext[$0] < ext[$1] }          // thinnest … longest
+        let thin = axes[order[0]], long = axes[order[2]]
+        let up = (mean[order[2]] - centre[order[2]]) >= 0 ? long : -long   // the lobes' side is up
+        let face = thin
+        let side = simd_cross(up, face)
+        // the rotation that sends side → +X, up → +Y, face → +Z
+        let m = simd_float3x3(rows: [side, up, face])
+        return simd_quatf(m)
     }
 }
