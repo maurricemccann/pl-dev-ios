@@ -84,7 +84,7 @@ struct SittingLiveActivity: Widget {
     var body: some WidgetConfiguration {
         ActivityConfiguration(for: SittingAttributes.self) { ctx in
             HStack(alignment: .center, spacing: 12) {
-                Image(systemName: "bubbles.and.sparkles").font(.title2).foregroundStyle(.orange)
+                Image(systemName: "bubbles.and.sparkles").font(.title2).foregroundStyle(HouseTint.key)
                 VStack(alignment: .leading, spacing: 2) {
                     Text(ctx.isStale ? "Open GlyphBot" : ctx.attributes.mode).font(.headline.weight(.semibold))
                     Text("\(ctx.state.answers) answers · \(ctx.state.seat)").font(.caption).foregroundStyle(.secondary)
@@ -94,19 +94,19 @@ struct SittingLiveActivity: Widget {
             }
             .padding(16)
             .activityBackgroundTint(Color.black.opacity(0.35))
-            .activitySystemActionForegroundColor(.orange)
+            .activitySystemActionForegroundColor(HouseTint.key)
             .widgetURL(URL(string: "pldev://section/glyphbot/interview"))
         } dynamicIsland: { ctx in
             DynamicIsland {
-                DynamicIslandExpandedRegion(.leading) { Label("\(ctx.state.answers)", systemImage: "text.bubble").font(.headline.weight(.semibold)).foregroundStyle(.orange) }
+                DynamicIslandExpandedRegion(.leading) { Label("\(ctx.state.answers)", systemImage: "text.bubble").font(.headline.weight(.semibold)).foregroundStyle(HouseTint.key) }
                 DynamicIslandExpandedRegion(.trailing) { Text(ctx.attributes.started, style: .timer).font(.headline.monospacedDigit()).frame(width: 64, alignment: .trailing) }
                 DynamicIslandExpandedRegion(.bottom) { Text("\(ctx.attributes.mode) · \(ctx.state.seat)").font(.headline.weight(.semibold)) }
             } compactLeading: {
-                Image(systemName: "bubbles.and.sparkles").foregroundStyle(.orange)
+                Image(systemName: "bubbles.and.sparkles").foregroundStyle(HouseTint.key)
             } compactTrailing: {
                 Text("\(ctx.state.answers)").font(.caption.weight(.semibold)).monospacedDigit()
             } minimal: {
-                Image(systemName: "bubbles.and.sparkles").foregroundStyle(.orange)
+                Image(systemName: "bubbles.and.sparkles").foregroundStyle(HouseTint.key)
             }
             .widgetURL(URL(string: "pldev://section/glyphbot/interview"))
         }

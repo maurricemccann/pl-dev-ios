@@ -59,6 +59,21 @@ Apple's guidance behind each line was read at the source on 11-13 (Human Interfa
 - **The house stays only where he ruled it:** his curve-tile wallpaper, his orange as the one accent, and his title face from a theme pack.
 - **The app icon has all three appearances:** default, dark (the glyph on clear) and tinted (grayscale), so it sits in his tinted Home Screen like Apple's own apps.
 
+## 5c. The PL remix (his ask 11-13: "give it the PL UI/UX remix with full Apple experience and capabilities")
+
+Apple's structure, gestures and capabilities stay whole. The house is laid over them only where he ruled it for the R1 (S347): his hand on titles, Courier Prime for panel labels, his palettes for colour (Apple's colours only for status dots), and his curve tile underneath. `PLDev/UI/HouseKit.swift` is the one place this lives:
+- **Palettes.** 13 of his palettes come from the Design Kit (`kit.json` on the gallery), with his own Home Screen (11-13) as the first and the default. Settings → The house → House palette. The palette drives:
+  - the accent (`PLTone.accent`)
+  - the wallpaper's ground and lines
+  - the icon glass wash
+  - every screen's ground (`plGround()`)
+  - the widgets and Live Activities (`HouseTint`, through the App Group)
+- **His hand on every navigation title.** The main hand (V1) comes from the gallery's `/fonts/` and is cached on the phone, so it never ships in this public repo. It is applied through the navigation bar appearance. A theme pack's title font still wins when one is loaded.
+- **The ground.** Each screen sits on the palette's ground with the psyground stencil (his curve tile) at about 7 %. In light mode that is Apple's grouped background washed in the palette's cream. Cards and glass stay Apple's, so they read over the tile.
+- **App icons.** Plain (with dark and tinted appearances) plus five alternates in his palettes (Settings → App icon).
+- **Control Center.** Controls for PL DEV, Capture, PL Paint, House and GlyphBot (Control Center, Lock Screen and the Action button).
+- **Never new.** No section picks its own colours or fonts. If a screen needs a colour, it takes it from the palette.
+
 ## 6. The system add-ons every app gets (the premium pass)
 
 An app is not done until each line below is built, or is marked "not fitting" with a reason, in its gap check:

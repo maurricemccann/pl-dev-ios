@@ -21,7 +21,7 @@ import UIKit
     var titleAllowed = true                          // the config can turn the pack's title font off
 
     var accent: Color? { colors["accent"] }
-    var titleFont: String? { titleAllowed ? titleFontName : nil }
+    var titleFont: String? { titleAllowed ? (titleFontName ?? HouseKit.shared.titleFont) : nil }   // no pack: his hand from the Design Kit (the PL remix)
 
     private struct File: Decodable {
         var colors: [String: String]?

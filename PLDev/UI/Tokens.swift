@@ -39,7 +39,7 @@ enum PLTone {
     static let quiet = Color(uiColor: .systemGray)
 
     /// The tint for controls and marks: the theme pack's accent when one is loaded, else the asset catalog's.
-    @MainActor static var accent: Color { ThemePack.shared.accent ?? Color.accentColor }
+    @MainActor static var accent: Color { ThemePack.shared.accent ?? HouseKit.shared.palette.keyColor }   // the PL remix: his palette, not Apple's blue
 
     /// The wash on a home tile: the pack's "tile" colour, else the accent.
     @MainActor static var tileWash: Color { ThemePack.shared.colors["tile"] ?? accent }

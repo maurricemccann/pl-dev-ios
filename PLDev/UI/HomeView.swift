@@ -184,9 +184,9 @@ struct HomeView: View {
     private func destination(_ id: String) -> some View {
         if let entry = model.sections.first(where: { $0.id == id }) {
             if reduce {
-                entry.makeRoot()
+                entry.makeRoot().plGround()
             } else {
-                entry.makeRoot()
+                entry.makeRoot().plGround()
                     .navigationTransition(.zoom(sourceID: id, in: zoom))
             }
         } else {

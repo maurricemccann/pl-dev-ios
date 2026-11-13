@@ -187,51 +187,53 @@ private struct TileGlass<S: Shape>: ViewModifier {
 /// Home's wallpaper: his curve tile (the Design Kit's psyground stencil, read from the gallery's /kit, so none of his art
 /// ships in this public repo) in his reference's colours, lines over a deep ground. Before the tile arrives, the ground alone.
 struct Wallpaper: View {
-    static let ground = Color(red: 0.35, green: 0.12, blue: 0.055)   // sampled from his 11-13 reference
-    static let line = Color(red: 0.72, green: 0.33, blue: 0.21)
+    /// The chosen house palette's ground and line (his 11-13 Home Screen reference is the default palette).
+    @MainActor static var ground: Color { HouseKit.shared.palette.groundColor }
+    @MainActor static var line: Color { HouseKit.shared.palette.keyColor }
+    /// The psyground stencil (his curve tile, alpha only, 300 pt a repeat), loaded once and shared with every screen's ground.
+    @MainActor static var stencil: UIImage?
     let model: AppModel
-    @State private var tile: UIImage?
+    @State private var kit = HouseKit.shared
+    @State private var ready = Wallpaper.stencil != nil
     @AppStorage("pldev.tileStrength") private var strength = 0.5   // Settings: how strongly the curves show; 0.5 = his reference
 
     init(model: AppModel) { self.model = model }
 
     var body: some View {
         ZStack {
-            Self.ground
-            if let tile {
-                Image(uiImage: tile).resizable(resizingMode: .tile).opacity(min(1, 0.15 + strength * 1.7))
+            kit.palette.groundColor
+            if ready, let tile = Self.stencil {
+                Image(uiImage: tile).renderingMode(.template).resizable(resizingMode: .tile)
+                    .foregroundStyle(kit.palette.keyColor).opacity(min(1, 0.15 + strength * 1.7))
             }
         }
         .ignoresSafeArea()
         .accessibilityHidden(true)
-        .task { tile = await Self.load(model: model) }
+        .task { await Self.load(model: model); ready = Self.stencil != nil }
     }
 
     private static var cacheURL: URL? {
         FileManager.default.urls(for: .cachesDirectory, in: .userDomainMask).first?.appendingPathComponent("psyground.png")
     }
 
-    /// The stencil, painted in the line colour at 300 pt a repeat. Cached, so later launches draw it at once and offline.
-    private static func load(model: AppModel) async -> UIImage? {
-        if let url = cacheURL, let data = try? Data(contentsOf: url), let img = UIImage(data: data) { return paint(img) }
+    /// The stencil from the Design Kit's glass.css on the gallery; cached, so later launches draw it at once and offline.
+    static func load(model: AppModel) async {
+        if stencil != nil { return }
+        if let url = cacheURL, let data = try? Data(contentsOf: url), let img = UIImage(data: data) { stencil = sized(img); return }
         guard let http = model.http,
               let css = try? await http.send(RequestPlan(origin: "gallery", path: "kit/glass/glass.css")),
               let text = String(data: css, encoding: .utf8),
               let start = text.range(of: "--psyground-tile: url(\"data:image/webp;base64,"),
               let end = text[start.upperBound...].firstIndex(of: "\""),
               let data = Data(base64Encoded: String(text[start.upperBound..<end])),
-              let img = UIImage(data: data) else { return nil }
+              let img = UIImage(data: data) else { return }
         if let url = cacheURL, let png = img.pngData() { try? png.write(to: url) }
-        return paint(img)
+        stencil = sized(img)
     }
 
-    private static func paint(_ stencil: UIImage) -> UIImage? {
-        // the tint applies when drawn, not to .cgImage, so draw it once into a bitmap
-        let format = UIGraphicsImageRendererFormat()
-        format.scale = 1
-        guard let cg = UIGraphicsImageRenderer(size: stencil.size, format: format).image(actions: { _ in
-            stencil.withTintColor(UIColor(line)).draw(at: .zero) }).cgImage else { return nil }
-        return UIImage(cgImage: cg, scale: CGFloat(cg.width) / 300, orientation: .up)
+    private static func sized(_ img: UIImage) -> UIImage? {
+        guard let cg = img.cgImage else { return nil }
+        return UIImage(cgImage: cg, scale: CGFloat(cg.width) / 300, orientation: .up).withRenderingMode(.alwaysTemplate)
     }
 }
 

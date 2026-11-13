@@ -13,6 +13,8 @@ struct PLDevApp: App {
             try? Tips.resetDatastore(); UserDefaults.standard.set(false, forKey: "pldev.resetTips")
         }
         try? Tips.configure([.displayFrequency(.daily)])   // tips only for gestures that cannot be seen, one a day at most
+        _ = HouseKit.shared   // the PL remix: his palette and his hand applied before the first screen draws
+        Task { await AppModel.shared.restoreIfNeeded(); await HouseKit.shared.refresh(model: AppModel.shared) }
         Task {   // every app's rooms in Spotlight, each in its own named index
             await HouseSpotlight.index(); await GallerySpotlight.index(); await ShopSpotlight.index(); await CongregationSpotlight.index()
             await PracticeSpotlight.index(); await GlyphBotSpotlight.index()

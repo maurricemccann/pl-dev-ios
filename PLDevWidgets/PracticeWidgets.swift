@@ -89,7 +89,7 @@ struct RehearsalLiveActivity: Widget {
     var body: some WidgetConfiguration {
         ActivityConfiguration(for: RehearsalAttributes.self) { ctx in
             HStack(alignment: .center, spacing: 12) {
-                Image(systemName: "wind").font(.title2).foregroundStyle(.orange)
+                Image(systemName: "wind").font(.title2).foregroundStyle(HouseTint.key)
                 VStack(alignment: .leading, spacing: 2) {
                     Text(ctx.isStale ? "Open Practice" : ctx.state.title).font(.headline.weight(.semibold))
                     Text(ctx.attributes.desire).font(.caption).foregroundStyle(.secondary).lineLimit(1)
@@ -99,26 +99,26 @@ struct RehearsalLiveActivity: Widget {
             }
             .padding(16)
             .activityBackgroundTint(Color.black.opacity(0.35))
-            .activitySystemActionForegroundColor(.orange)
+            .activitySystemActionForegroundColor(HouseTint.key)
             .widgetURL(URL(string: "pldev://section/practice/rehearsal"))
         } dynamicIsland: { ctx in
             DynamicIsland {
-                DynamicIslandExpandedRegion(.leading) { Label("\(ctx.state.stage + 1) of 5", systemImage: "wind").font(.headline.weight(.semibold)).foregroundStyle(.orange) }
+                DynamicIslandExpandedRegion(.leading) { Label("\(ctx.state.stage + 1) of 5", systemImage: "wind").font(.headline.weight(.semibold)).foregroundStyle(HouseTint.key) }
                 DynamicIslandExpandedRegion(.trailing) {
                     Text(timerInterval: ctx.attributes.started...ctx.attributes.ends, countsDown: true).font(.headline.monospacedDigit()).frame(width: 60, alignment: .trailing)
                 }
                 DynamicIslandExpandedRegion(.bottom) {
                     VStack(alignment: .leading, spacing: 6) {
                         Text(ctx.state.title).font(.headline.weight(.semibold))
-                        ProgressView(value: Double(ctx.state.stage + 1), total: 5).tint(.orange)
+                        ProgressView(value: Double(ctx.state.stage + 1), total: 5).tint(HouseTint.key)
                     }
                 }
             } compactLeading: {
-                Image(systemName: "wind").foregroundStyle(.orange)
+                Image(systemName: "wind").foregroundStyle(HouseTint.key)
             } compactTrailing: {
                 Text(timerInterval: ctx.attributes.started...ctx.attributes.ends, countsDown: true).font(.caption.monospacedDigit()).frame(width: 40)
             } minimal: {
-                Image(systemName: "wind").foregroundStyle(.orange)
+                Image(systemName: "wind").foregroundStyle(HouseTint.key)
             }
             .widgetURL(URL(string: "pldev://section/practice/rehearsal"))
         }

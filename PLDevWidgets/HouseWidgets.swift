@@ -93,7 +93,7 @@ struct ShiftLiveActivity: Widget {
                     Text("\(ctx.state.done)").font(.headline)
                 }
                 .gaugeStyle(.accessoryCircularCapacity)
-                .tint(.orange)
+                .tint(HouseTint.key)
                 VStack(alignment: .leading, spacing: 2) {
                     Text(ctx.isStale ? "Open House to refresh" : "Now").font(.caption.weight(.semibold)).foregroundStyle(.secondary)
                     Text(ctx.state.task).font(.headline.weight(.semibold)).lineLimit(2)
@@ -103,12 +103,12 @@ struct ShiftLiveActivity: Widget {
             }
             .padding(16)
             .activityBackgroundTint(Color.black.opacity(0.35))
-            .activitySystemActionForegroundColor(.orange)
+            .activitySystemActionForegroundColor(HouseTint.key)
             .widgetURL(URL(string: "pldev://section/house"))
         } dynamicIsland: { ctx in
             DynamicIsland {
                 DynamicIslandExpandedRegion(.leading) {
-                    Label("\(ctx.state.done)/\(ctx.state.total)", systemImage: "checklist").font(.headline.weight(.semibold)).foregroundStyle(.orange)
+                    Label("\(ctx.state.done)/\(ctx.state.total)", systemImage: "checklist").font(.headline.weight(.semibold)).foregroundStyle(HouseTint.key)
                 }
                 DynamicIslandExpandedRegion(.trailing) {
                     if let t = ctx.state.time { Text(t).font(.headline.weight(.medium)).monospacedDigit() }
@@ -116,15 +116,15 @@ struct ShiftLiveActivity: Widget {
                 DynamicIslandExpandedRegion(.bottom) {
                     VStack(alignment: .leading, spacing: 6) {
                         Text(ctx.state.task).font(.headline.weight(.semibold)).lineLimit(2)
-                        ProgressView(value: Double(ctx.state.done), total: Double(max(ctx.state.total, 1))).tint(.orange)
+                        ProgressView(value: Double(ctx.state.done), total: Double(max(ctx.state.total, 1))).tint(HouseTint.key)
                     }
                 }
             } compactLeading: {
-                Image(systemName: "checklist").foregroundStyle(.orange)
+                Image(systemName: "checklist").foregroundStyle(HouseTint.key)
             } compactTrailing: {
                 Text("\(ctx.state.done)/\(ctx.state.total)").font(.caption.weight(.semibold)).monospacedDigit()
             } minimal: {
-                Text("\(ctx.state.total - ctx.state.done)").font(.caption.weight(.bold)).foregroundStyle(.orange)
+                Text("\(ctx.state.total - ctx.state.done)").font(.caption.weight(.bold)).foregroundStyle(HouseTint.key)
             }
             .widgetURL(URL(string: "pldev://section/house"))
         }

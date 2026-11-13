@@ -111,6 +111,7 @@ struct Loaded<T, Content: View>: View {
             else if let failure { ContentUnavailableView("Could not load", systemImage: "wifi.exclamationmark", description: Text(failure)) }
             else { ProgressView().frame(maxWidth: .infinity, minHeight: 120) }
         }
+        .plGround()
         .task { await reload() }
         .refreshable { await reload() }
     }

@@ -50,6 +50,7 @@ struct SettingsView: View {
                     .padding(.vertical, 4)
                     .accessibilityElement(children: .combine)
                 }
+                HouseRows()
                 appearance
                 notifications
                 keys
@@ -398,6 +399,38 @@ struct SettingsLabel: View {
         HStack(spacing: PLSpace.pad) {
             SettingsIcon(symbol: symbol, color: color)
             Text(title).plFont(.body)
+        }
+    }
+}
+
+/// The PL remix in Settings: which of his palettes the whole app wears (accent, wallpaper, glass wash, grounds, widgets),
+/// and which app icon sits on the Home Screen.
+struct HouseRows: View {
+    @State private var kit = HouseKit.shared
+    @State private var icon = UIApplication.shared.alternateIconName
+    private let icons: [(String?, String)] = [(nil, "Plain"), ("AppIcon-HomeScreen", "Your Home Screen"), ("AppIcon-ObsidianGold", "Obsidian gold"),
+                                              ("AppIcon-VoidEmber", "Void ember"), ("AppIcon-DeepIndigo", "Deep indigo"), ("AppIcon-BoneOxblood", "Bone oxblood")]
+    var body: some View {
+        Section {
+            Picker(selection: $kit.paletteName) {
+                ForEach(kit.palettes) { p in
+                    HStack {
+                        HStack(spacing: 0) { ForEach([p.groundColor, p.keyColor, p.accentColor, p.textColor], id: \.self) { Rectangle().fill($0) } }
+                            .frame(width: 44, height: 18).clipShape(RoundedRectangle(cornerRadius: 4, style: .continuous))
+                        Text(p.name == "home-screen" ? "Your Home Screen" : p.title)
+                    }
+                    .tag(p.name)
+                }
+            } label: { SettingsLabel("House palette", "paintpalette.fill", kit.palette.keyColor) }
+            .pickerStyle(.navigationLink)
+            Picker(selection: Binding(get: { icon }, set: { name in
+                UIApplication.shared.setAlternateIconName(name) { err in if err == nil { Task { @MainActor in icon = name } } }
+            })) {
+                ForEach(icons, id: \.1) { Text($0.1).tag($0.0) }
+            } label: { SettingsLabel("App icon", "app.badge", kit.palette.keyColor) }
+            LabeledContent { Text(kit.titleFont == nil ? "Loading" : "Your hand") } label: { SettingsLabel("Titles", "signature", kit.palette.keyColor) }
+        } header: { Text("The house") } footer: {
+            Text("Your palettes and your hand come from the Design Kit on the gallery and stay on this iPhone; none of it ships in the app's public code. Status colours stay Apple's.")
         }
     }
 }
