@@ -77,66 +77,97 @@ import Charts
 struct InboundTab: View {
     let model: AppModel
     @State private var state = InboundModel()
+    @Environment(\.colorScheme) private var scheme
 
+    /// pl-os InboundTab's order: the numbers first, then who is asking for what (The Record, By Intent, The Ballot, Oracle Signal),
+    /// then what only the app adds (the inboxes and the live tiles), all in pl-os's skin.
     var body: some View {
         let shown = Array(state.days.suffix(state.range))
-        List {
-            Section {
-                HStack(spacing: 12) {
-                    Kpi(title: "Month", value: state.mtd.map { $0.formatted(.currency(code: "USD")) } ?? "·")
-                    Kpi(title: "12 months", value: state.trailing.map { $0.formatted(.currency(code: "USD")) } ?? "·")
-                    Kpi(title: "Audience", value: "\(state.people)")
-                    Kpi(title: "Registered", value: "\(state.registered ?? 0)")
-                }
-                .listRowInsets(EdgeInsets(top: 8, leading: 12, bottom: 8, trailing: 12))
+        ScrollView {
+            VStack(spacing: 12) {
+                OSHeader()
+                OSKpis(items: [("Month", state.mtd.map { $0.formatted(.currency(code: "USD").precision(.fractionLength(0))) } ?? "·", "revenue"),
+                               ("12 months", state.trailing.map { $0.formatted(.currency(code: "USD").precision(.fractionLength(0))) } ?? "·", nil),
+                               ("Audience", "\(state.people)", nil), ("Registered", "\(state.registered ?? 0)", nil)])
                 if let p = state.funnel?.campaign_progress {
-                    Gauge(value: min(p.quit_amazon_pct ?? 0, 100), in: 0...100) { Text("Quit Amazon · $65k") } currentValueLabel: { Text("\(p.quit_amazon_pct ?? 0, specifier: "%.2f")%") }
-                    Gauge(value: min(p.worth_line_pct ?? 0, 100), in: 0...100) { Text("Worth line · $100k") } currentValueLabel: { Text("\(p.worth_line_pct ?? 0, specifier: "%.2f")%") }
+                    VStack(alignment: .leading, spacing: 10) {
+                        Text("The two lines").osEyebrow(10).foregroundStyle(PLOS.goldDim(scheme))
+                        goal("Quit Amazon · $65k", p.quit_amazon_pct ?? 0)
+                        goal("Worth line · $100k", p.worth_line_pct ?? 0)
+                    }
+                    .osCard()
+                }
+                if !state.days.isEmpty {
+                    VStack(alignment: .leading, spacing: 10) {
+                        Picker("Range", selection: $state.range) { Text("7D").tag(7); Text("30D").tag(30); Text("90D").tag(90) }.pickerStyle(.segmented)
+                        MetricTrend(title: "Orders, all time", days: shown, value: { $0.orders }, unit: "orders")
+                        Divider().overlay(PLOS.line(scheme))
+                        MetricTrend(title: "Transmission subscribers", days: shown, value: { $0.subscribers }, unit: "subscribers")
+                        Divider().overlay(PLOS.line(scheme))
+                        MetricTrend(title: "Instagram followers", days: shown, value: { $0.ig_followers }, unit: "followers")
+                    }
+                    .osCard()
+                }
+                LazyVGrid(columns: [GridItem(.flexible(), spacing: 10), GridItem(.flexible(), spacing: 10)], spacing: 10) {
+                    card("The Record", "\(state.people)", "members + subscribers") { RecordView(model: model) }
+                    card("By Intent", "→", "who they are") { LeadsView(model: model) }
+                    card("The Ballot", "→", "request tally") { TallyView(model: model) }
+                    card("Oracle Signal", "→", "what they ask", tint: PLOS.philosophy) { OracleSignalView(model: model) }
+                }
+                OSPanel(title: "Inbox", badge: "\(state.unread + state.comments + state.supportOpen)", owed: state.unread + state.supportOpen > 0, startOpen: true) {
+                    door("Member inbox", state.unread > 0 ? "\(state.unread) unread" : "all read") { InboxView(model: model) }
+                    door("Comments", state.comments > 0 ? "\(state.comments) to post" : "none waiting") { CommentsView(model: model) }
+                    door("Support", state.supportOpen == 0 ? "all resolved" : "\(state.supportOpen) open") { SupportView(model: model) }
+                    door("Seed registrations", "\(state.registered ?? 0) registered") { SeedRegistrationsView(model: model) }
+                }
+                OSPanel(title: "Live", badge: state.siteUp == false ? "site down" : nil, owed: state.siteUp == false) {
+                    LazyVGrid(columns: [GridItem(.flexible(), spacing: 8), GridItem(.flexible(), spacing: 8)], spacing: 8) {
+                        StatTile(title: "Storefront", value: state.siteUp == nil ? "·" : state.siteUp! ? "LIVE" : "DOWN", line: "psychedluxuries.com", alert: state.siteUp == false)
+                        StatTile(title: "Subscribers", value: "\(state.days.last?.subscribers ?? 0)", line: "signal list · \(state.delta(\.subscribers))")
+                        StatTile(title: "Desires", value: "\(state.days.last?.desires_total ?? 0)", line: state.delta(\.desires_total))
+                        StatTile(title: "Captures", value: "\(state.days.last?.captures_new ?? 0)", line: "new · inbox · \(state.delta(\.captures_new))")
+                        StatTile(title: "Transmissions", value: "\(state.days.last?.transmissions ?? 0)", line: "signals published · \(state.delta(\.transmissions))")
+                        if let r = state.funnel?.returning { StatTile(title: "Returning", value: "\(r.users_28d ?? 0)", line: "\(Int((r.share_pct_28d ?? 0).rounded()))% of 28 days") }
+                        StatTile(title: "Archive", value: (state.archiveCount ?? state.days.last?.archive_count ?? 0).formatted(), line: "pieces catalogued")
+                        StatTile(title: "IG followers", value: (state.stats?.followers ?? 0).formatted(), line: "@psychedluxuries · \(state.delta(\.ig_followers))")
+                        StatTile(title: "IG posts", value: (state.stats?.media_count ?? 0).formatted(), line: "total published · \(state.delta(\.ig_posts))")
+                        StatTile(title: "Content runway", value: "\(state.runway?.instagram_pending ?? 0)", line: "\(state.runway?.reels_remaining ?? 0) reels in manifest", alert: state.runway?.low == true)
+                        if let f = state.stats?.following { StatTile(title: "IG following", value: f.formatted(), line: "keep unfollowing non-mutuals") }
+                    }
+                    Text("Each against yesterday.").font(.caption).foregroundStyle(PLOS.dim(scheme))
                 }
             }
-            Section {
-                LazyVGrid(columns: [GridItem(.flexible(), spacing: 8), GridItem(.flexible(), spacing: 8)], spacing: 8) {
-                    StatTile(title: "Storefront", value: state.siteUp == nil ? "·" : state.siteUp! ? "LIVE" : "DOWN", line: "psychedluxuries.com", alert: state.siteUp == false)
-                    StatTile(title: "Subscribers", value: "\(state.days.last?.subscribers ?? 0)", line: "signal list · \(state.delta(\.subscribers))")
-                    StatTile(title: "Desires", value: "\(state.days.last?.desires_total ?? 0)", line: state.delta(\.desires_total))
-                    StatTile(title: "Captures", value: "\(state.days.last?.captures_new ?? 0)", line: "new · inbox · \(state.delta(\.captures_new))")
-                    StatTile(title: "Transmissions", value: "\(state.days.last?.transmissions ?? 0)", line: "signals published · \(state.delta(\.transmissions))")
-                    if let r = state.funnel?.returning { StatTile(title: "Returning", value: "\(r.users_28d ?? 0)", line: "\(Int((r.share_pct_28d ?? 0).rounded()))% of 28 days") }
-                    StatTile(title: "Archive", value: (state.archiveCount ?? state.days.last?.archive_count ?? 0).formatted(), line: "pieces catalogued")
-                    StatTile(title: "IG followers", value: (state.stats?.followers ?? 0).formatted(), line: "@psychedluxuries · \(state.delta(\.ig_followers))")
-                    StatTile(title: "IG posts", value: (state.stats?.media_count ?? 0).formatted(), line: "total published · \(state.delta(\.ig_posts))")
-                    StatTile(title: "Content runway", value: "\(state.runway?.instagram_pending ?? 0)", line: "\(state.runway?.reels_remaining ?? 0) reels in manifest", alert: state.runway?.low == true)
-                    if let f = state.stats?.following { StatTile(title: "IG following", value: f.formatted(), line: "keep unfollowing non-mutuals") }
-                }
-                .listRowInsets(EdgeInsets(top: 8, leading: 8, bottom: 8, trailing: 8))
-            } footer: { Text("Live · each against yesterday.") }
-            Section {
-                NavigationLink { InboxView(model: model) } label: { Label("Member inbox", systemImage: "bubble.left.and.bubble.right").badge(state.unread) }
-                NavigationLink { CommentsView(model: model) } label: { Label("Comments", systemImage: "text.bubble").badge(state.comments) }
-                NavigationLink { SupportView(model: model) } label: {
-                    LabeledContent { Text(state.supportOpen == 0 ? "All resolved" : "\(state.supportOpen) open") } label: { Label("Support", systemImage: "lifepreserver") }
-                }
-                NavigationLink { SeedRegistrationsView(model: model) } label: { Label("Seed registrations", systemImage: "seal").badge(state.registered ?? 0) }
-            }
-            if !state.days.isEmpty {
-                Section {
-                    Picker("Range", selection: $state.range) { Text("7D").tag(7); Text("30D").tag(30); Text("90D").tag(90) }.pickerStyle(.segmented)
-                    // Each number is a running total, read once a day (his screenshot 11-13: the old bars read as "16 orders a day").
-                    // So each card says the total, what moved in the range, and draws the total over time.
-                    MetricTrend(title: "Orders, all time", days: shown, value: { $0.orders }, unit: "orders")
-                    MetricTrend(title: "Transmission subscribers", days: shown, value: { $0.subscribers }, unit: "subscribers")
-                    MetricTrend(title: "Instagram followers", days: shown, value: { $0.ig_followers }, unit: "followers")
-                }
-            }
-            Section {
-                NavigationLink { RecordView(model: model) } label: { LabeledContent { Text("\(state.people)") } label: { Label("The record", systemImage: "person.3") } }
-                NavigationLink { LeadsView(model: model) } label: { Label("By intent", systemImage: "person.crop.circle.badge.questionmark") }
-                NavigationLink { TallyView(model: model) } label: { Label("The ballot", systemImage: "chart.bar.doc.horizontal") }
-                NavigationLink { OracleSignalView(model: model) } label: { Label("Oracle signal: what they ask", systemImage: "questionmark.bubble") }
-            }
+            .padding(.horizontal, 14).padding(.bottom, 24)
         }
         .task { await state.load(model: model) }
         .refreshable { await state.load(model: model) }
+    }
+
+    private func goal(_ name: String, _ pct: Double) -> some View {
+        VStack(alignment: .leading, spacing: 4) {
+            HStack { Text(name).plHand(16).foregroundStyle(PLOS.dim(scheme)); Spacer(); Text("\(pct, specifier: "%.2f")%").osValue(13).foregroundStyle(PLOS.text(scheme)) }
+            Gauge(value: min(pct, 100), in: 0...100) { EmptyView() }.gaugeStyle(.accessoryLinearCapacity).tint(PLOS.gold)
+        }
+    }
+
+    /// FocusStrip's card: the name in his hand, the count, the line under it; opens its room.
+    private func card<D: View>(_ name: String, _ count: String, _ sub: String, tint: Color? = nil, @ViewBuilder _ dest: @escaping () -> D) -> some View {
+        NavigationLink { dest().osScreen() } label: {
+            VStack(alignment: .leading, spacing: 4) {
+                Text(name).plHand(17).foregroundStyle(tint ?? PLOS.dim(scheme))
+                Text(count).osValue(26).foregroundStyle(PLOS.text(scheme))
+                Text(sub).osEyebrow(8).foregroundStyle(PLOS.goldDim(scheme))
+            }
+            .osCard()
+        }
+        .buttonStyle(.plain)
+    }
+
+    private func door<D: View>(_ title: String, _ meta: String, @ViewBuilder _ dest: @escaping () -> D) -> some View {
+        NavigationLink { dest().osScreen() } label: {
+            OSRow(title: title, meta: meta) { Image(systemName: "chevron.right").font(.caption.weight(.bold)).foregroundStyle(PLOS.goldDim(scheme)) }
+        }
+        .buttonStyle(.plain)
     }
 }
 

@@ -6,33 +6,50 @@ import Charts
 /// GlyphBot (/oracle) and the board (/jarvis) become their own apps in the build order.
 struct MoreTab: View {
     let model: AppModel
+    @Environment(\.colorScheme) private var scheme
 
+    /// The console's rooms and its system drawer, as pl-os's panels.
     var body: some View {
-        List {
-            Section("Rooms") {
-                NavigationLink { CouncilView(model: model) } label: { Label("Council", systemImage: "person.3.sequence") }
-                NavigationLink { OpsView(model: model) } label: { Label("Ops", systemImage: "questionmark.bubble") }
-                NavigationLink { CorpusView(model: model) } label: { Label("Search the corpus", systemImage: "text.magnifyingglass") }
-                NavigationLink { CraftView(model: model) } label: { Label("Craft", systemImage: "wand.and.stars") }
-                NavigationLink { CodexToolView(model: model) } label: { Label("Codex", systemImage: "book.closed") }
-                NavigationLink { SourceInterviewView(model: model) } label: { Label("Source interview", systemImage: "quote.bubble") }
-                NavigationLink { CommentsView(model: model) } label: { Label("Comments to post", systemImage: "text.bubble") }
-                NavigationLink { MerchView(model: model) } label: { Label("Merch calendar", systemImage: "tshirt") }
-                NavigationLink { CatalogMatrixView(model: model) } label: { Label("Catalog", systemImage: "square.grid.3x3") }
-                NavigationLink { AtlasView(model: model) } label: { Label("Atlas", systemImage: "map") }
-                NavigationLink { PrecedentView(model: model) } label: { Label("Precedent", systemImage: "photo.on.rectangle.angled") }
-                NavigationLink { CrewView(model: model) } label: { Label("Crew", systemImage: "figure.2") }
-                Link(destination: URL(string: "https://pl-academy.psychedluxuries.workers.dev")!) { Label("Academy", systemImage: "graduationcap") }
+        ScrollView {
+            VStack(spacing: 12) {
+                OSHeader()
+                OSPanel(title: "Mind", startOpen: true) {
+                    door("Council · research, content, strategist, language") { CouncilView(model: model) }
+                    door("Search the corpus") { CorpusView(model: model) }
+                    door("Codex") { CodexToolView(model: model) }
+                    door("Source interview") { SourceInterviewView(model: model) }
+                }
+                OSPanel(title: "Rooms", startOpen: true) {
+                    door("The Atlas · the whole house, drawn") { AtlasView(model: model) }
+                    door("Operations · support, shipping, returns") { OpsView(model: model) }
+                    door("The Craft · archive captions") { CraftView(model: model) }
+                    door("Comments to post") { CommentsView(model: model) }
+                    door("Merch calendar") { MerchView(model: model) }
+                    door("Catalog") { CatalogMatrixView(model: model) }
+                    door("Precedent") { PrecedentView(model: model) }
+                    door("Crew") { CrewView(model: model) }
+                    Link(destination: URL(string: "https://pl-academy.psychedluxuries.workers.dev")!) {
+                        OSRow(title: "Academy") { Image(systemName: "arrow.up.right").foregroundStyle(PLOS.gold) }
+                    }
+                }
+                OSPanel(title: "System", startOpen: true) {
+                    door("Stack health") { StackHealthView(model: model) }
+                    door("Run a job now") { AutomationView(model: model) }
+                    door("Costs and revenue") { CostView(model: model) }
+                    door("Agent log") { LogView(model: model, kind: .agent) }
+                    door("Notifications sent") { LogView(model: model, kind: .notifications) }
+                    door("Where captures went") { LogView(model: model, kind: .captures) }
+                }
             }
-            Section("System") {
-                NavigationLink { StackHealthView(model: model) } label: { Label("Stack health", systemImage: "stethoscope") }
-                NavigationLink { AutomationView(model: model) } label: { Label("Run a job now", systemImage: "play.circle") }
-                NavigationLink { CostView(model: model) } label: { Label("Costs and revenue", systemImage: "dollarsign.circle") }
-                NavigationLink { LogView(model: model, kind: .agent) } label: { Label("Agent log", systemImage: "list.bullet.rectangle") }
-                NavigationLink { LogView(model: model, kind: .notifications) } label: { Label("Notifications sent", systemImage: "bell.badge") }
-                NavigationLink { LogView(model: model, kind: .captures) } label: { Label("Where captures went", systemImage: "arrow.triangle.branch") }
-            }
+            .padding(.horizontal, 14).padding(.bottom, 24)
         }
+    }
+
+    private func door<D: View>(_ title: String, @ViewBuilder _ dest: @escaping () -> D) -> some View {
+        NavigationLink { dest().osScreen() } label: {
+            OSRow(title: title) { Image(systemName: "chevron.right").font(.caption.weight(.bold)).foregroundStyle(PLOS.goldDim(scheme)) }
+        }
+        .buttonStyle(.plain)
     }
 }
 

@@ -52,85 +52,104 @@ struct OutboundTab: View {
     @State private var state = OutboundModel()
     @State private var crafting = false
     @State private var result: String?
+    @Environment(\.colorScheme) private var scheme
 
+    /// pl-os OutboundTab's order: Instagram followers and post reach first, then the eight cards (PL Queue, Organic Winners,
+    /// PL Feed, Drop Pipeline, Calendar, Signals Sent, Opportunity Scout, Outbound Sourcing), then the app's extra doors.
     var body: some View {
         let shown = Array(state.days.suffix(state.range))
-        List {
-            Section {
-                HStack(spacing: 12) {
-                    Kpi(title: "Instagram", value: (state.ig?.followers ?? 0).formatted())
-                    Kpi(title: "Drafted this week", value: "\(state.stats?.week_total ?? 0)")
-                    Kpi(title: "Queued", value: "\(state.stats?.queued ?? 0)")
-                    Kpi(title: "Sent", value: "\(state.sent)")
-                }
-                .listRowInsets(EdgeInsets(top: 8, leading: 12, bottom: 8, trailing: 12))
-                if state.runway?.low == true { Label("The Instagram runway is low", systemImage: "exclamationmark.triangle").foregroundStyle(PLTone.house) }
-            }
-            Section {
-                NavigationLink { FeedView(model: model) } label: {
-                    LabeledContent { Text("\(state.counts["feed"] ?? 0) ready") } label: { Label("PL Feed", systemImage: "square.stack") }
-                }
-                Button(crafting ? "Crafting…" : "Craft more +") { Task { await craft() } }.disabled(crafting)
-                if let r = result { ResultLine(text: r) }
-            } footer: { Text("Congregation feed drafts: review and push.") }
-            if !shown.isEmpty {
-                Section("Instagram followers") {
-                    Picker("Range", selection: $state.range) { Text("7D").tag(7); Text("30D").tag(30); Text("90D").tag(90) }.pickerStyle(.segmented)
-                    Chart(shown) { d in
-                        LineMark(x: .value("Day", Date.pl(d.day) ?? .now, unit: .day), y: .value("Followers", d.ig_followers ?? 0))
-                            .interpolationMethod(.monotone).foregroundStyle(Wallpaper.line)
+        ScrollView {
+            VStack(spacing: 12) {
+                OSHeader()
+                OSKpis(items: [("Instagram", (state.ig?.followers ?? 0).formatted(), "followers"), ("Drafted", "\(state.stats?.week_total ?? 0)", "this week"),
+                               ("Queued", "\(state.stats?.queued ?? 0)", nil), ("Sent", "\(state.sent)", nil)],
+                       status: state.runway?.low == true ? ("Watch  the Instagram runway is low", PLOS.warn) : nil)
+                if !shown.isEmpty {
+                    VStack(alignment: .leading, spacing: 10) {
+                        Picker("Range", selection: $state.range) { Text("7D").tag(7); Text("30D").tag(30); Text("90D").tag(90) }.pickerStyle(.segmented)
+                        MetricTrend(title: "Instagram followers", days: shown, value: { $0.ig_followers }, unit: "followers")
                     }
-                    .chartYScale(domain: .automatic(includesZero: false))
-                    .frame(height: 140)
+                    .osCard()
                 }
-            }
-            if !state.reach.isEmpty {
-                Section {
-                    ForEach(state.reach.prefix(6)) { r in
-                        VStack(alignment: .leading, spacing: 2) {
-                            HStack { Text(r.channel == "instagram" ? "IG" : "@").font(.caption.bold()); Ago(text: r.sent_at).font(.caption); Spacer(); Label("\(r.reach ?? 0)", systemImage: "eye").font(.caption.monospacedDigit()); Label("\(r.likes ?? 0)", systemImage: "heart").font(.caption.monospacedDigit()) }
-                                .foregroundStyle(.secondary)
-                            Text(r.caption_excerpt ?? "").lineLimit(2)
+                if !state.reach.isEmpty {
+                    let top = max(state.reach.map { $0.reach ?? 0 }.max() ?? 1, 1)
+                    VStack(alignment: .leading, spacing: 10) {
+                        HStack {
+                            Text("Post reach").plHand(19).foregroundStyle(PLOS.dim(scheme))
+                            Spacer()
+                            Text("\(state.reach.reduce(0) { $0 + ($1.reach ?? 0) }) reach · \(state.reach.reduce(0) { $0 + ($1.likes ?? 0) + ($1.comments ?? 0) }) engaged").osValue(11).foregroundStyle(PLOS.gold)
                         }
+                        ForEach(state.reach.prefix(6)) { r in
+                            VStack(alignment: .leading, spacing: 4) {
+                                HStack {
+                                    Text(r.channel == "instagram" ? "IG" : "@").osEyebrow(9).foregroundStyle(.white).padding(.horizontal, 6).padding(.vertical, 2)
+                                        .background(PLOS.platform(r.channel == "instagram" ? "instagram" : "threads"), in: Capsule())
+                                    Ago(text: r.sent_at).font(.caption2).foregroundStyle(PLOS.dim(scheme))
+                                    Spacer()
+                                    Label("\(r.reach ?? 0)", systemImage: "eye").font(.caption2.monospacedDigit()).foregroundStyle(PLOS.dim(scheme))
+                                    Label("\(r.likes ?? 0)", systemImage: "heart").font(.caption2.monospacedDigit()).foregroundStyle(PLOS.dim(scheme))
+                                }
+                                Text(r.caption_excerpt ?? "").font(.callout).foregroundStyle(PLOS.text(scheme)).lineLimit(2)
+                                // pl-os PostReachPanel: each post's reach as a bar against the top post
+                                GeometryReader { g in Capsule().fill(PLOS.gold.opacity(0.7)).frame(width: max(4, g.size.width * CGFloat(r.reach ?? 0) / CGFloat(top))) }.frame(height: 4)
+                            }
+                        }
+                        NavigationLink { ReachView(model: model).osScreen() } label: { Text("Every post →").osEyebrow(10).foregroundStyle(PLOS.gold) }
                     }
-                    NavigationLink("Every post") { ReachView(model: model) }
-                } header: {
-                    Text("Post reach · \(state.reach.count) posts · \(state.reach.reduce(0) { $0 + ($1.reach ?? 0) }) reach · \(state.reach.reduce(0) { $0 + ($1.likes ?? 0) + ($1.comments ?? 0) }) engaged")
+                    .osCard()
+                }
+                LazyVGrid(columns: [GridItem(.flexible(), spacing: 10), GridItem(.flexible(), spacing: 10)], spacing: 10) {
+                    card("PL Queue", count(state.counts["queue"]), "approved, in line") { DripView(model: model) }
+                    card("Organic Winners", "\(state.ig?.recent?.count ?? 0)", "top posts first") { WinnersView(posts: state.ig?.recent ?? []) }
+                    card("PL Feed", count(state.counts["feed"]), "ready to push") { FeedView(model: model) }
+                    card("Drop Pipeline", count(state.counts["pipeline"]), "active") { NotionView(model: model) }
+                    card("Calendar", count(state.counts["calendar"]), "this week") { CalendarView(model: model) }
+                    card("Signals Sent", count(state.counts["signals"]), "transmissions") { SignalsView(model: model) }
+                    card("Opportunity Scout", count(state.counts["opps"]), "placements + licensing") { OpportunityView(model: model) }
+                    card("Outbound Sourcing", "→", "no paid API") { OutboundLeadsView(model: model) }
+                }
+                OSPanel(title: "Make more", startOpen: true) {
+                    Button { Task { await craft() } } label: { Text(crafting ? "Crafting…" : "Craft more +") }.buttonStyle(OSPill()).disabled(crafting)
+                    if let r = result { ResultLine(text: r) }
+                    Text("Congregation feed drafts: review and push them in PL Feed.").font(.caption).foregroundStyle(PLOS.dim(scheme))
+                }
+                OSPanel(title: "More doors") {
+                    door("Tempo · this week's plan and email") { TempoView(model: model) }
+                    door("Pinterest") { PinterestView(model: model) }
+                    door("The vault · \(state.counts["vault"] ?? 0) held · \(state.counts["rewritten"] ?? 0) rewritten") { VaultView(model: model) }
                 }
             }
-            Section {
-                door("PL queue", "approved, in line", "list.number", state.counts["queue"]) { DripView(model: model) }
-                door("Organic winners", "top posts first", "trophy", nil) { WinnersView(posts: state.ig?.recent ?? []) }
-                door("Drop pipeline", "active", "list.bullet.indent", state.counts["pipeline"]) { NotionView(model: model) }
-                door("Calendar", "this week", "calendar", state.counts["calendar"]) { CalendarView(model: model) }
-                door("Signals sent", "transmissions", "paperplane", state.counts["signals"]) { SignalsView(model: model) }
-                door("Opportunity scout", "placements and licensing", "sparkle.magnifyingglass", state.counts["opps"]) { OpportunityView(model: model) }
-                door("Outbound sourcing", "no paid API", "mappin.and.ellipse", nil) { OutboundLeadsView(model: model) }
-                door("Tempo", "this week's plan and email", "metronome", nil) { TempoView(model: model) }
-            }
-            Section {
-                NavigationLink { PinterestView(model: model) } label: { Label("Pinterest", systemImage: "pin") }
-                NavigationLink { VaultView(model: model) } label: {
-                    LabeledContent { Text("\(state.counts["vault"] ?? 0) held · \(state.counts["rewritten"] ?? 0) rewritten") } label: { Label("The vault", systemImage: "archivebox") }
-                }
-            }
+            .padding(.horizontal, 14).padding(.bottom, 24)
         }
         .task { await state.load(model: model) }
         .refreshable { await state.load(model: model) }
     }
 
-    private func door<D: View>(_ title: String, _ line: String, _ symbol: String, _ count: Int?, @ViewBuilder _ dest: @escaping () -> D) -> some View {
-        NavigationLink { dest() } label: {
-            LabeledContent {
-                if let count { Text("\(count)").monospacedDigit() }
-            } label: { Label { Text(title); Text(line) } icon: { Image(systemName: symbol) } }
+    private func count(_ n: Int?) -> String { n.map(String.init) ?? "·" }
+
+    private func card<D: View>(_ name: String, _ count: String, _ sub: String, @ViewBuilder _ dest: @escaping () -> D) -> some View {
+        NavigationLink { dest().osScreen() } label: {
+            VStack(alignment: .leading, spacing: 4) {
+                Text(name).plHand(17).foregroundStyle(PLOS.dim(scheme)).lineLimit(1).minimumScaleFactor(0.7)
+                Text(count).osValue(26).foregroundStyle(PLOS.text(scheme))
+                Text(sub).osEyebrow(8).foregroundStyle(PLOS.goldDim(scheme)).lineLimit(1).minimumScaleFactor(0.7)
+            }
+            .osCard()
         }
+        .buttonStyle(.plain)
+    }
+
+    private func door<D: View>(_ title: String, @ViewBuilder _ dest: @escaping () -> D) -> some View {
+        NavigationLink { dest().osScreen() } label: {
+            OSRow(title: title) { Image(systemName: "chevron.right").font(.caption.weight(.bold)).foregroundStyle(PLOS.goldDim(scheme)) }
+        }
+        .buttonStyle(.plain)
     }
 
     private func craft() async {
         crafting = true; defer { crafting = false }
         do { try await Console.post("api/craft-batch", ["count": 3], model: model, timeout: 90); result = "Crafted. They wait in the PL Feed."; await state.load(model: model) }
-        catch { result = "Not crafted. \(error.localizedDescription)" }
+        catch { result = "Not crafted. \(plainSentence(error))" }
     }
 }
 
