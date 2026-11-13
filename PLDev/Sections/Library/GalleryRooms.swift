@@ -55,7 +55,7 @@ enum GalleryRoom: String, CaseIterable, Identifiable, Hashable {
         case .classify: ClassifyRoom(model: model)
         case .kit: KitRoom(model: model)
         case .tools: ToolsRoom(model: model)
-        case .labs: WebListRoom(model: model, title: "Labs", items: GalleryRoom.labPages)
+        case .labs: LabsRoom(model: model)   // every lab native (wave 3)
         case .worlds: WebListRoom(model: model, title: "The Defiance worlds", items: GalleryRoom.worldPages)
         case .town: TownView(model: model, state: TownSection.state)   // the native pixel town, no web view
         }
@@ -63,19 +63,6 @@ enum GalleryRoom: String, CaseIterable, Identifiable, Hashable {
 
     static let worldPages: [(String, String, String)] = [("defiance/the-haul", "The Haul", "Archive art on the walls of a room you walk"),
         ("defiance/the-money-room", "The Money Room", "GlyphGuy dancing in falling cash"), ("defiance/the-weight", "The Weight", "A field of floating works")]
-    static let labPages: [(String, String, String)] = [
-        ("lab", "Ribbon curves", "Three.js ribbons from his comps"), ("lab/golden-mend", "Golden Mend", "A kintsugi instrument played by the mic"),
-        ("lab/life", "Life", "Game of Life on the GPU, fed by the mic"), ("lab/ar", "AR curves", "Gold curves over the camera"),
-        ("lab/fly", "The fly", "A connectome steering a gold line"), ("lab/dance", "GlyphGuy dances", "His animation clips"),
-        ("lab/glyphbot", "GlyphBot", "GlyphGuy under a spotlight"), ("lab/heart", "Heart coin", "The spinning heart"),
-        ("lab/wordmark", "Wordmark", "His hand in 3D"), ("lab/nft-candidates", "Cards", "GlyphGuy on his palettes"),
-        ("lab/trained-hero", "Hero grammar", "The painting-grammar generator"), ("lab/fluid", "Fluid", "Fluid cursor reveal"),
-        ("lab/glitch", "Glitch", "Shader study"), ("lab/warp", "Warp", "Shader study"), ("lab/reaction-diffusion", "Reaction diffusion", "Shader study"),
-        ("lab/glyph-plotter", "Glyph plotter", "p5 sketch"), ("lab/kinematic", "Kinematic", "p5 sketch"), ("lab/phyllotaxis", "Phyllotaxis", "p5 sketch"),
-        ("lab/home", "Home study", "2,000 curves"), ("lab/study", "The study", "A door and the Three Truths"), ("lab/webgpu-probe", "WebGPU", "Probe"),
-        ("components", "Components", "Glass, borders, countdowns"), ("curve-who", "Curve who", "Clay story, in progress"),
-        ("living-curves-art/", "The curve in motion", "p5 and three"), ("hand.html", "His hand", "Type, rendered in his hands"),
-    ]
 }
 
 /// The Curve Library's rooms: the gallery's More sheet, native.
