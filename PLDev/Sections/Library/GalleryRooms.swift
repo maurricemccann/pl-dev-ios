@@ -203,7 +203,7 @@ struct CurvesRoom: View {
                     Button { playing = p } label: {
                         ZStack(alignment: .bottomLeading) {
                             Tile(item: p, mark: data.marks[p.vault_id], url: data.media(p, model: model).still)
-                            if liked.contains(p.item_id) { Image(systemName: "heart.fill").foregroundStyle(.orange).padding(6) }
+                            if liked.contains(p.item_id) { Image(systemName: "heart.fill").foregroundStyle(PLTone.house).padding(6) }
                         }
                     }
                     .buttonStyle(.plain)
@@ -368,7 +368,7 @@ struct StillsRoom: View {
                     Button { open = it } label: {
                         AsyncImage(url: url(it)) { $0.resizable().scaledToFill() } placeholder: { Color.secondary.opacity(0.12) }
                             .frame(height: 130).clipped()
-                            .overlay(alignment: .topTrailing) { if has(favs, it.id) { Image(systemName: "star.fill").foregroundStyle(.orange).padding(4) } }
+                            .overlay(alignment: .topTrailing) { if has(favs, it.id) { Image(systemName: "star.fill").foregroundStyle(PLTone.house).padding(4) } }
                     }
                     .buttonStyle(.plain)
                     .contextMenu {
@@ -558,12 +558,12 @@ struct PrintfulRoom: View {
                 VStack(alignment: .leading, spacing: 2) {
                     Text(t.t ?? "").font(.headline)
                     Text([t.c, t.s].compactMap { $0 }.joined(separator: " · ")).font(.caption).foregroundStyle(.secondary)
-                    if t.dead == true { Text("Discontinued").font(.caption2).foregroundStyle(.orange) }
+                    if t.dead == true { Text("Discontinued").font(.caption2).foregroundStyle(PLTone.house) }
                 }
                 Spacer()
-                if hearted.contains(String(t.id)) { Image(systemName: "heart.fill").foregroundStyle(.pink) }
+                if hearted.contains(String(t.id)) { Image(systemName: "heart.fill").foregroundStyle(PLTone.house) }
             }
-            .swipeActions(edge: .trailing) { Button("Heart") { Task { await act(t, "heart") } }.tint(.pink) }
+            .swipeActions(edge: .trailing) { Button("Heart") { Task { await act(t, "heart") } }.tint(PLTone.house) }
             .swipeActions(edge: .leading) {
                 Button("Delete", role: .destructive) { Task { await act(t, "delete") } }
                 Button("Clear") { Task { await act(t, "clear") } }.tint(.gray)

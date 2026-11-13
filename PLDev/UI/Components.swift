@@ -136,9 +136,10 @@ struct SectionTile: View {
         let icon = RoundedRectangle(cornerRadius: 15, style: .continuous)
         VStack(spacing: 6) {
             ZStack {
-                Image(systemName: entry.manifest.symbol)
-                    .font(.system(size: 30, weight: .medium))
-                    .symbolRenderingMode(.hierarchical)
+                Group {
+                    if let mine = PLIcon.forSection[entry.manifest.id] { PLIcon.image(mine).resizable().scaledToFit().frame(width: 34, height: 34) }
+                    else { Image(systemName: entry.manifest.symbol).font(.system(size: 30, weight: .medium)).symbolRenderingMode(.hierarchical) }
+                }
                     .foregroundStyle(LinearGradient(colors: [.white, Color(red: 1, green: 0.93, blue: 0.86)], startPoint: .top, endPoint: .bottom))
                     .shadow(color: .black.opacity(0.25), radius: 1.5, y: 1)
                 if !ready {

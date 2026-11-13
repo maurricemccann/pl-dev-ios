@@ -176,7 +176,7 @@ struct LibraryView: View {
                     Button { Task { await bulk("cut") } } label: { Image(systemName: "xmark") }.tint(.red).accessibilityLabel("Cut")
                     Button { Task { await bulk("maybe") } } label: { Image(systemName: "questionmark") }.tint(.yellow).accessibilityLabel("Maybe")
                     Button { Task { await bulk("keep") } } label: { Image(systemName: "checkmark") }.tint(.green).accessibilityLabel("Keep")
-                    Button { Task { await bulk("fav") } } label: { Image(systemName: "star.fill") }.tint(.orange).accessibilityLabel("Favourite")
+                    Button { Task { await bulk("fav") } } label: { Image(systemName: "star.fill") }.tint(PLTone.house).accessibilityLabel("Favourite")
                     Button { Task { await bulk("clear") } } label: { Image(systemName: "eraser") }.accessibilityLabel("Clear the mark")
                 }
             }
@@ -236,8 +236,8 @@ struct LibraryView: View {
                         Button { source = source == s.0 ? nil : s.0 } label: {
                             Text("\(s.1) \(data.items.filter { $0.source == s.0 }.count)").font(.caption.weight(.semibold))
                                 .padding(.horizontal, 12).padding(.vertical, 8)
-                                .background(source == s.0 ? Color.orange.opacity(0.3) : Color.orange.opacity(0.1), in: Capsule())
-                                .overlay(Capsule().stroke(Color.orange.opacity(0.6)))
+                                .background(source == s.0 ? PLTone.house.opacity(0.3) : PLTone.house.opacity(0.1), in: Capsule())
+                                .overlay(Capsule().stroke(PLTone.house.opacity(0.6)))
                         }
                         .buttonStyle(.plain)
                     }
@@ -270,7 +270,7 @@ struct LibraryView: View {
                                                     headers: ["content-type": "application/json", "Origin": data.base(model)], body: body), idempotent: false)
             } catch { refused += chunk }
         }
-        if !refused.isEmpty { for id in refused { data.marks[id] = before[id] }; data.notSaved += 1 }
+        if !refused.isEmpty { let was = Dictionary(before, uniquingKeysWith: { a, _ in a }); for id in refused { data.marks[id] = was[id] ?? nil }; data.notSaved += 1 }
         picked.removeAll(); bulkTick += 1
     }
 
@@ -313,11 +313,11 @@ struct Tile: View {
         }
         .aspectRatio(4.0 / 5.0, contentMode: .fit)
         .clipShape(RoundedRectangle(cornerRadius: 8, style: .continuous))
-        .overlay(RoundedRectangle(cornerRadius: 8, style: .continuous).stroke(Color.orange, lineWidth: item.source == "cloud-batch" || item.source == "on-model" ? 2 : 0))
+        .overlay(RoundedRectangle(cornerRadius: 8, style: .continuous).stroke(PLTone.house, lineWidth: item.source == "cloud-batch" || item.source == "on-model" ? 2 : 0))
     }
     private var dot: Color? {
         guard let m = mark else { return nil }
-        if m.isFav { return .orange }
+        if m.isFav { return PLTone.house }
         switch m.v { case "keep": return .green; case "maybe": return .yellow; case "cut": return .red; default: return nil }
     }
 }
@@ -375,7 +375,7 @@ struct PieceViewer: View {
                 Button("Save") { saveComment() }.buttonStyle(.bordered)
             }
             HStack {
-                mark("Cut", "cut", .red); mark("Maybe", "maybe", .yellow); mark("Keep", "keep", .green); mark("Fav", "fav", .orange)
+                mark("Cut", "cut", .red); mark("Maybe", "maybe", .yellow); mark("Keep", "keep", .green); mark("Fav", "fav", PLTone.house)
             }
         }
         .padding().background(.bar)
@@ -387,7 +387,7 @@ struct PieceViewer: View {
     }
 
     private func mark(_ label: String, _ v: String, _ tint: Color) -> some View {
-        Button(label) { Task { await set(v) } }
+        Button { Task { await set(v) } } label: { Label { Text(label) } icon: { PLIcon.mark(v).resizable().scaledToFit().frame(width: 16, height: 16) } }
             .buttonStyle(.borderedProminent).tint(isActive(v) ? tint : tint.opacity(0.35))
             .frame(maxWidth: .infinity)
     }

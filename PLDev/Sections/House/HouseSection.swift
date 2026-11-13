@@ -232,7 +232,7 @@ struct FounderTab: View {
                 Section {
                     VStack(alignment: .leading, spacing: 6) {
                         Text("DO NEXT · RAISES \(q.label.uppercased())").font(.caption2.weight(.semibold)).tracking(1.2).foregroundStyle(Wallpaper.line)
-                        (Text("\(q.score)/25").monospacedDigit().foregroundStyle(.secondary) + Text(" — \(q.note ?? "")")).font(.callout)
+                        (Text("\(q.score)/25").monospacedDigit().foregroundStyle(.secondary) + Text(" · \(q.note ?? "")")).font(.callout)
                     }
                     if let first = state.needsYou.first {
                         Button { state.room = .approvals } label: { LabeledContent(first) { Text("Open →").font(.caption.weight(.semibold)).foregroundStyle(Wallpaper.line) } }
@@ -285,7 +285,7 @@ struct FounderTab: View {
                                         Text(work ? "Work" : "Off").font(.caption2)
                                     }
                                     .frame(width: 52, height: 72)
-                                    .background(work ? Color.orange.opacity(0.25) : Color.secondary.opacity(0.12), in: RoundedRectangle(cornerRadius: 12, style: .continuous))
+                                    .background(work ? PLTone.house.opacity(0.25) : Color.secondary.opacity(0.12), in: RoundedRectangle(cornerRadius: 12, style: .continuous))
                                 }
                                 .buttonStyle(.plain)
                                 .accessibilityLabel("\(d.date), \(work ? "work day" : "day off"). Tap to change.")
@@ -314,7 +314,7 @@ struct FounderTab: View {
             }
             Section("Doors") {
                 Link(destination: URL(string: "https://psychedluxuries.com/shop?debug=open")!) { Label("Shop debug", systemImage: "ladybug") }
-                if let u = model.config?.origins["board"].flatMap(URL.init(string:)) { Link(destination: u) { Label("V.A.U.L.T. board (over Tailscale)", systemImage: "rectangle.3.group") } }
+                if let u = model.config?.origins["board"].flatMap({ URL(string: $0.base) }) { Link(destination: u) { Label("V.A.U.L.T. board (over Tailscale)", systemImage: "rectangle.3.group") } }
             }
             if !state.digests.isEmpty {
                 Section("What the sessions did today") {

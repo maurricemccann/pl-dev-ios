@@ -64,7 +64,7 @@ struct OutboundTab: View {
                     Kpi(title: "Sent", value: "\(state.sent)")
                 }
                 .listRowInsets(EdgeInsets(top: 8, leading: 12, bottom: 8, trailing: 12))
-                if state.runway?.low == true { Label("The Instagram runway is low", systemImage: "exclamationmark.triangle").foregroundStyle(.orange) }
+                if state.runway?.low == true { Label("The Instagram runway is low", systemImage: "exclamationmark.triangle").foregroundStyle(PLTone.house) }
             }
             Section {
                 NavigationLink { FeedView(model: model) } label: {
@@ -195,7 +195,7 @@ struct CalendarView: View {
                                     Spacer()
                                     if cell?.paused == true { Image(systemName: "pause.circle").foregroundStyle(.secondary) }
                                     Text("\(cell?.items?.count ?? 0)").monospacedDigit()
-                                    if short > 0 { Text("\(short) short").font(.caption.bold()).foregroundStyle(.orange) }
+                                    if short > 0 { Text("\(short) short").font(.caption.bold()).foregroundStyle(PLTone.house) }
                                 }
                             }
                         }
@@ -395,7 +395,7 @@ struct VaultView: View {
                         Text((r.platform ?? "").capitalized).font(.caption.bold()).foregroundStyle(.secondary)
                         Text(r.caption ?? "").lineLimit(5)
                         if let rw = r.rewrite_caption { Text("Rewrite: ").bold() + Text(rw) }
-                        if let v = r.violations, !v.isEmpty { Text(v.joined(separator: " · ")).font(.caption).foregroundStyle(.orange) }
+                        if let v = r.violations, !v.isEmpty { Text(v.joined(separator: " · ")).font(.caption).foregroundStyle(PLTone.house) }
                     }
                     .swipeActions {
                         Button("Restore") { Task { await restore(r, "original", reload) } }.tint(.blue)

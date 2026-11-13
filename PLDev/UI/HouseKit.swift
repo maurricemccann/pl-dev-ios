@@ -40,6 +40,7 @@ struct HousePalette: Codable, Hashable, Identifiable {
         try? FileManager.default.createDirectory(at: cache, withIntermediateDirectories: true)
         if let d = try? Data(contentsOf: cache.appendingPathComponent("palettes.json")), let p = try? JSONDecoder().decode([HousePalette].self, from: d), !p.isEmpty { palettes = [.homeScreen] + p.filter { $0.name != HousePalette.homeScreen.name } }
         registerFont(at: cache.appendingPathComponent("hand-v1.ttf"))
+        if titleFont == nil, UIFont(name: PLFace.handV1, size: 12) != nil { titleFont = PLFace.handV1 }   // bundled since 11-13: his hand from the first frame, offline too
         apply()
     }
 
@@ -130,4 +131,38 @@ extension View {
     func plGround() -> some View {
         scrollContentBackground(.hidden).background { HouseGround() }
     }
+}
+
+
+/// His Design Kit faces, bundled (public design assets, his ruling 11-13). V1 leads (titles, his words), V2 supports
+/// (his numbers in running text), Ransom V2 is the one loud word, Ledger keeps dates and tallies, Courier Prime labels panels.
+enum PLFace {
+    static let handV1 = "MaurriceMccannPsychedHandw-Rg"
+    static let handV2 = "PL-Hand-V2-Regular"
+    static let ransom = "PL-Ransom-V2-Regular"
+    static let ledger = "PL Ledger"
+    static let label = "CourierPrime-Regular"
+}
+
+extension View {
+    /// A panel label in Courier Prime, small capitals spaced out, the way pl-os labels its panels.
+    func plLabel(_ size: CGFloat = 11, relativeTo style: Font.TextStyle = .caption2) -> some View {
+        font(.custom(PLFace.label, size: size, relativeTo: style)).textCase(.uppercase).tracking(1)
+    }
+    /// A tally or date in his Ledger face.
+    func plLedger(_ size: CGFloat = 22, relativeTo style: Font.TextStyle = .title2) -> some View { font(.custom(PLFace.ledger, size: size, relativeTo: style)).monospacedDigit() }
+    /// The one loud word (a drop banner): Ransom V2.
+    func plRansom(_ size: CGFloat = 28, relativeTo style: Font.TextStyle = .title) -> some View { font(.custom(PLFace.ransom, size: size, relativeTo: style)) }
+}
+
+/// His 34 drawn icons (Design Kit icons/, template vectors that take the palette colour like SF Symbols) and his glyph symbols.
+enum PLIcon {
+    /// The section whose R1 / kit icon he drew; a section he has not drawn keeps its SF Symbol.
+    static let forSection: [String: String] = ["house": "house", "curate": "curate", "practice": "practice", "town": "town", "capture": "camera",
+                                               "glyphbot": "jarvis", "paint": "scribble", "library": "all_apps", "composer": "remote", "shop": "kiosk",
+                                               "pick": "favorite", "status": "notifications"]
+    static func image(_ name: String) -> Image { Image("PLIcons/\(name)") }
+    static func symbol(_ name: String) -> Image { Image("PLSymbols/\(name)") }
+    /// The mark buttons: keep, cut, maybe, fav are his icons.
+    static func mark(_ v: String) -> Image { image(v == "fav" ? "favorite" : v) }
 }

@@ -83,8 +83,8 @@ struct InboundTab: View {
         List {
             Section {
                 HStack(spacing: 12) {
-                    Kpi(title: "Month", value: state.mtd.map { $0.formatted(.currency(code: "USD")) } ?? "—")
-                    Kpi(title: "12 months", value: state.trailing.map { $0.formatted(.currency(code: "USD")) } ?? "—")
+                    Kpi(title: "Month", value: state.mtd.map { $0.formatted(.currency(code: "USD")) } ?? "·")
+                    Kpi(title: "12 months", value: state.trailing.map { $0.formatted(.currency(code: "USD")) } ?? "·")
                     Kpi(title: "Audience", value: "\(state.people)")
                     Kpi(title: "Registered", value: "\(state.registered ?? 0)")
                 }
@@ -96,7 +96,7 @@ struct InboundTab: View {
             }
             Section {
                 LazyVGrid(columns: [GridItem(.flexible(), spacing: 8), GridItem(.flexible(), spacing: 8)], spacing: 8) {
-                    StatTile(title: "Storefront", value: state.siteUp == nil ? "—" : state.siteUp! ? "LIVE" : "DOWN", line: "psychedluxuries.com", alert: state.siteUp == false)
+                    StatTile(title: "Storefront", value: state.siteUp == nil ? "·" : state.siteUp! ? "LIVE" : "DOWN", line: "psychedluxuries.com", alert: state.siteUp == false)
                     StatTile(title: "Subscribers", value: "\(state.days.last?.subscribers ?? 0)", line: "signal list · \(state.delta(\.subscribers))")
                     StatTile(title: "Desires", value: "\(state.days.last?.desires_total ?? 0)", line: state.delta(\.desires_total))
                     StatTile(title: "Captures", value: "\(state.days.last?.captures_new ?? 0)", line: "new · inbox · \(state.delta(\.captures_new))")
@@ -153,7 +153,7 @@ struct StatTile: View {
     var alert = false
     var body: some View {
         VStack(alignment: .leading, spacing: 3) {
-            Text(title.uppercased()).font(.caption2.weight(.semibold)).tracking(1).foregroundStyle(.secondary)
+            Text(title).plLabel().foregroundStyle(.secondary)
             Text(value).font(.title2.weight(.semibold)).monospacedDigit().foregroundStyle(alert ? Color.red : Color.primary).contentTransition(.numericText())
             Text(line).font(.caption2).foregroundStyle(.secondary).lineLimit(2)
         }
@@ -239,7 +239,7 @@ struct DMThreadView: View {
                         if m.sender == "founder" { Spacer(minLength: 40) }
                         Text(m.body).plReading()
                             .padding(10)
-                            .background(m.sender == "founder" ? Color.orange.opacity(0.25) : Color.secondary.opacity(0.15), in: RoundedRectangle(cornerRadius: 16, style: .continuous))
+                            .background(m.sender == "founder" ? PLTone.house.opacity(0.25) : Color.secondary.opacity(0.15), in: RoundedRectangle(cornerRadius: 16, style: .continuous))
                         if m.sender != "founder" { Spacer(minLength: 40) }
                     }
                     .listRowSeparator(.hidden)
@@ -293,7 +293,7 @@ struct SupportView: View {
                     HStack {
                         Text(m.name ?? m.email ?? "").font(.headline)
                         Spacer()
-                        Text(m.status == "resolved" ? "Resolved" : "New").font(.caption.bold()).foregroundStyle(m.status == "resolved" ? Color.secondary : Color.orange)
+                        Text(m.status == "resolved" ? "Resolved" : "New").font(.caption.bold()).foregroundStyle(m.status == "resolved" ? Color.secondary : PLTone.house)
                     }
                     Text(m.message ?? "")
                     HStack {
@@ -305,7 +305,7 @@ struct SupportView: View {
                     .font(.caption).foregroundStyle(.secondary)
                 }
                 .swipeActions {
-                    Button(m.status == "resolved" ? "Reopen" : "Resolve") { Task { await toggle(m) } }.tint(m.status == "resolved" ? .orange : .green)
+                    Button(m.status == "resolved" ? "Reopen" : "Resolve") { Task { await toggle(m) } }.tint(m.status == "resolved" ? PLTone.house : .green)
                 }
             }
         }
@@ -426,7 +426,7 @@ struct RecordView: View {
                         VStack(alignment: .leading, spacing: 2) {
                             HStack {
                                 Text(p.name ?? p.email).font(.headline)
-                                if (p.founding ?? 0) > 0 { Image(systemName: "star.fill").foregroundStyle(.orange).accessibilityLabel("Founding") }
+                                if (p.founding ?? 0) > 0 { Image(systemName: "star.fill").foregroundStyle(PLTone.house).accessibilityLabel("Founding") }
                             }
                             Text([p.stage, p.provenance, p.joined_at.map { String($0.prefix(10)) }].compactMap { $0 }.joined(separator: " · ")).font(.caption).foregroundStyle(.secondary)
                         }
@@ -496,7 +496,7 @@ struct TallyView: View {
                             HStack { Text(p.cr).font(.headline); Spacer(); Text("\(p.points ?? 0) pts").monospacedDigit() }
                             Text((p.products ?? []).map { "\($0.product) \($0.points ?? 0)" }.joined(separator: " · ")).font(.caption).foregroundStyle(.secondary)
                         }
-                        .swipeActions { Button("Choose") { choosing = p }.tint(.orange) }
+                        .swipeActions { Button("Choose") { choosing = p }.tint(PLTone.house) }
                     }
                 }
             }

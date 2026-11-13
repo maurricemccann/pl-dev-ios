@@ -166,7 +166,7 @@ struct ApprovalsView: View {
                     DraftRow(d: d)
                         .tag(d.id)
                         .swipeActions(edge: .trailing) { Button("Approve") { Task { await state.moderate(d, "approve", model: model) } }.tint(.green) }
-                        .swipeActions(edge: .leading) { Button("Hold") { Task { await state.moderate(d, "hold", model: model) } }.tint(.orange) }
+                        .swipeActions(edge: .leading) { Button("Hold") { Task { await state.moderate(d, "hold", model: model) } }.tint(PLTone.house) }
                         .contextMenu {
                             Button("Approve", systemImage: "checkmark") { Task { await state.moderate(d, "approve", model: model) } }
                             Button("Post now", systemImage: "bolt") { nowTarget = d }
@@ -225,7 +225,7 @@ struct ApprovalsView: View {
                         VStack(alignment: .leading, spacing: 4) {
                             Text("\(a.brand ?? "") #\(a.ad_no ?? 0) · \(a.name ?? "")").font(.headline)
                             Text(a.body ?? "")
-                            if let n = a.needs, !n.isEmpty { Text("Needs: \(n)").font(.caption).foregroundStyle(.orange) }
+                            if let n = a.needs, !n.isEmpty { Text("Needs: \(n)").font(.caption).foregroundStyle(PLTone.house) }
                             if let l = a.link, let u = URL(string: l) { Link(l, destination: u).font(.caption) }
                         }
                         .selectionDisabled()
@@ -322,7 +322,7 @@ private struct DraftRow: View {
             .foregroundStyle(.secondary)
             if let t = d.title, !t.isEmpty { Text(t).font(.headline) }
             Text(d.caption ?? "").font(.body).plReading()
-            if let s = d.similar_to { Label("Close to \(s)", systemImage: "square.on.square").font(.caption).foregroundStyle(.orange) }
+            if let s = d.similar_to { Label("Close to \(s)", systemImage: "square.on.square").font(.caption).foregroundStyle(PLTone.house) }
         }
         .padding(.vertical, 4)
     }

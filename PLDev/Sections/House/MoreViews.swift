@@ -82,7 +82,7 @@ struct OpsView: View {
                 Text(t.text).plReading().textSelection(.enabled)
                     .padding(10)
                     .frame(maxWidth: .infinity, alignment: t.you ? .trailing : .leading)
-                    .background(t.you ? Color.orange.opacity(0.2) : Color.secondary.opacity(0.12), in: RoundedRectangle(cornerRadius: 14, style: .continuous))
+                    .background(t.you ? PLTone.house.opacity(0.2) : Color.secondary.opacity(0.12), in: RoundedRectangle(cornerRadius: 14, style: .continuous))
                     .listRowSeparator(.hidden)
             }
             if busy { ProgressView() }

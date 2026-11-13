@@ -71,11 +71,11 @@ struct ComposerPiece: Codable, Identifiable, Hashable {
         if let t = p.transition { out.append("transition: \(t)") }
         out += ["duration: \(String(format: "%.1f", p.duration))", "---", ""]
         for (i, s) in p.shots.enumerated() {
-            out.append("## Shot \(String(format: "%02d", i + 1)) — \(s.title)")
+            out.append("## Shot \(String(format: "%02d", i + 1)): \(s.title)")
             out.append("duration: \(String(format: "%.1f", s.duration))")
             if let t = s.transition, i > 0 { out.append("transition: \(t)") }
             let resolved = s.sourceIds.compactMap { byId[$0] }
-            if resolved.isEmpty { out.append("sources: []   # no sources attached — this shot renders black") }
+            if resolved.isEmpty { out.append("sources: []   # no sources attached, so this shot renders black") }
             else { out.append("sources:"); for a in resolved { out.append("  - \(a.kind): \(a.id)   # \(a.name)\(a.ext ?? "")") } }
             out.append("# graph: derived on the laptop from the sources")
             out.append("")
@@ -132,7 +132,7 @@ struct PieceEditor: View {
                     NavigationLink { ShotEditor(model: model, shot: $s) } label: {
                         VStack(alignment: .leading) {
                             Text(s.title)
-                            Text("\(String(format: "%.1f", s.duration)) s · \(s.sourceIds.count) sources\(s.transition.map { " · enters by \($0)" } ?? "")").font(.caption).foregroundStyle(s.sourceIds.isEmpty ? .orange : .secondary)
+                            Text("\(String(format: "%.1f", s.duration)) s · \(s.sourceIds.count) sources\(s.transition.map { " · enters by \($0)" } ?? "")").font(.caption).foregroundStyle(s.sourceIds.isEmpty ? PLTone.house : .secondary)
                         }
                     }
                 }
@@ -174,7 +174,7 @@ struct ShotEditor: View {
             }
             if let t = shot.transition, let why = composerTransitions.first(where: { $0.0 == t })?.1 { Text(why).font(.footnote).foregroundStyle(.secondary) }
             Section("Sources") {
-                if shot.sourceIds.isEmpty { Text("No sources: this shot renders black.").foregroundStyle(.orange) }
+                if shot.sourceIds.isEmpty { Text("No sources: this shot renders black.").foregroundStyle(PLTone.house) }
                 ForEach(shot.sourceIds, id: \.self) { id in
                     let a = lib.assets.first { $0.id == id }
                     HStack {

@@ -92,7 +92,7 @@ struct AskTab: View {
 
     private var status: some View {
         HStack(spacing: 6) {
-            Image(systemName: net.online ? "circle.fill" : "circle.dotted").font(.caption2).foregroundStyle(net.online ? Color.green : Color.orange)
+            Image(systemName: net.online ? "circle.fill" : "circle.dotted").font(.caption2).foregroundStyle(net.online ? Color.green : PLTone.house)
             Text(net.online ? "Online" : "Offline: answering from memory").font(.caption).foregroundStyle(.secondary)
             Spacer()
             if store.unsynced.count > 0 {

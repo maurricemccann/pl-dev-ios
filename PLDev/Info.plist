@@ -52,6 +52,11 @@
 	<string>PL DEV asks for Face ID when it opens, because it holds your keys.</string>
 	<key>UIAppFonts</key>
 	<array>
+		<string>MaurriceMccannPsychedHandwrit-Regular.ttf</string>
+		<string>PL-Hand-V2.ttf</string>
+		<string>PL-Ransom-V2.ttf</string>
+		<string>PLLedger-Regular.ttf</string>
+		<string>courier-prime.ttf</string>
 		<string>Jost-400-Book.ttf</string>
 		<string>Jost-500-Medium.ttf</string>
 		<string>Jost-600-Semi.ttf</string>

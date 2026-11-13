@@ -300,10 +300,10 @@ struct CatalogMatrixView: View {
                                 Text(cw.colorway)
                                 Spacer()
                                 if cell.syncProductId != nil { Text(cell.value ?? "Built").foregroundStyle(.secondary) }
-                                else { Text(cell.status == "price" ? (cell.value ?? "") : (cell.value ?? "—")).foregroundStyle(.tertiary) }
+                                else { Text(cell.status == "price" ? (cell.value ?? "") : (cell.value ?? "·")).foregroundStyle(.tertiary) }
                             }
                             .font(.callout)
-                            .swipeActions { if cell.syncProductId == nil { Button("Queue") { Task { await queue(row, cw) } }.tint(.orange) } }
+                            .swipeActions { if cell.syncProductId == nil { Button("Queue") { Task { await queue(row, cw) } }.tint(PLTone.house) } }
                         }
                     }
                 }
@@ -376,8 +376,8 @@ struct NotionView: View {
 struct CraftView: View {
     let model: AppModel
     // the web's prompts, word for word (pl-os components/CraftRoom.tsx)
-    private static let game = "You write for Psyched Luxuries — a philosophy-first wearable art brand built on a seven-year daily practice. The founder plays 'Wouldn't It Be Nice': he names a desire softly, and you return it as ONE sovereign declaration — present tense, already true, in house voice: declarative, earned certainty, spare and weighted. Grounded in the Three Truths: Prepared for luxury. You are in control of your reality. What persists in the mind becomes your reality. One to three sentences. Never use: excited, honored, blessed, check out, amazing, unique, limited, exclusive, manifest. No exclamation marks. No questions. Output ONLY the declaration."
-    private static let caption = "You write Psyched Luxuries social captions — declarative, spare, catalogue-register voice. The piece is one mark in a seven-year unbroken daily practice; the archive is proof of a mind that did not stop. Never use 'excited', 'amazing', 'unique', 'exclusive', 'limited', or the word 'manifest'. No questions, no exclamation marks. Never invent facts: no dimensions, no medium or materials beyond what is given, no provenance, no certificates, no ownership claims. Only the facts provided and the practice itself. Write ONE caption of 1 to 3 short paragraphs. End with the line 'Watch this.' Output ONLY the caption text — no preamble, no quotation marks."
+    private static let game = "You write for Psyched Luxuries, a philosophy-first wearable art brand built on a seven-year daily practice. The founder plays 'Wouldn't It Be Nice': he names a desire softly, and you return it as ONE sovereign declaration — present tense, already true, in house voice: declarative, earned certainty, spare and weighted. Grounded in the Three Truths: Prepared for luxury. You are in control of your reality. What persists in the mind becomes your reality. One to three sentences. Never use: excited, honored, blessed, check out, amazing, unique, limited, exclusive, manifest. No exclamation marks. No questions. Output ONLY the declaration."
+    private static let caption = "You write Psyched Luxuries social captions: declarative, spare, catalogue-register voice. The piece is one mark in a seven-year unbroken daily practice; the archive is proof of a mind that did not stop. Never use 'excited', 'amazing', 'unique', 'exclusive', 'limited', or the word 'manifest'. No questions, no exclamation marks. Never invent facts: no dimensions, no medium or materials beyond what is given, no provenance, no certificates, no ownership claims. Only the facts provided and the practice itself. Write ONE caption of 1 to 3 short paragraphs. End with the line 'Watch this.' Output ONLY the caption text — no preamble, no quotation marks."
 
     struct Piece: Decodable, Identifiable, Hashable { let cr: String; let url: String; let thumb: String?; let title: String?; let year: Int?; let medium: String?; let shareable: Bool?; var id: String { cr } }
     struct Manifest: Decodable { let pieces: [Piece] }
@@ -407,7 +407,7 @@ struct CraftView: View {
                             Button { picked = p; text = ""; voice = "" } label: {
                                 AsyncImage(url: URL(string: p.thumb ?? p.url)) { $0.resizable().scaledToFill() } placeholder: { Color.secondary.opacity(0.12) }
                                     .frame(width: 84, height: 84).clipShape(RoundedRectangle(cornerRadius: 10, style: .continuous))
-                                    .overlay(RoundedRectangle(cornerRadius: 10, style: .continuous).stroke(picked == p ? Color.orange : .clear, lineWidth: 3))
+                                    .overlay(RoundedRectangle(cornerRadius: 10, style: .continuous).stroke(picked == p ? PLTone.house : .clear, lineWidth: 3))
                             }
                             .buttonStyle(.plain)
                             .accessibilityLabel(p.title ?? p.cr)
