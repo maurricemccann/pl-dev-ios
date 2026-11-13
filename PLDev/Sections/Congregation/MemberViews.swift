@@ -56,6 +56,12 @@ struct ChosenWork: Decodable, Identifiable, Hashable {
 /// (a ready one is in `LANES-congregation.md`); until it is live this is the one way to the points and the chosen works.
 enum ProfileReader {
     static func read(_ handle: String) async -> (PublicProfile, [ChosenWork])? {
+        // the lean route, once the site serves it
+        if let r = try? await Site.call("GET", "api/members/profile", query: ["handle": handle]), r.status == 200, let o = r.json, let po = o["profile"],
+           let pd = try? JSONSerialization.data(withJSONObject: po), let profile = try? JSONDecoder().decode(PublicProfile.self, from: pd) {
+            let fd = (try? JSONSerialization.data(withJSONObject: o["favorites"] ?? [])) ?? Data()
+            return (profile, (try? JSONDecoder().decode([ChosenWork].self, from: fd)) ?? [])
+        }
         guard let r = try? await Site.call("GET", "member/\(handle)"), r.status == 200, let html = String(data: r.data, encoding: .utf8) else { return nil }
         let t = html.replacingOccurrences(of: "\\\"", with: "\"")
         guard let obj = balanced(t, after: "\"profile\":{", open: "{", close: "}"),

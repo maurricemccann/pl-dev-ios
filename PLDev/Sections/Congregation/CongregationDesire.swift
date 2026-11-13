@@ -188,7 +188,7 @@ struct FlowPills: View {
     @Environment(\.colorScheme) private var scheme
 
     var body: some View {
-        FlowLayout(spacing: 8) {
+        WrapLayout(spacing: 8) {
             ForEach(Array(options.enumerated()), id: \.offset) { _, o in
                 Button { pick(o.0) } label: {
                     Text(o.1).font(SiteFont.body(12, relativeTo: .footnote, weight: .medium)).textCase(.uppercase).tracking(2)
@@ -202,7 +202,7 @@ struct FlowPills: View {
 }
 
 /// Lays its children left to right and wraps to the next line when the row is full.
-struct FlowLayout: Layout {
+struct WrapLayout: Layout {
     var spacing: CGFloat = 8
 
     func sizeThatFits(proposal: ProposedViewSize, subviews: Subviews, cache: inout ()) -> CGSize {

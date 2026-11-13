@@ -29,7 +29,7 @@ enum Glyphs {
     ]
     static func def(_ key: String?) -> GlyphDef? { all.first { $0.key == key } }
     static func label(_ key: String?) -> String? { def(key)?.label }
-    static func url(_ key: String?) -> URL? { Site.page(def(key)?.img ?? "glyphs/\(key ?? "smiley").png") }
+    @MainActor static func url(_ key: String?) -> URL? { Site.page(def(key)?.img ?? "glyphs/\(key ?? "smiley").png") }
     static func rank(_ tier: String?) -> Int { ["none": 0, "initiate": 1, "aligned": 2, "kin": 3][tier ?? "none"] ?? 0 }
     static func unlocked(_ minTier: String, tier: String?) -> Bool { rank(tier) >= rank(minTier) }
 
