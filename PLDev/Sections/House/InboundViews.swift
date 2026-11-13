@@ -446,7 +446,7 @@ struct RecordView: View {
                     LabeledContent("Members", value: "\(people.filter { $0.is_member == 1 }.count)")
                     LabeledContent("On the signal", value: "\(people.filter { $0.is_subscriber == 1 }.count)")
                     LabeledContent("Founding", value: "\(people.filter { ($0.founding ?? 0) > 0 }.count)")
-                }
+                }.listRowBackground(OSRowBackground())
                 Section {
                     ForEach(shown) { p in
                         VStack(alignment: .leading, spacing: 2) {
@@ -457,7 +457,7 @@ struct RecordView: View {
                             Text([p.stage, p.provenance, p.joined_at.map { String($0.prefix(10)) }].compactMap { $0 }.joined(separator: " · ")).font(.caption).foregroundStyle(.secondary)
                         }
                     }
-                }
+                }.listRowBackground(OSRowBackground())
             }
             .searchable(text: $search, prompt: "Name or email")
         }
@@ -509,7 +509,7 @@ struct TallyView: View {
                     Picker("Month", selection: $month) { ForEach(Self.months, id: \.self) { Text($0).tag($0) } }
                     LabeledContent("Founders sealed", value: "\(t.founders_sealed ?? 0)")
                     LabeledContent("Chosen this month", value: "\(t.chosen_count ?? 0)")
-                }
+                }.listRowBackground(OSRowBackground())
                 if let q = t.founder_queue, !q.isEmpty {
                     Section("Founder requests waiting") {
                         ForEach(q) { a in
@@ -518,7 +518,7 @@ struct TallyView: View {
                                 Text("\(a.email ?? "") · \(Int(a.promise_hours_left ?? 0)) h left on the promise").font(.caption).foregroundStyle((a.promise_hours_left ?? 99) < 0 ? PLOS.danger : (a.promise_hours_left ?? 99) < 24 ? PLOS.warn : .secondary)
                             }
                         }
-                    }
+                    }.listRowBackground(OSRowBackground())
                 }
                 Section("Ranked") {
                     if (t.ranked ?? []).isEmpty { Text("No votes yet this month.").foregroundStyle(.secondary) }
@@ -529,7 +529,7 @@ struct TallyView: View {
                         }
                         .swipeActions { Button("Choose") { choosing = p }.tint(PLTone.house) }
                     }
-                }
+                }.listRowBackground(OSRowBackground())
             }
             .alert("Choose \(choosing?.cr ?? "")", isPresented: Binding(get: { choosing != nil }, set: { if !$0 { choosing = nil } })) {
                 TextField("Product page address", text: $url)

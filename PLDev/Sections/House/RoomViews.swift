@@ -35,7 +35,7 @@ struct AtlasView: View {
                                     VStack(alignment: .leading, spacing: 2) { Text(n.label).font(.headline); if let b = n.blurb { Text(b).font(.caption).foregroundStyle(.secondary) } }
                                 }
                             }
-                        }
+                        }.listRowBackground(OSRowBackground())
                     }
                 case 1:
                     ForEach(a.journeys) { j in
@@ -44,7 +44,7 @@ struct AtlasView: View {
                                 Text("\(i + 1)").font(.caption.bold().monospacedDigit()).frame(width: 20)
                                 VStack(alignment: .leading, spacing: 2) { Text(s.label); Text([s.system, s.note].compactMap { $0 }.joined(separator: " · ")).font(.caption).foregroundStyle(.secondary) }
                             }
-                        } } header: { Text(j.title) } footer: { if let s = j.subtitle { Text(s) } }
+                        } } header: { Text(j.title) } footer: { if let s = j.subtitle { Text(s) } }.listRowBackground(OSRowBackground())
                     }
                 default:
                     ForEach(a.schedule, id: \.self) { s in
@@ -66,10 +66,10 @@ struct AtlasView: View {
 
     private func node(_ n: Node, _ a: Atlas) -> some View {
         List {
-            if let w = n.what { Section { Text(w) } }
-            if let does = n.does, !does.isEmpty { Section("What it does") { ForEach(does, id: \.self) { Text($0) } } }
-            if let u = n.use { Section("How you use it") { Text(u) } }
-            if let c = n.control, let meta = a.controls[c] { Section("Control") { Text("\(meta.emoji ?? "") \(meta.label)") } }
+            if let w = n.what { Section { Text(w) }.listRowBackground(OSRowBackground()) }
+            if let does = n.does, !does.isEmpty { Section("What it does") { ForEach(does, id: \.self) { Text($0) } }.listRowBackground(OSRowBackground()) }
+            if let u = n.use { Section("How you use it") { Text(u) }.listRowBackground(OSRowBackground()) }
+            if let c = n.control, let meta = a.controls[c] { Section("Control") { Text("\(meta.emoji ?? "") \(meta.label)") }.listRowBackground(OSRowBackground()) }
             if let l = n.link, let url = URL(string: l) { Link("Open", destination: url) }
         }
         .navigationTitle(n.label)
@@ -106,11 +106,11 @@ struct CodexToolView: View {
                         }
                         .font(.callout)
                     }
-                } header: { Text("Vocabulary install: scarcity → sovereign") } footer: { Text("Swap these out, immediately and permanently.") }
+                } header: { Text("Vocabulary install: scarcity → sovereign") } footer: { Text("Swap these out, immediately and permanently.") }.listRowBackground(OSRowBackground())
                 Section("Anchor") {
                     Text(c.anchors.isEmpty ? "" : c.anchors[anchor % c.anchors.count]).plHand(24)
                     Button("Another", systemImage: "shuffle") { anchor = Int.random(in: 0..<max(c.anchors.count, 1)) }
-                }
+                }.listRowBackground(OSRowBackground())
                 Section {
                     ForEach(Array(c.laws.enumerated()), id: \.offset) { i, law in
                         VStack(alignment: .leading, spacing: 6) {
@@ -122,12 +122,12 @@ struct CodexToolView: View {
                         Text("The Day's Sovereign Frame").font(.headline)
                         TextField("Today is the [action] that advances [structure].", text: $frame, axis: .vertical)
                     }
-                } header: { Text("I · Identity installation") }
+                } header: { Text("I · Identity installation") }.listRowBackground(OSRowBackground())
                 Section {
                     TextField("The desire statement: can a stranger know, without doubt, when it has arrived?", text: $desire[0], axis: .vertical)
                     TextField("The identity bridge: who is this already the baseline for, and what shows you are them in part?", text: $desire[1], axis: .vertical)
                     TextField("The next architectural step: so obvious it barely needs deciding. Today or this week.", text: $desire[2], axis: .vertical)
-                } header: { Text("IV · Desires → architecture") }
+                } header: { Text("IV · Desires → architecture") }.listRowBackground(OSRowBackground())
                 Section {
                     TextField("One Codex entry, even one sentence. A session without one exists only in working memory.", text: $entry, axis: .vertical).lineLimit(3...8)
                     Toggle("#ContentSource", isOn: $contentSource)
@@ -139,20 +139,20 @@ struct CodexToolView: View {
                             Text("\(String(e.date.prefix(10)))\(e.stateWord.isEmpty ? "" : " · \(e.stateWord)")\(e.contentSource == true ? " · #ContentSource" : "")").font(.caption).foregroundStyle(.secondary)
                         }
                     }
-                } header: { Text("The log") } footer: { Text("Kept on this iPhone only, as the web keeps it in the browser.") }
+                } header: { Text("The log") } footer: { Text("Kept on this iPhone only, as the web keeps it in the browser.") }.listRowBackground(OSRowBackground())
                 Section("Diagnostic") {
                     TextField("Filter", text: $filter)
                     ForEach(Array(c.diagnostic.enumerated()).filter { filter.isEmpty || $0.element.joined(separator: " ").localizedCaseInsensitiveContains(filter) }, id: \.offset) { _, d in
                         VStack(alignment: .leading, spacing: 2) { ForEach(Array(d.enumerated()), id: \.offset) { i, t in Text(t).font(i == 0 ? .headline : .callout) } }
                     }
-                }
+                }.listRowBackground(OSRowBackground())
                 Section("Modules") {
                     ForEach(c.modules) { m in
                         DisclosureGroup {
                             ForEach(m.lines, id: \.self) { Text($0).font(.callout) }
                         } label: { VStack(alignment: .leading) { Text(m.name).font(.headline); Text(m.trigger).font(.caption).foregroundStyle(.secondary) } }
                     }
-                }
+                }.listRowBackground(OSRowBackground())
             }
         }
         .navigationTitle("Codex")
@@ -179,7 +179,7 @@ struct SourceInterviewView: View {
             List {
                 if !answersLoaded {
                     Section { Text("Your saved answers did not load, so answering is closed until they do (it would replace them).").foregroundStyle(.secondary)
-                        Button("Try again") { Task { await loadAnswers() } } }
+                        Button("Try again") { Task { await loadAnswers() } } }.listRowBackground(OSRowBackground())
                 }
                 ForEach(s.sections, id: \.self) { sec in
                     let qs = s.questions.filter { $0.section == sec }
@@ -285,7 +285,7 @@ struct CatalogMatrixView: View {
     var body: some View {
         Loaded(load: { try await OS.get("matrix", Matrix.self, model: model) }) { m, _ in
             List {
-                Section { NavigationLink { CatalogQueueView(model: model) } label: { Label("Build queue", systemImage: "hammer") } }
+                Section { NavigationLink { CatalogQueueView(model: model) } label: { Label("Build queue", systemImage: "hammer") } }.listRowBackground(OSRowBackground())
                 Section {
                     ForEach(m.designs.filter { search.isEmpty || $0.design.localizedCaseInsensitiveContains(search) }) { d in
                         NavigationLink { DesignMatrix(model: model, d: d) } label: {
@@ -297,7 +297,7 @@ struct CatalogMatrixView: View {
                             }
                         }
                     }
-                } footer: { if let g = m.generatedAt { Text("Matrix from \(g).") } }
+                } footer: { if let g = m.generatedAt { Text("Matrix from \(g).") } }.listRowBackground(OSRowBackground())
             }
             .searchable(text: $search, prompt: "Design")
         }
@@ -326,7 +326,7 @@ struct CatalogMatrixView: View {
                             .font(.callout)
                             .swipeActions { if cell.syncProductId == nil { Button("Queue") { Task { await queue(row, cw) } }.tint(PLTone.house) } }
                         }
-                    }
+                    }.listRowBackground(OSRowBackground())
                 }
             }
             .navigationTitle(d.design)
@@ -362,22 +362,22 @@ struct NotionView: View {
             List {
                 if !s.connected { Text("pl-os is not connected to Notion.").foregroundStyle(.secondary) }
                 if let r = result { ResultLine(text: r) }
-                if let b = s.latestBriefing { Section("Latest briefing") { Text(b) } }
+                if let b = s.latestBriefing { Section("Latest briefing") { Text(b) }.listRowBackground(OSRowBackground()) }
                 Section("Pipeline · \(s.pipelineTotal)") {
                     ForEach(s.pipeline.keys.sorted(), id: \.self) { k in LabeledContent(k, value: "\(s.pipeline[k] ?? 0)") }
-                }
+                }.listRowBackground(OSRowBackground())
                 Section {
                     ForEach(s.pipelineRows) { r in
                         VStack(alignment: .leading) { Text(r.name); Text(r.meta ?? "").font(.caption).foregroundStyle(.secondary) }
                             .swipeActions { if let id = r.pageId { Button("Advance") { Task { await advance(id, reload) } }.tint(.blue) } }
                     }
-                } header: { Text("In the pipeline") } footer: { Text("Swipe to move a piece to its next stage.") }
+                } header: { Text("In the pipeline") } footer: { Text("Swipe to move a piece to its next stage.") }.listRowBackground(OSRowBackground())
                 Section("Content calendar") {
                     ForEach(s.content) { r in
                         if let u = r.url.flatMap(URL.init(string:)) { Link(destination: u) { VStack(alignment: .leading) { Text(r.name); Text(r.meta ?? "").font(.caption) } } }
                         else { Text(r.name) }
                     }
-                }
+                }.listRowBackground(OSRowBackground())
             }
         }
         .navigationTitle("Pipeline")

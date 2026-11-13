@@ -193,7 +193,7 @@ struct ApprovalsView: View {
                     }
                 } header: { Text("Runway") } footer: {
                     if let s = rw.next_open_slot, let d = Date.pl(s) { Text("Next open slot \(d.formatted(.relative(presentation: .named))).") }
-                }
+                }.listRowBackground(OSRowBackground())
             }
             Section {
                 if !state.drafts.isEmpty { TipView(DraftGesturesTip()).selectionDisabled() }
@@ -219,7 +219,7 @@ struct ApprovalsView: View {
                 }
             } header: { Text("Drafts · \(state.drafts.count)") } footer: {
                 if !state.drafts.isEmpty { Text("Swipe left to approve, right to hold. Touch and hold for Post now and Rewrite. Select for many at once.") }
-            }
+            }.listRowBackground(OSRowBackground())
             if !state.captures.isEmpty {
                 Section("Captures") {
                     ForEach(state.captures) { c in
@@ -235,7 +235,7 @@ struct ApprovalsView: View {
                         .swipeActions(edge: .trailing) { Button("Keep") { Task { await state.capture(c, "approve", model: model) } }.tint(.green) }
                         .swipeActions(edge: .leading) { Button("Reject", role: .destructive) { Task { await state.capture(c, "reject", model: model) } } }
                     }
-                }
+                }.listRowBackground(OSRowBackground())
             }
             if !state.desires.isEmpty {
                 Section("Desires") {
@@ -244,7 +244,7 @@ struct ApprovalsView: View {
                             .swipeActions(edge: .trailing) { Button("Approve") { Task { await state.desire(d, "approved", model: model) } }.tint(.green) }
                             .swipeActions(edge: .leading) { Button("Hide", role: .destructive) { Task { await state.desire(d, "hidden", model: model) } } }
                     }
-                }
+                }.listRowBackground(OSRowBackground())
             }
             if !state.reports.isEmpty {
                 Section("Reported in the congregation") {
@@ -258,7 +258,7 @@ struct ApprovalsView: View {
                         .swipeActions(edge: .trailing) { Button("Remove", role: .destructive) { Task { await state.report(r, "remove", model: model) } } }
                         .swipeActions(edge: .leading) { Button("Dismiss") { Task { await state.report(r, "dismiss", model: model) } }.tint(.gray) }
                     }
-                }
+                }.listRowBackground(OSRowBackground())
             }
             if !state.ads.isEmpty {
                 Section("Ads") {
@@ -274,12 +274,12 @@ struct ApprovalsView: View {
                         .swipeActions(edge: .trailing) { if (a.needs ?? "").isEmpty { Button("Approve") { approvingAd = a } .tint(.green) } }
                         .swipeActions(edge: .leading) { Button("Reject", role: .destructive) { Task { await state.ad(a, "reject", model: model) } } }
                     }
-                }
+                }.listRowBackground(OSRowBackground())
             }
             if !state.manual.isEmpty {
                 Section {
                     ForEach(state.manual) { m in ManualRow(m: m, model: model, state: state).selectionDisabled() }
-                } header: { Text("Post by hand") } footer: { Text("Copy, post it yourself, then mark it posted.") }
+                } header: { Text("Post by hand") } footer: { Text("Copy, post it yourself, then mark it posted.") }.listRowBackground(OSRowBackground())
             }
         }
         .environment(\.editMode, $editing)

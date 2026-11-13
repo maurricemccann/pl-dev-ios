@@ -154,7 +154,7 @@ struct CorpusView: View {
                 .textSelection(.enabled)
             }
             if let s = stats {
-                Section { Text("\(s.corpus_fragments ?? 0) fragments from \(s.corpus_conversations ?? 0) conversations · \(s.archive_count ?? 0) archive pieces").font(.caption).foregroundStyle(.secondary) }
+                Section { Text("\(s.corpus_fragments ?? 0) fragments from \(s.corpus_conversations ?? 0) conversations · \(s.archive_count ?? 0) archive pieces").font(.caption).foregroundStyle(.secondary) }.listRowBackground(OSRowBackground())
             }
         }
         .searchable(text: $q, prompt: "What did he say about…")
@@ -195,7 +195,7 @@ struct MerchView: View {
             Section {
                 LabeledContent("Now", value: nowSeason == "fw" ? "Fall / Winter" : "Spring / Summer")
                 LabeledContent("Next switch", value: nowSeason == "fw" ? "Mar 1" : "Sep 1")
-            } footer: { Text("Black and white bases are always live. A resting colourway leaves the grid but stays buyable by its own link.") }
+            } footer: { Text("Black and white bases are always live. A resting colourway leaves the grid but stays buyable by its own link.") }.listRowBackground(OSRowBackground())
             Section("Colourways") {
                 ForEach($rows) { $r in
                     Picker(selection: Binding(get: { r.season }, set: { v in r.season = v; Task { await save(r.product_name, v) } })) {
@@ -207,7 +207,7 @@ struct MerchView: View {
                         }
                     }
                 }
-            }
+            }.listRowBackground(OSRowBackground())
             if !candidates.isEmpty {
                 Section("Drop candidates · unlisted and hidden") {
                     LazyVGrid(columns: [GridItem(.adaptive(minimum: 96), spacing: 8)], spacing: 8) {
@@ -220,12 +220,12 @@ struct MerchView: View {
                             }
                         }
                     }
-                }
+                }.listRowBackground(OSRowBackground())
             }
             if !asks.isEmpty {
                 Section("The Ask on /shop") {
                     ForEach(asks) { a in LabeledContent("\(a.question_id) · \(a.answer_id)", value: "\(a.n)") }
-                }
+                }.listRowBackground(OSRowBackground())
             }
         }
         .navigationTitle("Merch")
@@ -261,8 +261,8 @@ struct CatalogQueueView: View {
                 let waiting = rows.filter { $0.built_at == nil }
                 Section("Waiting to build · \(waiting.count)") {
                     ForEach(waiting) { r in row(r).swipeActions { Button("Built") { building = r }.tint(.green) } }
-                }
-                Section("Built") { ForEach(rows.filter { $0.built_at != nil }) { row($0) } }
+                }.listRowBackground(OSRowBackground())
+                Section("Built") { ForEach(rows.filter { $0.built_at != nil }) { row($0) } }.listRowBackground(OSRowBackground())
             }
             .alert("Mark \(building?.design ?? "") built", isPresented: Binding(get: { building != nil }, set: { if !$0 { building = nil } })) {
                 TextField("Printful sync product id", text: $syncId).keyboardType(.numberPad)
@@ -370,7 +370,7 @@ struct StackHealthView: View {
                         .foregroundStyle(l.all_pass == true ? .green : .red)
                     if let s = l.summary { Text(s).font(.callout) }
                     HStack { Text("Ran"); Spacer(); Ago(text: l.ran_at) }.foregroundStyle(.secondary)
-                }
+                }.listRowBackground(OSRowBackground())
                 Section("Checks") {
                     ForEach((l.results ?? [:]).keys.sorted(), id: \.self) { k in
                         let r = l.results?[k]
@@ -381,7 +381,7 @@ struct StackHealthView: View {
                             if let ms = r?.latency { Text("\(ms) ms").font(.caption.monospacedDigit()).foregroundStyle(.secondary) }
                         }
                     }
-                }
+                }.listRowBackground(OSRowBackground())
             }
             if !history.isEmpty {
                 Section {
@@ -393,7 +393,7 @@ struct StackHealthView: View {
                     }
                     .chartXAxis(.hidden)
                     .frame(height: 150)
-                } header: { Text("The last \(min(history.count, 14)) nights") } footer: { Text("\(history.suffix(14).filter { $0.all_pass == true }.count) of \(min(history.count, 14)) all passed.") }
+                } header: { Text("The last \(min(history.count, 14)) nights") } footer: { Text("\(history.suffix(14).filter { $0.all_pass == true }.count) of \(min(history.count, 14)) all passed.") }.listRowBackground(OSRowBackground())
             }
             Button(busy ? "Running… about a minute" : "Run the checks now") { Task { await run() } }.disabled(busy)
         }
@@ -446,12 +446,12 @@ struct CostView: View {
                     LabeledContent("All time", value: (c.revenueAllTime ?? 0).formatted(.currency(code: "USD")))
                     LabeledContent("Orders", value: "\(c.orderCount30d ?? 0) in 30 days · \(c.orderCountAllTime ?? 0) all time")
                     LabeledContent("Average order", value: (c.aovAllTime ?? 0).formatted(.currency(code: "USD")))
-                }
+                }.listRowBackground(OSRowBackground())
                 Section {
                     ForEach(c.recurringMonthly ?? []) { LabeledContent($0.label, value: $0.value.formatted(.currency(code: "USD"))) }
                     LabeledContent("Monthly total", value: (c.recurringMonthly ?? []).reduce(0) { $0 + $1.value }.formatted(.currency(code: "USD")))
                     LabeledContent("Spent once", value: (c.oneTimeTotal ?? 0).formatted(.currency(code: "USD")))
-                } header: { Text("Costs") } footer: { Text("The recurring costs are kept by hand, as in pl-os; there is no billing feed.") }
+                } header: { Text("Costs") } footer: { Text("The recurring costs are kept by hand, as in pl-os; there is no billing feed.") }.listRowBackground(OSRowBackground())
             }
         }
         .navigationTitle("Costs")

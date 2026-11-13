@@ -240,3 +240,12 @@ struct OSKpis: View {
         .osCard()
     }
 }
+
+/// pl-os's row inside a room: the first glass on the console ground, held by its hairline (every List row in House wears it).
+struct OSRowBackground: View {
+    @Environment(\.colorScheme) private var scheme
+    var body: some View {
+        Rectangle().fill(PLOS.surface(scheme).opacity(scheme == .dark ? 0.78 : 0.86))
+            .overlay(alignment: .bottom) { Rectangle().fill(PLOS.line(scheme)).frame(height: 0.5) }
+    }
+}

@@ -246,7 +246,7 @@ struct CalendarView: View {
                     Spacer()
                     Text(shortAll == 0 ? "full" : "\(shortAll) short").foregroundStyle(shortAll == 0 ? PLOS.ok : PLOS.warn)
                 }
-            }
+            }.listRowBackground(OSRowBackground())
         }
     }
 }
@@ -280,7 +280,7 @@ struct TempoView: View {
                     if let g = w.performance?.top_glyph { LabeledContent("Top glyph", value: g) }
                     if let r = w.performance?.top_rate { LabeledContent("Engagement rate", value: String(format: "%.1f%%", r)) }
                     LabeledContent("Drafts waiting", value: "\(w.drafts?.pending ?? 0) · \(w.drafts?.held ?? 0) held")
-                }
+                }.listRowBackground(OSRowBackground())
                 Section {
                     ForEach((w.strategy?.angles ?? []).sorted { ($0.priority ?? 9) < ($1.priority ?? 9) }) { a in
                         VStack(alignment: .leading, spacing: 3) {
@@ -291,7 +291,7 @@ struct TempoView: View {
                             if let c = a.doctrine_cluster { Text(c.replacingOccurrences(of: "-", with: " ").uppercased()).font(.caption2.weight(.semibold)).tracking(1).foregroundStyle(.secondary) }
                         }
                     }
-                } header: { Text("This week's angles\(w.strategy?.used_by_wave.map { " · \($0) waves used" } ?? "")") }
+                } header: { Text("This week's angles\(w.strategy?.used_by_wave.map { " · \($0) waves used" } ?? "")") }.listRowBackground(OSRowBackground())
                 if let e = w.email {
                     Section {
                         Text(e.subject ?? "").font(.headline)
@@ -305,7 +305,7 @@ struct TempoView: View {
                                 .disabled(e.status != "approved")
                         }
                         .buttonStyle(.bordered)
-                    } header: { Text("This week's email") }
+                    } header: { Text("This week's email") }.listRowBackground(OSRowBackground())
                 }
             }
             if let n = reel?.next {
@@ -314,14 +314,14 @@ struct TempoView: View {
                     if let c = n.collection { LabeledContent("From", value: c) }
                     if let u = n.url.flatMap(URL.init(string:)) { Link("Watch it", destination: u) }
                     ConfirmButton(title: "Queue it", question: "Queue this reel to post?") { await act { try await Console.post("api/reels/queue-next", [:], model: model, timeout: 60); return "Queued." } }
-                } header: { Text("Reels · \(reel?.remaining ?? 0) left") }
+                } header: { Text("Reels · \(reel?.remaining ?? 0) left") }.listRowBackground(OSRowBackground())
             }
             Section {
                 Button("Plan the week") { Task { await act { await Console.run("run/plan-week", model: model) } } }
                 Button("Write the weekly email") { Task { await act { await Console.run("run/generate-email", model: model) } } }
                 Button("Pull performance") { Task { await act { await Console.run("run/pull-performance", model: model) } } }
                 Button("Run the content wave") { Task { await act { await Console.run("run/content-wave", model: model) } } }
-            } header: { Text("Run now") }
+            } header: { Text("Run now") }.listRowBackground(OSRowBackground())
         }
         .disabled(busy)
         .navigationTitle("Tempo")
@@ -374,7 +374,7 @@ struct FeedView: View {
                     }
                     .swipeActions(edge: .leading) { Button("Deny", role: .destructive) { Task { await act("api/feed/deny", ["id": d.id], "Denied.") } } }
                 }
-            }
+            }.listRowBackground(OSRowBackground())
             Section("Published") {
                 ForEach(posts.prefix(30)) { p in
                     HStack(spacing: 10) {
@@ -387,7 +387,7 @@ struct FeedView: View {
                     .contextMenu { if p.feed_post_id != nil { Button("Change the picture", systemImage: "photo.on.rectangle") { swapping = p } } }
                     .swipeActions { if p.feed_post_id != nil { Button("Picture") { swapping = p }.tint(PLOS.gold) } }
                 }
-            }
+            }.listRowBackground(OSRowBackground())
         }
         .navigationTitle("PL feed")
         .confirmationDialog("Publish this post now, everywhere it is set to go?", isPresented: Binding(get: { publishing != nil }, set: { if !$0 { publishing = nil } }), titleVisibility: .visible) {
@@ -574,7 +574,7 @@ struct PinterestView: View {
                         Text("Connecting Pinterest happens in pl-os on the laptop: Pinterest's sign-in returns to that page.").font(.footnote).foregroundStyle(.secondary)
                     }
                     if let e = s.error { Text(e).font(.footnote).foregroundStyle(.secondary) }
-                }
+                }.listRowBackground(OSRowBackground())
                 if s.connected == true {
                     Section {
                         if (s.queue ?? []).isEmpty { Text("No Pinterest drafts waiting.").foregroundStyle(.secondary) }
@@ -588,7 +588,7 @@ struct PinterestView: View {
                                     .buttonStyle(.bordered).disabled(busy != nil)
                             }
                         }
-                    } header: { Text("Drafts") } footer: { Text("Each Pin waits for your tap, as Pinterest's rules require.") }
+                    } header: { Text("Drafts") } footer: { Text("Each Pin waits for your tap, as Pinterest's rules require.") }.listRowBackground(OSRowBackground())
                     if !(s.pins ?? []).isEmpty {
                         Section("Pins on the board") {
                             LazyVGrid(columns: [GridItem(.adaptive(minimum: 84), spacing: 8)], spacing: 8) {
@@ -600,11 +600,11 @@ struct PinterestView: View {
                                     .accessibilityLabel(p.description ?? "Pin")
                                 }
                             }
-                        }
+                        }.listRowBackground(OSRowBackground())
                     }
                 }
             }
-            if let note { Section { ResultLine(text: note) } }
+            if let note { Section { ResultLine(text: note) }.listRowBackground(OSRowBackground()) }
         }
         .navigationTitle("Pinterest")
         .task { await load() }
