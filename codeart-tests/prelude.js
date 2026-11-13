@@ -336,6 +336,7 @@
     try { s.st = s.p.make(s.w, s.h); if (s.st && s.p.pal) s.st.pal = s.p.pal; } catch (e) {} s.warmed = 0; s.cv._sync();
   };
   G.__freeInstance = (hd) => { INST.delete(hd); };
+  G.__loadComp = (n, cb) => { try { Promise.resolve(G.PL_loadComp(String(n).padStart(2, '0'))).then(() => cb(1), () => cb(0)); } catch (e) { cb(0); } };
   G.__flushAll = () => { for (const c of Array.from(dirty)) { if (c._ctx2) c._ctx2._flush(); else dirty.delete(c); } };
   // Forge: run source that registers a piece, return the one it added (the wrapper ForgePreview injects, in the same scope).
   G.__forgeRun = (code) => {
