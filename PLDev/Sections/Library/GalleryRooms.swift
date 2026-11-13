@@ -88,6 +88,7 @@ struct GalleryRoomsView: View {
             Section("Find") { ForEach([GalleryRoom.vault, .kit, .tools]) { row($0) } }
             Section("Play") { ForEach([GalleryRoom.worlds, .labs, .town]) { row($0) } }
         }
+        .gScreen()
         .navigationTitle("Curve Library")
     }
     private func row(_ r: GalleryRoom) -> some View {
@@ -160,10 +161,10 @@ struct WebListRoom: View {
             if title == "Labs" {
                 Section {
                     NavigationLink { GalleryCanvas(model: model, path: "live", title: "The VJ") } label: {
-                        VStack(alignment: .leading, spacing: 2) { Text("● LIVE").font(.caption2.weight(.bold)).foregroundStyle(.red); Text("The VJ").font(.title3.italic()); Text("The living set as a controller: tracks, tap tempo, rack.").font(.caption).foregroundStyle(.secondary) }
+                        VStack(alignment: .leading, spacing: 2) { Text("● Live").gEyebrow(10).foregroundStyle(PLG.red); Text("The VJ").gTitle(22); Text("The living set as a controller: tracks, tap tempo, rack.").font(.caption).foregroundStyle(.secondary) }
                     }
                     NavigationLink { GalleryCanvas(model: model, path: "lab", title: "Living Curves") } label: {
-                        VStack(alignment: .leading, spacing: 2) { Text("RIBBON").font(.caption2.weight(.bold)).foregroundStyle(.secondary); Text("Living Curves, the ribbon lab").font(.title3.italic()) }
+                        VStack(alignment: .leading, spacing: 2) { Text("Ribbon").gEyebrow(10).foregroundStyle(PLG.goldDim(.dark)); Text("Living Curves, the ribbon lab").gTitle(22) }
                     }
                 } header: { Text("Instruments and experiments. The VJ lives here now.") }
             }
@@ -175,6 +176,7 @@ struct WebListRoom: View {
                 }
             }
         }
+        .gScreen()
         .navigationTitle(title == "Labs" ? "The Labs" : title)
     }
 }
@@ -203,7 +205,7 @@ struct CurvesRoom: View {
                     Button { playing = p } label: {
                         ZStack(alignment: .bottomLeading) {
                             Tile(item: p, mark: data.marks[p.vault_id], url: data.media(p, model: model).still)
-                            if liked.contains(p.item_id) { Image(systemName: "heart.fill").foregroundStyle(PLTone.house).padding(6) }
+                            if liked.contains(p.item_id) { Image(systemName: "heart.fill").foregroundStyle(PLG.gold).padding(6) }
                         }
                     }
                     .buttonStyle(.plain)
@@ -212,6 +214,7 @@ struct CurvesRoom: View {
             }
             .padding(6)
         }
+        .gScreen()
         .searchable(text: $search, prompt: "Piece")
         .navigationTitle("Curves · \(pieces.count)")
         .toolbar { Toggle(isOn: $onlyLiked) { Image(systemName: onlyLiked ? "heart.fill" : "heart") }.accessibilityLabel("Liked only") }
@@ -293,7 +296,7 @@ struct ArchiveRoom: View {
             LazyVGrid(columns: [GridItem(.adaptive(minimum: 104), spacing: 4)], spacing: 4) {
                 ForEach(shown) { p in
                     Button { open = p } label: {
-                        AsyncImage(url: URL(string: p.thumb ?? p.url ?? "")) { $0.resizable().scaledToFill() } placeholder: { Color.secondary.opacity(0.12) }
+                        AsyncImage(url: URL(string: p.thumb ?? p.url ?? "")) { $0.resizable().scaledToFill() } placeholder: { Color(hex: 0x1a1610) }
                             .frame(height: 104).clipped()
                     }
                     .buttonStyle(.plain).accessibilityLabel(p.title ?? p.cr)
@@ -301,6 +304,7 @@ struct ArchiveRoom: View {
             }
             .padding(4)
         }
+        .gScreen()
         .searchable(text: $search, prompt: "Title, PL number or subject")
         .navigationTitle("The complete works")
         .toolbar {
@@ -366,7 +370,7 @@ struct StillsRoom: View {
             LazyVGrid(columns: [GridItem(.adaptive(minimum: 104), spacing: 4)], spacing: 4) {
                 ForEach(shown.prefix(1500)) { it in
                     Button { open = it } label: {
-                        AsyncImage(url: url(it)) { $0.resizable().scaledToFill() } placeholder: { Color.secondary.opacity(0.12) }
+                        AsyncImage(url: url(it)) { $0.resizable().scaledToFill() } placeholder: { Color(hex: 0x1a1610) }
                             .frame(height: 130).clipped()
                             .overlay(alignment: .topTrailing) { if has(favs, it.id) { Image(systemName: "star.fill").foregroundStyle(PLTone.house).padding(4) } }
                     }
@@ -380,6 +384,7 @@ struct StillsRoom: View {
             }
             .padding(4)
         }
+        .gScreen()
         .navigationTitle("The Generated")
         .searchable(text: $jump, prompt: "Jump to # (e.g. 042)")
         .safeAreaInset(edge: .top) {
@@ -426,7 +431,7 @@ struct CinematicRoom: View {
             LazyVGrid(columns: [GridItem(.adaptive(minimum: 150), spacing: 6)], spacing: 6) {
                 ForEach(shown.prefix(1500)) { it in
                     Button { open = it } label: {
-                        AsyncImage(url: poster(it)) { $0.resizable().scaledToFill() } placeholder: { Color.secondary.opacity(0.12) }
+                        AsyncImage(url: poster(it)) { $0.resizable().scaledToFill() } placeholder: { Color(hex: 0x1a1610) }
                             .frame(height: 100).clipped()
                             .overlay(alignment: .bottomTrailing) {
                                 if let d = it.duration { Text(Duration.seconds(d).formatted(.time(pattern: .minuteSecond))).font(.caption2.monospacedDigit()).padding(3).background(.black.opacity(0.5)).foregroundStyle(.white) }
@@ -445,6 +450,7 @@ struct CinematicRoom: View {
             Picker("View", selection: $view) { Text("All").tag("all"); Text("★").tag("fav"); Text("Hidden").tag("hidden") }
                 .pickerStyle(.segmented).padding(.horizontal).padding(.vertical, 6).background(.bar)
         }
+        .gScreen()
         .navigationTitle("The Cinematic")
         .toolbar { Menu { Picker("Collection", selection: $collection) { Text("All").tag(String?.none); ForEach(cols, id: \.self) { Text($0).tag(String?.some($0)) } } } label: { Image(systemName: "line.3.horizontal.decrease.circle") } }
         .task {
@@ -514,6 +520,7 @@ struct VaultRoom: View {
                 }
             }
         }
+        .gScreen()
         .navigationTitle("The Vault")
         .task { if data.items.isEmpty { try? await data.load(model: model) } }
     }
@@ -521,12 +528,11 @@ struct VaultRoom: View {
     private func vaultTile(_ kind: String, _ big: String, _ line: String, _ room: GalleryRoom) -> some View {
         NavigationLink { room.view(model) } label: {
             VStack(alignment: .leading, spacing: 4) {
-                Text(kind).font(.caption2.weight(.semibold)).tracking(1.2).foregroundStyle(.secondary)
-                Text(big).font(.title.weight(.medium)).monospacedDigit().foregroundStyle(Wallpaper.line)
-                Text(line).font(.caption.monospaced()).foregroundStyle(.secondary)
+                Text(kind).gEyebrow(9.5).foregroundStyle(PLG.goldDim(.dark))
+                Text(big).font(.system(size: 28, weight: .regular, design: .serif).italic()).monospacedDigit().foregroundStyle(PLG.gold)
+                Text(line).font(.system(size: 11, design: .monospaced)).foregroundStyle(PLG.dim(.dark))
             }
-            .frame(maxWidth: .infinity, alignment: .leading).padding(12)
-            .background(Color.secondary.opacity(0.1), in: RoundedRectangle(cornerRadius: 16, style: .continuous))
+            .gCard(padding: 12, radius: 16)
         }
         .buttonStyle(.plain)
     }
@@ -561,7 +567,7 @@ struct PrintfulRoom: View {
                     if t.dead == true { Text("Discontinued").font(.caption2).foregroundStyle(PLTone.house) }
                 }
                 Spacer()
-                if hearted.contains(String(t.id)) { Image(systemName: "heart.fill").foregroundStyle(PLTone.house) }
+                if hearted.contains(String(t.id)) { Image(systemName: "heart.fill").foregroundStyle(PLG.gold) }
             }
             .swipeActions(edge: .trailing) { Button("Heart") { Task { await act(t, "heart") } }.tint(PLTone.house) }
             .swipeActions(edge: .leading) {
@@ -569,6 +575,7 @@ struct PrintfulRoom: View {
                 Button("Clear") { Task { await act(t, "clear") } }.tint(.gray)
             }
         }
+        .gScreen()
         .searchable(text: $search, prompt: "Template")
         .navigationTitle("What Survives")
         .safeAreaInset(edge: .top) {
@@ -655,6 +662,7 @@ struct ClassifyRoom: View {
             if let r = result { Section { ResultLine(text: r) } }
             Section { Button("Publish…") { confirmPublish = true } } footer: { Text("Publishing rewrites the live archive manifest from what you classified.") }
         }
+        .gScreen()
         .navigationTitle("Classify")
         .task { await boot() }
         .confirmationDialog("Publish the classified archive to the live manifest?", isPresented: $confirmPublish, titleVisibility: .visible) {
@@ -720,6 +728,7 @@ struct KitRoom: View {
                 group("Fonts", k.fonts); group("Symbols", k.symbols); group("Icons", k.icons); group("Patterns", k.patterns); group("Layouts", k.layouts)
             }
         }
+        .gScreen()
         .navigationTitle("Design Kit")
     }
 
@@ -746,6 +755,7 @@ struct ToolsRoom: View {
                 }
             }
         }
+        .gScreen()
         .searchable(text: $search, prompt: "Piece")
         .navigationTitle("Tools and source")
         .task { if data.items.isEmpty { try? await data.load(model: model) } }
