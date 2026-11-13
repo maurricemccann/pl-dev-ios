@@ -28,6 +28,7 @@ import UserNotifications
         }
         marks = m
         marksLoaded = true
+        LibraryGlanceWriter.publish(self)   // the Curate widget's numbers
     }
 
     func base(_ model: AppModel) -> String {
@@ -71,7 +72,10 @@ import UserNotifications
     static func probes(model: AppModel) -> [ProbeModel.Item] { [] }
     static func settingsRows(model: AppModel) -> AnyView? { nil }
     static func notificationCategories() -> Set<UNNotificationCategory> { [] }
-    static func handle(link: DeepLink, model: AppModel) -> Bool { true }
+    static func handle(link: DeepLink, model: AppModel) -> Bool {
+        if case .section(_, let path, _) = link, let first = path.first, let room = GalleryRoom(rawValue: first) { GalleryNav.shared.room = room }
+        return true
+    }
     static func refresh(model: AppModel) async -> SectionRefresh { SectionRefresh(badge: nil, notify: []) }
 }
 
@@ -94,6 +98,7 @@ enum Verdict: String, CaseIterable, Identifiable {
 struct LibraryView: View {
     let model: AppModel
     @State private var data = LibraryData.shared
+    @State private var nav = GalleryNav.shared
     @State private var verdict: Verdict = .all
     @State private var cls: String? = nil
     @State private var search = ""
@@ -199,6 +204,7 @@ struct LibraryView: View {
         .refreshable { await reload(force: true) }
         .task { if data.items.isEmpty || !data.marksLoaded { await reload(force: false) } }
         .fullScreenCover(item: $open) { it in PieceViewer(model: model, list: list, start: it) }
+        .navigationDestination(item: $nav.room) { room in room.view(model) }
     }
 
     /// The web Library's "Latest batches" shelf (the ten newest, with what is new, kept, maybe and cut) and the source chips.
@@ -346,7 +352,12 @@ struct PieceViewer: View {
             .safeAreaInset(edge: .bottom) { controls }
             .navigationTitle(current?.name ?? "")
             .navigationBarTitleDisplayMode(.inline)
-            .toolbar { ToolbarItem(placement: .cancellationAction) { Button("Close") { dismiss() } } }
+            .toolbar {
+                ToolbarItem(placement: .cancellationAction) { Button("Close") { dismiss() } }
+                if let it = current, let u = data.media(it, model: model).video ?? data.media(it, model: model).still {
+                    ToolbarItem(placement: .primaryAction) { ShareLink(item: u) }
+                }
+            }
             .sensoryFeedback(.impact(weight: .medium), trigger: tick)
             .onChange(of: selection, initial: true) { _, id in comment = data.marks[id]?.comment ?? "" }
         }

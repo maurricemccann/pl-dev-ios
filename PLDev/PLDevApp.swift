@@ -13,7 +13,7 @@ struct PLDevApp: App {
             try? Tips.resetDatastore(); UserDefaults.standard.set(false, forKey: "pldev.resetTips")
         }
         try? Tips.configure([.displayFrequency(.daily)])   // tips only for gestures that cannot be seen, one a day at most
-        Task { await HouseSpotlight.index() }   // House rooms in Spotlight
+        Task { await HouseSpotlight.index(); await GallerySpotlight.index() }   // House and Curve Library rooms in Spotlight
     }
 
     var body: some Scene {

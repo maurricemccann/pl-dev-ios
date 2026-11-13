@@ -7,6 +7,7 @@ struct PLDevWidgetsBundle: WidgetBundle {
     var body: some Widget {
         SnapshotWidget()
         HouseWidget()
+        LibraryWidget()
         HomeControl()
         ShiftLiveActivity()
     }

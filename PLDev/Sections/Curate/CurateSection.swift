@@ -1,5 +1,6 @@
 import AVKit
 import SwiftUI
+import TipKit
 import UserNotifications
 
 /// Curate: one card at a time; right = keep, left = cut, up = maybe, star = favourite (a keep with the note "fav").
@@ -159,6 +160,7 @@ struct CurateView: View {
             } else if state.loading && state.queue.isEmpty {
                 ProgressView("Loading the library…").frame(maxHeight: .infinity)
             } else if let it = state.current {
+                TipView(CurateSwipeTip())
                 TextField("A word about this piece", text: $state.comment, axis: .vertical)
                     .lineLimit(1...3).textFieldStyle(.roundedBorder).focused($commentFocus)
                     .onChange(of: commentFocus) { _, f in if !f { Task { await state.saveComment(model: model) } } }

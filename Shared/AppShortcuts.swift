@@ -36,6 +36,12 @@ struct PLDevShortcuts: AppShortcutsProvider {
             systemImageName: "door.left.hand.open"
         )
         AppShortcut(
+            intent: CurateWaitingIntent(),
+            phrases: ["How many pieces wait in \(.applicationName)"],
+            shortTitle: "Curate waiting",
+            systemImageName: "rectangle.stack"
+        )
+        AppShortcut(
             intent: InboxCountIntent(),
             phrases: [
                 "What is in my \(.applicationName) inbox"
