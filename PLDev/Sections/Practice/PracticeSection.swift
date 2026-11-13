@@ -33,7 +33,9 @@ import UserNotifications
     }
 
     static func refresh(model: AppModel) async -> SectionRefresh {
+        await PracticeOutbox.flush(model: model)
         await state.loadToday(model: model)
+        if PracticeDeck.cached().isEmpty, let l = try? await Practice.get("affirmations", PracticeAffirmations.self, model: model) { PracticeDeck.cache(l.items) }
         await PracticeNotice.reschedule(model: model)
         if !indexed { indexed = true; await PracticeSpotlight.index() }
         let left = state.left
@@ -192,11 +194,7 @@ struct TodayTab: View {
             if let m = state.message { Text(m).font(.footnote).foregroundStyle(.secondary) }
             if let s = state.streak {
                 Section {
-                    HStack(spacing: PLSpace.margin) {
-                        Kpi(title: "days this month", value: "\(s.practisedThisMonth)")
-                        Kpi(title: "days in all", value: "\(s.practisedTotal)")
-                        Kpi(title: "of the last 7 complete", value: "\(s.completedOfLast7)")
-                    }
+                    PracticeKpis(items: [("days this month", "\(s.practisedThisMonth)"), ("days in all", "\(s.practisedTotal)"), ("of the last 7 complete", "\(s.completedOfLast7)")])
                 } footer: { Text("A day counts when either check-in is done. Missing one costs nothing.") }
             }
             Section("Today") {
@@ -232,8 +230,8 @@ struct TodayTab: View {
             }
         }
         .overlay { if !state.loaded && state.streak == nil && state.message == nil { ProgressView() } }
-        .refreshable { await state.loadToday(model: model) }
-        .task { await state.loadToday(model: model) }
+        .refreshable { await PracticeOutbox.flush(model: model); await state.loadToday(model: model) }
+        .task { await PracticeOutbox.flush(model: model); await state.loadToday(model: model) }
     }
 
     private func row(_ room: PracticeRoom, done: Bool, detail: String) -> some View {
@@ -247,7 +245,7 @@ struct TodayTab: View {
 
     private func logWin() async {
         let text = win.trimmingCharacters(in: .whitespaces)
-        do { try await Practice.post("logs", ["kind": "win", "text": text], model: model); win = ""; result = "Logged."; state.tick += 1 }
+        do { let sent = try await Practice.postQueued("logs", ["kind": "win", "text": text], model: model); win = ""; result = sent ? "Logged." : "Saved on this iPhone. It sends when you are online."; state.tick += 1 }
         catch { result = error.localizedDescription }
     }
 }
@@ -307,7 +305,20 @@ struct RecordTab: View {
                     NavigationLink { r.view(model) } label: { Label(r.title, systemImage: r.symbol) }
                         .badge(r == .review && state.reviewDue ? 1 : 0)
                 }
-            } footer: { Text("Nothing here can be deleted from the phone. The record is the record.") }
+            } footer: {
+                Text("Nothing here can be deleted from the phone. The record is the record.\(PracticeOutbox.count > 0 ? " \(PracticeOutbox.count) written offline, waiting to send." : "")")
+            }
+        }
+    }
+}
+
+/// Figures in a row at normal sizes, stacked at the largest accessibility sizes (every screen must work at the largest size).
+struct PracticeKpis: View {
+    let items: [(String, String)]
+    var body: some View {
+        ViewThatFits(in: .horizontal) {
+            HStack(spacing: PLSpace.margin) { ForEach(items.indices, id: \.self) { Kpi(title: items[$0].0, value: items[$0].1) } }
+            VStack(alignment: .leading, spacing: PLSpace.gap) { ForEach(items.indices, id: \.self) { Kpi(title: items[$0].0, value: items[$0].1) } }
         }
     }
 }

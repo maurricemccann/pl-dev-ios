@@ -5,10 +5,11 @@ import SwiftUI
 /// config carries only an address. It answers bare arrays and a bare `null` for "nothing yet", so reads tolerate both.
 @MainActor enum Practice {
     enum Problem: LocalizedError {
-        case notSetUp, refused(String)
+        case notSetUp, offline, refused(String)
         var errorDescription: String? {
             switch self {
             case .notSetUp: return "The practice address is not in your config yet."
+            case .offline: return "Not saved. This iPhone is offline."
             case .refused(let why): return why
             }
         }
@@ -40,9 +41,24 @@ import SwiftUI
             data = try await client.send(RequestPlan(origin: "practice", method: method, path: "api/" + path, headers: ["content-type": "application/json"],
                                                      body: try JSONSerialization.data(withJSONObject: body)),
                                          idempotent: false, timeout: timeout)
-        } catch { throw Problem.refused("Not saved. \(plainSentence(error))") }
+        } catch {
+            if Self.isOffline(error) { throw Problem.offline }
+            throw Problem.refused("Not saved. \(plainSentence(error))")
+        }
         if let o = try? JSONSerialization.jsonObject(with: data) as? [String: Any], let why = o["error"] as? String { throw Problem.refused(why) }
         return data
+    }
+
+    /// Whether a failure means "no connection" (worth queueing) rather than "the server said no".
+    static func isOffline(_ error: any Error) -> Bool {
+        guard let u = error as? URLError else { return false }
+        return [.notConnectedToInternet, .networkConnectionLost, .dataNotAllowed, .timedOut, .cannotConnectToHost, .cannotFindHost, .dnsLookupFailed].contains(u.code)
+    }
+
+    /// Words written without a connection wait on the phone and go when it returns. True when sent, false when queued.
+    static func postQueued(_ path: String, _ body: [String: Any], model: AppModel) async throws -> Bool {
+        do { try await post(path, body, model: model); return true }
+        catch Problem.offline { PracticeOutbox.add(path: path, body: body); return false }
     }
 
     /// A POST of raw bytes (a photo, a recording); the Worker answers JSON.
@@ -155,5 +171,43 @@ struct PracticeBoardImages: Decodable, Sendable {
 
     nonisolated func audioPlayerDidFinishPlaying(_ player: AVAudioPlayer, successfully flag: Bool) {
         Task { @MainActor in self.playing = nil; self.player = nil }
+    }
+}
+
+// MARK: - The outbox: what he writes offline is kept on the phone and sent in order when the connection returns
+
+@MainActor enum PracticeOutbox {
+    private static let key = "practice.outbox"
+    private struct Item: Codable { let path: String; let body: String }
+    private static var items: [Item] {
+        get { UserDefaults.standard.data(forKey: key).flatMap { try? JSONDecoder().decode([Item].self, from: $0) } ?? [] }
+        set { UserDefaults.standard.set(try? JSONEncoder().encode(newValue), forKey: key) }
+    }
+
+    static var count: Int { items.count }
+
+    /// Saved on the phone before anything is said to him.
+    static func add(path: String, body: [String: Any]) {
+        guard let d = try? JSONSerialization.data(withJSONObject: body), let s = String(data: d, encoding: .utf8) else { return }
+        items.append(Item(path: path, body: s))
+    }
+
+    /// Sends what is waiting, oldest first. Offline keeps it all; a refusal (4xx) will never succeed, so it is dropped rather
+    /// than blocking what is behind it. Returns how many went.
+    @discardableResult
+    static func flush(model: AppModel) async -> Int {
+        guard let http = model.http, model.config?.origin("practice") != nil else { return 0 }
+        var sent = 0
+        while let first = items.first {
+            do {
+                _ = try await http.send(RequestPlan(origin: "practice", method: "POST", path: "api/" + first.path, headers: ["content-type": "application/json"],
+                                                    body: Data(first.body.utf8)), idempotent: false, timeout: 60)
+            } catch let f as HTTPClient.Failure {
+                if case .http(let code) = f, (400..<500).contains(code) { items.removeFirst(); continue }
+                break
+            } catch { break }
+            items.removeFirst(); sent += 1
+        }
+        return sent
     }
 }

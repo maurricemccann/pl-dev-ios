@@ -12,6 +12,7 @@ struct DesiresView: View {
     @State private var priority = "medium"
     @State private var result: String?
     @State private var loaded = false
+    @State private var failure: String?
 
     private var open: [PracticeDesire] { desires.filter { $0.completed_at == nil } }
     private var done: [PracticeDesire] { desires.filter { $0.completed_at != nil } }
@@ -24,7 +25,8 @@ struct DesiresView: View {
                 Button("Add it") { Task { await add() } }.disabled(text.trimmingCharacters(in: .whitespaces).isEmpty)
                 ResultLine(text: result)
             }
-            if loaded && desires.isEmpty { ContentUnavailableView("No desires yet", systemImage: "sparkles", description: Text("Write what you are preparing for. It shows here, open first.")) }
+            if let failure { Text(failure).font(.footnote).foregroundStyle(.secondary) }
+            if loaded && failure == nil && desires.isEmpty { ContentUnavailableView("No desires yet", systemImage: "sparkles", description: Text("Write what you are preparing for. It shows here, open first.")) }
             if !open.isEmpty {
                 Section { ForEach(open) { row($0) } } header: { Text("Open · \(open.count)") } footer: { Text("Swipe left to mark one done. Touch and hold for more.") }
             }
@@ -51,7 +53,8 @@ struct DesiresView: View {
     }
 
     private func load() async {
-        if let l = try? await Practice.get("scripts", [PracticeDesire].self, model: model) { desires = l }
+        do { desires = try await Practice.get("scripts", [PracticeDesire].self, model: model); failure = nil }
+        catch { failure = "Could not load the desires. Pull to try again." }
         loaded = true
     }
 
@@ -139,6 +142,7 @@ struct HabitsView: View {
     @State private var result: String?
     @State private var archive: PracticeHabit?
     @State private var loaded = false
+    @State private var failure: String?
 
     var body: some View {
         List {
@@ -149,7 +153,8 @@ struct HabitsView: View {
                 Button("Add the habit") { Task { await add() } }.disabled(response.trimmingCharacters(in: .whitespaces).isEmpty)
                 ResultLine(text: result)
             } header: { Text("A tiny habit") } footer: { Text("Cue, action, reward. One tick a day.") }
-            if loaded && habits.isEmpty { ContentUnavailableView("No habits yet", systemImage: "checklist", description: Text("Add one above. Its week of dots fills as you tick it.")) }
+            if let failure { Text(failure).font(.footnote).foregroundStyle(.secondary) }
+            if loaded && failure == nil && habits.isEmpty { ContentUnavailableView("No habits yet", systemImage: "checklist", description: Text("Add one above. Its week of dots fills as you tick it.")) }
             if !habits.isEmpty {
                 Section {
                     ForEach(habits) { h in
@@ -171,7 +176,8 @@ struct HabitsView: View {
     }
 
     private func load() async {
-        if let l = try? await Practice.get("habits", [PracticeHabit].self, model: model) { habits = l; PracticeSection.state.habits = l; PracticeSection.state.publish() }
+        do { let l = try await Practice.get("habits", [PracticeHabit].self, model: model); habits = l; PracticeSection.state.habits = l; PracticeSection.state.publish(); failure = nil }
+        catch { failure = "Could not load the habits. Pull to try again." }
         loaded = true
     }
 
@@ -199,6 +205,7 @@ struct NotesView: View {
     @State private var text = ""
     @State private var result: String?
     @State private var loaded = false
+    @State private var failure: String?
 
     var body: some View {
         List {
@@ -207,7 +214,8 @@ struct NotesView: View {
                 Button("Keep it") { Task { await add() } }.disabled(text.trimmingCharacters(in: .whitespaces).isEmpty)
                 ResultLine(text: result)
             }
-            if loaded && notes.isEmpty { ContentUnavailableView("No notes yet", systemImage: "note.text", description: Text("Each note you keep stacks here, newest first.")) }
+            if let failure { Text(failure).font(.footnote).foregroundStyle(.secondary) }
+            if loaded && failure == nil && notes.isEmpty { ContentUnavailableView("No notes yet", systemImage: "note.text", description: Text("Each note you keep stacks here, newest first.")) }
             Section {
                 ForEach(notes) { n in
                     VStack(alignment: .leading, spacing: 3) { Text(n.text).plReading(); Ago(text: n.created_at).font(.caption2).foregroundStyle(.tertiary) }
@@ -216,14 +224,22 @@ struct NotesView: View {
             }
         }
         .navigationTitle("Notes").navigationBarTitleDisplayMode(.inline)
+        .sensoryFeedback(PLHaptic.success, trigger: notes.count)
         .task { await load() }
         .refreshable { await load() }
     }
 
-    private func load() async { if let l = try? await Practice.get("notes", [PracticeNote].self, model: model) { notes = l }; loaded = true }
+    private func load() async {
+        do { notes = try await Practice.get("notes", [PracticeNote].self, model: model); failure = nil }
+        catch { failure = "Could not load the notes. Pull to try again." }
+        loaded = true
+    }
 
     private func add() async {
-        do { try await Practice.post("notes", ["text": text.trimmingCharacters(in: .whitespacesAndNewlines)], model: model); text = ""; result = "Kept."; await load() }
+        do {
+            let sent = try await Practice.postQueued("notes", ["text": text.trimmingCharacters(in: .whitespacesAndNewlines)], model: model)
+            text = ""; result = sent ? "Kept." : "Saved on this iPhone. It sends when you are online."; if sent { await load() }
+        }
         catch { result = error.localizedDescription }
     }
 }
@@ -237,6 +253,7 @@ struct WinsView: View {
     @State private var text = ""
     @State private var result: String?
     @State private var loaded = false
+    @State private var failure: String?
 
     var body: some View {
         List {
@@ -247,7 +264,8 @@ struct WinsView: View {
                 ResultLine(text: result)
             } footer: { Text(kind == "win" ? "Wins are proof of mastery." : "Noticed is what you now see because you hold it in mind.") }
             let shown = logs.filter { $0.kind == kind }
-            if loaded && shown.isEmpty { ContentUnavailableView(kind == "win" ? "No wins yet" : "Nothing noticed yet", systemImage: kind == "win" ? "trophy" : "eye", description: Text("What you log here is listed, newest first.")) }
+            if let failure { Text(failure).font(.footnote).foregroundStyle(.secondary) }
+            if loaded && failure == nil && shown.isEmpty { ContentUnavailableView(kind == "win" ? "No wins yet" : "Nothing noticed yet", systemImage: kind == "win" ? "trophy" : "eye", description: Text("What you log here is listed, newest first.")) }
             Section {
                 ForEach(shown) { l in
                     VStack(alignment: .leading, spacing: 3) { Text(l.text); Ago(text: l.created_at).font(.caption2).foregroundStyle(.tertiary) }
@@ -260,10 +278,17 @@ struct WinsView: View {
         .refreshable { await load() }
     }
 
-    private func load() async { if let l = try? await Practice.get("logs", [PracticeLog].self, model: model) { logs = l }; loaded = true }
+    private func load() async {
+        do { logs = try await Practice.get("logs", [PracticeLog].self, model: model); failure = nil }
+        catch { failure = "Could not load the log. Pull to try again." }
+        loaded = true
+    }
 
     private func add() async {
-        do { try await Practice.post("logs", ["kind": kind, "text": text.trimmingCharacters(in: .whitespacesAndNewlines)], model: model); text = ""; result = "Logged."; await load() }
+        do {
+            let sent = try await Practice.postQueued("logs", ["kind": kind, "text": text.trimmingCharacters(in: .whitespacesAndNewlines)], model: model)
+            text = ""; result = sent ? "Logged." : "Saved on this iPhone. It sends when you are online."; if sent { await load() }
+        }
         catch { result = error.localizedDescription }
     }
 }
@@ -349,6 +374,7 @@ struct TrendsView: View {
     @State private var trends: [PracticeTrend] = []
     @State private var sessions: [PracticeSessionRow] = []
     @State private var loaded = false
+    @State private var failure: String?
 
     var body: some View {
         List {
@@ -366,7 +392,8 @@ struct TrendsView: View {
                     }
                 }
             } header: { Text("Rehearsals · this week") }
-            if loaded && trends.isEmpty { ContentUnavailableView("No days on the record yet", systemImage: "chart.xyaxis.line", description: Text("Each check-in adds a day to the story history.")) }
+            if let failure { Text(failure).font(.footnote).foregroundStyle(.secondary) }
+            if loaded && failure == nil && trends.isEmpty { ContentUnavailableView("No days on the record yet", systemImage: "chart.xyaxis.line", description: Text("Each check-in adds a day to the story history.")) }
             Section("Story history") {
                 ForEach(trends) { t in
                     VStack(alignment: .leading, spacing: 3) {
@@ -389,6 +416,7 @@ struct TrendsView: View {
         let (t1, s1) = await (t, s)
         if let t1 { trends = t1 }
         if let s1 { sessions = s1 }
+        failure = (t1 == nil && s1 == nil) ? "Could not load the record. Pull to try again." : nil
         loaded = true
     }
 }

@@ -85,12 +85,11 @@ struct CheckinView: View {
     private func save() async {
         busy = true; defer { busy = false }
         do {
-            if evening {
-                try await Practice.post("checkin/evening", ["gratitude": gratitude, "storyShifted": shifted], model: model)
-            } else {
-                try await Practice.post("checkin/morning", ["mood": mood, "story": story], model: model)
-            }
-            saved += 1; result = "Saved."
+            let sent = evening ? try await Practice.postQueued("checkin/evening", ["gratitude": gratitude, "storyShifted": shifted], model: model)
+                               : try await Practice.postQueued("checkin/morning", ["mood": mood, "story": story], model: model)
+            saved += 1
+            guard sent else { result = "Saved on this iPhone. It sends when you are online."; return }
+            result = "Saved."
             await PracticeSection.state.loadToday(model: model)
             await PracticeNotice.reschedule(model: model)
             let body: [String: Any] = evening ? ["gratitude": gratitude, "shifted": shifted] : ["mood": mood, "story": story]

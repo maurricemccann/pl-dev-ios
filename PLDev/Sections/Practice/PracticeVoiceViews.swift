@@ -73,6 +73,7 @@ struct AffirmationsView: View {
     @State private var text = ""
     @State private var result: String?
     @State private var loaded = false
+    @State private var failure: String?
     @State private var line: PracticeAffirmation?
     private let clips = PracticeClips.shared
     @State private var recorder = PracticeRecorder()
@@ -98,7 +99,8 @@ struct AffirmationsView: View {
                 ResultLine(text: result)
             } header: { Text("Yours") } footer: { Text("Your lines lead the list. You can record each in your own voice.") }
             if !mine.isEmpty { Section { ForEach(mine) { row($0) } } header: { Text("Your lines · \(mine.count)") } }
-            if loaded && items.isEmpty { ContentUnavailableView("No lines loaded", systemImage: "quote.bubble", description: Text("Pull down to try again.")) }
+            if let failure { Text(failure).font(.footnote).foregroundStyle(.secondary) }
+            if loaded && failure == nil && items.isEmpty { ContentUnavailableView("No lines yet", systemImage: "quote.bubble", description: Text("Add your first line above.")) }
             Section { ForEach(library) { row($0) } } header: { Text("Library · \(library.count)") } footer: { Text("A play button shows only where a clip in your voice exists. The rest are text.") }
         }
         .searchable(text: $search, prompt: "Search the lines")
@@ -112,7 +114,7 @@ struct AffirmationsView: View {
         HStack(alignment: .top, spacing: 10) {
             Text(a.text).plReading().frame(maxWidth: .infinity, alignment: .leading)
             if a.audio != nil { playButton(a) }
-            if a.mine {
+            if a.mine && PracticeRecorder.available {
                 Button { Task { await record(a) } } label: {
                     Image(systemName: recorder.recordingKey == a.key ? "stop.circle.fill" : "mic.circle").font(.title2)
                         .foregroundStyle(recorder.recordingKey == a.key ? .red : Wallpaper.line)
@@ -139,10 +141,11 @@ struct AffirmationsView: View {
     }
 
     private func load() async {
-        if let l = try? await Practice.get("affirmations", PracticeAffirmations.self, model: model) {
-            items = l.items; PracticeDeck.cache(l.items)
+        do {
+            let l = try await Practice.get("affirmations", PracticeAffirmations.self, model: model)
+            items = l.items; PracticeDeck.cache(l.items); failure = nil
             if line == nil { shuffle() }
-        }
+        } catch { failure = "Could not load the lines. Pull to try again." }
         loaded = true
     }
 

@@ -16,7 +16,9 @@ import SwiftUI
         let data = try await Console.post("api/oracle", ["question": question, "top_k": 4], model: model, timeout: 60)
         let r = try JSONDecoder().decode(OracleReply.self, from: data)
         if let e = r.error { throw Console.Problem.refused(e) }
-        return (r.answer ?? "", r.passages ?? [], r.via ?? "oracle")
+        // the Oracle may send ten passages; four are kept, each cut short, so the offline store stays small
+        let kept = (r.passages ?? []).prefix(4).map { Passage(text: String($0.text.prefix(400)), source: $0.source, score: $0.score) }
+        return (r.answer ?? "", Array(kept), r.via ?? "oracle")
     }
 
     /// One turn into the record (idempotent on the id, so a retry is safe).

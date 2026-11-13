@@ -325,10 +325,7 @@ struct GlyphRecordTab: View {
             if let m = state.message { Text(m).font(.footnote).foregroundStyle(.secondary) }
             if let s = state.interview {
                 Section {
-                    HStack(spacing: PLSpace.margin) {
-                        Kpi(title: "bank questions asked", value: "\(s.bank?.asked ?? 0) of \(s.bank?.total ?? 0)")
-                        Kpi(title: "answers on record", value: "\((s.coverage ?? [:]).values.reduce(0, +))")
-                    }
+                    PracticeKpis(items: [("bank questions asked", "\(s.bank?.asked ?? 0) of \(s.bank?.total ?? 0)"), ("answers on record", "\((s.coverage ?? [:]).values.reduce(0, +))")])
                     if let r = s.bank?.next_round { LabeledContent("Next round", value: r.capitalized) }
                 }
                 Section {
