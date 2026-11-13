@@ -213,11 +213,11 @@ struct CalendarView: View {
 
 struct TempoView: View {
     let model: AppModel
-    struct Angle: Decodable, Identifiable { let id: String; let angle: String?; let hook: String?; let persona: String?; let glyph: String?; let beat: String? }
+    struct Angle: Decodable, Identifiable { let id: String; let angle: String?; let hook: String?; let persona: String?; let glyph: String?; let beat: String?; let priority: Int?; let doctrine_cluster: String? }
     struct Week: Decodable {
-        struct Strategy: Decodable { let angles: [Angle]? }
+        struct Strategy: Decodable { let angles: [Angle]?; let used_by_wave: Int? }
         struct Email: Decodable { let id: String; let status: String?; let subject: String? }
-        struct Perf: Decodable { let top_angle: String?; let top_rate: Double? }
+        struct Perf: Decodable { let top_angle: String?; let top_glyph: String?; let top_rate: Double? }
         struct Drafts: Decodable { let pending: Int?; let held: Int? }
         let week_key: String?; let strategy: Strategy?; let email: Email?; let performance: Perf?; let drafts: Drafts?
     }
@@ -234,18 +234,22 @@ struct TempoView: View {
             if let r = result { ResultLine(text: r) }
             if let w = week {
                 Section("Week \(w.week_key ?? "")") {
-                    if let p = w.performance?.top_angle { LabeledContent("Best angle last week", value: p) }
+                    if let p = w.performance?.top_angle { LabeledContent("Top angle last week", value: p) }
+                    if let g = w.performance?.top_glyph { LabeledContent("Top glyph", value: g) }
+                    if let r = w.performance?.top_rate { LabeledContent("Engagement rate", value: String(format: "%.1f%%", r)) }
                     LabeledContent("Drafts waiting", value: "\(w.drafts?.pending ?? 0) · \(w.drafts?.held ?? 0) held")
                 }
-                Section("Angles") {
-                    ForEach(w.strategy?.angles ?? []) { a in
-                        VStack(alignment: .leading, spacing: 2) {
+                Section {
+                    ForEach((w.strategy?.angles ?? []).sorted { ($0.priority ?? 9) < ($1.priority ?? 9) }) { a in
+                        VStack(alignment: .leading, spacing: 3) {
+                            HStack { Text("P\(a.priority ?? 0)").font(.caption.bold().monospacedDigit()).foregroundStyle(Wallpaper.line); if let g = a.glyph { Text(g).font(.caption).foregroundStyle(.secondary) } }
                             Text(a.angle ?? "").font(.headline)
-                            if let h = a.hook { Text(h).font(.callout) }
-                            Text([a.persona, a.beat, a.glyph].compactMap { $0 }.joined(separator: " · ")).font(.caption).foregroundStyle(.secondary)
+                            if let pr = a.persona { Text(pr).font(.callout) }
+                            if let h = a.hook { Text("“\(h)”").font(.callout).italic() }
+                            if let c = a.doctrine_cluster { Text(c.replacingOccurrences(of: "-", with: " ").uppercased()).font(.caption2.weight(.semibold)).tracking(1).foregroundStyle(.secondary) }
                         }
                     }
-                }
+                } header: { Text("This week's angles\(w.strategy?.used_by_wave.map { " · \($0) waves used" } ?? "")") }
                 if let e = w.email {
                     Section {
                         Text(e.subject ?? "").font(.headline)

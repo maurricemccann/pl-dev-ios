@@ -94,6 +94,15 @@ struct CodexToolView: View {
     var body: some View {
         Loaded(load: { try await OS.get("codex", Codex.self, model: model) }) { c, _ in
             List {
+                Section {
+                    ForEach(Array(c.vocab.enumerated()), id: \.offset) { _, v in
+                        HStack(alignment: .firstTextBaseline) {
+                            Text(v.first ?? "").foregroundStyle(.red).frame(maxWidth: .infinity, alignment: .leading)
+                            Text(v.dropFirst().joined(separator: " ")).frame(maxWidth: .infinity, alignment: .leading)
+                        }
+                        .font(.callout)
+                    }
+                } header: { Text("Vocabulary install: scarcity → sovereign") } footer: { Text("Swap these out, immediately and permanently.") }
                 Section("Anchor") {
                     Text(c.anchors.isEmpty ? "" : c.anchors[anchor % c.anchors.count]).font(.title3).italic()
                     Button("Another", systemImage: "shuffle") { anchor = Int.random(in: 0..<max(c.anchors.count, 1)) }
@@ -115,9 +124,6 @@ struct CodexToolView: View {
                     ForEach(Array(c.diagnostic.enumerated()).filter { filter.isEmpty || $0.element.joined(separator: " ").localizedCaseInsensitiveContains(filter) }, id: \.offset) { _, d in
                         VStack(alignment: .leading, spacing: 2) { ForEach(Array(d.enumerated()), id: \.offset) { i, t in Text(t).font(i == 0 ? .headline : .callout) } }
                     }
-                }
-                Section("Vocabulary") {
-                    ForEach(Array(c.vocab.enumerated()), id: \.offset) { _, v in LabeledContent(v.first ?? "", value: v.dropFirst().joined(separator: " ")) }
                 }
                 Section("Modules") {
                     ForEach(c.modules) { m in
@@ -253,7 +259,12 @@ struct CatalogMatrixView: View {
                 Section {
                     ForEach(m.designs.filter { search.isEmpty || $0.design.localizedCaseInsensitiveContains(search) }) { d in
                         NavigationLink { DesignMatrix(model: model, d: d) } label: {
-                            LabeledContent(d.design, value: "\(d.rows.flatMap(\.cells).filter { $0.syncProductId != nil }.count) built")
+                            let cells = d.rows.flatMap(\.cells)
+                            let built = cells.filter { $0.syncProductId != nil }.count
+                            VStack(alignment: .leading, spacing: 2) {
+                                Text(d.design)
+                                Text("\(d.technique ?? "") · \(built) built · \(cells.count - built) open").font(.caption).foregroundStyle(.secondary)
+                            }
                         }
                     }
                 } footer: { if let g = m.generatedAt { Text("Matrix from \(g).") } }

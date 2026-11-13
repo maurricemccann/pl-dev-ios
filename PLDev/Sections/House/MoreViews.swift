@@ -166,18 +166,30 @@ struct MerchView: View {
     @State private var candidates: [Candidate] = []
     @State private var asks: [Ask] = []
     @State private var result: String?
-    private let seasons = [("fw", "Fall–winter"), ("ss", "Spring–summer"), ("always", "Always"), ("rest", "Resting")]
+    private let seasons = [("fw", "Fall / Winter"), ("ss", "Spring / Summer"), ("always", "Always"), ("rest", "Resting")]
+    /// fw = Sep 1 to the end of Feb, ss = Mar 1 to Aug 31 (pl-headless isOutOfSeason).
+    private var nowSeason: String { let m = Calendar.current.component(.month, from: .now); return (m >= 9 || m <= 2) ? "fw" : "ss" }
+    private func onGrid(_ season: String) -> Bool { season == "always" || season == nowSeason }
 
     var body: some View {
         List {
             if let r = result { ResultLine(text: r) }
             Section {
+                LabeledContent("Now", value: nowSeason == "fw" ? "Fall / Winter" : "Spring / Summer")
+                LabeledContent("Next switch", value: nowSeason == "fw" ? "Mar 1" : "Sep 1")
+            } footer: { Text("Black and white bases are always live. A resting colourway leaves the grid but stays buyable by its own link.") }
+            Section("Colourways") {
                 ForEach($rows) { $r in
-                    Picker(r.product_name, selection: Binding(get: { r.season }, set: { v in r.season = v; Task { await save(r.product_name, v) } })) {
+                    Picker(selection: Binding(get: { r.season }, set: { v in r.season = v; Task { await save(r.product_name, v) } })) {
                         ForEach(seasons, id: \.0) { Text($0.1).tag($0.0) }
+                    } label: {
+                        VStack(alignment: .leading, spacing: 2) {
+                            Text(r.product_name)
+                            Text(onGrid(r.season) ? "ON THE GRID" : "RESTING").font(.caption2.weight(.bold)).tracking(1).foregroundStyle(onGrid(r.season) ? Color.green : Color.secondary)
+                        }
                     }
                 }
-            } header: { Text("Seasons") } footer: { Text("Fall–winter shows Sep 1 to the end of Feb, spring–summer Mar 1 to Aug 31.") }
+            }
             if !candidates.isEmpty {
                 Section("Drop candidates · unlisted and hidden") {
                     LazyVGrid(columns: [GridItem(.adaptive(minimum: 96), spacing: 8)], spacing: 8) {
