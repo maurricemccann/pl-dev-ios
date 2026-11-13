@@ -219,7 +219,9 @@ struct PieceView: View {
                     if images.isEmpty { FlatImage(url: nil) }
                     else {
                         TabView(selection: $page) {
-                            ForEach(Array(images.enumerated()), id: \.offset) { i, u in FlatImage(url: URL(string: u), padding: PLSpace.roomy).tag(i) }
+                            ForEach(Array(images.enumerated()), id: \.offset) { i, u in
+                                FlatImage(url: URL(string: u), padding: PLSpace.roomy).tag(i).accessibilityLabel("\(piece.name), picture \(i + 1) of \(images.count)")
+                            }
                         }
                         .tabViewStyle(.page(indexDisplayMode: images.count > 1 ? .automatic : .never))
                     }
