@@ -44,7 +44,7 @@ enum ShopGroup: String, Codable, CaseIterable, Identifiable, Sendable {
         if has("GIFT BAG") || has("POSTER|PILLOW|PILLOW CASE|MAGNET|STICKER|PATCH|PIN SET|PIN|COASTER|MOUSE PAD|JOURNAL|NOTEBOOK|MUG|BLANKET") { return .home }
         if has("HOODIE|ZIP") { return .layers }
         if has("PANTS?|SWEATS|JOGGERS?|SKIRT|SHORTS|CARGO") { return .bottoms }
-        if has("TEE|CROP|TANK|CREWNECK|CREW|LONG SLEEVE|JERSEY|SHIRT") { return .tops }
+        if has("TEE|CROP|TANK|CREWNECK|CREW|LONG SLEEVE|JERSEY|SHIRT|DRESS") { return .tops }
         if has("BAG|BANDANA|GAITER|BEANIE|HAT|CAP|TRUCKER") { return .accessories }
         return .home
     }
