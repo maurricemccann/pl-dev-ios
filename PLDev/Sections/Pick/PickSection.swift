@@ -76,8 +76,7 @@ extension Color {
         guard let http = model.http, let pick = selected, !sending else { return }
         sending = true; message = nil; defer { sending = false }
         do {
-            // "link" is on the route's allowed list; a native source tag needs a pl-cron change.
-            let body = try JSONSerialization.data(withJSONObject: ["palette": pick, "source": "link"])
+            let body = try JSONSerialization.data(withJSONObject: ["palette": pick, "source": "pl-dev"])
             _ = try await http.send(RequestPlan(origin: "cron", method: "POST", path: "api/color-pick",
                                                 headers: ["content-type": "application/json"], body: body), idempotent: false)
             thanks = true

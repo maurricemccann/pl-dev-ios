@@ -26,7 +26,7 @@ import Foundation
             let file = SharedInbox.data(for: item)
             if let file, !store(file, id: item.id) { continue }   // could not keep the file: leave it in the shared inbox for next time
             let words = [item.title, item.note].compactMap { $0 }.filter { !$0.isEmpty }
-            let queued = QueuedItem(id: item.id, createdAt: item.createdAt, kind: item.kind, origin: target, path: "",
+            let queued = QueuedItem(id: item.id, createdAt: item.createdAt, kind: item.kind, origin: item.target ?? target, path: "",
                                     text: item.text ?? item.url, fileName: item.fileName,
                                     note: words.isEmpty ? nil : words.joined(separator: "\n"))
             if let dropped = queue.add(queued) {

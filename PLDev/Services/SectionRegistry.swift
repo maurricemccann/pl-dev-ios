@@ -4,7 +4,7 @@ import Foundation
 /// and the poller all read it; nothing else needs to know a section exists.
 @MainActor enum SectionRegistry {
     static var all: [any PLSection.Type] {
-        [StatusSection.self, PickSection.self]
+        [StatusSection.self, CaptureSection.self, PickSection.self]
     }
 
     static func section(_ id: String) -> (any PLSection.Type)? {

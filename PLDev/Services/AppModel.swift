@@ -129,7 +129,7 @@ enum OriginReach: Equatable {
         for entry in sections {
             if let badge = entry.badge, badge > 0 { badges[entry.id] = badge }
         }
-        let line = inboxCount > 0 ? "\(inboxCount) waiting to send" : "Up to date"
+        let line = inboxCount > 0 ? "\(inboxCount) waiting to send" : (CaptureSection.state.waitingLine ?? "Up to date")
         SharedState.writeSnapshot(WidgetSnapshot(updatedAt: Date(), inboxCount: inboxCount, badges: badges, statusLine: line))
     }
 

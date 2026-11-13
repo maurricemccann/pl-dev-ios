@@ -13,6 +13,7 @@ enum SharedInbox {
         var title: String?
         var fileName: String?
         var note: String?
+        var target: String? = nil   // "cron" | "board"; nil = the config's default
     }
 
     enum InboxError: Error, LocalizedError {
