@@ -32,7 +32,7 @@ struct GlyphBadge: View {
         switch glyph ?? "smiley" {
         case "smiley": return "face.smiling"
         case "glyph-guy": return "person.fill"
-        case "money": return "dollarsign.circle"
+        case "money", "money-grin": return "dollarsign.circle"
         case "love-yourself": return "heart.circle"
         default: return "circle.hexagongrid"
         }

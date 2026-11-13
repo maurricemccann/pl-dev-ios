@@ -48,7 +48,7 @@ struct CongregationStatusIntent: AppIntent {
             line += n == 0 ? " Nothing is waiting for your word." : " \(n) posts and answers are waiting for your word."
         }
         if SiteAccount.shared.signedIn, let a = try? await Site.get("api/notifications", ActivityReply.self) {
-            line += a.unread == 0 ? " No new activity." : " \(a.unread) new reactions, answers or follows."
+            line += a.visibleUnread == 0 ? " No new activity." : " \(a.visibleUnread) new reactions, answers or follows."
         } else if !SiteAccount.shared.signedIn { line += " You are not signed in on this phone." }
         StorefrontGlanceWriter.publishCongregation(held: held, members: members)
         return .result(dialog: "\(line)")

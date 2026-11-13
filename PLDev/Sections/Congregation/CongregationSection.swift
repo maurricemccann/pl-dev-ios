@@ -51,10 +51,10 @@ import UserNotifications
             }
             state.lastHeld = n
         }
-        if SiteAccount.shared.signedIn, let a = try? await Site.get("api/notifications", ActivityReply.self), a.unread > 0, a.unread != state.lastUnread {
-            notify.append(LocalNotice(id: "congregation.activity", title: "New in your Congregation", body: a.unread == 1 ? "One new reaction, answer or follow." : "\(a.unread) new reactions, answers or follows.",
+        if SiteAccount.shared.signedIn, let a = try? await Site.get("api/notifications", ActivityReply.self), a.visibleUnread > 0, a.visibleUnread != state.lastUnread {
+            notify.append(LocalNotice(id: "congregation.activity", title: "New in your Congregation", body: a.visibleUnread == 1 ? "One new reaction, answer or follow." : "\(a.visibleUnread) new reactions, answers or follows.",
                                       category: "congregation.activity", link: .section(id: "congregation", path: ["me"], query: [:])))
-            state.lastUnread = a.unread
+            state.lastUnread = a.visibleUnread
         } else if SiteAccount.shared.signedIn { state.lastUnread = 0 }
         let members = (try? await Site.get("api/members/directory", DirectoryReply.self))?.members.count ?? 0
         StorefrontGlanceWriter.publishCongregation(held: held, members: members)
@@ -126,7 +126,12 @@ struct CongregationSettingsRows: View {
             } label: {
                 SettingsLabel("Site account", "person.crop.circle", IOS27.SystemColors.indigo)
             }
-            Text("Notices for the room are switched in Notifications above.").font(.footnote).foregroundStyle(.secondary)
+            ForEach(BellKinds.all, id: \.key) { kind in
+                Toggle(isOn: Binding(get: { BellKinds.shows(kind.key) }, set: { UserDefaults.standard.set($0, forKey: "pldev.bell." + kind.key) })) {
+                    SettingsLabel(kind.label, "bell", Color(uiColor: .systemGray))
+                }
+            }
+            Text("The activity list and its notice show these kinds. News that a post went live or was removed always reaches you.").font(.footnote).foregroundStyle(.secondary)
         }
     }
 }

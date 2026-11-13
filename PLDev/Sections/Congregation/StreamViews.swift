@@ -309,6 +309,7 @@ struct StreamDetailView: View {
                 }
                 if item.kind == "archive", let cr = item.cr {
                     Section {
+                        if SiteAccount.shared.signedIn { PinButton(cr: cr) }
                         Button { if let url = Site.page("catalogue/\(cr)") { web = WebPage(url) } } label: { Label("Request this piece", systemImage: "hand.raised") }
                     } footer: { Text("Requests are a vote, and the site checks a vote comes from a person, so it opens on the site.") }
                 }

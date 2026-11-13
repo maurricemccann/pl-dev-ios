@@ -29,7 +29,21 @@ struct ActivityItem: Decodable, Identifiable, Hashable {
     }
 }
 
-struct ActivityReply: Decodable { let unread: Int; let items: [ActivityItem] }
+/// The site's bell kinds he can switch off (its Settings page has the same five). News that a post went live or was removed always shows.
+enum BellKinds {
+    static let all: [(key: String, label: String)] = [("follow", "Follows"), ("react", "Reactions"), ("comment", "Replies"), ("mention", "Mentions"), ("repost", "Reposts")]
+    static func shows(_ kind: String) -> Bool {
+        guard all.contains(where: { $0.key == kind }) else { return true }
+        return UserDefaults.standard.object(forKey: "pldev.bell." + kind) as? Bool ?? true
+    }
+}
+
+struct ActivityReply: Decodable {
+    let unread: Int
+    let items: [ActivityItem]
+    var visible: [ActivityItem] { items.filter { BellKinds.shows($0.kind) } }
+    var visibleUnread: Int { visible.filter { !$0.read }.count }
+}
 
 struct AccountTabView: View {
     @Bindable var state: CongregationModel
@@ -89,8 +103,9 @@ struct AccountTabView: View {
                 NavigationLink { ActivityView() } label: { Label("Activity", systemImage: "bell") }
                 if me.isFounder != true { NavigationLink { MessagesView() } label: { Label("Messages to the Founder", systemImage: "envelope") } }
                 NavigationLink { MyOrdersView() } label: { Label("Your orders", systemImage: "receipt") }
+                NavigationLink { PinsView() } label: { Label("Pins", systemImage: "pin") }
                 NavigationLink { ProfileEditView(me: me) } label: { Label("Edit your profile", systemImage: "person.text.rectangle") }
-                if me.isFounder != true { IntentRow() }
+                if me.isFounder != true { GlyphRow(current: me.glyph); IntentRow() }
             }
             if me.isFounder == true {
                 Section { Label("Member messages to you are in House, under Support.", systemImage: "tray.full").foregroundStyle(.secondary) }
@@ -133,8 +148,8 @@ struct ActivityView: View {
     var body: some View {
         Loaded(load: { try await Site.get("api/notifications", ActivityReply.self) }) { reply, reload in
             List {
-                if reply.items.isEmpty { ContentUnavailableView("Nothing yet", systemImage: "bell", description: Text("Reactions, answers and follows appear here.")).listRowBackground(Color.clear) }
-                ForEach(reply.items) { i in
+                if reply.visible.isEmpty { ContentUnavailableView("Nothing yet", systemImage: "bell", description: Text("Reactions, answers and follows appear here.")).listRowBackground(Color.clear) }
+                ForEach(reply.visible) { i in
                     HStack(alignment: .top, spacing: PLSpace.pad) {
                         Circle().fill(i.read ? Color.clear : PLTone.accent).frame(width: 8, height: 8).padding(.top, 7).accessibilityHidden(true)
                         VStack(alignment: .leading, spacing: 2) {
@@ -147,7 +162,7 @@ struct ActivityView: View {
             }
             .toolbar {
                 ToolbarItem(placement: .topBarTrailing) {
-                    Button("Mark read") { Task { _ = try? await Site.post("api/notifications", [:]); await reload() } }.disabled(reply.unread == 0)
+                    Button("Mark read") { Task { _ = try? await Site.post("api/notifications", [:]); await reload() } }.disabled(reply.visibleUnread == 0)
                 }
             }
         }
@@ -240,5 +255,80 @@ struct ProfileEditView: View {
         if handle != (me.handle ?? "") { body["handle"] = handle }
         do { _ = try await Site.post("api/account/profile", body); line = "Saved."; await SiteAccount.shared.refresh() }
         catch { line = "Not saved. \(error.localizedDescription)" }
+    }
+}
+
+/// Pins a piece of the archive to the signed-in account, as the site's pin does.
+struct PinButton: View {
+    let cr: String
+    private struct PinState: Decodable { let pinned: Bool? }
+    @State private var pinned = false
+    @State private var line: String?
+
+    var body: some View {
+        Group {
+            Button {
+                let was = pinned
+                pinned.toggle()
+                Task {
+                    do { _ = try await Site.post("api/account/pins", ["cr": cr, "action": was ? "unpin" : "pin"]); line = nil }
+                    catch { pinned = was; line = "Not saved. \(error.localizedDescription)" }
+                }
+            } label: { Label(pinned ? "Pinned" : "Pin to your page", systemImage: pinned ? "pin.fill" : "pin").symbolEffect(.bounce, value: pinned) }
+            ResultLine(text: line)
+        }
+        .task { pinned = (try? await Site.get("api/account/pins", PinState.self, query: ["cr": cr]))?.pinned ?? false }
+    }
+}
+
+/// The pieces pinned to his page: the reference of each, with the site's page for it one tap away.
+struct PinsView: View {
+    private struct Pins: Decodable { let pins: [String] }
+    @State private var web: WebPage?
+    @State private var removed: Set<String> = []
+    @State private var line: String?
+
+    var body: some View {
+        Loaded(load: { try await Site.get("api/account/pins", Pins.self).pins }) { pins, _ in
+            List {
+                let shown = pins.filter { !removed.contains($0) }
+                if shown.isEmpty { ContentUnavailableView("Nothing pinned", systemImage: "pin", description: Text("Pin a piece from the archive and it appears here.")).listRowBackground(Color.clear) }
+                ForEach(shown, id: \.self) { cr in
+                    Button { if let url = Site.page("catalogue/\(cr)") { web = WebPage(url) } } label: { Label(cr, systemImage: "pin") }
+                        .swipeActions(edge: .trailing) {
+                            Button("Unpin") {
+                                removed.insert(cr)
+                                Task { do { _ = try await Site.post("api/account/pins", ["cr": cr, "action": "unpin"]); line = nil } catch { removed.remove(cr); line = "Not saved. \(error.localizedDescription)" } }
+                            }.tint(.orange)
+                        }
+                }
+                ResultLine(text: line)
+            }
+        }
+        .plScreenTitle("Pins")
+        .sheet(item: $web) { SafariSheet(url: $0.url).ignoresSafeArea() }
+    }
+}
+
+/// The member's glyph, as the site's picker offers it (the higher ones unlock up the climb, and the site says so when one is locked).
+struct GlyphRow: View {
+    static let options: [(key: String, label: String)] = [("smiley", "What Goes Around Comes Around"), ("love-yourself", "Love Yourself"), ("money-grin", "Money Grin"), ("money", "Money Glyph"), ("glyph-guy", "Glyph Guy")]
+    let current: String?
+    @State private var glyph = ""
+    @State private var line: String?
+
+    var body: some View {
+        Group {
+            Picker("Glyph", selection: $glyph) { ForEach(Self.options, id: \.key) { Text($0.label).tag($0.key) } }
+                .onChange(of: glyph) { old, v in
+                    guard !old.isEmpty, v != old else { return }
+                    Task {
+                        do { _ = try await Site.post("api/account/glyph", ["glyph": v]); line = nil; await SiteAccount.shared.refresh() }
+                        catch { glyph = old; line = "Not saved. \(error.localizedDescription)" }
+                    }
+                }
+            ResultLine(text: line)
+        }
+        .onAppear { glyph = current ?? "smiley" }
     }
 }
