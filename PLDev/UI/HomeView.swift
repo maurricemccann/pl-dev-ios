@@ -270,5 +270,11 @@ struct InboxSheet: View {
         }
         .padding(PLSpace.margin * 2)
         .tint(PLTone.accent)
+        .task {   // the sender exists as soon as Capture can run, not only after its first refresh
+            if model.sections.contains(where: { $0.id == "capture" && $0.readiness.isReady }) {
+                CaptureSection.install(model: model)
+                await model.drainInbox()
+            }
+        }
     }
 }
