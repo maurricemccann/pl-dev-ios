@@ -42,12 +42,28 @@ struct PLDevShortcuts: AppShortcutsProvider {
             systemImageName: "rectangle.stack"
         )
         AppShortcut(
-            intent: InboxCountIntent(),
-            phrases: [
-                "What is in my \(.applicationName) inbox"
-            ],
-            shortTitle: "Inbox",
-            systemImageName: "tray"
+            intent: ShopStatusIntent(),
+            phrases: ["What's in the shop in \(.applicationName)", "\(.applicationName) shop status"],
+            shortTitle: "Shop status",
+            systemImageName: "bag"
+        )
+        AppShortcut(
+            intent: CongregationStatusIntent(),
+            phrases: ["What's in the congregation in \(.applicationName)", "\(.applicationName) congregation status"],
+            shortTitle: "Congregation status",
+            systemImageName: "person.3"
+        )
+        AppShortcut(
+            intent: PracticeStatusIntent(),
+            phrases: ["What's left in my practice today in \(.applicationName)"],
+            shortTitle: "Practice today",
+            systemImageName: "sun.horizon"
+        )
+        AppShortcut(
+            intent: AskGlyphBotIntent(),
+            phrases: ["Ask GlyphBot in \(.applicationName)"],
+            shortTitle: "Ask GlyphBot",
+            systemImageName: "bubble.left.and.text.bubble.right"
         )
     }
 }

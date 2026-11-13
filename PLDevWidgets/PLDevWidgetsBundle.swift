@@ -7,10 +7,15 @@ struct PLDevWidgetsBundle: WidgetBundle {
     var body: some Widget {
         SnapshotWidget()
         HouseWidget()
+        StorefrontWidget()
+        PracticeWidget()
+        GlyphBotWidget()
         LibraryWidget()
         PaintWidget()
         HomeControl()
         ShiftLiveActivity()
         RenderLiveActivity()
+        RehearsalLiveActivity()
+        SittingLiveActivity()
     }
 }

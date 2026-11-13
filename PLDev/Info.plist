@@ -46,6 +46,8 @@
 	</array>
 	<key>NSSupportsLiveActivities</key>
 	<true/>
+	<key>NSMicrophoneUsageDescription</key>
+	<string>PL DEV records your own voice for your affirmations, only when you tap the microphone.</string>
 	<key>NSFaceIDUsageDescription</key>
 	<string>PL DEV asks for Face ID when it opens, because it holds your keys.</string>
 	<key>UIAppFonts</key>
