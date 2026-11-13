@@ -50,7 +50,7 @@ enum OfflineCache {
             let up = path.status == .satisfied
             Task { @MainActor in
                 OfflineState.shared.online = up
-                if up { OfflineState.shared.servedSince = nil; await MarkOutbox.flush(model: AppModel.shared) }
+                if up { OfflineState.shared.servedSince = nil; await MarkOutbox.flush(model: AppModel.shared); _ = await PracticeOutbox.flush(model: AppModel.shared) }
             }
         }
         monitor.start(queue: DispatchQueue(label: "pldev.offline"))
@@ -71,7 +71,7 @@ struct OfflineLine: View {
             HStack(spacing: 6) {
                 Image(systemName: "wifi.slash")
                 if let s = state.servedSince { Text("Offline · showing what was saved ") + Text(s, format: .relative(presentation: .named)) }
-                else { Text("Offline · changes wait until you are back") }
+                else { Text("Offline · showing saved copies") }
             }
             .font(.caption.weight(.semibold))
             .padding(.horizontal, 12).padding(.vertical, 6)

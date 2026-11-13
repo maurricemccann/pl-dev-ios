@@ -141,7 +141,8 @@ struct GlyphTurn: Codable, Identifiable, Equatable, Sendable {
         persist()
     }
 
-    var unsynced: [GlyphTurn] { turns.filter { !$0.synced && !$0.answer.isEmpty } }
+    /// Real Oracle answers only: a stock doctrine line given offline is never written into his record as an answer.
+    var unsynced: [GlyphTurn] { turns.filter { !$0.synced && !$0.answer.isEmpty && !$0.via.hasPrefix("doctrine") } }
 
     func markSynced(_ ids: [String]) {
         for i in turns.indices where ids.contains(turns[i].id) { turns[i].synced = true }
@@ -156,7 +157,10 @@ struct GlyphTurn: Codable, Identifiable, Equatable, Sendable {
         return turns.first { t in
             guard !t.answer.isEmpty else { return false }
             let tq = norm(t.question)
-            return tq == q || tq.contains(q) || q.contains(tq)
+            if tq == q { return true }
+            // a near match only: the shorter must be most of the longer, so "love" never answers a long question about something else
+            let short = min(tq.count, q.count), long = max(tq.count, q.count)
+            return long > 0 && Double(short) / Double(long) >= 0.75 && (tq.contains(q) || q.contains(tq))
         }
     }
 

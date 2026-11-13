@@ -151,7 +151,7 @@ enum PracticeRoom: String, CaseIterable, Identifiable, Hashable {
         habits[i].tickedToday.toggle()
         if !habits[i].week.isEmpty { habits[i].week[habits[i].week.count - 1] = habits[i].tickedToday }
         do { try await Practice.post("habits/\(h.id)/tick", model: model); tick += 1; publish() }
-        catch { habits[i] = before; message = error.localizedDescription }
+        catch { if let j = habits.firstIndex(where: { $0.id == h.id }) { habits[j] = before }; message = error.localizedDescription }   // find it again: the list may have reloaded
     }
 }
 
@@ -264,7 +264,7 @@ struct HabitRow: View {
             Spacer(minLength: 0)
             HStack(spacing: 3) {
                 ForEach(Array(habit.week.enumerated()), id: \.offset) { _, on in
-                    Circle().fill(on ? Color.orange : Color.secondary.opacity(0.25)).frame(width: 7, height: 7)
+                    Circle().fill(on ? PLTone.accent : Color.secondary.opacity(0.25)).frame(width: 7, height: 7)
                 }
             }
             .accessibilityHidden(true)

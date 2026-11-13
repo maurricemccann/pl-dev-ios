@@ -114,7 +114,8 @@ struct AskTab: View {
         } else {
             let hit = store.cached(for: q)
             turn.answer = hit?.answer ?? GlyphDoctrine.pick(q)
-            turn.via = hit == nil ? "doctrine · offline" : "cached · offline"
+            let why = net.online ? "the Oracle did not answer" : "offline"   // online but refused is not "offline"
+            turn.via = hit == nil ? "doctrine · \(why)" : "cached · \(why)"
         }
         store.save(turn); typingID = turn.id
         await store.flush(model: model); state.publish()
@@ -352,6 +353,8 @@ struct GlyphRecordTab: View {
                 }
             } else if !GlyphBot.interviewReady(model) {
                 ContentUnavailableView("The record needs the interviewer key", systemImage: "key", description: Text("Your config has no key named interview. Add it to the config file and load it again."))
+            } else if !OfflineState.shared.online {
+                ContentUnavailableView("The record needs a connection the first time", systemImage: "wifi.slash", description: Text("Once it has loaded, it stays on this iPhone for offline use."))
             } else {
                 ProgressView().frame(maxWidth: .infinity, minHeight: 120)
             }

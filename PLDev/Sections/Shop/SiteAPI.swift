@@ -75,10 +75,23 @@ import SwiftUI
 
     /// A read that decodes straight into the screen's type. A 401 on a members' route clears the saved session.
     static func get<T: Decodable>(_ path: String, _ type: T.Type, query: [String: String] = [:]) async throws -> T {
-        let r = try await call("GET", path, query: query)
-        if r.status == 401 { SiteAccount.shared.expire() }
-        guard (200..<300).contains(r.status) else { throw Problem.refused(r.message ?? "The site could not answer that. Pull to try again.") }
-        do { return try JSONDecoder().decode(T.self, from: r.data) }
+        // Offline for every app: the last answer is kept on the phone (signed-in and signed-out answers kept apart)
+        // and served when the site cannot be reached or errs.
+        let key = "site|\(SiteAccount.shared.token == nil ? "anon" : "member")|" + path + "?" + query.sorted { $0.key < $1.key }.map { "\($0.key)=\($0.value)" }.joined(separator: "&")
+        let data: Data
+        do {
+            let r = try await call("GET", path, query: query)
+            if r.status == 401 { SiteAccount.shared.expire() }
+            if r.status >= 500, let (saved, at) = OfflineCache.load(key) { OfflineState.servedCopy(from: at); data = saved }
+            else {
+                guard (200..<300).contains(r.status) else { throw Problem.refused(r.message ?? "The site could not answer that. Pull to try again.") }
+                OfflineCache.save(r.data, for: key); data = r.data
+            }
+        } catch Problem.unreachable {
+            guard let (saved, at) = OfflineCache.load(key) else { throw Problem.unreachable }
+            OfflineState.servedCopy(from: at); data = saved
+        }
+        do { return try JSONDecoder().decode(T.self, from: data) }
         catch { throw Problem.refused("The site answered in a shape this app does not know yet.") }
     }
 

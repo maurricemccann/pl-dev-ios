@@ -22,8 +22,11 @@ import UserNotifications
             await model.restoreIfNeeded()
             guard let habits = try? await Practice.get("habits", [PracticeHabit].self, model: model),
                   let next = habits.first(where: { !$0.tickedToday }) else { return }
-            _ = try? await Practice.post("habits/\(next.id)/tick", model: model)
-            _ = await NotificationHub.shared.post(id: "practice.ticked", title: "Ticked", body: next.response, category: nil, link: nil)
+            if (try? await Practice.post("habits/\(next.id)/tick", model: model)) != nil {
+                _ = await NotificationHub.shared.post(id: "practice.ticked", title: "Ticked", body: next.response, category: nil, link: nil)
+            } else {
+                _ = await NotificationHub.shared.post(id: "practice.ticked", title: "Not ticked", body: "The practice did not answer. Open PL DEV to try again.", category: nil, link: nil)
+            }
         }
         NotificationHub.actions["practice.line"] = {
             await schedule(after: 2)

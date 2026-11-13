@@ -72,6 +72,7 @@ Apple's structure, gestures and capabilities stay whole. The house is laid over 
 - **The ground.** Each screen sits on the palette's ground with the psyground stencil (his curve tile) at about 7 %. In light mode that is Apple's grouped background washed in the palette's cream. Cards and glass stay Apple's, so they read over the tile.
 - **App icons.** Plain (with dark and tinted appearances) plus five alternates in his palettes (Settings → App icon).
 - **Control Center.** Controls for PL DEV, Capture, PL Paint, House and GlyphBot (Control Center, Lock Screen and the Action button).
+- **His words in his hand** (his ruling 11-13): anything he said or wrote, such as seed phrases, quotes, declarations, affirmations, the Three Truths, Codex lines and hooks, uses `plHand()`. UI labels and other people's words (members' posts, captions in review) never do.
 - **Never new.** No section picks its own colours or fonts. If a screen needs a colour, it takes it from the palette.
 
 ## 6. The system add-ons every app gets (the premium pass)

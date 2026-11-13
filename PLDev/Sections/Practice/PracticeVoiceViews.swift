@@ -55,13 +55,15 @@ enum PracticeDeck {
         } catch { return "Recording would not start. \(plainSentence(error))" }
     }
 
-    /// Stops and returns the recording's bytes, then removes the file.
+    /// Stops and returns the recording's bytes. The file stays until `discard()` (called once the upload has landed),
+    /// so a failed upload loses nothing: the next tap tries again with the same take.
     func stop() -> Data? {
         recorder?.stop(); recorder = nil; recordingKey = nil
-        defer { if let file { try? FileManager.default.removeItem(at: file) }; file = nil }
         guard let file, let d = try? Data(contentsOf: file), !d.isEmpty else { return nil }
         return d
     }
+
+    func discard() { if let file { try? FileManager.default.removeItem(at: file) }; file = nil }
 }
 
 // MARK: - Affirmations
@@ -85,7 +87,7 @@ struct AffirmationsView: View {
         List {
             if let line {
                 Section {
-                    Text(line.text).font(.title3).plReading().frame(maxWidth: .infinity, alignment: .center).padding(.vertical, 6).textSelection(.enabled)
+                    Text(line.text).plHand(26).frame(maxWidth: .infinity, alignment: .center).padding(.vertical, 6).textSelection(.enabled)
                     HStack {
                         if line.audio != nil { playButton(line) }
                         Spacer()
@@ -97,6 +99,7 @@ struct AffirmationsView: View {
                 TextField("A line in your own words", text: $text, axis: .vertical).lineLimit(1...4)
                 Button("Add it") { Task { await add() } }.disabled(text.trimmingCharacters(in: .whitespaces).isEmpty)
                 ResultLine(text: result)
+                if lastTake != nil { Button("Send your take again", systemImage: "arrow.up.circle") { Task { await resend() } } }
             } header: { Text("Yours") } footer: { Text("Your lines lead the list. You can record each in your own voice.") }
             if !mine.isEmpty { Section { ForEach(mine) { row($0) } } header: { Text("Your lines · \(mine.count)") } }
             if let failure { Text(failure).font(.footnote).foregroundStyle(.secondary) }
@@ -112,7 +115,7 @@ struct AffirmationsView: View {
 
     private func row(_ a: PracticeAffirmation) -> some View {
         HStack(alignment: .top, spacing: 10) {
-            Text(a.text).plReading().frame(maxWidth: .infinity, alignment: .leading)
+            Text(a.text).plHand(20, relativeTo: .body).frame(maxWidth: .infinity, alignment: .leading)
             if a.audio != nil { playButton(a) }
             if a.mine && PracticeRecorder.available {
                 Button { Task { await record(a) } } label: {
@@ -159,13 +162,22 @@ struct AffirmationsView: View {
         catch { result = error.localizedDescription }
     }
 
+    @State private var lastTake: (String, Data)?
+
+    private func resend() async {
+        guard let (key, bytes) = lastTake else { return }
+        let id = key.hasPrefix("c-") ? String(key.dropFirst(2)) : key
+        do { try await Practice.upload("affirmation-audio", bytes, type: "audio/mp4", model: model, query: ["id": id]); lastTake = nil; recorder.discard(); result = "Saved in your voice."; await load() }
+        catch { result = "\(error.localizedDescription) Your take is still kept." }
+    }
+
     /// Tap to start, tap again to save. The recording is his live voice, sent as it is.
     private func record(_ a: PracticeAffirmation) async {
         if recorder.recordingKey == a.key {
             guard let bytes = recorder.stop() else { result = "Nothing was recorded."; return }
             let id = a.key.hasPrefix("c-") ? String(a.key.dropFirst(2)) : a.key
-            do { try await Practice.upload("affirmation-audio", bytes, type: "audio/mp4", model: model, query: ["id": id]); result = "Saved in your voice."; await load() }
-            catch { result = error.localizedDescription }
+            do { try await Practice.upload("affirmation-audio", bytes, type: "audio/mp4", model: model, query: ["id": id]); recorder.discard(); result = "Saved in your voice."; await load() }
+            catch { lastTake = (a.key, bytes); result = "\(error.localizedDescription) Your take is kept: tap Send again." }
         } else if let why = await recorder.start(a.key) { result = why }
     }
 }

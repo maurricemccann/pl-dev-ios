@@ -104,10 +104,10 @@ struct CodexToolView: View {
                     }
                 } header: { Text("Vocabulary install: scarcity → sovereign") } footer: { Text("Swap these out, immediately and permanently.") }
                 Section("Anchor") {
-                    Text(c.anchors.isEmpty ? "" : c.anchors[anchor % c.anchors.count]).font(.title3).italic()
+                    Text(c.anchors.isEmpty ? "" : c.anchors[anchor % c.anchors.count]).plHand(24)
                     Button("Another", systemImage: "shuffle") { anchor = Int.random(in: 0..<max(c.anchors.count, 1)) }
                 }
-                Section("The laws") { ForEach(c.laws, id: \.self) { Text($0) } }
+                Section("The laws") { ForEach(c.laws, id: \.self) { Text($0).plHand(20, relativeTo: .body) } }
                 Section {
                     TextField("What happened today", text: $entry, axis: .vertical).lineLimit(3...8)
                     TextField("One word for your state", text: $word)
@@ -387,7 +387,7 @@ struct CraftView: View {
                 TextField("…the archive hung in a room with tall windows", text: $desire, axis: .vertical).lineLimit(2...4)
                 Button("Say it") { Task { await play() } }.disabled(desire.isEmpty || busy)
                 if !declaration.isEmpty {
-                    Text(declaration).font(.title3).italic()
+                    Text(declaration).plHand(26)
                     Button("Capture it") { Task { await capture() } }.disabled(busy)
                 }
             } header: { Text("Wouldn't it be nice if…") }

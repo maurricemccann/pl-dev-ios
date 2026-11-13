@@ -245,7 +245,7 @@ struct TempoView: View {
                             HStack { Text("P\(a.priority ?? 0)").font(.caption.bold().monospacedDigit()).foregroundStyle(Wallpaper.line); if let g = a.glyph { Text(g).font(.caption).foregroundStyle(.secondary) } }
                             Text(a.angle ?? "").font(.headline)
                             if let pr = a.persona { Text(pr).font(.callout) }
-                            if let h = a.hook { Text("“\(h)”").font(.callout).italic() }
+                            if let h = a.hook { Text("“\(h)”").plHand(20, relativeTo: .callout) }
                             if let c = a.doctrine_cluster { Text(c.replacingOccurrences(of: "-", with: " ").uppercased()).font(.caption2.weight(.semibold)).tracking(1).foregroundStyle(.secondary) }
                         }
                     }

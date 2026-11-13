@@ -68,7 +68,7 @@ struct DesiresView: View {
         let before = desires[i]
         desires[i].completed_at = before.completed_at == nil ? ISO8601DateFormatter().string(from: .now) : nil
         do { try await Practice.post("scripts/\(d.id)/toggle", model: model); await load() }
-        catch { desires[i] = before; result = error.localizedDescription }
+        catch { if let j = desires.firstIndex(where: { $0.id == d.id }) { desires[j] = before }; result = error.localizedDescription }
     }
 }
 
@@ -162,7 +162,7 @@ struct HabitsView: View {
                             .swipeActions(edge: .trailing) {
                                 Button(h.tickedToday ? "Undo" : "Done") { Task { await tick(h) } }.tint(h.tickedToday ? .gray : .green)
                             }
-                            .swipeActions(edge: .leading) { Button("Archive") { archive = h }.tint(.orange) }
+                            .swipeActions(edge: .leading) { Button("Archive") { archive = h }.tint(PLTone.accent) }
                     }
                 } header: { Text("This week") } footer: { Text("Swipe left to tick, right to archive.") }
             }

@@ -52,7 +52,8 @@ import SwiftUI
     /// Whether a failure means "no connection" (worth queueing) rather than "the server said no".
     static func isOffline(_ error: any Error) -> Bool {
         guard let u = error as? URLError else { return false }
-        return [.notConnectedToInternet, .networkConnectionLost, .dataNotAllowed, .timedOut, .cannotConnectToHost, .cannotFindHost, .dnsLookupFailed].contains(u.code)
+        // not .timedOut: a post that timed out may have landed, and queueing it would send it twice
+        return [.notConnectedToInternet, .networkConnectionLost, .dataNotAllowed, .cannotConnectToHost, .cannotFindHost, .dnsLookupFailed].contains(u.code)
     }
 
     /// Words written without a connection wait on the phone and go when it returns. True when sent, false when queued.

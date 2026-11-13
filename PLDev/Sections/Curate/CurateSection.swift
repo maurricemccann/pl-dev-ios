@@ -330,7 +330,7 @@ struct SeedCard: View {
         ZStack {
             kit.palette.groundColor
             Text(phrase.uppercased())
-                .font(kit.titleFont.map { Font.custom($0, size: 34, relativeTo: .title) } ?? .system(.title, design: .serif))
+                .plHand(34, relativeTo: .title)
                 .foregroundStyle(kit.palette.textColor)
                 .multilineTextAlignment(.center)
                 .minimumScaleFactor(0.4)

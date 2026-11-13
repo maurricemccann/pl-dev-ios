@@ -110,7 +110,22 @@ struct HouseGround: View {
     }
 }
 
+/// His words in his hand (his ruling 11-13: "anything that sounds like it came from the founder needs the house font, anything
+/// like seed phrases and quotes"): seed phrases, quotes, declarations, affirmations, the Three Truths, Codex lines, hooks.
+/// Follows Dynamic Type; falls back to the serif italic until his hand has loaded.
+private struct HandFont: ViewModifier {
+    let size: CGFloat
+    let style: Font.TextStyle
+    @State private var kit = HouseKit.shared
+    func body(content: Content) -> some View {
+        content.font(kit.titleFont.map { Font.custom($0, size: size, relativeTo: style) } ?? .system(style, design: .serif).italic())
+    }
+}
+
 extension View {
+    /// His words in his hand. Use for anything he said or wrote; never for UI labels or other people's words.
+    func plHand(_ size: CGFloat = 24, relativeTo style: Font.TextStyle = .title3) -> some View { modifier(HandFont(size: size, style: style)) }
+
     /// A screen on the house ground: the list's own grey goes, the cards stay Apple's (they read as glass over the tile).
     func plGround() -> some View {
         scrollContentBackground(.hidden).background { HouseGround() }

@@ -221,7 +221,7 @@ struct FounderTab: View {
         List {
             if let m = state.message { Text(m).font(.footnote).foregroundStyle(.secondary) }
             if let line = state.walls?.madman {
-                Section { Text(line).font(.headline).tracking(1).frame(maxWidth: .infinity).multilineTextAlignment(.center) }
+                Section { Text(line).plHand(26).frame(maxWidth: .infinity).multilineTextAlignment(.center) }
                     .listRowBackground(Color.clear)
             }
             if let q = state.standing?.quarters?.min(by: { $0.score < $1.score }) {

@@ -126,6 +126,7 @@ struct IntentRow: View {
     private struct Reply: Decodable { let intent: String? }
     private let options = ["buyer", "collaborator", "student", "teacher", "believer"]
     @State private var intent = ""
+    @State private var loaded = false
     @State private var line: String?
 
     var body: some View {
@@ -134,13 +135,13 @@ struct IntentRow: View {
                 Text("Not said").tag("")
                 ForEach(options, id: \.self) { Text($0.capitalized).tag($0) }
             }
-            .onChange(of: intent) { _, v in
-                guard !v.isEmpty else { return }
+            .onChange(of: intent) { old, v in
+                guard !v.isEmpty, loaded, v != old else { return }   // the value that just arrived from the site is not a choice
                 Task { do { _ = try await Site.post("api/congregation/intent", ["intent": v]); line = nil } catch { line = "Not saved. \(error.localizedDescription)" } }
             }
             ResultLine(text: line)
         }
-        .task { intent = (try? await Site.get("api/congregation/intent", Reply.self))?.intent ?? "" }
+        .task { intent = (try? await Site.get("api/congregation/intent", Reply.self))?.intent ?? ""; loaded = true }
     }
 }
 
@@ -299,7 +300,7 @@ struct PinsView: View {
                             Button("Unpin") {
                                 removed.insert(cr)
                                 Task { do { _ = try await Site.post("api/account/pins", ["cr": cr, "action": "unpin"]); line = nil } catch { removed.remove(cr); line = "Not saved. \(error.localizedDescription)" } }
-                            }.tint(.orange)
+                            }.tint(PLTone.accent)
                         }
                 }
                 ResultLine(text: line)
@@ -316,15 +317,16 @@ struct GlyphRow: View {
     let current: String?
     @State private var glyph = ""
     @State private var line: String?
+    @State private var reverting = false
 
     var body: some View {
         Group {
             Picker("Glyph", selection: $glyph) { ForEach(Self.options, id: \.key) { Text($0.label).tag($0.key) } }
                 .onChange(of: glyph) { old, v in
-                    guard !old.isEmpty, v != old else { return }
+                    guard !old.isEmpty, v != old, !reverting else { reverting = false; return }
                     Task {
                         do { _ = try await Site.post("api/account/glyph", ["glyph": v]); line = nil; await SiteAccount.shared.refresh() }
-                        catch { glyph = old; line = "Not saved. \(error.localizedDescription)" }
+                        catch { reverting = true; glyph = old; line = "Not saved. \(error.localizedDescription)" }   // a put-back is not a new choice
                     }
                 }
             ResultLine(text: line)
