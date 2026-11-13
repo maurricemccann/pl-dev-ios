@@ -73,6 +73,9 @@ import UserNotifications
     struct Record: Decodable { let days: Int?; let total: Int?; let done: Int?; let skipped: Int?; let since: String?; let streak: Int? }
     struct Digest: Decodable, Identifiable { let id: Int; let session_id: String?; let title: String?; let summary: String?; let closed_at: String? }
     struct Digests: Decodable { let digests: [Digest]? }
+    struct Quarter: Decodable, Identifiable { let key: String; let label: String; let score: Int; let note: String?; var id: String { key } }
+    struct Standing: Decodable { let total: Int?; let verdict: String?; let quarters: [Quarter]? }
+    struct Counts: Decodable { let desiresPending: Int?; let captures: Int? }
     struct FounderTask: Decodable, Identifiable { let notion_page_id: String; let title: String?; let status: String?; let due_date: String?; let priority: String?; let project: String?; var id: String { notion_page_id } }
 
     var tab: Tab = .founder
@@ -86,6 +89,9 @@ import UserNotifications
     var record: Record?
     var tasks: [FounderTask] = []
     var digests: [Digest] = []
+    var standing: Standing?
+    var counts: Counts?
+    var devStuck = 0
     var message: String?
     var tick = 0
     var lastNotified = 0
@@ -103,13 +109,37 @@ import UserNotifications
         async let r = try? Console.get("api/record", Record.self, model: model)
         async let t = try? Console.q("foundertasks", [FounderTask].self, model: model)
         async let dg = try? Console.get("api/session-digest", Digests.self, model: model)
+        async let st = HouseModel.standingRead(model: model)
+        async let ct = try? Console.q("counts", Counts.self, model: model)
+        async let nt = try? OS.get("notion", NotionView.NState.self, model: model)
         let (s1, w1, c1, p1, sc1, r1, t1, dg1) = await (s, w, c, p, sc, r, t, dg)
         digests = dg1?.digests ?? []
+        let (st1, ct1, nt1) = await (st, ct, nt)
+        standing = st1; counts = ct1; devStuck = nt1?.pipeline["Development"] ?? 0
         live = ShiftLive.running != nil
         stats = s1; walls = w1; creator = c1; plan = p1; schedule = sc1?.days ?? []; record = r1; tasks = t1 ?? []
         ShiftLive.publish(drafts: s1?.pending, plan: p1)
         await ShiftLive.sync(p1)
         message = (s1 == nil && p1 == nil) ? "Could not reach the console. Pull to try again." : nil
+    }
+
+    /// The house's one number, computed by pl-cron the same way pl-os computes it (lib/standing.ts), read on the widget door.
+    static func standingRead(model: AppModel) async -> Standing? {
+        guard let http = model.http else { return nil }
+        return try? JSONDecoder().decode(Standing.self, from: try await http.send(RequestPlan(origin: "cron", path: "api/widget/standing")))
+    }
+
+    /// The Needs You list, built as pl-os builds it (app/page.tsx): pipeline flags first, then founder tasks.
+    var needsYou: [String] {
+        var flags: [String] = []
+        if let d = counts?.desiresPending, d > 0 { flags.append("\(d) desire(s) to moderate") }
+        if let c = counts?.captures, c > 0 { flags.append("\(c) capture(s) in inbox") }
+        if devStuck > 0 { flags.append("\(devStuck) piece(s) stuck in Development") }
+        var out: [String] = []
+        if !flags.isEmpty { out.append(flags.joined(separator: " · ")) }
+        let pending = tasks.filter { !($0.status ?? "").lowercased().contains("done") }.count
+        if pending > 0 { out.append("\(pending) founder task(s) pending") }
+        return out
     }
 
     func tickTask(_ t: PlanTask, _ status: String, model: AppModel) async {
@@ -194,6 +224,31 @@ struct FounderTab: View {
                 Section { Text(line).font(.headline).tracking(1).frame(maxWidth: .infinity).multilineTextAlignment(.center) }
                     .listRowBackground(Color.clear)
             }
+            if let q = state.standing?.quarters?.min(by: { $0.score < $1.score }) {
+                Section {
+                    VStack(alignment: .leading, spacing: 6) {
+                        Text("DO NEXT · RAISES \(q.label.uppercased())").font(.caption2.weight(.semibold)).tracking(1.2).foregroundStyle(Wallpaper.line)
+                        (Text("\(q.score)/25").monospacedDigit().foregroundStyle(.secondary) + Text(" — \(q.note ?? "")")).font(.callout)
+                    }
+                    if let first = state.needsYou.first {
+                        Button { state.room = .approvals } label: { LabeledContent(first) { Text("Open →").font(.caption.weight(.semibold)).foregroundStyle(Wallpaper.line) } }
+                    }
+                }
+            }
+            Section {
+                HStack(spacing: 12) {
+                    Kpi(title: "Needs you", value: "\(state.needsYou.count)")
+                    Kpi(title: "Shift", value: "\((state.plan?.tasks ?? []).filter { $0.status == "done" }.count)/\(state.plan?.tasks?.count ?? 0)")
+                    Kpi(title: "Approve", value: "\(state.stats?.pending ?? 0)")
+                    Kpi(title: "Standing", value: "\(state.standing?.total ?? 0)")
+                }
+                .listRowInsets(EdgeInsets(top: 8, leading: 12, bottom: 8, trailing: 12))
+                if !state.needsYou.isEmpty {
+                    ForEach(state.needsYou, id: \.self) { Label($0, systemImage: "exclamationmark.circle").font(.callout) }
+                } else {
+                    Text("Nothing waiting on you.").foregroundStyle(.secondary)
+                }
+            }
             Section {
                 NavigationLink { ApprovalsView(model: model) } label: {
                     LabeledContent {
@@ -241,6 +296,21 @@ struct FounderTab: View {
                     LabeledContent("Done", value: "\(r.done ?? 0) of \(r.total ?? 0)")
                     if let since = r.since { LabeledContent("Since", value: since) }
                 }
+            }
+            if let st = state.standing {
+                Section {
+                    ForEach(st.quarters ?? []) { q in
+                        VStack(alignment: .leading, spacing: 4) {
+                            HStack { Text(q.label.capitalized).font(.headline); Spacer(); Text("\(q.score)/25").monospacedDigit() }
+                            ProgressView(value: Double(q.score), total: 25).tint(Wallpaper.line)
+                            if let n = q.note { Text(n).font(.caption).foregroundStyle(.secondary) }
+                        }
+                    }
+                } header: { Text("Standing · \(st.total ?? 0)/100") } footer: { if let v = st.verdict { Text(v) } }
+            }
+            Section("Doors") {
+                Link(destination: URL(string: "https://psychedluxuries.com/shop?debug=open")!) { Label("Shop debug", systemImage: "ladybug") }
+                Link(destination: URL(string: "http://tailnet-board:8800")!) { Label("V.A.U.L.T. board (over Tailscale)", systemImage: "rectangle.3.group") }
             }
             if !state.digests.isEmpty {
                 Section("What the sessions did today") {

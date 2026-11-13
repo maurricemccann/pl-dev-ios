@@ -10,7 +10,7 @@ import Charts
         let audience: Int?; let participants: Int?; let belonging: Int?; let transmissions: Int?; let captures: Int?; let orders: Int?
         let revenue_total: Double?; let campaign_progress: Progress?; let returning: Returning?
     }
-    struct Day: Decodable, Identifiable { let day: String; let subscribers: Int?; let orders: Int?; let ig_followers: Int?; let archive_count: Int?; var id: String { day } }
+    struct Day: Decodable, Identifiable { let day: String; let subscribers: Int?; let orders: Int?; let ig_followers: Int?; let archive_count: Int?; let desires_total: Int?; let captures_new: Int?; let transmissions: Int?; let ig_posts: Int?; var id: String { day } }
     struct Days: Decodable { let days: [Day]? }
     struct Digest: Decodable { let text: String? }
     struct Pending: Decodable { let count: Int? }
@@ -23,6 +23,14 @@ import Charts
     var registered: Int?
     var unread = 0
     var support = 0
+    var supportOpen = 0
+    var siteUp: Bool?
+    var stats: OutboundModel.IG?
+    var archiveCount: Int?
+    var runway: OutboundModel.Runway?
+    var people = 0
+    var comments = 0
+    var range = 30
 
     func load(model: AppModel) async {
         async let f = try? Console.get("run/funnel", Funnel.self, model: model)
@@ -37,6 +45,25 @@ import Charts
         support = (c1 ?? []).filter { $0.status == "new" }.count
         let text = o1?.text ?? ""
         mtd = Self.money(text, "Month to date"); trailing = Self.money(text, "Trailing 365 days")
+        supportOpen = (c1 ?? []).filter { $0.status != "resolved" }.count
+        struct Stats: Decodable { let archive_count: Int? }
+        struct Following: Decodable { let following: Int? }
+        async let ig = try? Console.get("run/ig-insights", OutboundModel.IG.self, model: model)
+        async let st = try? Console.get("api/stats", Stats.self, model: model)
+        async let rw = try? Console.get("run/content-runway", OutboundModel.Runway.self, model: model)
+        async let rec = try? Console.q("record", [RecordView.Person].self, model: model)
+        async let cm = try? OS.get("comments", CommentsView.Out.self, model: model)
+        let (ig1, st1, rw1, rec1, cm1) = await (ig, st, rw, rec, cm)
+        stats = ig1; archiveCount = st1?.archive_count; runway = rw1; people = rec1?.count ?? 0; comments = cm1?.items.count ?? 0
+        var head = URLRequest(url: URL(string: "https://psychedluxuries.com")!); head.httpMethod = "HEAD"; head.timeoutInterval = 10
+        siteUp = ((try? await URLSession.shared.data(for: head))?.1 as? HTTPURLResponse).map { $0.statusCode < 500 }
+    }
+
+    /// Today against yesterday, from the daily metrics (the live tiles' "±0 1d").
+    func delta(_ k: KeyPath<Day, Int?>) -> String {
+        guard days.count >= 2, let a = days[days.count - 1][keyPath: k], let b = days[days.count - 2][keyPath: k] else { return "" }
+        let d = a - b
+        return d == 0 ? "±0 1d" : (d > 0 ? "+\(d) 1d" : "\(d) 1d")
     }
 
     /// The digest's "… → $1,234.56" for a line, as pl-os reads it, so the two can never disagree.
@@ -52,12 +79,14 @@ struct InboundTab: View {
     @State private var state = InboundModel()
 
     var body: some View {
+        let shown = Array(state.days.suffix(state.range))
         List {
             Section {
                 HStack(spacing: 12) {
-                    Kpi(title: "This month", value: state.mtd.map { $0.formatted(.currency(code: "USD")) } ?? "—")
-                    Kpi(title: "365 days", value: state.trailing.map { $0.formatted(.currency(code: "USD")) } ?? "—")
-                    Kpi(title: "Audience", value: state.funnel?.audience.map(String.init) ?? "—")
+                    Kpi(title: "Month", value: state.mtd.map { $0.formatted(.currency(code: "USD")) } ?? "—")
+                    Kpi(title: "12 months", value: state.trailing.map { $0.formatted(.currency(code: "USD")) } ?? "—")
+                    Kpi(title: "Audience", value: "\(state.people)")
+                    Kpi(title: "Registered", value: "\(state.registered ?? 0)")
                 }
                 .listRowInsets(EdgeInsets(top: 8, leading: 12, bottom: 8, trailing: 12))
                 if let p = state.funnel?.campaign_progress {
@@ -66,41 +95,89 @@ struct InboundTab: View {
                 }
             }
             Section {
-                NavigationLink { InboxView(model: model) } label: { Label("Inbox", systemImage: "bubble.left.and.bubble.right").badge(state.unread) }
-                NavigationLink { SupportView(model: model) } label: { Label("Support", systemImage: "lifepreserver").badge(state.support) }
-                NavigationLink { SeedRegistrationsView(model: model) } label: { Label("Seed registrations", systemImage: "seal").badge(state.registered ?? 0) }
-                NavigationLink { RecordView(model: model) } label: { Label("The record", systemImage: "person.3") }
-                NavigationLink { LeadsView(model: model) } label: { Label("Leads", systemImage: "person.crop.circle.badge.questionmark") }
-                NavigationLink { TallyView(model: model) } label: { Label("Request and vote", systemImage: "chart.bar.doc.horizontal") }
-            }
-            if let f = state.funnel {
-                Section("The funnel") {
-                    LabeledContent("Audience", value: "\(f.audience ?? 0)")
-                    LabeledContent("Participants", value: "\(f.participants ?? 0)")
-                    LabeledContent("Belonging", value: "\(f.belonging ?? 0)")
-                    LabeledContent("Orders", value: "\(f.orders ?? 0)")
-                    LabeledContent("Revenue, all time", value: (f.revenue_total ?? 0).formatted(.currency(code: "USD")))
-                    if let r = f.returning { LabeledContent("Returning visitors, 28 days", value: "\(r.users_28d ?? 0) (\(Int((r.share_pct_28d ?? 0).rounded()))%)") }
+                LazyVGrid(columns: [GridItem(.flexible(), spacing: 8), GridItem(.flexible(), spacing: 8)], spacing: 8) {
+                    StatTile(title: "Storefront", value: state.siteUp == nil ? "—" : state.siteUp! ? "LIVE" : "DOWN", line: "psychedluxuries.com", alert: state.siteUp == false)
+                    StatTile(title: "Subscribers", value: "\(state.days.last?.subscribers ?? 0)", line: "signal list · \(state.delta(\.subscribers))")
+                    StatTile(title: "Desires", value: "\(state.days.last?.desires_total ?? 0)", line: state.delta(\.desires_total))
+                    StatTile(title: "Captures", value: "\(state.days.last?.captures_new ?? 0)", line: "new · inbox · \(state.delta(\.captures_new))")
+                    StatTile(title: "Transmissions", value: "\(state.days.last?.transmissions ?? 0)", line: "signals published · \(state.delta(\.transmissions))")
+                    if let r = state.funnel?.returning { StatTile(title: "Returning", value: "\(r.users_28d ?? 0)", line: "\(Int((r.share_pct_28d ?? 0).rounded()))% of 28 days") }
+                    StatTile(title: "Archive", value: (state.archiveCount ?? state.days.last?.archive_count ?? 0).formatted(), line: "pieces catalogued")
+                    StatTile(title: "IG followers", value: (state.stats?.followers ?? 0).formatted(), line: "@psychedluxuries · \(state.delta(\.ig_followers))")
+                    StatTile(title: "IG posts", value: (state.stats?.media_count ?? 0).formatted(), line: "total published · \(state.delta(\.ig_posts))")
+                    StatTile(title: "Content runway", value: "\(state.runway?.instagram_pending ?? 0)", line: "\(state.runway?.reels_remaining ?? 0) reels in manifest", alert: state.runway?.low == true)
+                    if let f = state.stats?.following { StatTile(title: "IG following", value: f.formatted(), line: "keep unfollowing non-mutuals") }
                 }
+                .listRowInsets(EdgeInsets(top: 8, leading: 8, bottom: 8, trailing: 8))
+            } footer: { Text("Live · each against yesterday.") }
+            Section {
+                NavigationLink { InboxView(model: model) } label: { Label("Member inbox", systemImage: "bubble.left.and.bubble.right").badge(state.unread) }
+                NavigationLink { CommentsView(model: model) } label: { Label("Comments", systemImage: "text.bubble").badge(state.comments) }
+                NavigationLink { SupportView(model: model) } label: {
+                    LabeledContent { Text(state.supportOpen == 0 ? "All resolved" : "\(state.supportOpen) open") } label: { Label("Support", systemImage: "lifepreserver") }
+                }
+                NavigationLink { SeedRegistrationsView(model: model) } label: { Label("Seed registrations", systemImage: "seal").badge(state.registered ?? 0) }
             }
             if !state.days.isEmpty {
-                Section("Orders, 90 days") {
-                    Chart(state.days) { d in
-                        BarMark(x: .value("Day", Date.pl(d.day) ?? .now, unit: .day), y: .value("Orders", d.orders ?? 0)).foregroundStyle(Color.orange)
+                Section {
+                    Picker("Range", selection: $state.range) { Text("7D").tag(7); Text("30D").tag(30); Text("90D").tag(90) }.pickerStyle(.segmented)
+                    Text("Orders").font(.headline)
+                    Chart(shown) { d in
+                        BarMark(x: .value("Day", Date.pl(d.day) ?? .now, unit: .day), y: .value("Orders", d.orders ?? 0)).foregroundStyle(Wallpaper.line)
                     }
-                    .frame(height: 140)
-                    .accessibilityLabel("Orders per day over 90 days, \(state.days.reduce(0) { $0 + ($1.orders ?? 0) }) in total")
-                }
-                Section("Audience, 90 days") {
-                    Chart(state.days) { d in
+                    .frame(height: 130)
+                    Text("Audience").font(.headline)
+                    Chart(shown) { d in
                         LineMark(x: .value("Day", Date.pl(d.day) ?? .now, unit: .day), y: .value("Subscribers", d.subscribers ?? 0)).interpolationMethod(.monotone)
                     }
-                    .frame(height: 140)
+                    .frame(height: 130)
                 }
+            }
+            Section {
+                NavigationLink { RecordView(model: model) } label: { LabeledContent { Text("\(state.people)") } label: { Label("The record", systemImage: "person.3") } }
+                NavigationLink { LeadsView(model: model) } label: { Label("By intent", systemImage: "person.crop.circle.badge.questionmark") }
+                NavigationLink { TallyView(model: model) } label: { Label("The ballot", systemImage: "chart.bar.doc.horizontal") }
+                NavigationLink { OracleSignalView(model: model) } label: { Label("Oracle signal: what they ask", systemImage: "questionmark.bubble") }
             }
         }
         .task { await state.load(model: model) }
         .refreshable { await state.load(model: model) }
+    }
+}
+
+/// One live tile: the label, the number, the line under it (with the change since yesterday), red when it needs a look.
+struct StatTile: View {
+    let title: String
+    let value: String
+    let line: String
+    var alert = false
+    var body: some View {
+        VStack(alignment: .leading, spacing: 3) {
+            Text(title.uppercased()).font(.caption2.weight(.semibold)).tracking(1).foregroundStyle(.secondary)
+            Text(value).font(.title2.weight(.semibold)).monospacedDigit().foregroundStyle(alert ? Color.red : Color.primary).contentTransition(.numericText())
+            Text(line).font(.caption2).foregroundStyle(.secondary).lineLimit(2)
+        }
+        .frame(maxWidth: .infinity, alignment: .leading).padding(10)
+        .background(Color.secondary.opacity(0.1), in: RoundedRectangle(cornerRadius: 12, style: .continuous))
+        .accessibilityElement(children: .combine)
+    }
+}
+
+/// What people ask GlyphBot (the console's Oracle Signal panel).
+struct OracleSignalView: View {
+    let model: AppModel
+    struct Row: Decodable, Identifiable { let id: String; let question: String?; let answer: String?; let via: String?; let asked_at: String? }
+    var body: some View {
+        Loaded(load: { try await Console.q("oracle", [Row].self, model: model) }) { rows, _ in
+            List(rows) { r in
+                VStack(alignment: .leading, spacing: 4) {
+                    Text(r.question ?? "").font(.headline)
+                    Text(r.answer ?? "").font(.callout).foregroundStyle(.secondary).lineLimit(4).plReading()
+                    HStack { Text(r.via ?? ""); Spacer(); Ago(text: r.asked_at) }.font(.caption2).foregroundStyle(.tertiary)
+                }
+            }
+        }
+        .navigationTitle("Oracle signal")
     }
 }
 

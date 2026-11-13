@@ -12,6 +12,11 @@ import Charts
     var ig: IG?
     var runway: Runway?
     var days: [InboundModel.Day] = []
+    var stats: HouseModel.DraftStats?
+    var sent = 0
+    var reach: [ReachView.Row] = []
+    var counts: [String: Int] = [:]
+    var range = 30
 
     func load(model: AppModel) async {
         async let i = try? Console.get("run/ig-insights", IG.self, model: model)
@@ -19,59 +24,137 @@ import Charts
         async let d = try? Console.get("api/metrics/daily", InboundModel.Days.self, model: model, query: ["days": "90"])
         let (i1, r1, d1) = await (i, r, d)
         ig = i1; runway = r1; days = (d1?.days ?? []).filter { ($0.ig_followers ?? 0) > 0 }.sorted { $0.day < $1.day }
+        struct C: Decodable { let transmissions: Int? }
+        struct Feed: Decodable { let drafts: [FeedView.Draft]? }
+        struct Leads: Decodable { let leads: [OpportunityView.Lead]? }
+        struct Vault: Decodable { let rows: [VaultView.Row]? }
+        async let st = try? Console.q("draftstats", HouseModel.DraftStats.self, model: model)
+        async let ct = try? Console.q("counts", C.self, model: model)
+        async let rc = try? Console.q("postreach", [ReachView.Row].self, model: model)
+        async let aq = try? Console.q("approvedqueue", [DripView.Row].self, model: model)
+        async let fd = try? Console.get("api/feed/drafts", Feed.self, model: model)
+        async let op = try? Console.get("api/opportunity-leads", Leads.self, model: model)
+        async let vt = try? Console.get("api/vaulted", Vault.self, model: model)
+        async let sg = try? Console.q("signals", [Signal].self, model: model)
+        async let nt = try? OS.get("notion", NotionView.NState.self, model: model)
+        let (st1, ct1, rc1, aq1, fd1, op1, vt1, sg1, nt1) = await (st, ct, rc, aq, fd, op, vt, sg, nt)
+        stats = st1; sent = ct1?.transmissions ?? 0; reach = rc1 ?? []
+        counts = ["queue": aq1?.count ?? 0, "feed": fd1?.drafts?.count ?? 0, "opps": (op1?.leads ?? []).filter { ($0.ruled_out ?? 0) == 0 && $0.status != "dead" }.count,
+                  "vault": vt1?.rows?.count ?? 0, "rewritten": (vt1?.rows ?? []).filter { $0.rewrite_caption != nil }.count,
+                  "signals": sg1?.count ?? 0, "pipeline": nt1?.pipelineTotal ?? 0, "calendar": nt1?.content.count ?? 0]
     }
+
+    struct Signal: Decodable, Identifiable { let title: String?; let at: String?; var id: String { (title ?? "") + (at ?? "") } }
 }
 
 struct OutboundTab: View {
     let model: AppModel
     @State private var state = OutboundModel()
+    @State private var crafting = false
+    @State private var result: String?
 
     var body: some View {
+        let shown = Array(state.days.suffix(state.range))
         List {
             Section {
                 HStack(spacing: 12) {
-                    Kpi(title: "Followers", value: state.ig?.followers.map(String.init) ?? "—")
-                    Kpi(title: "Instagram ready", value: state.runway?.instagram_pending.map(String.init) ?? "—")
-                    Kpi(title: "Reels left", value: state.runway?.reels_remaining.map(String.init) ?? "—")
+                    Kpi(title: "Instagram", value: (state.ig?.followers ?? 0).formatted())
+                    Kpi(title: "Drafted this week", value: "\(state.stats?.week_total ?? 0)")
+                    Kpi(title: "Queued", value: "\(state.stats?.queued ?? 0)")
+                    Kpi(title: "Sent", value: "\(state.sent)")
                 }
                 .listRowInsets(EdgeInsets(top: 8, leading: 12, bottom: 8, trailing: 12))
                 if state.runway?.low == true { Label("The Instagram runway is low", systemImage: "exclamationmark.triangle").foregroundStyle(.orange) }
             }
             Section {
-                NavigationLink { CalendarView(model: model) } label: { Label("Content calendar", systemImage: "calendar") }
-                NavigationLink { TempoView(model: model) } label: { Label("Tempo · this week", systemImage: "metronome") }
-                NavigationLink { NotionView(model: model) } label: { Label("Pipeline and briefing", systemImage: "list.bullet.indent") }
-                NavigationLink { FeedView(model: model) } label: { Label("PL feed", systemImage: "square.stack") }
-                NavigationLink { DripView(model: model) } label: { Label("In the drip", systemImage: "drop") }
-                NavigationLink { VaultView(model: model) } label: { Label("The vault", systemImage: "archivebox") }
-                NavigationLink { ReachView(model: model) } label: { Label("Post reach", systemImage: "eye") }
-                NavigationLink { OpportunityView(model: model) } label: { Label("Opportunities", systemImage: "sparkle.magnifyingglass") }
-                NavigationLink { OutboundLeadsView(model: model) } label: { Label("Outbound leads", systemImage: "mappin.and.ellipse") }
-                NavigationLink { PinterestView(model: model) } label: { Label("Pinterest", systemImage: "pin") }
-            }
-            if !state.days.isEmpty {
-                Section("Instagram followers, 90 days") {
-                    Chart(state.days) { d in
+                NavigationLink { FeedView(model: model) } label: {
+                    LabeledContent { Text("\(state.counts["feed"] ?? 0) ready") } label: { Label("PL Feed", systemImage: "square.stack") }
+                }
+                Button(crafting ? "Crafting…" : "Craft more +") { Task { await craft() } }.disabled(crafting)
+                if let r = result { ResultLine(text: r) }
+            } footer: { Text("Congregation feed drafts: review and push.") }
+            if !shown.isEmpty {
+                Section("Instagram followers") {
+                    Picker("Range", selection: $state.range) { Text("7D").tag(7); Text("30D").tag(30); Text("90D").tag(90) }.pickerStyle(.segmented)
+                    Chart(shown) { d in
                         LineMark(x: .value("Day", Date.pl(d.day) ?? .now, unit: .day), y: .value("Followers", d.ig_followers ?? 0))
-                            .interpolationMethod(.monotone).foregroundStyle(Color.orange)
+                            .interpolationMethod(.monotone).foregroundStyle(Wallpaper.line)
                     }
                     .chartYScale(domain: .automatic(includesZero: false))
-                    .frame(height: 150)
+                    .frame(height: 140)
                 }
             }
-            if let recent = state.ig?.recent, !recent.isEmpty {
-                Section("Latest on Instagram") {
-                    ForEach(recent.prefix(8)) { p in
-                        Link(destination: URL(string: p.permalink) ?? URL(string: "https://instagram.com")!) {
-                            HStack { Ago(text: p.timestamp); Spacer(); Label("\(p.likes ?? 0)", systemImage: "heart"); Label("\(p.comments ?? 0)", systemImage: "bubble.right") }
-                                .font(.callout).monospacedDigit()
+            if !state.reach.isEmpty {
+                Section {
+                    ForEach(state.reach.prefix(6)) { r in
+                        VStack(alignment: .leading, spacing: 2) {
+                            HStack { Text(r.channel == "instagram" ? "IG" : "@").font(.caption.bold()); Ago(text: r.sent_at).font(.caption); Spacer(); Label("\(r.reach ?? 0)", systemImage: "eye").font(.caption.monospacedDigit()); Label("\(r.likes ?? 0)", systemImage: "heart").font(.caption.monospacedDigit()) }
+                                .foregroundStyle(.secondary)
+                            Text(r.caption_excerpt ?? "").lineLimit(2)
                         }
                     }
+                    NavigationLink("Every post") { ReachView(model: model) }
+                } header: {
+                    Text("Post reach · \(state.reach.count) posts · \(state.reach.reduce(0) { $0 + ($1.reach ?? 0) }) reach · \(state.reach.reduce(0) { $0 + ($1.likes ?? 0) + ($1.comments ?? 0) }) engaged")
+                }
+            }
+            Section {
+                door("PL queue", "approved, in line", "list.number", state.counts["queue"]) { DripView(model: model) }
+                door("Organic winners", "top posts first", "trophy", nil) { WinnersView(posts: state.ig?.recent ?? []) }
+                door("Drop pipeline", "active", "list.bullet.indent", state.counts["pipeline"]) { NotionView(model: model) }
+                door("Calendar", "this week", "calendar", state.counts["calendar"]) { CalendarView(model: model) }
+                door("Signals sent", "transmissions", "paperplane", state.counts["signals"]) { SignalsView(model: model) }
+                door("Opportunity scout", "placements and licensing", "sparkle.magnifyingglass", state.counts["opps"]) { OpportunityView(model: model) }
+                door("Outbound sourcing", "no paid API", "mappin.and.ellipse", nil) { OutboundLeadsView(model: model) }
+                door("Tempo", "this week's plan and email", "metronome", nil) { TempoView(model: model) }
+            }
+            Section {
+                NavigationLink { PinterestView(model: model) } label: { Label("Pinterest", systemImage: "pin") }
+                NavigationLink { VaultView(model: model) } label: {
+                    LabeledContent { Text("\(state.counts["vault"] ?? 0) held · \(state.counts["rewritten"] ?? 0) rewritten") } label: { Label("The vault", systemImage: "archivebox") }
                 }
             }
         }
         .task { await state.load(model: model) }
         .refreshable { await state.load(model: model) }
+    }
+
+    private func door<D: View>(_ title: String, _ line: String, _ symbol: String, _ count: Int?, @ViewBuilder _ dest: @escaping () -> D) -> some View {
+        NavigationLink { dest() } label: {
+            LabeledContent {
+                if let count { Text("\(count)").monospacedDigit() }
+            } label: { Label { Text(title); Text(line) } icon: { Image(systemName: symbol) } }
+        }
+    }
+
+    private func craft() async {
+        crafting = true; defer { crafting = false }
+        do { try await Console.post("api/craft-batch", ["count": 3], model: model, timeout: 90); result = "Crafted. They wait in the PL Feed."; await state.load(model: model) }
+        catch { result = "Not crafted. \(error.localizedDescription)" }
+    }
+}
+
+/// Instagram's latest, best first (the console's Organic Winners).
+struct WinnersView: View {
+    let posts: [OutboundModel.IG.Post]
+    var body: some View {
+        List(posts.sorted { ($0.likes ?? 0) + ($0.comments ?? 0) > ($1.likes ?? 0) + ($1.comments ?? 0) }) { p in
+            Link(destination: URL(string: p.permalink) ?? URL(string: "https://instagram.com")!) {
+                HStack { Ago(text: p.timestamp); Spacer(); Label("\(p.likes ?? 0)", systemImage: "heart"); Label("\(p.comments ?? 0)", systemImage: "bubble.right") }.monospacedDigit()
+            }
+        }
+        .navigationTitle("Organic winners")
+    }
+}
+
+/// Transmissions and sent emails, newest first (the console's Signals Sent).
+struct SignalsView: View {
+    let model: AppModel
+    var body: some View {
+        Loaded(load: { try await Console.q("signals", [OutboundModel.Signal].self, model: model) }) { rows, _ in
+            List(rows) { r in VStack(alignment: .leading) { Text(r.title ?? ""); Ago(text: r.at).font(.caption).foregroundStyle(.secondary) } }
+        }
+        .navigationTitle("Signals sent")
     }
 }
 

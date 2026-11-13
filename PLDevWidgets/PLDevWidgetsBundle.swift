@@ -8,6 +8,7 @@ struct PLDevWidgetsBundle: WidgetBundle {
         SnapshotWidget()
         HouseWidget()
         LibraryWidget()
+        PaintWidget()
         HomeControl()
         ShiftLiveActivity()
         RenderLiveActivity()

@@ -365,8 +365,18 @@ struct MakeView: View {
     @State private var tick = 0
     private let platforms = ["instagram", "threads", "bluesky", "tumblr", "facebook", "linkedin", "pinterest"]
 
+    @State private var intakeKind = "text"
+    @State private var intakeText = ""
+
     var body: some View {
         Form {
+            Section {
+                Picker("Kind", selection: $intakeKind) { Text("Text").tag("text"); Text("Quote").tag("quote"); Text("Link").tag("link") }.pickerStyle(.segmented)
+                TextField(intakeKind == "link" ? "URL → pull it in" : intakeKind == "quote" ? "Phrase · hook · caption" : "Body or essay", text: $intakeText, axis: .vertical)
+                    .lineLimit(2...8).keyboardType(intakeKind == "link" ? .URL : .default)
+                Button("Add to the system →") { Task { await go { try await Console.post("api/pldev/x/intake", ["type": intakeKind, "note": intakeText], model: model); intakeText = ""; return "Captured. The system will sort it." } } }
+                    .disabled(intakeText.trimmingCharacters(in: .whitespaces).isEmpty || busy)
+            } header: { Text("Capture into the system") } footer: { Text("Artwork with a picture: use Capture on Home, which sends photos.") }
             Section {
                 TextField("Caption", text: $caption, axis: .vertical).lineLimit(4...12)
                 Picker("Platform", selection: $platform) { ForEach(platforms, id: \.self) { Text($0.capitalized).tag($0) } }
