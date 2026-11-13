@@ -32,8 +32,8 @@ extension ShopCatalogue {
             let body = ns.substring(with: m.range(at: 2))
             let b = body as NSString
             let whole = NSRange(location: 0, length: b.length)
-            let name = head.firstMatch(in: body, range: whole).map { SiteReaderView.clean(b.substring(with: $0.range(at: 1))) } ?? slug
-            let ps = para.matches(in: body, range: whole).map { SiteReaderView.clean(b.substring(with: $0.range(at: 1))) }
+            let name = head.firstMatch(in: body, range: whole).map { SiteHTML.text(b.substring(with: $0.range(at: 1))) } ?? slug
+            let ps = para.matches(in: body, range: whole).map { SiteHTML.text(b.substring(with: $0.range(at: 1))) }
             var cents = 0
             if let first = ps.first, let mm = money.firstMatch(in: first, range: NSRange(location: 0, length: (first as NSString).length)) {
                 let n = (first as NSString).substring(with: mm.range(at: 1)).replacingOccurrences(of: ",", with: "")
@@ -111,7 +111,7 @@ struct PieceDetail: Codable, Sendable {
         do {
             let r = try await Site.call("GET", "shop/" + slug, timeout: 30)
             if (200..<300).contains(r.status), let html = String(data: r.data, encoding: .utf8) {
-                let d = await Task.detached { parse(html) }.value
+                let d = await Task.detached { PieceDetail.parse(html) }.value
                 if let d, let data = try? JSONEncoder().encode(d) { OfflineCache.save(data, for: key); return d }
             }
         } catch {}
@@ -145,10 +145,18 @@ struct PieceDetail: Codable, Sendable {
         if let re = try? NSRegularExpression(pattern: #"<details class="group py-4"><summary[^>]*>([\s\S]*?)<span[\s\S]*?</summary><p[^>]*>([\s\S]*?)</p></details>"#) {
             let ns = html as NSString
             for m in re.matches(in: html, range: NSRange(location: 0, length: ns.length)) {
-                let t = SiteReaderView.clean(ns.substring(with: m.range(at: 1)))
-                let x = SiteReaderView.clean(ns.substring(with: m.range(at: 2)))
+                let t = SiteHTML.text(ns.substring(with: m.range(at: 1)))
+                let x = SiteHTML.text(ns.substring(with: m.range(at: 2)))
                 if !t.isEmpty, !x.isEmpty { d.folds.append(Fold(title: t, text: x)) }
             }
+        }
+
+        // "Delivery & returns" streams in after the page: its words are in the flight data, not in the first HTML
+        let streamed = flight(html)
+        if !d.folds.contains(where: { $0.title.hasPrefix("Delivery") }), html.contains("Delivery &amp; returns"),
+           let raw = firstRaw(#"(?<="children":")Ships tracked[^"\\]*(?:\\.[^"\\]*)*(?=")"#, in: streamed),
+           let data = ("[\"" + raw + "\"]").data(using: .utf8), let arr = try? JSONSerialization.jsonObject(with: data) as? [String], let text = arr.first, !text.isEmpty {
+            d.folds.append(Fold(title: "Delivery & returns", text: text))
         }
 
         // more from the drop
@@ -158,7 +166,7 @@ struct PieceDetail: Codable, Sendable {
         }
 
         // the page's props: variants and the pictures that lead them
-        let f = flight(html)
+        let f = streamed
         if let vr = f.range(of: "\"variants\":[") {
             let from = f.index(before: vr.upperBound)
             if let arr = balanced(f, from: from), let json = try? JSONSerialization.jsonObject(with: Data(arr.utf8)) as? [[String: Any]] {
@@ -191,7 +199,7 @@ struct PieceDetail: Codable, Sendable {
 
     nonisolated private static func first(_ pattern: String, in s: String) -> String? {
         guard let re = try? NSRegularExpression(pattern: pattern), let m = re.firstMatch(in: s, range: NSRange(location: 0, length: (s as NSString).length)), m.numberOfRanges > 1 else { return nil }
-        let t = SiteReaderView.clean((s as NSString).substring(with: m.range(at: 1)))
+        let t = SiteHTML.text((s as NSString).substring(with: m.range(at: 1)))
         return t.isEmpty ? nil : t
     }
 
@@ -200,7 +208,7 @@ struct PieceDetail: Codable, Sendable {
         let ns = s as NSString
         return re.matches(in: s, range: NSRange(location: 0, length: ns.length)).map {
             let t = ns.substring(with: $0.range(at: 1))
-            return clean ? SiteReaderView.clean(t) : t
+            return clean ? SiteHTML.text(t) : t
         }
     }
 

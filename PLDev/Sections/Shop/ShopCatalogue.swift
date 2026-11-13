@@ -224,7 +224,7 @@ enum ShopCatalogue {
     var failure: String?
     var loading = false
 
-    private let seenKey = "pldev.shop.seen"
+    private let seenKey = "pldev.shop.seen2"   // v2: the list grew from the feed's 52 to the site's 89, so the old record would call 37 pieces new
     private var cacheURL: URL? {
         FileManager.default.urls(for: .cachesDirectory, in: .userDomainMask).first?.appendingPathComponent("shop-catalogue.json")
     }

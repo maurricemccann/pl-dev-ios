@@ -119,8 +119,8 @@ enum ArchiveDate {
         var keeps: [String: String] = [:]
         for x in k?.keeps ?? [] { keeps[x.cr] = x.kept ?? "" }
         kept = keeps
-        // his keeps lead (his S308 ruling), the catalogue's order within each
-        works = parsed.filter { !Self.blocked.contains($0.cr) && $0.shareable != false }.sorted {
+        // his keeps lead (his S308 ruling), the catalogue's order within each; every work stays in All works (his: none hidden), as the site's viewer does
+        works = parsed.filter { !Self.blocked.contains($0.cr) }.sorted {
             let a = keeps[$0.cr] != nil, b = keeps[$1.cr] != nil
             return a != b ? a : $0.cr.localizedStandardCompare($1.cr) == .orderedAscending
         }

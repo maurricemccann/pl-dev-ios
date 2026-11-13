@@ -17,26 +17,6 @@ struct ShopMoreView: View {
     }
 }
 
-// MARK: - The signal
-
-struct SignalView: View {
-    @State private var web: WebPage?
-
-    var body: some View {
-        List {
-            Section {
-                Text("The signal goes out as the work does. Sign up with an email and you are the first to see what arrives.").plReading()
-                Button {
-                    if let url = Site.page("transmission") { web = WebPage(url) }
-                } label: { Label("Receive the signal", systemImage: "antenna.radiowaves.left.and.right").frame(minHeight: PLMetric.touch) }
-            } footer: { Text("The form opens on the site, which checks a person is signing up.") }
-        }
-        .siteList()
-        .plScreenTitle("The signal")
-        .sheet(item: $web) { SafariSheet(url: $0.url).ignoresSafeArea() }
-    }
-}
-
 // MARK: - Track an order (no account: email and order number, as the site's own page does)
 
 struct TrackOrderView: View {
