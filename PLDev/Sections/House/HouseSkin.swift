@@ -59,8 +59,8 @@ struct OSCard: ViewModifier {
             .frame(maxWidth: .infinity, alignment: .leading)
             .background {
                 ZStack(alignment: .top) {
-                    shape.fill(PLOS.surface(scheme).opacity(scheme == .dark ? 0.62 : 0.72))
-                    LinearGradient(colors: [.white.opacity(scheme == .dark ? 0.10 : 0.20), .white.opacity(0.03), .clear], startPoint: .top, endPoint: .bottom)
+                    shape.fill(PLOS.surface(scheme).opacity(scheme == .dark ? 0.28 : 0.34))
+                    LinearGradient(colors: [.white.opacity(scheme == .dark ? 0.08 : 0.16), .white.opacity(0.02), .clear], startPoint: .top, endPoint: .bottom)
                         .frame(maxHeight: .infinity, alignment: .top).mask(shape).allowsHitTesting(false)
                 }
                 .glassEffect(.regular, in: shape)
@@ -76,9 +76,7 @@ extension View {
     /// `.dash-kpi-value`: numbers and states in the instrument face.
     func osValue(_ size: CGFloat = 30) -> some View { font(.system(size: size, weight: .regular, design: .monospaced)).monospacedDigit() }
     /// House screens on the console ground, gold as the tint, Lists see-through so the glass shows.
-    func osScreen() -> some View {
-        self.scrollContentBackground(.hidden).background { OSGround() }.tint(PLOS.gold)
-    }
+    func osScreen() -> some View { modifier(OSScreen()) }
 }
 
 /// `.o-section-label` / Panel: a collapsible glass panel named in his hand, a mono badge on the right, a chevron.
@@ -128,7 +126,7 @@ struct OSRow<Trailing: View>: View {
             trailing()
         }
         .padding(12)
-        .background(PLOS.surface2(scheme).opacity(0.7), in: RoundedRectangle(cornerRadius: 12, style: .continuous))
+        .background(PLOS.surface2(scheme).opacity(scheme == .dark ? 0.32 : 0.4), in: RoundedRectangle(cornerRadius: 12, style: .continuous))
         .overlay { RoundedRectangle(cornerRadius: 12, style: .continuous).strokeBorder(PLOS.line(scheme), lineWidth: 0.6) }
     }
 }
@@ -141,7 +139,7 @@ struct OSPill: ButtonStyle {
         configuration.label
             .osEyebrow(11).foregroundStyle(PLOS.goldDim(scheme))
             .padding(.horizontal, 16).frame(minHeight: 44).frame(maxWidth: .infinity)
-            .glassEffect(.regular.interactive(), in: Capsule())
+            .glassEffect(.clear.interactive(), in: Capsule())
             .overlay { Capsule().strokeBorder(PLOS.line(scheme), lineWidth: 0.8) }
             .opacity(configuration.isPressed ? 0.7 : 1)
     }
@@ -152,8 +150,9 @@ struct OSHeader: View {
     @Environment(\.colorScheme) private var scheme
     var body: some View {
         HStack(alignment: .center) {
-            Image("PLIcons/house").resizable().scaledToFit().frame(width: 26, height: 26).foregroundStyle(PLOS.gold.opacity(0.8))
-            Text("Psyched Luxuries").plHand(26, relativeTo: .title2).foregroundStyle(PLOS.gold)
+            Image("PLIcons/pl-mark").resizable().scaledToFit().frame(width: 30, height: 30).foregroundStyle(PLOS.gold)
+                .accessibilityHidden(true)
+            Text("Psyched Luxuries").plHand(24, relativeTo: .title2).foregroundStyle(PLOS.gold).lineLimit(1).minimumScaleFactor(0.55)
             Spacer()
             TimelineView(.periodic(from: .now, by: 15)) { ctx in
                 VStack(alignment: .trailing, spacing: 0) {
@@ -245,7 +244,18 @@ struct OSKpis: View {
 struct OSRowBackground: View {
     @Environment(\.colorScheme) private var scheme
     var body: some View {
-        Rectangle().fill(PLOS.surface(scheme).opacity(scheme == .dark ? 0.78 : 0.86))
+        Rectangle().fill(PLOS.surface(scheme).opacity(scheme == .dark ? 0.42 : 0.5))
             .overlay(alignment: .bottom) { Rectangle().fill(PLOS.line(scheme)).frame(height: 0.5) }
+    }
+}
+
+
+/// House's screen: the console ground, gold as the tint, Lists see-through, and pl-os's dark theme unless he chose light
+/// (Settings > House look). His screenshot of pl-os dark on the PC, 11-13: "this looked really cool".
+struct OSScreen: ViewModifier {
+    @AppStorage("house.look") private var look = "dark"
+    func body(content: Content) -> some View {
+        content.scrollContentBackground(.hidden).background { OSGround() }.tint(PLOS.gold)
+            .environment(\.colorScheme, look == "light" ? .light : .dark)
     }
 }

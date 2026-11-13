@@ -14,6 +14,7 @@ import UserNotifications
     /// House's own Settings rows: the tips again, and the rooms back into Spotlight.
     static func settingsRows(model: AppModel) -> AnyView? {
         AnyView(Group {
+            HouseLookPicker()
             Button { UserDefaults.standard.set(true, forKey: "pldev.resetTips") } label: {   // TipKit resets only before configure: at next launch
                 SettingsLabel("Show the tips again next time PL DEV opens", "lightbulb", IOS27.SystemColors.yellow)
             }
@@ -202,10 +203,10 @@ struct HouseView: View {
             case .more: MoreTab(model: model)
             }
         }
-        .osScreen()
         .safeAreaInset(edge: .bottom, spacing: 0) {
             OSTabBar(tab: $state.tab, badge: state.needsYou.count + (state.stats?.pending ?? 0))
         }
+        .osScreen()   // after the tab bar, so it wears the same look
         .toolbar(.hidden, for: .navigationBar)
         .sensoryFeedback(PLHaptic.commit, trigger: state.tick)
         .sensoryFeedback(.selection, trigger: state.tab)
@@ -476,5 +477,16 @@ struct FounderTab: View {
             }
         }
         .buttonStyle(.plain)
+    }
+}
+
+
+/// Settings > House look: pl-os dark (the default, his 11-13 screenshot) or pl-os light.
+struct HouseLookPicker: View {
+    @AppStorage("house.look") private var look = "dark"
+    var body: some View {
+        Picker(selection: $look) { Text("Dark, like pl-os at night").tag("dark"); Text("Light, the ivory console").tag("light") } label: {
+            SettingsLabel("House look", "circle.lefthalf.filled", Color(hex: 0xc9a84c))
+        }
     }
 }

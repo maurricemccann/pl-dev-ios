@@ -13,14 +13,17 @@ import SwiftUI
 
 struct AtlasView: View {
     let model: AppModel
-    struct Node: Decodable, Identifiable { let id: String; let label: String; let zone: String; let blurb: String?; let what: String?; let does: [String]?; let use: String?; let control: String?; let link: String? }
+    struct Node: Decodable, Identifiable, Hashable { let id: String; let label: String; let zone: String; let blurb: String?; let what: String?; let does: [String]?; let use: String?; let control: String?; let link: String?
+        let x: Double?; let y: Double?; let w: Double?; let h: Double? }
+    struct Edge: Decodable, Identifiable { let id: String; let from: String; let to: String; let fromSide: String?; let toSide: String?; let label: String? }
     struct Step: Decodable, Hashable { let label: String; let system: String?; let note: String? }
     struct Journey: Decodable, Identifiable { let id: String; let title: String; let subtitle: String?; let steps: [Step] }
     struct Slot: Decodable, Hashable { let days: [Int]; let timePT: String; let label: String; let detail: String?; let `where`: String? }
     struct Zone: Decodable { let title: String }
     struct Control: Decodable { let label: String; let emoji: String? }
-    struct Atlas: Decodable { let nodes: [Node]; let journeys: [Journey]; let schedule: [Slot]; let zones: [String: Zone]; let controls: [String: Control] }
+    struct Atlas: Decodable { let nodes: [Node]; let edges: [Edge]?; let journeys: [Journey]; let schedule: [Slot]; let zones: [String: Zone]; let controls: [String: Control] }
     @State private var part = 0
+    @State private var opened: Node?
 
     var body: some View {
         Loaded(load: { try await OS.get("atlas", Atlas.self, model: model) }) { a, _ in
@@ -28,6 +31,10 @@ struct AtlasView: View {
                 Picker("Part", selection: $part) { Text("Map").tag(0); Text("Journeys").tag(1); Text("Week").tag(2) }.pickerStyle(.segmented)
                 switch part {
                 case 0:
+                    // the house drawn (his word 11-13: the Atlas was never meant to be text): pl-os's own map, pinch and drag
+                    AtlasMap(atlas: a) { opened = $0 }
+                        .frame(height: 520)
+                        .listRowInsets(EdgeInsets()).listRowBackground(Color.clear)
                     ForEach(["desk", "spine", "doors", "world"], id: \.self) { z in
                         Section(a.zones[z]?.title ?? z.capitalized) {
                             ForEach(a.nodes.filter { $0.zone == z }) { n in
@@ -58,6 +65,7 @@ struct AtlasView: View {
             }
         }
         .navigationTitle("Atlas")
+        .navigationDestination(item: $opened) { n in AtlasNodeSheet(node: n) }
     }
 
     private func days(_ d: [Int]) -> String {
@@ -488,5 +496,119 @@ struct CraftView: View {
         busy = true; defer { busy = false }
         do { try await Console.post("api/drafts/create", ["id": "craft-\(UUID().uuidString.prefix(8).lowercased())", "caption": text, "media_url": p.url, "platform": "instagram"], model: model); result = "Added. It waits in Approvals." }
         catch { result = "Not added. \(error.localizedDescription)" }
+    }
+}
+
+
+/// One node of the Atlas on its own: what it is, what it does, how he uses it.
+struct AtlasNodeSheet: View {
+    let node: AtlasView.Node
+    var body: some View {
+        List {
+            if let w = node.what { Section { Text(w) }.listRowBackground(OSRowBackground()) }
+            if let does = node.does, !does.isEmpty { Section("What it does") { ForEach(does, id: \.self) { Text($0) } }.listRowBackground(OSRowBackground()) }
+            if let u = node.use { Section("How you use it") { Text(u) }.listRowBackground(OSRowBackground()) }
+            if let l = node.link, let url = URL(string: l) { Link("Open", destination: url) }
+        }
+        .navigationTitle(node.label).osScreen()
+    }
+}
+
+/// pl-os's Atlas map drawn natively: every node at its own place and size, the zone's colour on its rim, the edges between the
+/// sides they name, labelled when zoomed in. Fits the screen first; pinch to zoom, drag to move, tap a node to open it.
+struct AtlasMap: View {
+    let atlas: AtlasView.Atlas
+    let open: (AtlasView.Node) -> Void
+    @State private var zoom: CGFloat = 1
+    @State private var base: CGFloat = 1
+    @State private var pan: CGSize = .zero
+    @State private var panBase: CGSize = .zero
+    @Environment(\.colorScheme) private var scheme
+
+    private static func zoneColor(_ z: String) -> Color {
+        switch z {
+        case "desk": return PLOS.gold
+        case "spine": return Color(hex: 0xa3453f)
+        case "doors": return Color(hex: 0x9c8347)
+        default: return Color(hex: 0x6e2f2c)
+        }
+    }
+
+    private struct Frame { let minX: Double; let minY: Double; let w: Double; let h: Double }
+
+    private func frameOf(_ placed: [AtlasView.Node]) -> Frame {
+        let minX = placed.map { $0.x ?? 0 }.min() ?? 0, minY = placed.map { $0.y ?? 0 }.min() ?? 0
+        let maxX = placed.map { ($0.x ?? 0) + ($0.w ?? 340) }.max() ?? 1, maxY = placed.map { ($0.y ?? 0) + ($0.h ?? 130) }.max() ?? 1
+        return Frame(minX: minX, minY: minY, w: maxX - minX + 80, h: maxY - minY + 80)
+    }
+
+    private func rect(_ n: AtlasView.Node, _ f: Frame, _ k: CGFloat) -> CGRect {
+        CGRect(x: ((n.x ?? 0) - f.minX + 40) * k, y: ((n.y ?? 0) - f.minY + 40) * k, width: (n.w ?? 340) * k, height: (n.h ?? 130) * k)
+    }
+
+    private func anchor(_ r: CGRect, _ side: String?) -> CGPoint {
+        switch side {
+        case "top": return CGPoint(x: r.midX, y: r.minY)
+        case "bottom": return CGPoint(x: r.midX, y: r.maxY)
+        case "left": return CGPoint(x: r.minX, y: r.midY)
+        default: return CGPoint(x: r.maxX, y: r.midY)
+        }
+    }
+
+    var body: some View {
+        let placed = atlas.nodes.filter { $0.x != nil && $0.y != nil }
+        let f = frameOf(placed)
+        let byId = Dictionary(placed.map { ($0.id, $0) }, uniquingKeysWith: { a, _ in a })
+        GeometryReader { g in
+            let k = min(g.size.width / f.w, g.size.height / f.h) * zoom
+            ZStack(alignment: .topLeading) {
+                Canvas { ctx, _ in
+                    for e in atlas.edges ?? [] {
+                        guard let a = byId[e.from], let b = byId[e.to] else { continue }
+                        let p0 = anchor(rect(a, f, k), e.fromSide), p1 = anchor(rect(b, f, k), e.toSide)
+                        let dx = (p1.x - p0.x) * 0.5, dy = (p1.y - p0.y) * 0.5
+                        let vertical0 = e.fromSide == "top" || e.fromSide == "bottom", vertical1 = e.toSide == "top" || e.toSide == "bottom"
+                        let c0 = vertical0 ? CGPoint(x: p0.x, y: p0.y + dy) : CGPoint(x: p0.x + dx, y: p0.y)
+                        let c1 = vertical1 ? CGPoint(x: p1.x, y: p1.y - dy) : CGPoint(x: p1.x - dx, y: p1.y)
+                        var path = Path()
+                        path.move(to: p0)
+                        path.addCurve(to: p1, control1: c0, control2: c1)
+                        ctx.stroke(path, with: .color(PLOS.goldDim(scheme).opacity(0.7)), style: StrokeStyle(lineWidth: max(0.8, 1.6 * zoom), dash: [4 * zoom, 3 * zoom]))
+                        if let l = e.label, zoom > 1.6 {
+                            ctx.draw(Text(l).font(.system(size: 9 * min(zoom, 2.5), design: .monospaced)).foregroundStyle(PLOS.dim(scheme)),
+                                     at: CGPoint(x: (p0.x + p1.x) / 2, y: (p0.y + p1.y) / 2))
+                        }
+                    }
+                }
+                ForEach(placed) { n in
+                    let r = rect(n, f, k)
+                    let shape = RoundedRectangle(cornerRadius: 10 * max(k, 0.3), style: .continuous)
+                    Button { open(n) } label: {
+                        VStack(alignment: .leading, spacing: 2) {
+                            Text(n.label).font(.system(size: max(5, 15 * k), weight: .semibold, design: .monospaced)).foregroundStyle(PLOS.text(scheme)).lineLimit(2).minimumScaleFactor(0.5)
+                            if let b = n.blurb, k > 0.25 { Text(b).font(.system(size: max(4, 11 * k))).foregroundStyle(PLOS.dim(scheme)).lineLimit(3) }
+                        }
+                        .padding(6 * k)
+                        .frame(width: r.width, height: r.height, alignment: .topLeading)
+                        .background(PLOS.surface(scheme).opacity(0.45), in: shape)
+                        .glassEffect(.regular, in: shape)
+                        .overlay { shape.strokeBorder(Self.zoneColor(n.zone), lineWidth: 1.2) }
+                    }
+                    .buttonStyle(.plain)
+                    .position(x: r.midX, y: r.midY)
+                    .accessibilityLabel(n.label)
+                }
+            }
+            .frame(width: f.w * k, height: f.h * k, alignment: .topLeading)
+            .offset(pan)
+            .frame(width: g.size.width, height: g.size.height, alignment: .topLeading)
+            .clipped()
+            .contentShape(Rectangle())
+            .gesture(MagnifyGesture().onChanged { zoom = min(max(base * $0.magnification, 1), 8) }.onEnded { _ in base = zoom })
+            .simultaneousGesture(DragGesture().onChanged { pan = CGSize(width: panBase.width + $0.translation.width, height: panBase.height + $0.translation.height) }.onEnded { _ in panBase = pan })
+            .onTapGesture(count: 2) { withAnimation(.snappy) { zoom = 1; base = 1; pan = .zero; panBase = .zero } }
+        }
+        .background(PLOS.bg(scheme).opacity(0.5), in: RoundedRectangle(cornerRadius: PLOS.radius, style: .continuous))
+        .overlay(alignment: .bottomTrailing) { Text("pinch · drag · double-tap to fit").osEyebrow(8).foregroundStyle(PLOS.goldDim(scheme)).padding(10) }
     }
 }
