@@ -57,7 +57,7 @@ struct CodeArtGate<Content: View>: View {
                 VStack(spacing: 10) { ProgressView(); Text("Loading the pieces").font(.footnote).foregroundStyle(.secondary) }.frame(maxWidth: .infinity, maxHeight: .infinity)
             }
         }
-        .task { await boot.ensure(model: model) }
+        .task { FontResolver.handName = HouseKit.shared.titleFont; await boot.ensure(model: model) }
     }
 }
 

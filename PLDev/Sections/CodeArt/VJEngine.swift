@@ -277,6 +277,8 @@ final class VJEngine: @unchecked Sendable {
     private var loading: [String] = ["", ""]
     private var frameAcc = [0.0, 0.0]
     private var prevBeat = false
+    private var lastA = ""
+    private var lastB = ""
     private var beatCount = 0
     private var seqPlayhead = 0
     private var holdStart = 0.0
@@ -314,9 +316,9 @@ final class VJEngine: @unchecked Sendable {
         rt.queue.async { [self] in
             if decks[deck]?.info.id == id && pending[deck] == nil { return }
             if loading[deck] == id { return }
-            loading[deck] = id
             let (w, h, d) = (pxW, pxH, dpr)
             guard w > 1 else { return }
+            loading[deck] = id
             Task.detached { [self] in
                 if let inst = await rt.makeInstance(id, pxW: w, pxH: h, dpr: d) {
                     rt.queue.async { [self] in pending[deck] = inst; loading[deck] = "" }
@@ -382,12 +384,13 @@ final class VJEngine: @unchecked Sendable {
                 }
             }
         }
-        // a requested piece that is not loaded yet
-        if decks[0] == nil, pending[0] == nil, loading[0].isEmpty { let id = p.pieceA.isEmpty ? (order.first ?? "") : p.pieceA; if !id.isEmpty { load(deck: 0, id: id) } }
-        if p.layerBOn, decks[1] == nil, pending[1] == nil, loading[1].isEmpty, !p.pieceB.isEmpty { load(deck: 1, id: p.pieceB) }
-        if !p.layerBOn, decks[1] != nil { decks[1] = nil }
-        if let a = decks[0], a.info.id != p.pieceA, !p.pieceA.isEmpty, pending[0] == nil, loading[0] != p.pieceA { load(deck: 0, id: p.pieceA) }
-        if p.layerBOn, let b = decks[1], b.info.id != p.pieceB, !p.pieceB.isEmpty, pending[1] == nil, loading[1] != p.pieceB { load(deck: 1, id: p.pieceB) }
+        // a piece the screen asked for (the knob changed), or a first piece when nothing is loaded yet
+        if p.pieceA != lastA { lastA = p.pieceA; if !p.pieceA.isEmpty { load(deck: 0, id: p.pieceA) } }
+        else if decks[0] == nil, pending[0] == nil, loading[0].isEmpty { let id = p.pieceA.isEmpty ? (order.first ?? "") : p.pieceA; if !id.isEmpty { load(deck: 0, id: id) } }
+        if p.layerBOn {
+            if p.pieceB != lastB { lastB = p.pieceB; if !p.pieceB.isEmpty { load(deck: 1, id: p.pieceB) } }
+            else if decks[1] == nil, pending[1] == nil, loading[1].isEmpty, !p.pieceB.isEmpty { load(deck: 1, id: p.pieceB) }
+        } else { if decks[1] != nil { decks[1] = nil }; pending[1] = nil; lastB = "" }
 
         // the beat grid: the sequencer takes the beat, else auto-advance
         let edge = audio.beat && !prevBeat

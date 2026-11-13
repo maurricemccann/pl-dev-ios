@@ -1,4 +1,5 @@
 import SwiftUI
+import TipKit
 import UniformTypeIdentifiers
 
 // The Curves room, native: every code piece as a tile (the first few running live as you scroll), a full-screen piece you
@@ -146,6 +147,7 @@ struct NativeCurvesRoom: View {
                                            description: Text(onlyLiked ? "Touch and hold a piece and choose Like." : "The pieces appear here when the library loads."))
                 } else {
                     let running = liveSet
+                    TipView(PieceHoldTip()).padding(.horizontal, 6)
                     LazyVGrid(columns: [GridItem(.adaptive(minimum: 130), spacing: 6)], spacing: 6) {
                         ForEach(Array(list.enumerated()), id: \.element.id) { i, p in
                             Button { tick += 1; playing = p } label: { tile(p, live: running.contains(p.id)) }
@@ -227,6 +229,7 @@ struct PieceStage: View {
                     .transition(.opacity)
             }
             .contentShape(Rectangle())
+            .overlay(alignment: .top) { if bars { TipView(PieceSwipeTip()).padding() } }
             .onTapGesture { withAnimation(.snappy) { bars.toggle() } }
             .gesture(DragGesture(minimumDistance: 30).onChanged { drag = $0.translation.width }.onEnded { g in
                 drag = 0

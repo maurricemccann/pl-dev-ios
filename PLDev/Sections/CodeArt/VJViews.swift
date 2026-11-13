@@ -1,4 +1,5 @@
 import SwiftUI
+import TipKit
 import UIKit
 
 // The VJ instrument's screens (the twin of /live): the full-bleed output, a rack under it (deck, mix, effects, modulation,
@@ -92,6 +93,7 @@ struct VJInstrument: View {
     // MARK: Deck
 
     @ViewBuilder private var deck: some View {
+        Section { TipView(VJGestureTip()) }
         Section("Now") {
             Button { browsing = .deckA } label: { LabeledContent("Piece", value: vj.name(vj.p.pieceA)) }
             LazyVGrid(columns: Array(repeating: GridItem(.flexible(), spacing: 6), count: 3), spacing: 6) {
