@@ -18,7 +18,7 @@ struct PLDevApp: App {
         Task { await AppModel.shared.restoreIfNeeded(); await HouseKit.shared.refresh(model: AppModel.shared) }
         Task {   // every app's rooms in Spotlight, each in its own named index
             await HouseSpotlight.index(); await GallerySpotlight.index(); await ShopSpotlight.index(); await CongregationSpotlight.index()
-            await PracticeSpotlight.index(); await GlyphBotSpotlight.index(); await CurateSpotlight.index(); await PickSpotlight.index()
+            await PracticeSpotlight.index(); await GlyphBotSpotlight.index(); await CurateSpotlight.index(); await PickSpotlight.index(); await CaptureSpotlight.index(); await ComposerSpotlight.index()
         }
     }
 

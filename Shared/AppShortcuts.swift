@@ -39,17 +39,17 @@ struct PLDevShortcuts: AppShortcutsProvider {
             shortTitle: "Town status",
             systemImageName: "building.2"
         )
-        AppShortcut(
-            intent: ShopStatusIntent(),
-            phrases: ["What's in the shop in \(.applicationName)", "\(.applicationName) shop status"],
-            shortTitle: "Shop status",
-            systemImageName: "bag"
+        AppShortcut(   // wave 3 (11-13): Capture's two, in place of Shop status and Congregation status (cap of 10)
+            intent: CaptureThoughtIntent(),
+            phrases: ["Capture a thought in \(.applicationName)", "\(.applicationName) capture"],
+            shortTitle: "Capture a thought",
+            systemImageName: "square.and.arrow.down"
         )
         AppShortcut(
-            intent: CongregationStatusIntent(),
-            phrases: ["What's in the congregation in \(.applicationName)", "\(.applicationName) congregation status"],
-            shortTitle: "Congregation status",
-            systemImageName: "person.3"
+            intent: WaitingOnMeIntent(),
+            phrases: ["What is waiting on me in \(.applicationName)"],
+            shortTitle: "Waiting on me",
+            systemImageName: "tray"
         )
         AppShortcut(
             intent: PracticeStatusIntent(),

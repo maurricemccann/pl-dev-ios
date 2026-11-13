@@ -9,6 +9,7 @@ struct PLDevWidgetsBundle: WidgetBundle {
         PLDevHomeWidgets().body
         PLDevControls().body
         PLDevLiveActivities().body
+        PLDevMoreWidgets().body
     }
 }
 
@@ -23,6 +24,7 @@ struct PLDevHomeWidgets: WidgetBundle {
         PaintWidget()
         PickWidget()
         TownWidget()
+        CaptureWidget()
     }
 }
 
@@ -42,5 +44,12 @@ struct PLDevLiveActivities: WidgetBundle {
         RenderLiveActivity()
         RehearsalLiveActivity()
         SittingLiveActivity()
+    }
+}
+
+/// The second group: the first is at the builder's ten (11-13).
+struct PLDevMoreWidgets: WidgetBundle {
+    var body: some Widget {
+        ComposerWidget()
     }
 }
