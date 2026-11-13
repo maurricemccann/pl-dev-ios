@@ -19,6 +19,7 @@ struct NativeStroker: Sendable {
     let B: Brush
     let size: Double
     var total: Double?
+    var global = 0.0   // the Stabilization slider for every brush; a brush's own StreamLine and Stabilization still apply, the larger wins
     private(set) var dist = 0.0
     private var tab: [Double]
     private var seed = 7919.0
@@ -152,12 +153,12 @@ struct NativeStroker: Sendable {
     /// One pen point. `t` is milliseconds since the stroke began. Returns the dabs it lays down.
     mutating func add(x: Double, y: Double, p: Double, t: Double, tilt tl: (Double, Double)? = nil) -> [Dab] {
         if let tl { tilt = tl }
-        let stream = B.n("stream")
+        let stream = max(B.n("stream"), global * 0.7)
         if sp == nil { sp = (x, y) }
         let k = 1 - 0.92 * stream
         sp = (sp!.0 + (x - sp!.0) * k, sp!.1 + (y - sp!.1) * k)   // StreamLine: the line follows the pen with a little lag
         var sx = sp!.0, sy = sp!.1
-        let sb = B.n("stab")
+        let sb = max(B.n("stab"), global)
         if sb > 0 {   // Stabilization: a moving average
             let n = 1 + Int((sb * 10).rounded())
             win.append((sx, sy)); if win.count > n { win.removeFirst() }

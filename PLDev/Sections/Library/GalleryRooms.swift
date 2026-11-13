@@ -1,7 +1,6 @@
 import AVKit
 import CryptoKit
 import SwiftUI
-import WebKit
 
 // The Curve Library in full (his order 11-13; inventory of pl-curves-gallery at 1af6cabd). Everything with data is native.
 // The code art (live pieces, the VJ instrument, Forge, the 3D worlds, the labs) is written as browser code (Canvas 2D,
@@ -84,58 +83,6 @@ struct GalleryRoomsView: View {
 }
 
 // MARK: - The web canvas for code art
-
-/// One gallery page as full-screen code art. Signed in with the gallery's own cookie, never the key itself.
-struct GalleryCanvas: View {
-    let model: AppModel
-    let path: String
-    let title: String
-    @Environment(\.dismiss) private var dismiss
-
-    var body: some View {
-        GalleryWeb(model: model, path: path)
-            .ignoresSafeArea(edges: .bottom)
-            .navigationTitle(title)
-            .navigationBarTitleDisplayMode(.inline)
-            .toolbar {
-                if let u = URL(string: LibraryData.shared.base(model) + "/" + path) {
-                    ShareLink(item: u) { Image(systemName: "square.and.arrow.up") }
-                }
-            }
-    }
-}
-
-struct GalleryWeb: UIViewRepresentable {
-    let model: AppModel
-    let path: String
-
-    func makeUIView(context: Context) -> WKWebView {
-        let cfg = WKWebViewConfiguration()
-        cfg.allowsInlineMediaPlayback = true
-        cfg.mediaTypesRequiringUserActionForPlayback = []
-        let web = WKWebView(frame: .zero, configuration: cfg)
-        web.isOpaque = false
-        web.backgroundColor = .black
-        web.scrollView.contentInsetAdjustmentBehavior = .never
-        web.allowsBackForwardNavigationGestures = true
-        let base = LibraryData.shared.base(model)
-        guard let url = URL(string: base + "/" + path), let host = url.host else { return web }
-        if let key = model.config?.key("vault") {
-            let token = SHA256.hash(data: Data("pl-lib-unlock:\(key)".utf8)).map { String(format: "%02x", $0) }.joined()
-            let cookie = HTTPCookie(properties: [.name: "pl_lib", .value: token, .domain: host, .path: "/", .secure: "TRUE",
-                                                 HTTPCookiePropertyKey("HttpOnly"): "TRUE", .sameSitePolicy: "Lax",
-                                                 .expires: Date().addingTimeInterval(400 * 86400)])
-            if let cookie {
-                web.configuration.websiteDataStore.httpCookieStore.setCookie(cookie) { web.load(URLRequest(url: url)) }
-                return web
-            }
-        }
-        web.load(URLRequest(url: url))
-        return web
-    }
-
-    func updateUIView(_ web: WKWebView, context: Context) {}
-}
 
 // MARK: - Curves: every live piece, liked filter, full-screen live
 

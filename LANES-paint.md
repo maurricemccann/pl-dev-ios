@@ -1,52 +1,56 @@
-PHASE REACHED: P1 and P2 built, P3 part built (layers, 15 live blends, groups, clips, share). Everything compiles in CI (lane-paint, build.yml publish=false). Nothing has run on a device. P3's selection and transform, and P4 to P6, are not started.
+DONE (paint lane, waves 3 and 4, 11-13). PL Paint is native from the home screen to the canvas; the web canvas is deleted. The branch compiles in CI (`wave-paint`, build.yml publish=false). Nothing has run on a device: every pixel, the Pencil feel and the memory at 16 MP are unproven (listed below).
 
-# Lane C: PL Paint native engine (11-13)
+# What changed in this pass (on top of the P1 to P3 engine already on the branch)
 
-## The one line the lead adds to open it
-In `PaintHome` (`PLDev/Sections/Paint/PaintSection.swift`), a row and a cover:
+## The web canvas is gone
+- `PaintCanvas`, `PaintWeb` and `import WebKit` are deleted from `PLDev/Sections/Paint/PaintSection.swift`. The handbook link no longer opens `GalleryCanvas`; it opens the native handbook (`NativeHandbookView`, built from the laptop's handbook, pictures load from the gallery at run time).
+- `grep -rn "WKWebView\|GalleryCanvas(\|PaintWeb\|PaintCanvas(" PLDev/Sections/Paint` returns nothing. `ComingSection` stays in that file because other sections still build it.
+- The Paint home is now native in PL Paint's own look (its `style.css`: ground #0e0c08, cream text, his gold, thin glass panels, his hand for the title): Back to the canvas, the Daily Mark (streak, five weeks), Your works (this phone's, then the laptop's not yet here, tap to download and open), Waiting to be filed, Sync now, the Handbook. Deep link `pldev://section/paint/canvas` (or `/native`) opens the canvas.
 
-```swift
-// state: @State private var nativeOpen = false   (or a flag on PaintModel, like canvasOpen)
-Section { Button { nativeOpen = true } label: { Label("Native canvas (beta)", systemImage: "paintbrush.pointed") } }
-.fullScreenCover(isPresented: $nativeOpen) { NativeCanvasView(model: model) }
-```
+## Built this pass (all in `PLDev/Sections/Paint/Native/`, new files marked +)
+- + `NativeAdjust.swift`: the 11 adjustments and effects of `adjust.js` (Hue/Saturation/Brightness, Colour Balance, Curves, Gradient Map, Gaussian and Motion Blur, Noise, Sharpen, Bloom, Halftone, Chromatic Aberration), a live preview on a 720 px copy, Apply to the full layer inside the selection, keeping the shape on an alpha-locked layer, one undo step.
+- + `NativeLift.swift`: Lift (ink off a photo of a physical piece), port of `lift.js` (per-block paper, threshold, softness, gain, specks, light-on-dark, own colours or the current colour, fit to canvas), photo from the Photos picker, result on its own layer, then Transform.
+- + `NativeExport.swift`: Save or share as PNG, JPEG, PSD (layers, names, opacity, blends, groups as folders, masks and clips baked in), SVG with layers as images, SVG with the strokes as vector paths (port of `svg.js`, with channels as masks and the eraser as a mask), and the work file; all leave through the share sheet. Bring in: a photo as a layer, a PSD as layers (groups kept), a Photoshop `.abr` file (tips into Mine), a brush pack `.json`, a work file from the laptop (opens as a new work), any picture; Make a brush from this layer (the signature stamp).
+- + `NativePSD.swift`: the PSD writer and reader (8-bit RGB, raw and RLE channels, groups).
+- + `NativeTimelapse.swift`: a small picture after every change (960 px JPEG, a folder per work, thinned past 2,400), replay and scrub, and a video as MP4 (every frame at 30 fps, or 10, 20, 30, 60 seconds).
+- + `NativeStudy.swift`: the Study recorder (every stroke with its raw path, pressure, tilt and timing; undo; marks), the twelve guided exercises from the toolkit, the bar while it records, past sessions with share and delete. Sessions stay on the phone in `PLPaintNative/study/` unless he shares one.
+- + `NativeTweak.swift`: Adjust last stroke (size, swell, clearance, companion width and gap, lines, line gap, drawn again from its pen path as a slider moves, Keep as the brush's setting) and Restyle the whole layer (every stroke redrawn with a size scale and brush overrides, one undo step).
+- + `NativeExtras.swift`: ghost copy behind a layer, corner copies for a tile, the 3 by 3 repeat check, Name It (a quality from his names file plus the date), Stacks of works (put in a stack, take out; grouped in the Works list; the stack name syncs with the laptop), Passes (each stroke takes the next colour of a palette; Colour sheet).
+- Edits to existing files: `defaultMeta` raw is now false (the laptop's default; it had been true, which would have blocked Restyle and mislabelled every new layer); every layer carries a stable `id` and the log names its layer by it (as the laptop does), which Restyle and the vector SVG need; Settings has a Keys row (sync key Set / Not set) and the timelapse switch; the rename alert is now a sheet with the suggestion button; the Actions list gained Adjust last stroke, Study, Lift, Timelapse, Ghost copy, Corner copies, Check the repeat.
+- Fixes for the merge: `override` on `gestureRecognizerShouldBegin`, `catmull` made `nonisolated`, the duplicate `DailyMarkStrip` removed, and the two wave-2 name-clash renames (`FlowChips` in GlyphBot, `ArchiveWork` in ThreeD) cherry-picked from main so this branch builds alone.
 
-`NativeCanvasView` closes itself (its own X) and saves on close, on leaving the app and 3 s after the last change.
-No other shared file needs a line: no key (it reads the same `paint` origin the web canvas uses), no intent, no notification, no Info.plist entry.
+## Already there before this pass (kept)
+Engine P1 and P2 (stroker, stamp, the whole brush generator, 45 brushes in four packs), layers, 26 blends (the nine PSD ones per pixel on the CPU), groups, masks, clips, solo, reference, glow, alpha lock, selection (automatic, freehand, rectangle, ellipse, add, remove, invert, feather, history), transform (free, uniform, distort, warp, pivot), assists (symmetry, guides, vanishing points, assisted drawing, QuickShape, tangent lock, tile), smudge, wet mix, ColorDrop, eyedropper, gestures and the QuickMenu, copy and paste, Sync both ways with the laptop (works, Daily Mark, Mine brushes, fork on conflict), Send to Curate or the Archive, the native handbook.
 
-## Files (all new, all in `PLDev/Sections/Paint/Native/`)
-- `NativeCanvasView.swift`: the screen (toolbar, brush, colours, size, opacity, finger-paints toggle, works sheet, share).
-- `NativeCanvasModel.swift`: the open work, the live stroke, undo and redo, autosave, layer operations.
-- `NativeCanvasStage.swift`: the UIKit surface: Pencil touches (coalesced), pinch, twist, two-finger pan, two/three/four-finger taps (undo, redo, fit).
-- `NativeStroker.swift`: port of `Stroker` in `pl-paint/src/brush.js`. Pure.
-- `NativeStamp.swift`: port of the sprite, `drawStamp`, twin, fill, grain and colour-jitter code.
-- `NativeToolkit.swift` + `NativeToolkit.json`: his packs and defaults (a copy of `pl-toolkit`'s data; 4 packs, 45 brushes, 14 canvas presets).
-- `NativeBrushSheet.swift`: the brush list with sample strokes drawn by the same engine.
-- `NativeLayers.swift`, `NativeLayersSheet.swift`: layers, 26 blend names, groups, clip, flat export.
-- `NativePixels.swift`: layer pixels and the patch-stack undo (250).
-- `NativeWork.swift`: his work file read and written, the local store, the synced-works reader, gzip.
+# Gap check against the laptop's "Every feature" chapter (12)
+Built: the screen, gestures, canvases and files (presets, paper stocks, transparent background, Gallery with rename, duplicate, delete and now stacks, Daily Mark, autosave, stroke journal, PNG, PSD in and out, both SVGs, open as layer, Name It), brushes (packs, Studio, import and export of packs, `.abr`, brush from a layer), adjusting what you drew, colour (disc, sliders, harmony, value, hex, history, palettes, colour sense, Passes), layers, selecting and transforming, drawing aids except those below, all 11 adjustments, Timelapse (replay, scrub, 30 s and full video), Study, Lift, phone and sync, the handbook.
 
-## What works (by construction; compiled, not run)
-- **P1.** A canvas at any size up to 16,777,216 px. Apple Pencil: force, coalesced samples, tilt (altitude and azimuth turned into the laptop's tiltX and tiltY and logged only when the brush uses tilt). Fingers draw only if "Finger paints" (the laptop's rule); a second finger cancels a finger stroke. Pinch, twist, pan, undo (patch stack of 250, blocked mid-stroke), autosave, save and open.
-- **His work files, both ways.** `NativeDoc(file:)` reads the laptop's `work-<id>.json` (v:1: w, h, bg, bgVis, active, groups, guide, layers with PNG data URLs, mask, log). Anything the engine does not use yet (groups, guide, seam, glow, ref, raw, assist, mask) is carried through untouched, so a work opened here and saved goes back whole. Synced works: `GET paint/index`, then `GET paint/work/:id` (the body is gunzipped when its first two bytes say gzip), kept on the phone under the same id with the sync fields (`sy`, `scu`, `sn`) the laptop's `pullWork` sets. The stroke log is written in the laptop's `rec` shape (tool, color, color2, size, op, brush, layer, onMask, t, pts [x, y, p, ms(, tiltX, tiltY)], bs, snapped, sym), last 4,000 kept.
-- **P2.** The whole generator of `brush.js`: spacing and its jitter, lateral and linear jitter, StreamLine, Stabilization, taper, flare, caps, swell, tremor, speed, scatter, stroke rotation, tilt size and angle, twin, parallel lines, band mode (His bands), a replay on release for brushes whose ends need the length, and the 14-step catch-up. Stamp shapes round, square, diamond, bristle, tube, and tips (PNG tips from a brush file). Texturised grain (noise, paper, relief, canvas, dots) in one pass over the stroke at release. Hue, saturation and lightness jitter. His packs listed with live sample strokes.
-- **P3 (part).** Layer sheet: add, duplicate, delete (asks), move, rename, opacity, blend, show or hide, alpha lock (paints only where pixels are), clip to the layer below. 15 blend modes live on screen through Core Animation; groups' visibility and opacity applied; masks he made on the laptop are shown. Share sheet exports the flat PNG through the same compositor.
+**Not built (named so nothing is mistaken for done):**
+- Facet and Curve (straight segments with rounded corners while drawing).
+- Seam mode (a garment's pieces on one canvas) and Save print files; tile ghost, tile gate, the middle cross guide, Show the tiles around.
+- Echo Fill, Node mode, Lights off / Light one (glow lighting), Hand Trace (the one-page record of a piece).
+- Colourways (one tap recolours every part of a brush), the Colour card's random palettes and the merged kit palettes list (his 13 palettes are there).
+- Timelapse by colour pass and the "alive" breathing loop; Transform resampling choice and Magnetics beyond the snap; the Pencil second-button swap beyond the action it is given.
+- The iOS add-ons of DESIGN.md section 6 for the canvas: a Live Activity, App Intents and Spotlight entries for the rooms, notification buttons, Tips. The Paint tile already has its widget (Daily Mark) and the deep link; the new panels are reachable from the toolbar, not by Siri.
+- The laptop's Settings glass panel (blur, tile strength, text size, fonts, reduce motion): the canvas follows PL DEV's Settings for look.
 
-## Unproven (no device, no Mac)
-- Every pixel. Nothing in this lane has been drawn on, so the stamp scale, Pencil feel, gesture conflicts (twist and pinch against a finger stroke), memory at 16 MP (a layer 64 MB plus the stroke buffer 64 MB plus tiles) and the frame rate while drawing are all untested. First thing to check on the phone: draw with Round, then with Oil pastel, then with a His bands brush, compare to the laptop.
-- The fidelity set (the same strokes on both, compared) is not built. The stroker is a line-by-line port, so spacing and jitter should match; the sprite blur on square and diamond is a Core Graphics shadow, close not identical.
-- `NativeToolkit.json` reaching the bundle: files in a synchronized group are bundled by default, but the build was not inspected. If the brush list shows only "Round", the file is missing from the app; add it to Copy Bundle Resources.
-- gzip: Apple's `.zlib` decoder is used on the raw deflate stream between the gzip header and trailer. Right in theory, never run against a real synced work.
-- Large works: saving PNG-encodes every layer on the main thread (a hitch at the end of a stroke on a big canvas).
+# Unproven (no device, no Mac)
+- Every pixel: stamp scale, Pencil feel, gesture conflicts (twist and pinch against a finger stroke), memory at 16 MP (a layer 64 MB, the stroke buffer 64 MB, the compositor's temporary buffers, an adjustment's copies), frame rate while drawing.
+- Adjustments, Lift and Restyle run on the main thread on full-size layers; a 16 MP layer will hitch for a second or two while they apply (the preview is a 720 px copy and is quick).
+- gzip in Sync (Apple's `.zlib` decoder on the raw deflate stream between the gzip header and trailer) and the PSD reader against real Photoshop files; the PSD writer against Photoshop, Procreate or Affinity opening it.
+- The ABR reader against real brush files (versions 1, 2, 6, 7, 10 are handled the way `abr.js` does; descriptor names are read without a full parser).
+- Video: `AVAssetWriter` H.264 from the JPEG frames, never run.
+- Restyle uses each stroke's brush by id from the toolkit as it is now, not the brush as it was when the stroke was drawn (the laptop keeps `brushFull`; this log keeps only the `bs` summary).
 
-## Not built (named, so nothing is mistaken for done)
-- P3: selection (automatic, freehand, rectangle, ellipse), transform (freeform, uniform, distort, warp), layer groups editing, mask painting, merge down, glow, the nine PSD-only blends (they save and show as Normal; the sub-spec says per-pixel, a CPU port of `blend.js` is the way), layer-structure undo (layer operations clear the undo stack and say so).
-- Strokes the engine does not yet make: smudge, wet mix, channel clearance (the keyline), satellites, echo, weave, wick, "moving" and "along" grain, pressure grain, join modes (band-meets-band), QuickShape, tangent lock, assisted drawing, symmetry, guides, tile and seam modes, eyedropper from the pen button, adjust last stroke, rapid undo (hold two fingers).
-- P4 assists, P5 (adjustments, PSD, SVG, .abr import, timelapse, Send to Curate or Archive, Daily Mark counting), P6 fidelity pass. Sync **write** (push to pl-cron, fork on conflict) is not built, so a stroke made here stays on the phone; the laptop and the web canvas do not see it. The web canvas (`PaintCanvas`) stays his working painter, as the lane brief said.
-- The handbook, Settings glass and the iOS add-ons of DESIGN.md section 6 (widget, Live Activity, intents, Spotlight, tips, deep link `pldev://section/paint/native`) were not done for the native canvas; the Paint section already has its widget and deep link.
+# Server routes needed
+None. Sync uses the existing paint door: `GET index`, `GET work/:id`, `PUT work/:id`, `POST meta`, `POST delete`, `GET/PUT file/:name`, `POST send`, `GET outbox`.
 
-## Server routes needed
-None. Only reads of `GET /api/paint/index` and `GET /api/paint/work/:id` (both exist). Sync write later needs only the existing `PUT work/:id` and `POST meta`.
+# Shared-file lines the lead must wire
+None required. `PaintSection` already registers the section and its origins (`gallery`, `paint`) and key (`paintSync`). Optional, for the add-ons above: an App Intent "Open PL Paint's canvas" and a Spotlight entry would go in `Shared/AppShortcuts.swift` (shared, so not touched here).
+Info.plist: nothing new. The Photos picker, the Files importer and the share sheet need no usage string. If the lead later adds "Save to Photos" directly (not through the share sheet) it needs `NSPhotoLibraryAddUsageDescription`.
 
-## Gap check against the twin rule
-Twin of the laptop app: **partial by design**. Behaviour a stroke has on the laptop that this engine does not yet produce is listed under "Strokes the engine does not yet make"; until those land, a work drawn with such a brush here will differ from the laptop's. The handbook text for the native canvas does not exist yet (rule: One change, every body).
+# Twin rule (one change, every body)
+Twins named: the laptop app (`C:\dev\pl-paint`) and its handbook. Nothing was changed on the laptop side. The native handbook text is generated from the laptop's (`scripts/paint_handbook.py`); the laptop handbook already describes Lift, Adjustments, Timelapse, Study, Stacks, Name It and the exports, so no handbook text was missing for what was added. The R1 has no PL Paint app. Left alone on purpose: the gallery's `/paint/` web build (it remains the laptop's installable web twin, no longer used by this app).
+
+# Test notes
+Pure parts worth unit tests when a Linux-hosted package exists for them: `NativePSD` (write then read round trip), `NativeABR.parse`, `NativeStroker`, the work-file reader. They live in the app target here, not in `PLDevCore`, so `logic.yml` does not run them.

@@ -40,7 +40,7 @@ extension NativeDoc {
     private func groupRecord(of l: NativeLayer) -> [String: Any]? {
         let gid = l.meta["grp"] as? Int ?? 0
         guard gid != 0 else { return nil }
-        return (groups as? [[String: Any]])?.first { ($0["id"] as? Int) == gid }
+        return groups.first { ($0["id"] as? Int) == gid }
     }
     /// A layer is shown when it and its group are on; its opacity is its own times its group's (the laptop's `shown` and `grpOf(L).op`).
     func isShown(_ l: NativeLayer) -> Bool { l.visible && (groupRecord(of: l)?["vis"] as? Bool ?? true) }
@@ -57,54 +57,6 @@ extension NativeDoc {
         return nil
     }
 
-    // MARK: structure (these clear undo: a patch names a layer by position)
-
-    func addLayer() -> Bool {
-        guard layers.count < 40, let px = PixelBuffer(w: w, h: h) else { return false }
-        layerSeq += 1
-        let L = NativeLayer(meta: NativeLayer.defaultMeta("Layer \(layerSeq)"), mask: nil, pixels: px)
-        layers.insert(L, at: active + 1); active += 1
-        return true
-    }
-    func duplicateActive() -> Bool {
-        guard layers.count < 40, let px = PixelBuffer(w: w, h: h) else { return false }
-        let src = layers[active]
-        memcpy(px.ptr, src.pixels.ptr, w * h * 4)
-        var meta = src.meta; meta["name"] = src.name + " copy"
-        layers.insert(NativeLayer(meta: meta, mask: src.mask, pixels: px), at: active + 1); active += 1
-        return true
-    }
-    func removeActive() -> Bool {
-        guard layers.count > 1 else { return false }
-        layers.remove(at: active); active = min(active, layers.count - 1)
-        return true
-    }
-    func moveActive(by n: Int) -> Bool {
-        let to = active + n
-        guard layers.indices.contains(to) else { return false }
-        layers.swapAt(active, to); active = to
-        return true
-    }
-
-    // MARK: the picture, flattened
-
-    /// Every layer in order with its blend, opacity, group and clip, over the background (transparent when it is hidden).
-    func flatImage() -> CGImage? {
-        guard let c = CGContext(data: nil, width: w, height: h, bitsPerComponent: 8, bytesPerRow: 0, space: CGColorSpaceCreateDeviceRGB(), bitmapInfo: CGImageAlphaInfo.premultipliedLast.rawValue) else { return nil }
-        let full = CGRect(x: 0, y: 0, width: w, height: h)
-        if bgVis, let col = Hex.color(bg) { c.setFillColor(col); c.fill(full) }
-        for (i, l) in layers.enumerated() where isShown(l) {
-            guard var img = l.pixels.image() else { continue }
-            if let b = clipBase(of: i), let base = layers[b].pixels.image(), let t = CGContext(data: nil, width: w, height: h, bitsPerComponent: 8, bytesPerRow: 0, space: CGColorSpaceCreateDeviceRGB(), bitmapInfo: CGImageAlphaInfo.premultipliedLast.rawValue) {
-                t.draw(img, in: full); t.setBlendMode(.destinationIn); t.draw(base, in: full)
-                if let m = t.makeImage() { img = m }
-            }
-            c.saveGState()
-            c.setAlpha(CGFloat(shownOpacity(l)))
-            c.setBlendMode(NativeBlend.mode(l.meta["blend"] as? String).cg ?? .normal)
-            c.draw(img, in: full)
-            c.restoreGState()
-        }
-        return c.makeImage()
-    }
+    /// The flat picture: every layer in order with its blend, mask, group and clip, over the background (transparent when it is hidden).
+    func flatImage() -> CGImage? { compositeBuffer()?.ctx.makeImage() }
 }

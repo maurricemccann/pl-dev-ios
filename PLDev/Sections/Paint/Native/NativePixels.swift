@@ -75,29 +75,59 @@ import Foundation
 
 struct TileKey: Hashable, Sendable { let tx: Int, ty: Int }
 
-/// What one stroke changed on one layer: each touched tile before and after.
-struct Patch {
-    struct T { let key: TileKey; let before: Data; var after: Data }
-    let layer: Int
-    var tiles: [T]
+/// One step of history: what undoes it and what does it again. A stroke names its pixel tiles; a layer edit names the layer list; a
+/// selection names a mask copy. `structural` means the layer tree on screen must be built again afterwards.
+struct HistoryEntry {
+    let label: String
+    let structural: Bool
+    let undo: () -> Void
+    let redo: () -> Void
 }
 
-/// Undo and redo as a patch stack of 250, the laptop's MAX_UNDO. Blocked mid-stroke by the caller.
+/// Undo and redo, 250 deep (the laptop's MAX_UNDO). Blocked mid-stroke by the caller.
 @MainActor final class UndoStack {
     static let limit = 250
-    private(set) var done: [Patch] = [], undone: [Patch] = []
+    private(set) var done: [HistoryEntry] = [], undone: [HistoryEntry] = []
     var canUndo: Bool { !done.isEmpty }
     var canRedo: Bool { !undone.isEmpty }
-    func push(_ p: Patch) { done.append(p); undone.removeAll(); if done.count > Self.limit { done.removeFirst() } }
-    func undo(_ layers: [PixelBuffer]) -> Patch? {
-        guard let p = done.popLast(), p.layer < layers.count else { return nil }
-        for t in p.tiles { layers[p.layer].setTile(tx: t.key.tx, ty: t.key.ty, t.before) }
-        undone.append(p); return p
+    func push(_ e: HistoryEntry) { done.append(e); undone.removeAll(); if done.count > Self.limit { done.removeFirst() } }
+    func undo() -> HistoryEntry? {
+        guard let e = done.popLast() else { return nil }
+        e.undo(); undone.append(e); return e
     }
-    func redo(_ layers: [PixelBuffer]) -> Patch? {
-        guard let p = undone.popLast(), p.layer < layers.count else { return nil }
-        for t in p.tiles { layers[p.layer].setTile(tx: t.key.tx, ty: t.key.ty, t.after) }
-        done.append(p); return p
+    func redo() -> HistoryEntry? {
+        guard let e = undone.popLast() else { return nil }
+        e.redo(); done.append(e); return e
     }
     func reset() { done.removeAll(); undone.removeAll() }
+    /// Forgets the last `n` steps without undoing them (a restyle folds its many strokes into one step).
+    func dropLast(_ n: Int) { if n > 0 { done.removeLast(min(n, done.count)) } }
+}
+
+extension PixelBuffer {
+    /// Copies the whole buffer, packed with LZ4 (a layer is mostly empty, so a history step of a whole layer stays small).
+    func snapshot() -> Data {
+        let raw = Data(bytes: ptr, count: w * h * 4)
+        return ((try? (raw as NSData).compressed(using: .lz4)) as Data?) ?? raw
+    }
+    func restore(_ d: Data) {
+        var raw = d
+        if d.count != w * h * 4 { guard let u = try? (d as NSData).decompressed(using: .lz4) as Data else { return }; raw = u }
+        guard raw.count == w * h * 4 else { return }
+        raw.withUnsafeBytes { memcpy(ptr, $0.baseAddress!, w * h * 4) }
+    }
+    /// The pixels of a rectangle as a tight copy, and the way back.
+    func region(_ r: CGRect) -> (CGRect, Data)? {
+        let b = r.integral.intersection(CGRect(x: 0, y: 0, width: w, height: h))
+        guard !b.isNull, b.width >= 1, b.height >= 1 else { return nil }
+        let x0 = Int(b.minX), y0 = Int(b.minY), rw = Int(b.width), rh = Int(b.height)
+        var d = Data(count: rw * rh * 4)
+        d.withUnsafeMutableBytes { out in for row in 0..<rh { memcpy(out.baseAddress! + row * rw * 4, ptr + ((y0 + row) * w + x0) * 4, rw * 4) } }
+        return (b, d)
+    }
+    func put(region r: CGRect, _ d: Data) {
+        let x0 = Int(r.minX), y0 = Int(r.minY), rw = Int(r.width), rh = Int(r.height)
+        guard d.count == rw * rh * 4 else { return }
+        d.withUnsafeBytes { src in for row in 0..<rh { memcpy(ptr + ((y0 + row) * w + x0) * 4, src.baseAddress! + row * rw * 4, rw * 4) } }
+    }
 }

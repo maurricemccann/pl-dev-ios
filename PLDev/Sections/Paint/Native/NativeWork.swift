@@ -10,15 +10,15 @@ struct WorkFileError: Error { let why: String }
 
 @MainActor final class NativeLayer {
     var meta: [String: Any]        // everything in the file's layer record except the pixels
-    var mask: String?              // the mask's PNG data URL: kept and shown, not yet editable
+    var maskPx: PixelBuffer?       // the layer mask: white with alpha; alpha says how much of the layer shows
     let pixels: PixelBuffer
     var name: String { meta["name"] as? String ?? "Layer" }
     var visible: Bool { meta["vis"] as? Bool ?? true }
     var opacity: Double { (meta["op"] as? Double) ?? Double(meta["op"] as? Int ?? 1) }
     var alphaLock: Bool { meta["lock"] as? Bool ?? false }
-    init(meta: [String: Any], mask: String?, pixels: PixelBuffer) { self.meta = meta; self.mask = mask; self.pixels = pixels }
+    init(meta: [String: Any], maskPx: PixelBuffer?, pixels: PixelBuffer) { self.meta = meta; self.maskPx = maskPx; self.pixels = pixels }
     static func defaultMeta(_ name: String) -> [String: Any] {
-        ["name": name, "vis": true, "op": 1, "blend": "source-over", "lock": false, "clip": false, "grp": 0, "ref": false, "raw": true, "glow": 0]
+        ["name": name, "vis": true, "op": 1, "blend": "source-over", "lock": false, "clip": false, "grp": 0, "ref": false, "raw": false, "glow": 0]
     }
 }
 
@@ -27,16 +27,22 @@ struct WorkFileError: Error { let why: String }
     var bg: String, bgVis: Bool
     var layers: [NativeLayer]
     var active: Int
-    var groups: Any, guide: Any            // carried as the file has them
+    var groups: [[String: Any]]
+    var guide: [String: Any]
+    var groupSeq = 0
     var log: [[String: Any]]
     var layerSeq: Int
+
+    /// The number a stroke in the log uses to name this layer; it does not change when layers are moved.
+    func layerID(_ i: Int) -> Int { layers.indices.contains(i) ? (layers[i].meta["id"] as? Int ?? i + 1) : i + 1 }
+    func freshLayerID() -> Int { (layers.compactMap { $0.meta["id"] as? Int }.max() ?? 0) + 1 }
 
     init(w: Int, h: Int, bg: String = "#ffffff") throws {
         guard w >= 64, h >= 64, let px = PixelBuffer(w: w, h: h) else { throw WorkFileError(why: "That size is outside what this phone holds.") }
         self.w = w; self.h = h; self.bg = bg; bgVis = true; active = 0
-        layers = [NativeLayer(meta: NativeLayer.defaultMeta("Layer 1"), mask: nil, pixels: px)]
-        groups = [Any]()
-        guide = ["g": "off", "vps": NSNull(), "size": 64, "tile": "off", "paper": "plain", "seam": NSNull()] as [String: Any]
+        layers = [NativeLayer(meta: NativeLayer.defaultMeta("Layer 1"), maskPx: nil, pixels: px)]
+        groups = []
+        guide = ["g": "off", "vps": NSNull(), "size": 128, "tile": "off", "paper": "plain", "seam": NSNull()]
         log = []; layerSeq = 1
     }
 
@@ -47,15 +53,20 @@ struct WorkFileError: Error { let why: String }
         guard w >= 64, h >= 64, w * h <= 16_777_216 else { throw WorkFileError(why: "This work's size is outside what PL Paint holds.") }
         self.w = w; self.h = h
         bg = d["bg"] as? String ?? "#ffffff"; bgVis = d["bgVis"] as? Bool ?? true
-        groups = d["groups"] ?? [Any](); guide = d["guide"] ?? ["g": "off"]
+        groups = d["groups"] as? [[String: Any]] ?? []; guide = d["guide"] as? [String: Any] ?? ["g": "off"]
+        groupSeq = groups.map { $0["id"] as? Int ?? 0 }.max() ?? 0
         log = d["log"] as? [[String: Any]] ?? []
         var out: [NativeLayer] = []
         for l in ls {
             guard let px = PixelBuffer(w: w, h: h) else { throw WorkFileError(why: "This work is too large for this phone.") }
             if let png = l["png"] as? String, let img = Self.image(fromDataURL: png) { px.drawUpright(img, in: CGRect(x: 0, y: 0, width: w, height: h)) }
             var meta = l; meta.removeValue(forKey: "png"); meta.removeValue(forKey: "mask")
-            out.append(NativeLayer(meta: meta, mask: l["mask"] as? String, pixels: px))
+            var mpx: PixelBuffer?
+            if let m = l["mask"] as? String, let img = Self.image(fromDataURL: m), let mb = PixelBuffer(w: w, h: h) { mb.drawUpright(img, in: CGRect(x: 0, y: 0, width: w, height: h)); mpx = mb }
+            if let g = meta["grp"] as? Int, g != 0, !groups.contains(where: { ($0["id"] as? Int) == g }) { meta["grp"] = 0 }
+            out.append(NativeLayer(meta: meta, maskPx: mpx, pixels: px))
         }
+        for (i, l) in out.enumerated() where l.meta["id"] as? Int == nil { l.meta["id"] = i + 1 }   // the laptop's numbering: a stroke in the log names its layer by this
         layers = out
         active = max(0, min(out.count - 1, d["active"] as? Int ?? 0))
         layerSeq = out.count
@@ -74,7 +85,7 @@ struct WorkFileError: Error { let why: String }
             guard let img = l.pixels.image(), let png = UIImage(cgImage: img).pngData() else { throw WorkFileError(why: "A layer could not be turned into a picture.") }
             var r = l.meta
             r["png"] = "data:image/png;base64," + png.base64EncodedString()
-            r["mask"] = l.mask ?? NSNull()
+            if let m = l.maskPx?.image(), let mp = UIImage(cgImage: m).pngData() { r["mask"] = "data:image/png;base64," + mp.base64EncodedString() } else { r["mask"] = NSNull() }
             ls.append(r)
         }
         let o: [String: Any] = ["v": 1, "w": w, "h": h, "bg": bg, "bgVis": bgVis, "active": active, "groups": groups, "guide": guide, "layers": ls, "log": Array(log.suffix(keepLog))]
@@ -130,6 +141,10 @@ enum Hex {
         var o: [String: Any] = ["v": 1, "list": i.list, "gone": i.gone]
         o["current"] = i.current ?? NSNull()
         try JSONSerialization.data(withJSONObject: o).write(to: indexURL, options: .atomic)
+    }
+    static func rememberCurrent(_ id: String) {
+        var ix = loadIndex(); ix.current = id
+        try? saveIndex(ix)
     }
     static func newID() -> String {
         let chars = Array("abcdefghijklmnopqrstuvwxyz0123456789")
