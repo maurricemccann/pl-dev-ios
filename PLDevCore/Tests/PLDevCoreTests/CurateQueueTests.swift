@@ -68,4 +68,31 @@ final class CurateQueueTests: XCTestCase {
         let marks = ["a": TasteMark(v: "maybe"), "arch": TasteMark(v: "maybe")]
         XCTAssertEqual(CurateQueue.build(.maybes, items: [it("a"), it("arch", "archive-work")], marks: marks).map(\.vault_id), ["a", "arch"])
     }
+
+    func testRepassIsMaybesThenFavsThenKeepsBeforeTheCutoff() {
+        let marks = ["m": TasteMark(v: "maybe", at: "2026-10-01"), "f1": TasteMark(v: "keep", at: "2026-10-01", note: "fav"),
+                     "f2": TasteMark(v: "keep", at: "2026-10-02", note: "fav"), "k": TasteMark(v: "keep", at: "2026-10-03"),
+                     "late": TasteMark(v: "keep", at: "2026-11-01"), "arch": TasteMark(v: "keep", at: "2026-10-01")]
+        let items = [it("m"), it("f1"), it("f2"), it("k"), it("late"), it("arch", "archive-work")]
+        XCTAssertEqual(CurateQueue.build(.repass, items: items, marks: marks).map(\.vault_id), ["m", "f2", "f1", "k"])
+    }
+
+    func testUnseenCountsScriptBurstsAndSystemNotesAsNoHand() {
+        var marks: [String: TasteMark] = [:]
+        for n in 0..<4 { marks["b\(n)"] = TasteMark(v: "keep", at: "2026-11-01T10:00:00.\(n)00Z") }
+        marks["hand"] = TasteMark(v: "keep", at: "2026-11-02T10:00:00Z")
+        marks["sys"] = TasteMark(v: "cut", at: "2026-11-03T10:00:00Z", note: "replaced by V-X")
+        marks["rep"] = TasteMark(v: "replaced", at: "2026-11-04T10:00:00Z")
+        let items = ["b0", "b1", "b2", "b3", "hand", "sys", "rep", "fresh"].map { it($0) }
+        let ids = Set(CurateQueue.build(.unseen, items: items, marks: marks).map(\.vault_id))
+        XCTAssertEqual(ids, ["b0", "b1", "b2", "b3", "sys", "fresh"])
+    }
+
+    func testSourceDecksPutUnmarkedFirst() {
+        var a = it("a"); a.source = "cloud-batch"; a.batch = "2026-11-01"
+        var b = it("b"); b.source = "cloud-batch"; b.batch = "2026-11-05"
+        var c = it("c"); c.source = "cloud-batch"; c.batch = "2026-11-09"
+        let out = CurateQueue.build(.cloud, items: [a, b, c, it("other")], marks: ["c": TasteMark(v: "keep")]).map(\.vault_id)
+        XCTAssertEqual(out, ["b", "a", "c"])
+    }
 }

@@ -84,6 +84,10 @@ import UserNotifications
         if dir == "fav" {
             await post(["id": it.vault_id, "v": "keep", "note": "fav"], model: model)
             marks[it.vault_id] = TasteMark(v: "keep", note: "fav", comment: prev?.comment)
+        } else if dir == "keep", prev?.v == "keep", [.repass, .cloud, .api, .all, .unseen].contains(deck) {
+            // re-pass rule: a keep on a keep (or favourite) leaves it as it was; the post only stamps the time so it leaves the re-pass
+            await post(["id": it.vault_id, "v": "keep"].merging(prev?.note.map { ["note": $0] } ?? [:]) { a, _ in a }, model: model)
+            marks[it.vault_id] = TasteMark(v: "keep", note: prev?.note, comment: prev?.comment)
         } else if !(deck == .favs && dir == "keep") {
             var body = ["id": it.vault_id, "v": dir]
             if deck == .maybes, let n = prev?.note, !n.isEmpty, dir == "maybe" { body["note"] = n }
@@ -99,11 +103,11 @@ import UserNotifications
 
     func undo(model: AppModel) async {
         guard let last = history.popLast() else { return }
-        switch deck {
-        case .maybes: await post(["id": last.item.vault_id, "v": "maybe"].merging(last.prev?.note.map { ["note": $0] } ?? [:]) { a, _ in a }, model: model)
-        case .favs: await post(["id": last.item.vault_id, "v": "keep"], model: model)
-        case .trash: await post(["id": last.item.vault_id, "v": "cut"], model: model)
-        default: await post(["id": last.item.vault_id, "v": "clear"], model: model)
+        // one rule for every deck: put back the mark the card had before (with its note), or clear it if it had none
+        if let p = last.prev, !p.v.isEmpty {
+            await post(["id": last.item.vault_id, "v": p.v].merging(p.note.map { ["note": $0] } ?? [:]) { a, _ in a }, model: model)
+        } else {
+            await post(["id": last.item.vault_id, "v": "clear"], model: model)
         }
         marks[last.item.vault_id] = last.prev
         if last.dir == "keep" || last.dir == "fav" { kept = max(0, kept - 1) }
@@ -144,7 +148,7 @@ struct CurateView: View {
     @State private var drag: CGSize = .zero
     @FocusState private var commentFocus: Bool
     private let threshold: CGFloat = 110
-    private let classes: [(String?, String)] = [(nil, "Everything"), ("still", "Stills"), ("cinematic", "Shorts"), ("code-piece", "Code"), ("font", "Fonts"), ("archive-work", "Archive")]
+    private let classes: [(String?, String)] = [(nil, "Everything"), ("still", "Stills"), ("cinematic", "Shorts"), ("code-piece", "Code"), ("font", "Fonts"), ("essay", "Essays"), ("archive-work", "Archive")]
 
     var body: some View {
         VStack(spacing: 12) {
@@ -220,6 +224,8 @@ struct CurateView: View {
                 LoopingClip(url: v).id(v)
             } else if let s = m.still {
                 AsyncImage(url: s) { $0.resizable().scaledToFit() } placeholder: { ProgressView() }
+            } else if it.class == "essay", let src = it.src, let url = URL(string: LibraryData.shared.base(model) + src) {
+                EssayCard(url: url)
             } else {
                 Text(it.name ?? it.vault_id).font(.title3).padding()
             }
@@ -269,5 +275,17 @@ struct CurateView: View {
         }
         .buttonStyle(.bordered).tint(tint)
         .accessibilityLabel(label.capitalized)
+    }
+}
+
+/// An essay card: its full text, scrolling inside the card (web: EssayCard).
+struct EssayCard: View {
+    let url: URL
+    @State private var text: String?
+    var body: some View {
+        ScrollView { Text(text ?? "Loading…").font(.body).frame(maxWidth: .infinity, alignment: .leading).padding(20) }
+            .task(id: url) {
+                if let (d, _) = try? await URLSession.shared.data(from: url) { text = String(decoding: d, as: UTF8.self) } else { text = "Could not load this essay." }
+            }
     }
 }

@@ -1,8 +1,9 @@
 import Foundation
 
 /// The Curate deck's brain, ported from the gallery's CurateDeck.tsx (S348, sub-spec 4). Pure: no network, no UI,
-/// so it is tested on Linux against the same rules the web uses. Decks ported in v1: everything (the default),
-/// new, trash, maybes, favs ("Keeps: star the favourites"). Not yet: repass, source=, tag=, the categories deck.
+/// so it is tested on Linux against the same rules the web uses. Decks: everything (the default), new, trash,
+/// maybes, favs, repass, and the source decks cloud / api / all / unseen. Not yet: tag=, the categories deck, seed phrases.
+/// String order uses code units where the web uses localeCompare: ids and stamps are lowercase ASCII, so they agree.
 public struct LibraryItem: Codable, Sendable, Equatable, Identifiable {
     public var vault_id: String
     public var item_id: String
@@ -39,9 +40,14 @@ public struct TasteMark: Codable, Sendable, Equatable {
 }
 
 public enum CurateDeck: String, Sendable, CaseIterable {
-    case everything, new, trash, maybes, favs
+    case everything, new, trash, maybes, favs, repass, cloud, api, all, unseen
     public var title: String {
         switch self {
+        case .repass: return "Re-pass"
+        case .cloud: return "Cloud batches"
+        case .api: return "API (on-model)"
+        case .all: return "Everything, marked or not"
+        case .unseen: return "Unseen (no hand mark)"
         case .everything: return "Unmarked"
         case .new: return "New"
         case .trash: return "Trash"
@@ -74,6 +80,34 @@ public enum CurateQueue {
             items = items.filter { let m = marks[$0.vault_id]; return m?.v == "keep" && m?.note != "fav" && $0.class != "archive-work" }.reversed()
             items = items.filter(renderable)
             return cls == nil ? items.filter { $0.class != "archive-work" } : items
+        case .repass:
+            // marks at or before the replace pass only; maybes, then favourites newest first, then keeps newest first
+            let since = "2026-10-10T00:41:00.000Z"
+            let pool = all.filter { (cls == nil || $0.class == cls) && (marks[$0.vault_id]?.at ?? "") <= since }
+            let ordered = pool.filter { marks[$0.vault_id]?.v == "maybe" }
+                + pool.filter { marks[$0.vault_id]?.isFav == true }.reversed()
+                + pool.filter { let m = marks[$0.vault_id]; return m?.v == "keep" && m?.note != "fav" }.reversed()
+            return ordered.filter(renderable).filter { ["still", "cinematic", "code-piece", "seed", "font"].contains($0.class) }
+        case .cloud, .api, .all, .unseen:
+            var burst: [String: Int] = [:]
+            for m in marks.values { let k = String((m.at ?? "").prefix(19)); if !k.isEmpty { burst[k, default: 0] += 1 } }
+            func machine(_ id: String) -> Bool {   // no hand gave this mark: unmarked, a script's burst (4+ in one second), or a system note
+                guard let m = marks[id] else { return true }
+                if m.v == "replaced" { return false }
+                return (burst[String((m.at ?? "").prefix(19))] ?? 0) >= 4
+                    || (m.note ?? "").range(of: #"^(on-model-ban|SN |was |regenerated|replaced by|superseded)"#, options: [.regularExpression, .caseInsensitive]) != nil
+            }
+            let want = deck == .cloud ? "cloud-batch" : "on-model"
+            let pool = all.filter { it in
+                (deck == .all ? true : deck == .unseen ? machine(it.vault_id) : it.source == want) && (cls == nil || it.class == cls) && renderable(it)
+            }
+            let key = { (it: LibraryItem) in "\(it.batch ?? "")\(it.vault_id)" }
+            return pool.enumerated().sorted { a, b in
+                let ma = marks[a.element.vault_id] == nil ? 0 : 1, mb = marks[b.element.vault_id] == nil ? 0 : 1
+                if ma != mb { return ma < mb }
+                let ka = key(a.element), kb = key(b.element)
+                return ka != kb ? ka > kb : a.offset < b.offset
+            }.map(\.element)
         case .everything:
             var items = all.filter { (cls == nil || $0.class == cls) && marks[$0.vault_id] == nil }
             items = rankAndMix(items)
