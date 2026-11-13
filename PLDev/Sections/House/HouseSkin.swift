@@ -19,6 +19,16 @@ enum PLOS {
     static let danger = Color(hex: 0xc0392b)
     static let philosophy = Color(hex: 0x9b72cf)
     static let radius: CGFloat = 18
+    /// pl-os ModerationPanel PLATFORM_COLORS: every draft wears its platform's colour.
+    static func platform(_ p: String?) -> Color {
+        switch p ?? "instagram" {
+        case "instagram": return Color(hex: 0xc9679a); case "threads": return Color(hex: 0x8a8a8a)   // pl-os #3a3a3a, lifted to read on obsidian
+        case "tumblr": return Color(hex: 0x4a64a8); case "bluesky": return Color(hex: 0x3a8ede); case "facebook": return Color(hex: 0x4267b2)
+        case "linkedin": return Color(hex: 0x0a7d99); case "youtube": return Color(hex: 0xb23a3a); case "pinterest": return Color(hex: 0xd1603a)
+        case "substack": return Color(hex: 0xe08a2c); case "pl_feed": return gold
+        default: return Color(hex: 0x8a7d6a)
+        }
+    }
 }
 
 extension Color {

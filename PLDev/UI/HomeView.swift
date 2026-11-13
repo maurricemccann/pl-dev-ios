@@ -64,6 +64,7 @@ struct HomeView: View {
                         }
                         .animation(PLMotion.spring(reduce: reduce), value: model.sections.map(\.badge))
                     }
+                    HomeDashboard(model: model)   // his heart, the PC, the house at a glance (11-13)
                 }
                 .padding(.horizontal, PLSpace.margin)
                 .padding(.top, PLSpace.gap)

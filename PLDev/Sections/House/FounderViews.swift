@@ -202,6 +202,9 @@ struct ApprovalsView: View {
                 ForEach(state.drafts) { d in
                     DraftRow(d: d)
                         .tag(d.id)
+                        .listRowBackground(Color.clear)
+                        .listRowSeparator(.hidden)
+                        .listRowInsets(EdgeInsets(top: 0, leading: 12, bottom: 0, trailing: 12))
                         .swipeActions(edge: .trailing) { Button("Approve") { Task { await state.moderate(d, "approve", model: model) } }.tint(.green) }
                         .swipeActions(edge: .leading) { Button("Hold") { Task { await state.moderate(d, "hold", model: model) } }.tint(PLTone.house) }
                         .contextMenu {
@@ -356,17 +359,25 @@ private struct DraftRow: View {
                 Label("Video", systemImage: "play.rectangle").font(.caption).foregroundStyle(.secondary)
             }
             HStack {
-                Text((d.platform ?? "?").capitalized).font(.caption.bold())
-                if let fam = d.family_platforms, !fam.isEmpty { Text("also " + fam.joined(separator: ", ")).font(.caption2) }
+                Text(platformName(d.platform)).osEyebrow(10).foregroundStyle(.white)
+                    .padding(.horizontal, 8).padding(.vertical, 3).background(PLOS.platform(d.platform), in: Capsule())
+                if let fam = d.family_platforms, !fam.isEmpty { Text("also " + fam.map(platformName).joined(separator: ", ")).font(.caption2).foregroundStyle(.secondary) }
                 Spacer()
-                Ago(text: d.created_at).font(.caption2)
+                Ago(text: d.created_at).font(.caption2).foregroundStyle(.secondary)
             }
-            .foregroundStyle(.secondary)
             if let t = d.title, !t.isEmpty { Text(t).font(.headline) }
             Text(d.caption ?? "").font(.body).plReading()
-            if let s = d.similar_to { Label("Close to \(s)", systemImage: "square.on.square").font(.caption).foregroundStyle(PLTone.house) }
+            // never the raw id (his screenshot 11-13): only that it is close to something already made
+            if d.similar_to != nil { Label("Close to an earlier post", systemImage: "square.on.square").font(.caption).foregroundStyle(PLOS.warn) }
         }
-        .padding(.vertical, 4)
+        .padding(12)
+        .background { RoundedRectangle(cornerRadius: PLOS.radius, style: .continuous).fill(PLOS.platform(d.platform).opacity(0.08)).glassEffect(.regular, in: RoundedRectangle(cornerRadius: PLOS.radius, style: .continuous)) }
+        .overlay { RoundedRectangle(cornerRadius: PLOS.radius, style: .continuous).strokeBorder(PLOS.platform(d.platform), lineWidth: 1.5) }
+        .padding(.vertical, 6)
+    }
+
+    private func platformName(_ p: String?) -> String {
+        switch p ?? "" { case "pl_feed": return "PL feed"; case "bluesky": return "Bluesky"; case "": return "?"; default: return (p ?? "").capitalized }
     }
 }
 
