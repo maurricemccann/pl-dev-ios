@@ -21,8 +21,14 @@ struct ComingSection: View {
     let title: String
     let symbol: String
     let webPath: String?
+    var webURL: String? = nil   // a full address, for a web version that is not on the gallery
     let points: [String]
     @Environment(\.openURL) private var openURL
+
+    // explicit: a private property would make the synthesized initializer file-private, and other files build these
+    init(model: AppModel, title: String, symbol: String, webPath: String?, webURL: String? = nil, points: [String]) {
+        self.model = model; self.title = title; self.symbol = symbol; self.webPath = webPath; self.webURL = webURL; self.points = points
+    }
 
     var body: some View {
         List {
@@ -42,7 +48,7 @@ struct ComingSection: View {
             Section("What it will have") {
                 ForEach(points, id: \.self) { Label($0, systemImage: "checkmark.circle") }
             }
-            if let webPath, let base = model.config?.origin("gallery")?.base, let url = URL(string: base + webPath) {
+            if let url = webURL.flatMap(URL.init(string:)) ?? webPath.flatMap({ p in model.config?.origin("gallery").flatMap { URL(string: $0.base + p) } }) {
                 Section {
                     Button { openURL(url) } label: { Label("Open the web version", systemImage: "safari") }
                 } footer: { Text("Works today, in Safari.") }

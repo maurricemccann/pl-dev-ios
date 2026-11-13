@@ -158,6 +158,9 @@ struct HouseView: View {
     }
 
     @ViewBuilder private var approvals: some View {
+        if state.drafts.isEmpty && state.message == nil {
+            ContentUnavailableView("Nothing waiting", systemImage: "checkmark.seal", description: Text("No drafts need you. New ones land here."))
+        }
         Section {
             ForEach(state.drafts) { d in
                 VStack(alignment: .leading, spacing: 8) {
@@ -188,6 +191,9 @@ struct HouseView: View {
     }
 
     @ViewBuilder private var shift: some View {
+        if state.tasks.isEmpty && state.message == nil {
+            ContentUnavailableView("No shift today", systemImage: "calendar", description: Text("Today's plan has not been written yet."))
+        }
         Section(state.planDate.map { "Shift for \($0)" } ?? "Shift") {
             ForEach(state.tasks) { t in
                 HStack {

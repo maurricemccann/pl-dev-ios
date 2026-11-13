@@ -134,6 +134,8 @@ struct SectionTile: View {
         case "pick": return .yellow
         case "paint": return .red
         case "status": return .gray
+        case "shop": return .orange
+        case "congregation": return .cyan
         default: return .accentColor
         }
     }
