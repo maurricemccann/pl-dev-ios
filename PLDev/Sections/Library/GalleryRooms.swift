@@ -55,15 +55,15 @@ enum GalleryRoom: String, CaseIterable, Identifiable, Hashable {
         case .classify: ClassifyRoom(model: model)
         case .kit: KitRoom(model: model)
         case .tools: ToolsRoom(model: model)
-        case .labs: WebListRoom(model: model, title: "Labs", items: GalleryRoom.labs)
-        case .worlds: WebListRoom(model: model, title: "The Defiance worlds", items: GalleryRoom.worlds)
+        case .labs: WebListRoom(model: model, title: "Labs", items: GalleryRoom.labPages)
+        case .worlds: WebListRoom(model: model, title: "The Defiance worlds", items: GalleryRoom.worldPages)
         case .town: GalleryCanvas(model: model, path: "town?r1=1", title: "The town")
         }
     }
 
-    static let worlds: [(String, String, String)] = [("defiance/the-haul", "The Haul", "Archive art on the walls of a room you walk"),
+    static let worldPages: [(String, String, String)] = [("defiance/the-haul", "The Haul", "Archive art on the walls of a room you walk"),
         ("defiance/the-money-room", "The Money Room", "GlyphGuy dancing in falling cash"), ("defiance/the-weight", "The Weight", "A field of floating works")]
-    static let labs: [(String, String, String)] = [
+    static let labPages: [(String, String, String)] = [
         ("lab", "Ribbon curves", "Three.js ribbons from his comps"), ("lab/golden-mend", "Golden Mend", "A kintsugi instrument played by the mic"),
         ("lab/life", "Life", "Game of Life on the GPU, fed by the mic"), ("lab/ar", "AR curves", "Gold curves over the camera"),
         ("lab/fly", "The fly", "A connectome steering a gold line"), ("lab/dance", "GlyphGuy dances", "His animation clips"),
