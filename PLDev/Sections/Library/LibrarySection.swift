@@ -151,7 +151,10 @@ import UserNotifications
     static func settingsRows(model: AppModel) -> AnyView? { nil }
     static func notificationCategories() -> Set<UNNotificationCategory> { [] }
     static func handle(link: DeepLink, model: AppModel) -> Bool {
-        if case .section(_, let path, _) = link, let first = path.first, let room = GalleryRoom(rawValue: first) { GalleryNav.shared.room = room }
+        if case .section(_, let path, _) = link, let first = path.first {
+            if first == "worlds", path.count > 1, let w = WorldRoom(rawValue: path[1]) { WorldsNav.shared.room = w; GalleryNav.shared.room = .worlds }
+            else if let room = GalleryRoom(rawValue: first) { GalleryNav.shared.room = room }
+        }
         return true
     }
     static func refresh(model: AppModel) async -> SectionRefresh { SectionRefresh(badge: nil, notify: []) }

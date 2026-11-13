@@ -48,7 +48,7 @@ enum GalleryRoom: String, CaseIterable, Identifiable, Hashable {
         case .forge: NativeForgeRoom(model: model)
         case .vault: VaultRoom(model: model)
         case .archive: ArchiveRoom(model: model)
-        case .space: GalleryCanvas(model: model, path: "archive/space", title: "Walk the archive")
+        case .space: ArchiveSpaceWorld(model: model)   // native (wave 4)
         case .generated: StillsRoom(model: model)
         case .cinematic: CinematicRoom(model: model)
         case .printful: PrintfulRoom(model: model)
@@ -56,13 +56,11 @@ enum GalleryRoom: String, CaseIterable, Identifiable, Hashable {
         case .kit: KitRoom(model: model)
         case .tools: ToolsRoom(model: model)
         case .labs: LabsRoom(model: model)   // every lab native (wave 3)
-        case .worlds: WebListRoom(model: model, title: "The Defiance worlds", items: GalleryRoom.worldPages)
+        case .worlds: WorldsRoom(model: model)   // native (wave 4)
         case .town: TownView(model: model, state: TownSection.state)   // the native pixel town, no web view
         }
     }
 
-    static let worldPages: [(String, String, String)] = [("defiance/the-haul", "The Haul", "Archive art on the walls of a room you walk"),
-        ("defiance/the-money-room", "The Money Room", "GlyphGuy dancing in falling cash"), ("defiance/the-weight", "The Weight", "A field of floating works")]
 }
 
 /// The Curve Library's rooms: the gallery's More sheet, native.
@@ -139,38 +137,6 @@ struct GalleryWeb: UIViewRepresentable {
     func updateUIView(_ web: WKWebView, context: Context) {}
 }
 
-struct WebListRoom: View {
-    let model: AppModel
-    let title: String
-    let items: [(String, String, String)]
-    var body: some View {
-        List {
-            if title == "Labs" {
-                Section {
-                    NavigationLink { NativeVJRoom(model: model) } label: {
-                        VStack(alignment: .leading, spacing: 2) { Text("● Live").gEyebrow(10).foregroundStyle(PLG.red); Text("The VJ").gTitle(22); Text("The living set as a controller: tracks, tap tempo, rack.").font(.caption).foregroundStyle(.secondary) }
-                    }
-                    NavigationLink { GalleryCanvas(model: model, path: "lab", title: "Living Curves") } label: {
-                        VStack(alignment: .leading, spacing: 2) { Text("Ribbon").gEyebrow(10).foregroundStyle(PLG.goldDim(.dark)); Text("Living Curves, the ribbon lab").gTitle(22) }
-                    }
-                } header: { Text("Instruments and experiments. The VJ lives here now.") }
-            }
-            Section {
-                ForEach(items.filter { title != "Labs" || $0.0 != "lab" }, id: \.0) { it in
-                    NavigationLink {   // his GlyphGuy labs run natively on his own model; the rest stay his web pieces
-                        if it.0 == "lab/dance" { GlyphGuyRoom(kind: .dance) } else if it.0 == "lab/glyphbot" { GlyphGuyRoom(kind: .glyphbot) }
-                        else { GalleryCanvas(model: model, path: it.0, title: it.1) }
-                    } label: {
-                        VStack(alignment: .leading) { Text(it.1); Text("/" + it.0).font(.caption.monospaced()).foregroundStyle(.secondary) }
-                    }
-                }
-            }
-        }
-        .gScreen()
-        .navigationTitle(title == "Labs" ? "The Labs" : title)
-    }
-}
-
 // MARK: - Curves: every live piece, liked filter, full-screen live
 
 struct SourceView: View {
@@ -232,7 +198,7 @@ struct ArchiveRoom: View {
                 Picker("Colour", selection: $color) { Text("Every colour").tag(String?.none); ForEach(Array(Set(pieces.compactMap(\.color))).sorted(), id: \.self) { Text($0.capitalized).tag(String?.some($0)) } }
                 Picker("Subject", selection: $subj) { Text("Every subject").tag(String?.none); ForEach(Array(Set(pieces.compactMap(\.subj))).sorted(), id: \.self) { Text($0.capitalized).tag(String?.some($0)) } }
             } label: { Image(systemName: "line.3.horizontal.decrease.circle") }
-            NavigationLink { GalleryCanvas(model: model, path: "archive/space", title: "Walk the archive") } label: { Label("Walk it in 3D", systemImage: "view.3d") }
+            NavigationLink { ArchiveSpaceWorld(model: model) } label: { Label("Walk it in 3D", systemImage: "view.3d") }
         }
         .task { if pieces.isEmpty, let d = try? await gallery("archive/manifest.json"), let m = try? JSONDecoder().decode(M.self, from: d) { pieces = m.pieces } }
         .sheet(item: $open) { p in
