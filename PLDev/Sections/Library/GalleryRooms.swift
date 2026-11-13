@@ -648,7 +648,8 @@ struct KitRoom: View {
     struct Palette: Decodable, Identifiable { let name: String; let ground: String?; let text: String?; let key: String?; let accent: String?; let use: String?; var id: String { name } }
     struct Named: Decodable, Identifiable { let name: String; let role: String?; let use: String?; let kind: String?; var id: String { name } }
     struct Colors: Decodable { let palettes: [Palette]? }
-    struct Kit: Decodable { let colors: Colors?; let fonts: [Named]?; let symbols: [Named]?; let icons: [Named]?; let patterns: [Named]?; let layouts: [Named]? }
+    struct Layout: Decodable, Identifiable { let layout: String; let favs: Int?; let keeps: Int?; let cuts: Int?; let use: String?; var id: String { layout }; var name: String { layout } }
+    struct Kit: Decodable { let colors: Colors?; let fonts: [Named]?; let symbols: [Named]?; let icons: [Named]?; let patterns: [Named]?; let layouts: [Layout]? }
 
     var body: some View {
         Loaded(load: {
@@ -665,7 +666,7 @@ struct KitRoom: View {
                         }
                     }
                 }
-                group("Fonts", k.fonts); group("Symbols", k.symbols); group("Icons", k.icons); group("Patterns", k.patterns); group("Layouts", k.layouts)
+                group("Fonts", k.fonts); group("Symbols", k.symbols); group("Icons", k.icons); group("Patterns", k.patterns); group("Layouts", k.layouts?.map { Named(name: $0.layout, role: "\($0.keeps ?? 0) keeps · \($0.favs ?? 0) favs · \($0.cuts ?? 0) cuts", use: $0.use, kind: nil) })
             }
         }
         .gScreen()

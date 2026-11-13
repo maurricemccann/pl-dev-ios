@@ -15,9 +15,20 @@ import UserNotifications
     private(set) var batchOf: [String: String] = [:]
     private(set) var unrenderable: Set<String> = []
 
+    private var running: Task<Void, Error>?
+
+    /// One load at a time; a caller that arrives while one runs waits for it and gets its answer (Library, Curate and the
+    /// widget refresh all ask at once on launch; the second used to return at once with nothing loaded).
     func load(model: AppModel, force: Bool = false) async throws {
+        if let running { return try await running.value }
+        let t = Task { try await self.loadNow(model: model, force: force) }
+        running = t
+        defer { running = nil }
+        try await t.value
+    }
+
+    private func loadNow(model: AppModel, force: Bool) async throws {
         guard let http = model.http else { throw URLError(.notConnectedToInternet) }
-        if loading { return }
         loading = true; defer { loading = false }
         await MarkOutbox.flush(model: model)   // marks made offline go first, so the fresh marks below include them
         if items.isEmpty || force {

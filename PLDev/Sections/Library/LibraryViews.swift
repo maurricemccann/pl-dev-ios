@@ -52,6 +52,7 @@ struct LibraryView: View {
     @State private var q = ""
     @State private var limit = 100
     @State private var failed = false
+    @State private var failReason: String?
     @State private var scoped: [LibraryItem] = []
     @State private var open: LibraryItem?
     @State private var selecting = false
@@ -149,8 +150,8 @@ struct LibraryView: View {
     private func header(counts: [Verdict: Int], total: Int) -> some View {
         VStack(alignment: .leading, spacing: 10) {
             GalleryHeading(eyebrow: "The Curve Library", title: "Library")
-            if failed {
-                ContentUnavailableView("YOUR MARKS DID NOT LOAD", systemImage: "exclamationmark.triangle", description: Text("Nothing can be marked until they do. Pull to try again."))
+            if failed && !data.marksLoaded {
+                ContentUnavailableView("YOUR MARKS DID NOT LOAD", systemImage: "exclamationmark.triangle", description: Text("Nothing can be marked until they do. \(failReason ?? "") Pull to try again."))
             } else if data.items.isEmpty {
                 ProgressView("Opening the library…").frame(maxWidth: .infinity).padding(.top, 60)
             }
@@ -432,7 +433,7 @@ struct LibraryView: View {
     }
 
     private func reload(force: Bool) async {
-        do { try await data.load(model: model, force: force); failed = false } catch { failed = true }
+        do { try await data.load(model: model, force: force); failed = false; failReason = nil } catch { failed = true; failReason = plainSentence(error) }
         rescope()
         if !landed, !data.items.isEmpty {   // Unmarked is the working queue; an empty queue lands on All so the page never opens blank
             landed = true
