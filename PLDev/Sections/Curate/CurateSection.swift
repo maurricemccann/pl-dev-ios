@@ -27,7 +27,10 @@ import UserNotifications
     var cls: String? = nil
     var queue: [LibraryItem] = []
     var index = 0
-    var marks: [String: TasteMark] = [:]
+    var marks: [String: TasteMark] {   // one store: a mark here shows in the Library at once
+        get { LibraryData.shared.marks }
+        set { LibraryData.shared.marks = newValue }
+    }
     var loading = false
     var loadFailed = false
     var notSaved = 0
@@ -41,20 +44,11 @@ import UserNotifications
     var current: LibraryItem? { index < queue.count ? queue[index] : nil }
 
     func load(model: AppModel, force: Bool = false) async {
-        guard let http = model.http, !loading else { return }
+        guard !loading else { return }
         loading = true; defer { loading = false }
         do {
-            if allItems.isEmpty || force {
-                let data = try await http.send(RequestPlan(origin: "gallery", path: "library-index.json"), timeout: 60)
-                struct Index: Decodable { let items: [LibraryItem] }
-                allItems = try await Task.detached { try JSONDecoder().decode(Index.self, from: data).items }.value
-            }
-            let tdata = try await http.send(RequestPlan(origin: "gallery", path: "api/taste"), timeout: 60)
-            struct Taste: Decodable { let marks: [String: TasteMark]? }
-            guard let m = try await Task.detached(operation: { try JSONDecoder().decode(Taste.self, from: tdata).marks }).value else {
-                throw URLError(.cannotParseResponse)
-            }
-            marks = m
+            try await LibraryData.shared.load(model: model, force: force)
+            allItems = LibraryData.shared.items
             loadFailed = false
             deal()
         } catch {
@@ -69,19 +63,9 @@ import UserNotifications
         comment = current?.vaultComment(marks) ?? ""
     }
 
-    private func origin(_ model: AppModel) -> String {
-        var base = model.config?.origin("gallery")?.base ?? ""
-        if base.hasSuffix("/") { base.removeLast() }
-        return base
-    }
-
     private func post(_ body: [String: String], model: AppModel) async {
-        guard let http = model.http, let data = try? JSONSerialization.data(withJSONObject: body) else { notSaved += 1; return }
-        do {
-            _ = try await http.send(RequestPlan(origin: "gallery", method: "POST", path: "api/taste",
-                                                headers: ["content-type": "application/json", "Origin": origin(model)], body: data),
-                                    idempotent: false)
-        } catch { notSaved += 1 }
+        _ = await LibraryData.shared.post(body, model: model)
+        notSaved = LibraryData.shared.notSaved
     }
 
     func saveComment(model: AppModel) async {
@@ -128,21 +112,7 @@ import UserNotifications
         comment = current?.vaultComment(marks) ?? ""
     }
 
-    /// Where the card's picture or clip lives on the gallery.
-    func media(_ it: LibraryItem, model: AppModel) -> (still: URL?, video: URL?) {
-        let base = origin(model)
-        func u(_ p: String) -> URL? { URL(string: base + (p.hasPrefix("/") ? p : "/" + p)) }
-        let file = (it.src?.split(separator: "/").last.map(String.init)) ?? it.name ?? ""
-        switch it.class {
-        case "still", "font": return (it.name.flatMap { u("/generated/" + ($0.addingPercentEncoding(withAllowedCharacters: .urlPathAllowed) ?? $0)) }, nil)
-        case "archive-work": return ((it.sub ?? "").contains("· edited") ? u("/archive-edits/ba/\(it.item_id).jpg") : it.src.flatMap(u), nil)
-        case "code-piece": return (it.src?.hasPrefix("/thumbs/") == true ? u(it.src!) : nil, nil)
-        case "cinematic":
-            let poster = file.replacingOccurrences(of: #"\.(mp4|mov)$"#, with: ".jpg", options: [.regularExpression, .caseInsensitive])
-            return (u("/cinematic-poster/" + poster), u("/media/cinematic/" + file))
-        default: return (nil, nil)
-        }
-    }
+    func media(_ it: LibraryItem, model: AppModel) -> (still: URL?, video: URL?) { LibraryData.shared.media(it, model: model) }
 }
 
 private extension LibraryItem {
