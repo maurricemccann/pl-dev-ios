@@ -9,6 +9,7 @@ struct NativeCanvasView: View {
     @State private var canvas = NativeCanvasModel()
     @State private var showWorks = false
     @State private var showSizes = false
+    @State private var showBrushes = false
     @Environment(\.dismiss) private var dismiss
     @Environment(\.scenePhase) private var phase
 
@@ -37,6 +38,7 @@ struct NativeCanvasView: View {
         .statusBarHidden()
         .persistentSystemOverlays(.hidden)
         .sheet(isPresented: $showWorks) { NativeWorksSheet(model: model, canvas: canvas) }
+        .sheet(isPresented: $showBrushes) { NativeBrushSheet(canvas: canvas) }
         .confirmationDialog("New canvas", isPresented: $showSizes, titleVisibility: .visible) {
             Button("Phone screen") { let s = UIScreen.main.nativeBounds.size; canvas.startNew(w: Int(s.width), h: Int(s.height)) }
             Button("2048 × 2048") { canvas.startNew(w: 2048, h: 2048) }
@@ -83,8 +85,11 @@ struct NativeCanvasView: View {
                 Picker("Tool", selection: $canvas.tool) {
                     Image(systemName: "paintbrush.pointed.fill").tag(NativeTool.paint)
                     Image(systemName: "eraser.fill").tag(NativeTool.erase)
-                }.pickerStyle(.segmented).frame(width: 110)
+                }.pickerStyle(.segmented).frame(width: 90)
+                Button { showBrushes = true } label: { Label(canvas.brush.name, systemImage: "paintbrush.pointed").lineLimit(1) }
+                    .buttonStyle(.bordered).accessibilityLabel("Brush: \(canvas.brush.name)")
                 ColorPicker("Colour", selection: $canvas.color, supportsOpacity: false).labelsHidden()
+                if canvas.brush.needsTwinColour { ColorPicker("Companion colour", selection: $canvas.color2, supportsOpacity: false).labelsHidden() }
                 Toggle(isOn: $canvas.fingerPaints) { Image(systemName: "hand.point.up.left") }
                     .toggleStyle(.button).accessibilityLabel("Finger paints")
                 Spacer(minLength: 0)

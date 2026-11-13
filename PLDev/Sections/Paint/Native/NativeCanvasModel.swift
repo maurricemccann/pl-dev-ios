@@ -13,6 +13,8 @@ enum NativeTool: String, CaseIterable, Sendable { case paint, erase }
     var size: Double = 28            // the laptop's paint default
     var opacity: Double = 1          // the laptop keeps 100 %
     var color: Color = .black
+    var color2 = Color(red: 0.478, green: 0.627, blue: 0.784)   // the companion colour of twin brushes (the laptop's preview blue)
+    var brush = NativeToolkit.round
     var fingerPaints = false         // fingers draw only if "Finger paints" (the laptop's rule)
     var name = "Untitled"
     var line: String?                // the one-line result under the toolbar
@@ -32,20 +34,22 @@ enum NativeTool: String, CaseIterable, Sendable { case paint, erase }
     @ObservationIgnored private var saveTask: Task<Void, Never>?
     @ObservationIgnored private var firstDirty: Date?
     @ObservationIgnored private var dirty = false
-    @ObservationIgnored private let brush = RoundBrush()
 
     private struct Live {
-        var stroker: Stroker
-        var tool: NativeTool
-        var layer: Int
-        var rgb: (Double, Double, Double)
-        var op: Double
-        var size: Double
-        var t0: TimeInterval
+        var stroker: NativeStroker
+        let brush: Brush
+        let tool: NativeTool
+        let layer: Int
+        let color: String
+        let color2: String
+        let op: Double
+        let size: Double
+        let t0: TimeInterval
+        var pAvg: Double?
         var pts: [[Any]] = []
+        var raw: [(x: Double, y: Double, p: Double, t: Double, tilt: (Double, Double)?)] = []
         var dirty: CGRect?
         var before: [TileKey: Data] = [:]
-        var grads: [Int: CGGradient] = [:]
     }
 
     var drawing: Bool { live != nil }
@@ -122,43 +126,97 @@ enum NativeTool: String, CaseIterable, Sendable { case paint, erase }
 
     func begin(at p: CGPoint, pressure: Double, time: TimeInterval, tilt: (Double, Double)?) {
         guard let d = doc, live == nil else { return }
-        let L = d.layers[d.active]
-        guard L.visible else { say("This layer is hidden."); return }
-        let rgb = UIColor(color).rgb
+        guard d.layers[d.active].visible else { say("This layer is hidden."); return }
         if tool == .paint, wet == nil { wet = PixelBuffer(w: d.w, h: d.h) }
         if tool == .paint, wet == nil { say("Not drawn. This phone has no room for the stroke buffer."); return }
-        live = Live(stroker: Stroker(brush: brush, size: size), tool: tool, layer: d.active, rgb: rgb, op: tool == .erase ? 1 : opacity, size: size, t0: time)
+        live = Live(stroker: NativeStroker(brush, size: size), brush: brush, tool: tool, layer: d.active, color: UIColor(color).hex, color2: UIColor(color2).hex,
+                    op: tool == .erase ? 1 : opacity, size: size, t0: time)
         extend(to: p, pressure: pressure, time: time, tilt: tilt)
     }
 
     func extend(to p: CGPoint, pressure: Double, time: TimeInterval, tilt: (Double, Double)?) {
         guard var s = live, let d = doc else { return }
-        let sm = s.stroker.smooth(max(0.02, min(1, pressure)))
-        // the log: x, y (0.1), pressure (0.01), ms since the stroke began; tilt only when the brush uses it (this brush does not)
-        s.pts.append([(p.x * 10).rounded() / 10, (p.y * 10).rounded() / 10, (sm * 100).rounded() / 100, Int(((time - s.t0) * 1000).rounded())])
-        let stamps = s.stroker.add(x: Double(p.x), y: Double(p.y), p: sm)
-        let L = d.layers[s.layer].pixels
-        for st in stamps {
-            let r = CGRect(x: st.x - st.r - 1, y: st.y - st.r - 1, width: st.r * 2 + 2, height: st.r * 2 + 2)
-            s.dirty = s.dirty.map { $0.union(r) } ?? r
-            if s.tool == .erase {
-                for k in L.tiles(in: r) where s.before[k] == nil { s.before[k] = L.tilePixels(tx: k.tx, ty: k.ty) }
-                stamp(st, into: L.ctx, rgb: (0, 0, 0), erase: true, live: &s)
-            } else if let w = wet {
-                stamp(st, into: w.ctx, rgb: s.rgb, erase: false, live: &s)
-            }
-        }
+        let raw = max(0.02, min(1, pressure))
+        let sm = s.pAvg.map { $0 * 0.5 + raw * 0.5 } ?? raw   // the laptop's pAvg: pressure averaged half and half with the last value
+        s.pAvg = sm
+        let ms = ((time - s.t0) * 1000).rounded()
+        let tl: (Double, Double)? = s.brush.usesTilt ? tilt.map { (Double(Int($0.0)), Double(Int($0.1))) } : nil   // tilt is kept in the log only when the brush uses it
+        var pt: [Any] = [(Double(p.x) * 10).rounded() / 10, (Double(p.y) * 10).rounded() / 10, (sm * 100).rounded() / 100, Int(ms)]
+        if let tl { pt.append(Int(tl.0)); pt.append(Int(tl.1)) }
+        s.pts.append(pt)
+        s.raw.append((x: Double(p.x), y: Double(p.y), p: sm, t: ms, tilt: tl))
+        let dabs = s.stroker.add(x: Double(p.x), y: Double(p.y), p: sm, t: ms, tilt: tl)
+        lay(dabs, &s, on: d)
         live = s
         stage?.refresh(active: s.layer, wetOpacity: s.tool == .paint ? s.op : 0)
     }
 
+    /// Puts dabs on the stroke buffer (paint) or straight on the layer (erase), and grows the stroke's dirty box.
+    private func lay(_ dabs: [Dab], _ s: inout Live, on d: NativeDoc) {
+        let L = d.layers[s.layer].pixels
+        let B = s.brush
+        for dab in dabs {
+            let r = B.radius(size: s.size, pressure: dab.p, f: dab.f)
+            let reach = r * 1.5 + 4 + (dab.span / 2) + (B.n("channel") > 0 ? B.n("channel") * s.size * 2 : 0)
+            var box = CGRect(x: dab.x - reach, y: dab.y - reach, width: reach * 2, height: reach * 2)
+            if let tw = dab.tw { box = box.union(CGRect(x: dab.x + tw.dx - reach, y: dab.y + tw.dy - reach, width: reach * 2, height: reach * 2)) }
+            s.dirty = s.dirty.map { $0.union(box) } ?? box
+            if s.tool == .erase {
+                for k in L.tiles(in: box) where s.before[k] == nil { s.before[k] = L.tilePixels(tx: k.tx, ty: k.ty) }
+                L.ctx.saveGState(); L.ctx.setBlendMode(.destinationOut)
+                paintDab(dab, B, s, into: L.ctx, ink: "#000000")
+                L.ctx.restoreGState()
+            } else if let w = wet {
+                paintDab(dab, B, s, into: w.ctx, ink: nil)
+            }
+        }
+    }
+
+    private func paintDab(_ dab: Dab, _ B: Brush, _ s: Live, into ctx: CGContext, ink: String?) {
+        if dab.span > 0 {
+            let fill = ink ?? (B.t("gapFillColor").isEmpty ? s.color2 : B.t("gapFillColor"))
+            NativeStamp.drawFill(ctx, B, color: fill, size: s.size, dab)
+            return
+        }
+        var col = ink ?? s.color
+        if ink == nil, B.n("hueJit") > 0 || B.n("satJit") > 0 || B.n("briJit") > 0 {
+            col = NativeStamp.jitterColour(col, hue: B.n("hueJit"), sat: B.n("satJit"), bri: B.n("briJit"), x: dab.x, y: dab.y)
+        }
+        NativeStamp.drawWithTwin(ctx, B, color: col, color2: ink ?? s.color2, size: s.size, dab)
+    }
+
+    /// The line catches up with the pen after release (StreamLine lags it).
+    private func catchUp(_ st: inout NativeStroker, _ s: Live) -> [Dab] {
+        guard st.B.n("stream") > 0, let q = s.raw.last else { return [] }
+        var out: [Dab] = []
+        for _ in 0..<14 { out += st.add(x: q.x, y: q.y, p: s.pAvg ?? 1, t: q.t, tilt: nil) }
+        return out
+    }
+
     func end() {
-        guard let s = live, let d = doc else { return }
-        live = nil
+        guard var s = live, let d = doc else { return }
         let L = d.layers[s.layer]
+        // the line catches up with the pen, and an end taper needs the whole length, so the stroke is laid down once more (the laptop's `finishStroke`)
+        var st = s.stroker
+        let flushed = st.flush()
+        lay(flushed, &s, on: d)
+        let caught = catchUp(&st, s)
+        lay(caught, &s, on: d)
+        s.stroker = st
+        if s.brush.needsLength, s.stroker.dist > 8, let box = s.dirty?.integral {
+            if s.tool == .erase { for (k, data) in s.before { L.pixels.setTile(tx: k.tx, ty: k.ty, data) } } else { wet?.clear(box) }
+            var again = NativeStroker(s.brush, size: s.size, total: s.stroker.dist)
+            for q in s.raw { let dabs = again.add(x: q.x, y: q.y, p: q.p, t: q.t, tilt: q.tilt); lay(dabs, &s, on: d) }
+            let tail = again.flush()
+            lay(tail, &s, on: d)
+            let more = catchUp(&again, s)
+            lay(more, &s, on: d)
+        }
+        live = nil
         guard let box = s.dirty?.integral else { return }
         var before = s.before
         if s.tool == .paint, let w = wet {
+            if s.brush.t("grain") != "none", s.brush.t("grainMode") == "texturised" { NativeStamp.applyGrain(w.ctx, s.brush, in: box) }
             for k in L.pixels.tiles(in: box) where before[k] == nil { before[k] = L.pixels.tilePixels(tx: k.tx, ty: k.ty) }
             if let img = w.image() { L.pixels.drawUpright(img, in: box, alpha: CGFloat(s.op), blend: L.alphaLock ? .sourceAtop : .normal) }
             w.clear(box)
@@ -183,28 +241,13 @@ enum NativeTool: String, CaseIterable, Sendable { case paint, erase }
 
     /// One stroke in the laptop's log shape (`app.js`, the `rec` in the stroke-commit function).
     private func record(_ s: Live) -> [String: Any] {
-        let b = brush
-        return ["tool": s.tool.rawValue, "color": Hex.string(r: s.rgb.0, g: s.rgb.1, b: s.rgb.2), "color2": NSNull(), "size": s.size, "op": s.op,
-                "brush": b.id, "layer": s.layer + 1, "onMask": false, "t": Int((s.t0 * 1000).rounded()), "pts": s.pts,
-                "bs": ["ps": b.pressSize, "twin": 0, "gap": 0, "side": "right", "ch": 0, "lines": 1, "lineGap": 0.15, "wet": 0, "round": true, "k": 1, "pc": b.pressCurve] as [String: Any],
-                "snapped": false, "sym": "off"]
-    }
-
-    private func stamp(_ st: Stamp, into ctx: CGContext, rgb: (Double, Double, Double), erase: Bool, live s: inout Live) {
-        let key = Int((st.a * 200).rounded())
-        let g: CGGradient
-        if let c = s.grads[key] { g = c } else {
-            let a = CGFloat(min(1, max(0, Double(key) / 200)))
-            let c = CGColor(red: rgb.0, green: rgb.1, blue: rgb.2, alpha: a), z = CGColor(red: rgb.0, green: rgb.1, blue: rgb.2, alpha: 0)
-            let hard = CGFloat(min(0.995, max(0, brush.hard)))
-            g = CGGradient(colorsSpace: CGColorSpaceCreateDeviceRGB(), colors: [c, c, z] as CFArray, locations: [0, hard, 1])!
-            s.grads[key] = g
-        }
-        ctx.saveGState()
-        if erase { ctx.setBlendMode(.destinationOut) }
-        ctx.translateBy(x: st.x, y: st.y); ctx.scaleBy(x: st.r, y: st.r)
-        ctx.drawRadialGradient(g, startCenter: .zero, startRadius: 0, endCenter: .zero, endRadius: 1, options: [])
-        ctx.restoreGState()
+        let B = s.brush
+        let bs: [String: Any] = ["ps": B.n("pressSize"), "twin": B.n("twin"), "gap": B.n("twinGap"), "side": B.t("twinSide"), "ch": B.n("channel"), "lines": B.n("lines"),
+                                 "lineGap": B.n("lineGap"), "wet": B.n("wet"), "round": B.shape != "square" && B.shape != "tube",
+                                 "k": B.shape == "square" ? 0.72 : B.shape == "tube" ? 0.92 : 1, "pc": B.n("pressCurve")]
+        let c2: Any = B.n("twin") > 0 ? s.color2 : NSNull()
+        return ["tool": s.tool.rawValue, "color": s.color, "color2": c2, "size": s.size, "op": s.op,
+                "brush": B.id, "layer": s.layer + 1, "onMask": false, "t": Int((s.t0 * 1000).rounded()), "pts": s.pts, "bs": bs, "snapped": false, "sym": "off"]
     }
 
     // MARK: undo, redo, layers
@@ -241,6 +284,7 @@ enum NativeTool: String, CaseIterable, Sendable { case paint, erase }
 }
 
 extension UIColor {
+    var hex: String { let c = rgb; return Hex.string(r: c.0, g: c.1, b: c.2) }
     var rgb: (Double, Double, Double) {
         var r: CGFloat = 0, g: CGFloat = 0, b: CGFloat = 0, a: CGFloat = 0
         getRed(&r, green: &g, blue: &b, alpha: &a)
