@@ -1,7 +1,6 @@
 import AppIntents
 import CoreSpotlight
 import SwiftUI
-import TipKit
 
 // Pick's system add-ons (DESIGN.md §6): both rooms in Spotlight, Siri says who leads the vote, deep links to each room,
 // a tip for the touch-and-hold, and the widget's numbers (Shared/PickGlance.swift, PLDevWidgets/PickWidget.swift).
@@ -11,12 +10,6 @@ import TipKit
 @MainActor @Observable final class PickNav {
     static let shared = PickNav()
     var room: PickRoom?
-}
-
-struct PickLookTip: Tip {
-    var title: Text { Text("Look closer") }
-    var message: Text? { Text("Touch and hold a colourway to see its colours, copy them or share the vote.") }
-    var image: Image? { Image(systemName: "hand.tap") }
 }
 
 struct PickRoomEntity: IndexedEntity {
