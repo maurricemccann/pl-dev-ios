@@ -1,11 +1,11 @@
 import SwiftUI
 import UserNotifications
 
-/// House: the pl-os pages that have widget routes. Approvals (draft cards, approve / hold, approve all in two steps),
-/// Shift (today's tasks, tick done / skipped) and Standing (the house score, sales). Reads use widgetRead, writes widgetWrite.
+/// House: the whole pl-os console on the phone (his order 11-13, "build everything in plos in full"). The web's three tabs,
+/// Founder / Inbound / Outbound, plus More (the rooms and the system drawer). Every call goes through Console (the PL DEV key).
 @MainActor enum HouseSection: PLSection {
     static let manifest = SectionManifest(id: "house", title: "House", symbol: "house",
-                                          needsKeys: ["widgetRead", "widgetWrite"], needsOrigins: ["cron"])
+                                          needsKeys: ["pldev"], needsOrigins: ["console"])
     static let state = HouseModel()
 
     static func makeRoot(model: AppModel) -> AnyView { AnyView(HouseView(model: model, state: state)) }
@@ -13,13 +13,16 @@ import UserNotifications
     static func settingsRows(model: AppModel) -> AnyView? { nil }
     static func notificationCategories() -> Set<UNNotificationCategory> { [] }
     static func handle(link: DeepLink, model: AppModel) -> Bool {
-        if case .section(_, let path, _) = link, let first = path.first, let page = HouseModel.Page(rawValue: first) { state.page = page }
+        if case .section(_, let path, _) = link, let first = path.first {
+            if let tab = HouseModel.Tab(rawValue: first) { state.tab = tab }
+            if first == "approvals" { state.tab = .founder; state.openApprovals = true }
+        }
         return true
     }
 
     static func refresh(model: AppModel) async -> SectionRefresh {
-        await state.loadDrafts(model: model)
-        let n = state.draftCount
+        await state.loadCounts(model: model)
+        let n = state.stats?.pending ?? 0
         var notify: [LocalNotice] = []
         if n > 0, n != state.lastNotified {
             state.lastNotified = n
@@ -31,90 +34,79 @@ import UserNotifications
 }
 
 @MainActor @Observable final class HouseModel {
-    enum Page: String, CaseIterable, Identifiable { case approvals, shift, standing; var id: String { rawValue } }
+    enum Tab: String, CaseIterable, Identifiable {
+        case founder, inbound, outbound, more
+        var id: String { rawValue }
+        var title: String { rawValue.capitalized }
+    }
 
-    struct Draft: Decodable, Identifiable, Equatable { let id: String; let platform: String?; let kind: String?; let caption: String?; let image: String?; let created_at: String? }
-    struct ShiftTask: Decodable, Identifiable, Equatable { let id: String; let time: String?; let title: String?; var status: String?; let kind: String? }
-    struct Quarter: Decodable, Identifiable, Equatable { let key: String; let label: String; let score: Int; let note: String?; var id: String { key } }
-    struct Standing: Decodable, Equatable { let total: Int?; let verdict: String?; let quarters: [Quarter]? }
-    struct Sales: Decodable, Equatable { struct Last: Decodable, Equatable { let at: String?; let total: Double?; let currency: String? }; let count: Int?; let last: Last? }
+    struct DraftStats: Decodable { let pending: Int?; let queued: Int?; let held: Int?; let week_total: Int? }
+    struct Declarations: Decodable { let approve: String?; let now: String?; let bulk: String?; let madman: String? }
+    struct Creator: Decodable { let status: String; let label: String; let updated: String? }
+    struct PlanTask: Decodable, Identifiable, Equatable {
+        let id: String; let slot: String?; let time_pt: String?; let title: String?; let why: String?; var status: String?; let kind: String?; let action_label: String?
+    }
+    struct Plan: Decodable { let plan_date: String?; let tasks: [PlanTask]? }
+    struct Day: Decodable, Identifiable { let date: String; let dow: Int?; let work: Bool?; let exception: Bool?; var id: String { date } }
+    struct Schedule: Decodable { let days: [Day]? }
+    struct Record: Decodable { let days: Int?; let total: Int?; let done: Int?; let skipped: Int?; let since: String?; let streak: Int? }
+    struct FounderTask: Decodable, Identifiable { let notion_page_id: String; let title: String?; let status: String?; let due_date: String?; let priority: String?; let project: String?; var id: String { notion_page_id } }
 
-    var page: Page = .approvals
-    var drafts: [Draft] = []
-    var draftCount = 0
-    var tasks: [ShiftTask] = []
-    var planDate: String?
-    var standing: Standing?
-    var sales: Sales?
+    var tab: Tab = .founder
+    var openApprovals = false
+    var stats: DraftStats?
+    var walls: Declarations?
+    var creator: Creator?
+    var plan: Plan?
+    var schedule: [Day] = []
+    var record: Record?
+    var tasks: [FounderTask] = []
     var message: String?
     var tick = 0
     var lastNotified = 0
-    var confirmAll = false
 
-    private func get<T: Decodable>(_ path: String, _ type: T.Type, model: AppModel) async throws -> T {
-        guard let http = model.http else { throw URLError(.notConnectedToInternet) }
-        return try JSONDecoder().decode(T.self, from: try await http.send(RequestPlan(origin: "cron", path: path)))
+    func loadCounts(model: AppModel) async {
+        stats = try? await Console.q("draftstats", DraftStats.self, model: model)
     }
 
-    private func post(_ path: String, _ body: [String: String], model: AppModel) async throws -> Data {
-        guard let http = model.http, let write = model.config?.key("widgetWrite") else { throw URLError(.userAuthenticationRequired) }
-        return try await http.send(RequestPlan(origin: "cron", method: "POST", path: path, headers: ["content-type": "application/json"],
-                                               body: try JSONSerialization.data(withJSONObject: body)),
-                                   idempotent: false, extraHeaders: ["Authorization": "Bearer " + write])
+    func loadFounder(model: AppModel) async {
+        async let s = try? Console.q("draftstats", DraftStats.self, model: model)
+        async let w = try? Console.get("api/declarations", Declarations.self, model: model)
+        async let c = try? Console.q("creator", Creator.self, model: model)
+        async let p = try? Console.get("api/day-plan", Plan.self, model: model)
+        async let sc = try? Console.get("api/schedule", Schedule.self, model: model, query: ["days": "7"])
+        async let r = try? Console.get("api/record", Record.self, model: model)
+        async let t = try? Console.q("foundertasks", [FounderTask].self, model: model)
+        let (s1, w1, c1, p1, sc1, r1, t1) = await (s, w, c, p, sc, r, t)
+        stats = s1; walls = w1; creator = c1; plan = p1; schedule = sc1?.days ?? []; record = r1; tasks = t1 ?? []
+        message = (s1 == nil && p1 == nil) ? "Could not reach the console. Pull to try again." : nil
     }
 
-    func loadDrafts(model: AppModel) async {
-        struct Out: Decodable { let drafts: [Draft]? }
-        struct Count: Decodable { let pending: Int? }
+    func tickTask(_ t: PlanTask, _ status: String, model: AppModel) async {
+        guard let i = plan?.tasks?.firstIndex(where: { $0.id == t.id }) else { return }
+        let before = plan?.tasks?[i].status
+        plan?.tasks?[i].status = status
+        do { try await Console.post("api/day-plan/complete", ["id": t.id, "status": status], model: model); tick += 1 }
+        catch { plan?.tasks?[i].status = before; message = "Not saved. \(error.localizedDescription)" }
+    }
+
+    func setWork(_ d: Day, _ work: Bool, model: AppModel) async {
+        do { try await Console.post("api/schedule", ["date": d.date, "work": work], model: model); tick += 1
+            schedule = (try? await Console.get("api/schedule", Schedule.self, model: model, query: ["days": "7"]))?.days ?? schedule }
+        catch { message = "Not saved. \(error.localizedDescription)" }
+    }
+
+    func setCreator(awake: Bool, model: AppModel) async {
         do {
-            drafts = try await get("api/widget/drafts", Out.self, model: model).drafts ?? []
-            draftCount = (try? await get("api/widget/moderation", Count.self, model: model).pending) ?? drafts.count
-            message = nil
-        } catch { message = "Could not read the drafts." }
+            try await Console.post("api/pldev/x/creator", ["status": awake ? "awake" : "asleep"], model: model)
+            creator = try? await Console.q("creator", Creator.self, model: model); tick += 1
+        } catch { message = "Not saved. \(error.localizedDescription)" }
     }
 
-    func loadShift(model: AppModel) async {
-        struct Out: Decodable { let plan_date: String?; let tasks: [ShiftTask]? }
-        do { let o = try await get("api/widget/dayplan", Out.self, model: model); tasks = o.tasks ?? []; planDate = o.plan_date; message = nil }
-        catch { message = "Could not read the shift." }
-    }
-
-    func loadStanding(model: AppModel) async {
-        do {
-            standing = try await get("api/widget/standing", Standing.self, model: model)
-            sales = try? await get("api/widget/sales", Sales.self, model: model)
-            message = nil
-        } catch { message = "Could not read the standing." }
-    }
-
-    /// Optimistic: the card leaves at once and comes back if the server refuses.
-    func act(_ d: Draft, _ action: String, model: AppModel) async {
-        guard let i = drafts.firstIndex(of: d) else { return }
-        drafts.remove(at: i)
-        do { _ = try await post("api/widget/draft-act", ["id": d.id, "action": action], model: model); tick += 1; draftCount = max(0, draftCount - 1) }
-        catch { drafts.insert(d, at: min(i, drafts.count)); message = "Not saved: \(action) failed. Try again." }
-    }
-
-    func tickTask(_ t: ShiftTask, _ status: String, model: AppModel) async {
-        guard let i = tasks.firstIndex(where: { $0.id == t.id }) else { return }
-        let before = tasks[i].status
-        tasks[i].status = status
-        do { _ = try await post("api/widget/dayplan-tick", ["id": t.id, "status": status], model: model); tick += 1 }
-        catch { tasks[i].status = before; message = "Not saved. Try again." }
-    }
-
-    /// Two steps, as the server requires: arm, then confirm with the nonce within 30 s.
-    func approveAll(model: AppModel) async {
-        struct Armed: Decodable { let confirm: String?; let pending: Int? }
-        struct Done: Decodable { let started: Int? }
-        do {
-            let armed = try JSONDecoder().decode(Armed.self, from: try await post("api/widget/approve-all", [:], model: model))
-            guard let nonce = armed.confirm else { message = "Nothing to approve."; return }
-            let done = try JSONDecoder().decode(Done.self, from: try await post("api/widget/approve-all", ["confirm": nonce], model: model))
-            message = "Approving \(done.started ?? 0). Slack reports when it finishes."
-            tick += 1
-            drafts = drafts.filter { $0.platform == "pinterest" }
-        } catch { message = "Approve all failed. Nothing changed." }
+    func complete(_ t: FounderTask, model: AppModel) async {
+        tasks.removeAll { $0.id == t.id }
+        do { try await Console.post("api/founder-task/complete", ["task_id": t.notion_page_id], model: model); tick += 1 }
+        catch { tasks.append(t); message = "Not saved. \(error.localizedDescription)" }
     }
 }
 
@@ -123,114 +115,125 @@ struct HouseView: View {
     @Bindable var state: HouseModel
 
     var body: some View {
-        List {
-            Picker("Page", selection: $state.page) {
-                Text("Approvals").tag(HouseModel.Page.approvals)
-                Text("Shift").tag(HouseModel.Page.shift)
-                Text("Standing").tag(HouseModel.Page.standing)
+        Group {
+            switch state.tab {
+            case .founder: FounderTab(model: model, state: state)
+            case .inbound: InboundTab(model: model)
+            case .outbound: OutboundTab(model: model)
+            case .more: MoreTab(model: model)
+            }
+        }
+        .safeAreaInset(edge: .top, spacing: 0) {
+            Picker("Page", selection: $state.tab) {
+                ForEach(HouseModel.Tab.allCases) { Text($0.title).tag($0) }
             }
             .pickerStyle(.segmented)
-            .listRowBackground(Color.clear)
-            if let m = state.message { Text(m).foregroundStyle(.secondary) }
-            switch state.page {
-            case .approvals: approvals
-            case .shift: shift
-            case .standing: standingView
-            }
+            .padding(.horizontal, PLSpace.margin).padding(.vertical, PLSpace.gap)
+            .background(.bar)
         }
         .navigationTitle("House")
-        .refreshable { await load() }
-        .task(id: state.page) { await load() }
+        .navigationBarTitleDisplayMode(.inline)
         .sensoryFeedback(PLHaptic.commit, trigger: state.tick)
-        .confirmationDialog("Approve every waiting draft except Pins?", isPresented: $state.confirmAll, titleVisibility: .visible) {
-            Button("Approve all") { Task { await state.approveAll(model: model) } }
-        } message: {
-            Text("Up to 50 drafts join the drip. Pins still wait for your tap one by one.")
-        }
+        .navigationDestination(isPresented: $state.openApprovals) { ApprovalsView(model: model) }
     }
+}
 
-    private func load() async {
-        switch state.page {
-        case .approvals: await state.loadDrafts(model: model)
-        case .shift: await state.loadShift(model: model)
-        case .standing: await state.loadStanding(model: model)
-        }
-    }
+/// Founder: the shift, the approvals door, the house switches. What the web's default tab shows.
+struct FounderTab: View {
+    let model: AppModel
+    @Bindable var state: HouseModel
 
-    @ViewBuilder private var approvals: some View {
-        if state.drafts.isEmpty && state.message == nil {
-            ContentUnavailableView("Nothing waiting", systemImage: "checkmark.seal", description: Text("No drafts need you. New ones land here."))
-        }
-        Section {
-            ForEach(state.drafts) { d in
-                VStack(alignment: .leading, spacing: 8) {
-                    if let s = d.image, let url = URL(string: s) {
-                        AsyncImage(url: url) { $0.resizable().scaledToFill() } placeholder: { Color.secondary.opacity(0.15) }
-                            .frame(height: 220).clipShape(RoundedRectangle(cornerRadius: PLRadius.row, style: .continuous))
+    var body: some View {
+        List {
+            if let m = state.message { Text(m).font(.footnote).foregroundStyle(.secondary) }
+            if let line = state.walls?.madman {
+                Section { Text(line).font(.headline).tracking(1).frame(maxWidth: .infinity).multilineTextAlignment(.center) }
+                    .listRowBackground(Color.clear)
+            }
+            Section {
+                NavigationLink { ApprovalsView(model: model) } label: {
+                    LabeledContent {
+                        Text("\(state.stats?.pending ?? 0)").monospacedDigit()
+                    } label: {
+                        Label("Approvals", systemImage: "checkmark.seal")
+                        if let s = state.stats { Text("\(s.queued ?? 0) in the drip · \(s.held ?? 0) held · \(s.week_total ?? 0) made this week") }
                     }
-                    Text((d.platform ?? "?").capitalized).font(.caption.bold()).foregroundStyle(.secondary)
-                    Text(d.caption ?? "").font(.body)
                 }
-                .padding(.vertical, 4)
-                .swipeActions(edge: .trailing) { Button("Approve") { Task { await state.act(d, "approve", model: model) } }.tint(.green) }
-                .swipeActions(edge: .leading) { Button("Hold") { Task { await state.act(d, "hold", model: model) } }.tint(.orange) }
-                .contextMenu {
-                    Button("Copy caption") { UIPasteboard.general.string = d.caption }
-                    Button("Approve") { Task { await state.act(d, "approve", model: model) } }
-                    Button("Hold") { Task { await state.act(d, "hold", model: model) } }
+                NavigationLink { MakeView(model: model) } label: { Label("Make a draft", systemImage: "square.and.pencil") }
+                NavigationLink { SiteControlsView(model: model) } label: { Label("Site controls", systemImage: "switch.2") }
+                if let c = state.creator {
+                    Toggle(isOn: Binding(get: { c.status == "awake" }, set: { v in Task { await state.setCreator(awake: v, model: model) } })) {
+                        Label { Text("The creator is awake"); Text(c.label) } icon: { Image(systemName: c.status == "awake" ? "sun.max" : "moon") }
+                    }
+                    .disabled(c.status == "dnd")
                 }
             }
-        } header: {
-            Text("\(state.draftCount) waiting · showing the newest \(state.drafts.count)")
-        } footer: {
-            Text("Swipe left to approve, right to hold.")
+            shift
+            if !state.schedule.isEmpty {
+                Section {
+                    ScrollView(.horizontal, showsIndicators: false) {
+                        HStack(spacing: 8) {
+                            ForEach(state.schedule) { d in
+                                let work = d.work ?? false
+                                Button { Task { await state.setWork(d, !work, model: model) } } label: {
+                                    VStack(spacing: 4) {
+                                        Text(Date.pl(d.date)?.formatted(.dateTime.weekday(.abbreviated)) ?? d.date).font(.caption.bold())
+                                        Text(Date.pl(d.date)?.formatted(.dateTime.day()) ?? "").font(.title3.monospacedDigit())
+                                        Text(work ? "Work" : "Off").font(.caption2)
+                                    }
+                                    .frame(width: 52, height: 72)
+                                    .background(work ? Color.orange.opacity(0.25) : Color.secondary.opacity(0.12), in: RoundedRectangle(cornerRadius: 12, style: .continuous))
+                                }
+                                .buttonStyle(.plain)
+                                .accessibilityLabel("\(d.date), \(work ? "work day" : "day off"). Tap to change.")
+                            }
+                        }
+                    }
+                } header: { Text("Amazon shifts") } footer: { Text("Tap a day to flip it. The day plan reads this.") }
+            }
+            if let r = state.record {
+                Section("The record") {
+                    LabeledContent("Streak", value: "\(r.streak ?? 0) days")
+                    LabeledContent("Done", value: "\(r.done ?? 0) of \(r.total ?? 0)")
+                    if let since = r.since { LabeledContent("Since", value: since) }
+                }
+            }
+            if !state.tasks.isEmpty {
+                Section("Founder tasks") {
+                    ForEach(state.tasks) { t in
+                        VStack(alignment: .leading, spacing: 2) {
+                            Text(t.title ?? "")
+                            Text([t.project, t.priority, t.due_date].compactMap { $0 }.joined(separator: " · ")).font(.caption).foregroundStyle(.secondary)
+                        }
+                        .swipeActions { Button("Done") { Task { await state.complete(t, model: model) } }.tint(.green) }
+                    }
+                }
+            }
         }
-        if state.draftCount > 0 {
-            Button("Approve all…") { state.confirmAll = true }
-        }
+        .refreshable { await state.loadFounder(model: model) }
+        .task { await state.loadFounder(model: model) }
     }
 
     @ViewBuilder private var shift: some View {
-        if state.tasks.isEmpty && state.message == nil {
-            ContentUnavailableView("No shift today", systemImage: "calendar", description: Text("Today's plan has not been written yet."))
-        }
-        Section(state.planDate.map { "Shift for \($0)" } ?? "Shift") {
-            ForEach(state.tasks) { t in
-                HStack {
+        let tasks = state.plan?.tasks ?? []
+        Section {
+            if tasks.isEmpty { Text("Today's plan has not been written yet.").foregroundStyle(.secondary) }
+            ForEach(tasks) { t in
+                HStack(alignment: .top, spacing: 10) {
                     Image(systemName: t.status == "done" ? "checkmark.circle.fill" : t.status == "skipped" ? "minus.circle" : "circle")
                         .foregroundStyle(t.status == "done" ? .green : .secondary)
-                    VStack(alignment: .leading) {
+                        .font(.title3)
+                    VStack(alignment: .leading, spacing: 2) {
                         Text(t.title ?? "").strikethrough(t.status == "done" || t.status == "skipped")
-                        if let time = t.time { Text(time).font(.caption).foregroundStyle(.secondary) }
+                        if let why = t.why, !why.isEmpty { Text(why).font(.caption).foregroundStyle(.secondary).lineLimit(3) }
+                        if let time = t.time_pt { Text(time).font(.caption2.monospacedDigit()).foregroundStyle(.tertiary) }
                     }
                 }
                 .swipeActions(edge: .trailing) { Button("Done") { Task { await state.tickTask(t, "done", model: model) } }.tint(.green) }
                 .swipeActions(edge: .leading) { Button("Skip") { Task { await state.tickTask(t, "skipped", model: model) } }.tint(.gray) }
             }
-        }
-    }
-
-    @ViewBuilder private var standingView: some View {
-        if let s = state.standing {
-            Section {
-                LabeledContent("Score", value: s.total.map { "\($0)" } ?? "?")
-                if let v = s.verdict { Text(v).font(.headline) }
-            }
-            Section("Quarters") {
-                ForEach(s.quarters ?? []) { q in
-                    VStack(alignment: .leading, spacing: 4) {
-                        HStack { Text(q.label).font(.headline); Spacer(); Text("\(q.score)").monospacedDigit() }
-                        ProgressView(value: Double(q.score), total: 25)
-                        if let n = q.note { Text(n).font(.caption).foregroundStyle(.secondary) }
-                    }
-                }
-            }
-        }
-        if let sales = state.sales {
-            Section("Sales") {
-                LabeledContent("Orders", value: sales.count.map(String.init) ?? "?")
-                if let t = sales.last?.total { LabeledContent("Last", value: String(format: "%@ %.2f", sales.last?.currency ?? "", t)) }
-            }
+        } header: { Text(state.plan?.plan_date.map { "Shift · \($0)" } ?? "Shift") } footer: {
+            if !tasks.isEmpty { Text("Swipe left for done, right to skip.") }
         }
     }
 }
