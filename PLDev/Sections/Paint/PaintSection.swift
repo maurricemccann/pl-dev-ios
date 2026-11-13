@@ -74,6 +74,7 @@ import WidgetKit
 struct PaintHome: View {
     let model: AppModel
     @Bindable var state: PaintModel
+    @State private var nativeOpen = false
 
     var body: some View {
         List {
@@ -89,6 +90,10 @@ struct PaintHome: View {
                     }
                 }
                 .buttonStyle(.plain)
+                // lane C (11-13): the native engine, beside the web canvas until it matches it
+                Button { nativeOpen = true } label: {
+                    Label { VStack(alignment: .leading, spacing: 2) { Text("Native canvas (beta)"); Text("Built for the iPhone: your brushes, layers and blends. Works stay on this iPhone for now.").font(.caption).foregroundStyle(.secondary) } } icon: { Image(systemName: "paintbrush.pointed") }
+                }
             }
             if let f = state.failed { Text(f).foregroundStyle(.secondary) }
             Section("The Daily Mark") {
@@ -121,6 +126,7 @@ struct PaintHome: View {
             Section { NavigationLink("The handbook") { GalleryCanvas(model: model, path: "paint/handbook/", title: "Handbook") } }
         }
         .navigationTitle("Paint")
+        .fullScreenCover(isPresented: $nativeOpen) { NativeCanvasView(model: model) }
         .refreshable { await state.load(model: model) }
         .task { await state.load(model: model) }
         .fullScreenCover(isPresented: $state.canvasOpen, onDismiss: { Task { await state.load(model: model) } }) {
