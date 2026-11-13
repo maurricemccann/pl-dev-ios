@@ -21,7 +21,7 @@ struct VJInstrument: View {
     @State private var tab = RackTab.deck
     @State private var open = false
     @State private var browsing: VJTarget?
-    @State private var audio = AudioController.shared
+    @State private var audio = CodeArtAudio.shared
 
     var body: some View {
         ZStack(alignment: .topTrailing) {
@@ -47,7 +47,7 @@ struct VJInstrument: View {
         }
         .safeAreaInset(edge: .bottom, spacing: 0) { rack }
         .sheet(item: $browsing) { t in VJBrowser(vj: vj, target: t) { vj.choose($0, for: t); browsing = nil } }
-        .sheet(item: $vj.share) { ShareSheet(items: $0.items) }
+        .sheet(item: $vj.share) { CodeArtShareSheet(items: $0.items) }
         .task { vj.start() }
         .sensoryFeedback(PLHaptic.select, trigger: vj.p.pieceA)
         .sensoryFeedback(.impact(weight: .light), trigger: vj.beat)
@@ -93,7 +93,7 @@ struct VJInstrument: View {
     // MARK: Deck
 
     @ViewBuilder private var deck: some View {
-        Section { TipView(VJGestureTip()) }
+        Section { TipView(CodeArtVJTip()) }
         Section("Now") {
             Button { browsing = .deckA } label: { LabeledContent("Piece", value: vj.name(vj.p.pieceA)) }
             LazyVGrid(columns: Array(repeating: GridItem(.flexible(), spacing: 6), count: 3), spacing: 6) {
@@ -134,7 +134,7 @@ struct VJInstrument: View {
             if vj.p.auto { Picker("Every", selection: $vj.p.autoEvery) { ForEach([4, 8, 16, 32], id: \.self) { Text("\($0) beats").tag($0) } } }
         }
         Section("Sound") {
-            AudioSourceMenu(model: model)
+            CodeArtSoundMenu(model: model)
             if let l = audio.line { ResultLine(text: l) }
             Toggle("Include the archive (\(max(0, PieceRuntime.shared.pieces.count - PieceRuntime.shared.pieces.filter(\.live).count)) more)", isOn: $vj.p.includeArchive)
                 .onChange(of: vj.p.includeArchive) { _, _ in vj.refreshPieces() }
@@ -328,9 +328,9 @@ struct VJBrowser: View {
 
 // MARK: - share
 
-struct ShareItem: Identifiable { let id = UUID(); let items: [Any] }
+struct CodeArtShareItem: Identifiable { let id = UUID(); let items: [Any] }
 
-struct ShareSheet: UIViewControllerRepresentable {
+struct CodeArtShareSheet: UIViewControllerRepresentable {
     let items: [Any]
     func makeUIViewController(context: Context) -> UIActivityViewController { UIActivityViewController(activityItems: items, applicationActivities: nil) }
     func updateUIViewController(_ c: UIActivityViewController, context: Context) {}

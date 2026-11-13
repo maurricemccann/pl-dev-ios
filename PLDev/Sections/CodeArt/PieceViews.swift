@@ -4,7 +4,7 @@ import UIKit
 
 // The views that show a piece the native runtime is drawing. No web view anywhere.
 
-final class WeakBox<T: AnyObject>: @unchecked Sendable {
+final class CodeArtWeakBox<T: AnyObject>: @unchecked Sendable {
     weak var value: T?
     init(_ v: T) { value = v }
 }
@@ -145,7 +145,7 @@ final class PieceDisplay: UIView {
     /// The warm-up frames run in slices so a heavy piece never freezes the screen before its first picture.
     private func warmUp(_ made: PieceInstance, _ gen: Int) {
         let rt = runtime
-        let box = WeakBox(self)
+        let box = CodeArtWeakBox(self)
         rt.queue.async {
             let t0 = CACurrentMediaTime()
             var left = made.warmLeft
@@ -174,7 +174,7 @@ final class PieceDisplay: UIView {
         busy = true
         let gen = generation
         let rt = runtime
-        let box = WeakBox(self)
+        let box = CodeArtWeakBox(self)
         rt.queue.async {
             let t0 = CACurrentMediaTime()
             rt.pushAudio(VJAudio.shared.read())

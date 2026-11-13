@@ -27,8 +27,8 @@ enum PieceSet: String, CaseIterable, Identifiable {
 
 // MARK: - likes
 
-@MainActor @Observable final class LikesStore {
-    static let shared = LikesStore()
+@MainActor @Observable final class CodeArtLikes {
+    static let shared = CodeArtLikes()
     private(set) var liked = Set<String>()
     private(set) var loaded = false
     var line: String?
@@ -61,8 +61,8 @@ enum PieceSet: String, CaseIterable, Identifiable {
 // MARK: - sound
 
 /// The room's sound: the microphone, a track from the gallery, or a file from the phone. One at a time, shared by every code-art screen.
-@MainActor @Observable final class AudioController {
-    static let shared = AudioController()
+@MainActor @Observable final class CodeArtAudio {
+    static let shared = CodeArtAudio()
     struct Track: Identifiable, Hashable { let id: String; let label: String; let path: String; let bpm: Int }
     static let tracks = [Track(id: "helium", label: "Helium", path: "audio/helium.mp3", bpm: 122), Track(id: "fractal", label: "Fractal", path: "audio/fractal.mp4", bpm: 123)]
 
@@ -109,15 +109,15 @@ enum PieceSet: String, CaseIterable, Identifiable {
     func toggle() { if playing { VJAudio.shared.pause(); playing = false } else { VJAudio.shared.resume(); playing = VJAudio.shared.isPlaying } }
 }
 
-struct AudioSourceMenu: View {
+struct CodeArtSoundMenu: View {
     let model: AppModel
-    @State private var audio = AudioController.shared
+    @State private var audio = CodeArtAudio.shared
     @State private var picking = false
 
     var body: some View {
         Menu {
             Button("Microphone", systemImage: "mic") { Task { await audio.mic() } }
-            ForEach(AudioController.tracks) { t in Button(t.label, systemImage: "music.note") { Task { await audio.play(t, model: model) } } }
+            ForEach(CodeArtAudio.tracks) { t in Button(t.label, systemImage: "music.note") { Task { await audio.play(t, model: model) } } }
             Button("A file from this phone", systemImage: "folder") { picking = true }
             if audio.label != "Silent" { Button("Silence", systemImage: "speaker.slash", role: .destructive) { audio.stop() } }
         } label: {
@@ -133,7 +133,7 @@ struct AudioSourceMenu: View {
 struct NativeCurvesRoom: View {
     let model: AppModel
     @State private var data = LibraryData.shared
-    @State private var likes = LikesStore.shared
+    @State private var likes = CodeArtLikes.shared
     @State private var onlyLiked = false
     @State private var liveGrid = true
     @State private var search = ""
@@ -168,7 +168,7 @@ struct NativeCurvesRoom: View {
                                            description: Text(onlyLiked ? "Touch and hold a piece and choose Like." : "The pieces appear here when the library loads."))
                 } else {
                     let running = liveSet
-                    TipView(PieceHoldTip()).padding(.horizontal, 6)
+                    TipView(CodeArtHoldTip()).padding(.horizontal, 6)
                     LazyVGrid(columns: [GridItem(.adaptive(minimum: 130), spacing: 6)], spacing: 6) {
                         ForEach(Array(list.enumerated()), id: \.element.id) { i, p in
                             Button { tick += 1; playing = p } label: { tile(p, live: running.contains(p.id)) }
@@ -188,7 +188,7 @@ struct NativeCurvesRoom: View {
             .searchable(text: $search, prompt: "Piece")
             .navigationTitle("Curves · \(list.count)")
             .toolbar {
-                ToolbarItem(placement: .topBarTrailing) { AudioSourceMenu(model: model) }
+                ToolbarItem(placement: .topBarTrailing) { CodeArtSoundMenu(model: model) }
                 ToolbarItem(placement: .topBarTrailing) {
                     Menu {
                         Picker("Set", selection: $set) { ForEach(PieceSet.allCases) { Text($0.title).tag($0) } }
@@ -232,7 +232,7 @@ struct PieceStage: View {
     let entries: [PieceEntry]
     @State var current: PieceEntry
     let close: () -> Void
-    @State private var likes = LikesStore.shared
+    @State private var likes = CodeArtLikes.shared
     @State private var bars = true
     @State private var drag: CGFloat = 0
 
@@ -252,7 +252,7 @@ struct PieceStage: View {
                     .transition(.opacity)
             }
             .contentShape(Rectangle())
-            .overlay(alignment: .top) { if bars { TipView(PieceSwipeTip()).padding() } }
+            .overlay(alignment: .top) { if bars { TipView(CodeArtSwipeTip()).padding() } }
             .onTapGesture { withAnimation(.snappy) { bars.toggle() } }
             .gesture(DragGesture(minimumDistance: 30).onChanged { drag = $0.translation.width }.onEnded { g in
                 drag = 0
@@ -271,7 +271,7 @@ struct PieceStage: View {
                 ToolbarItem(placement: .secondaryAction) {
                     if let u = URL(string: LibraryData.shared.base(model) + "/pieces/embed?id=" + current.id) { ShareLink("Share the link", item: u) }
                 }
-                ToolbarItem(placement: .bottomBar) { AudioSourceMenu(model: model) }
+                ToolbarItem(placement: .bottomBar) { CodeArtSoundMenu(model: model) }
                 ToolbarItem(placement: .bottomBar) { Text("\(index + 1) of \(entries.count)").font(.caption).monospacedDigit() }
             }
             .toolbarBackground(.visible, for: .bottomBar)

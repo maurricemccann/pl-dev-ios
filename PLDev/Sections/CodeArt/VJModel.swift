@@ -17,7 +17,7 @@ import UIKit
     var seqStep = 0
     var recording = false
     var line: String?
-    var share: ShareItem?
+    var share: CodeArtShareItem?
     var pieces: [PieceInfo] = []
     private var taps: [Double] = []
     private var started = false
@@ -126,7 +126,7 @@ import UIKit
             guard let data, let img = VJModel.image(bgra: data, w: w, h: h) else { return }
             Task { @MainActor in
                 guard let self else { return }
-                self.share = ShareItem(items: [img])
+                self.share = CodeArtShareItem(items: [img])
                 self.line = "Saved a still."
                 if let png = img.pngData() { await self.fileToVault(png, model: model) }
             }
@@ -157,7 +157,7 @@ import UIKit
             engine.stopRecording { [weak self] url in
                 Task { @MainActor in
                     guard let self else { return }
-                    if let url { self.share = ShareItem(items: [url]); self.line = "Saved a clip." } else { self.line = "Not saved. The clip could not be written." }
+                    if let url { self.share = CodeArtShareItem(items: [url]); self.line = "Saved a clip." } else { self.line = "Not saved. The clip could not be written." }
                 }
             }
         } else {

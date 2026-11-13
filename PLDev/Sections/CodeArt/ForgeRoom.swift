@@ -95,7 +95,7 @@ struct ForgeBench: View {
                 if let status { ResultLine(text: status) }
             }
             Section {
-                AudioSourceMenu(model: model)
+                CodeArtSoundMenu(model: model)
             } footer: { Text("With no sound source the preview moves to a gentle signal of its own.") }
         }
         .navigationTitle("Forge")
