@@ -188,6 +188,12 @@ struct MerchView: View {
     /// fw = Sep 1 to the end of Feb, ss = Mar 1 to Aug 31 (pl-headless isOutOfSeason).
     private var nowSeason: String { let m = Calendar.current.component(.month, from: .now); return (m >= 9 || m <= 2) ? "fw" : "ss" }
     private func onGrid(_ season: String) -> Bool { season == "always" || season == nowSeason }
+    /// A colourway's picture: the shop's own, else the drop candidate's Square photo (matched by name, then by group).
+    private func picture(_ name: String) -> URL? {
+        if let p = ShopStore.shared.pieces.first(where: { $0.name == name }), let s = p.images.first { return URL(string: s) }
+        if let c = candidates.first(where: { $0.name == name || $0.group == name }), let s = c.image { return URL(string: s) }
+        return nil
+    }
 
     var body: some View {
         List {
@@ -201,9 +207,14 @@ struct MerchView: View {
                     Picker(selection: Binding(get: { r.season }, set: { v in r.season = v; Task { await save(r.product_name, v) } })) {
                         ForEach(seasons, id: \.0) { Text($0.1).tag($0.0) }
                     } label: {
-                        VStack(alignment: .leading, spacing: 2) {
+                        HStack(spacing: 10) {
+                          // the actual merch (his word 11-13): its Square picture beside its name
+                          AsyncImage(url: picture(r.product_name)) { $0.resizable().scaledToFit() } placeholder: { Image(systemName: "tshirt").foregroundStyle(.secondary) }
+                              .frame(width: 52, height: 52)
+                          VStack(alignment: .leading, spacing: 2) {
                             Text(r.product_name)
                             Text(onGrid(r.season) ? "ON THE GRID" : "RESTING").font(.caption2.weight(.bold)).tracking(1).foregroundStyle(onGrid(r.season) ? Color.green : Color.secondary)
+                          }
                         }
                     }
                 }
@@ -235,6 +246,7 @@ struct MerchView: View {
 
     private func load() async {
         rows = (try? await Console.q("merch", [Row].self, model: model)) ?? rows
+        await ShopStore.shared.load()   // the pictures
         candidates = (try? await Console.get("api/drop-candidates", C.self, model: model, timeout: 40).items) ?? candidates
         asks = (try? await Console.q("asktally", [Ask].self, model: model)) ?? asks
     }

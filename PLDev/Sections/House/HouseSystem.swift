@@ -42,7 +42,7 @@ enum HouseRoom: String, CaseIterable, Identifiable, Hashable {
         case .record: RecordView(model: model)
         case .leads: LeadsView(model: model)
         case .tally: TallyView(model: model)
-        case .calendar: CalendarView(model: model)
+        case .calendar: HouseCalendarView(model: model)
         case .tempo: TempoView(model: model)
         case .pipeline: NotionView(model: model)
         case .feed: FeedView(model: model)

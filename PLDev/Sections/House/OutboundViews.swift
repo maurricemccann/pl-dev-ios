@@ -103,7 +103,7 @@ struct OutboundTab: View {
                     card("Organic Winners", "\(state.ig?.recent?.count ?? 0)", "top posts first") { WinnersView(posts: state.ig?.recent ?? []) }
                     card("PL Feed", count(state.counts["feed"]), "ready to push") { FeedView(model: model) }
                     card("Drop Pipeline", count(state.counts["pipeline"]), "active") { NotionView(model: model) }
-                    card("Calendar", count(state.counts["calendar"]), "this week") { CalendarView(model: model) }
+                    card("Calendar", count(state.counts["calendar"]), "content + merch") { HouseCalendarView(model: model) }
                     card("Signals Sent", count(state.counts["signals"]), "transmissions") { SignalsView(model: model) }
                     card("Opportunity Scout", count(state.counts["opps"]), "placements + licensing") { OpportunityView(model: model) }
                     card("Outbound Sourcing", "→", "no paid API") { OutboundLeadsView(model: model) }

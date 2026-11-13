@@ -283,7 +283,7 @@ struct FounderTab: View {
                 houseSwitches
                 standingPanel
                 OSPanel(title: "Calendars and the catalog") {
-                    door("Content calendar", "calendar", .calendar)
+                    door("Calendar · content and merch, by day", "calendar", .calendar)
                     door("Merch calendar", "calendar.badge.clock", .merch)
                     door("Catalog matrix · every design × every Printful category", "tablecells", .catalog)
                     Link(destination: URL(string: "https://psychedluxuries.com/shop?debug=open")!) { OSRow(title: "Shop debug") { Image(systemName: "arrow.up.right").foregroundStyle(PLOS.gold) } }
