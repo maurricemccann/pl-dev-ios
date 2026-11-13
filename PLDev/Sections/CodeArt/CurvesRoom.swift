@@ -9,6 +9,20 @@ struct PieceEntry: Identifiable, Hashable {
     let id: String
     let name: String
     let still: URL?
+    var ground: String? = nil
+    var tags: [String] = []
+}
+
+/// The gallery's own sets (app/curves: ?set=), plus the curated library list the room opens on.
+enum PieceSet: String, CaseIterable, Identifiable {
+    case library, canon, waveOne = "wave-one", waveTwo = "wave-two", jarvis = "jarvis-crafted", archive = "curve-archive"
+    var id: String { rawValue }
+    var title: String {
+        switch self {
+        case .library: return "Curated"; case .canon: return "Canon"; case .waveOne: return "Wave one"
+        case .waveTwo: return "Wave two"; case .jarvis: return "Written by the board"; case .archive: return "The archive"
+        }
+    }
 }
 
 // MARK: - likes
@@ -123,16 +137,23 @@ struct NativeCurvesRoom: View {
     @State private var onlyLiked = false
     @State private var liveGrid = true
     @State private var search = ""
+    @State private var set = PieceSet.library
     @State private var playing: PieceEntry?
     @State private var visible: [String: Int] = [:]
     @State private var tick = 0
 
     private var entries: [PieceEntry] {
-        let fromLibrary = data.items.filter { $0.class == "code-piece" && data.marks[$0.vault_id]?.v != "cut" }
-            .map { PieceEntry(id: $0.item_id, name: $0.name ?? $0.item_id, still: data.media($0, model: model).still) }
-        let list = fromLibrary.isEmpty ? PieceRuntime.shared.pieces.filter(\.live).map { PieceEntry(id: $0.id, name: $0.name, still: nil) } : fromLibrary
+        func fromRuntime(_ keep: (PieceInfo) -> Bool) -> [PieceEntry] {
+            PieceRuntime.shared.pieces.filter(keep).map { PieceEntry(id: $0.id, name: $0.name, still: nil, ground: $0.ground, tags: $0.tags) }
+        }
+        let list: [PieceEntry]
+        if set == .library {
+            let fromLibrary = data.items.filter { $0.class == "code-piece" && data.marks[$0.vault_id]?.v != "cut" }
+                .map { PieceEntry(id: $0.item_id, name: $0.name ?? $0.item_id, still: data.media($0, model: model).still) }
+            list = fromLibrary.isEmpty ? fromRuntime { $0.live } : fromLibrary
+        } else { list = fromRuntime { $0.set == set.rawValue } }
         return list.filter { !onlyLiked || likes.liked.contains($0.id) }
-            .filter { search.isEmpty || $0.name.localizedCaseInsensitiveContains(search) || $0.id.localizedCaseInsensitiveContains(search) }
+            .filter { search.isEmpty || $0.name.localizedCaseInsensitiveContains(search) || $0.id.localizedCaseInsensitiveContains(search) || $0.tags.contains { $0.localizedCaseInsensitiveContains(search) } }
     }
 
     /// The tiles that run live: the first few on screen (the one JavaScript queue draws them in turn).
@@ -170,6 +191,7 @@ struct NativeCurvesRoom: View {
                 ToolbarItem(placement: .topBarTrailing) { AudioSourceMenu(model: model) }
                 ToolbarItem(placement: .topBarTrailing) {
                     Menu {
+                        Picker("Set", selection: $set) { ForEach(PieceSet.allCases) { Text($0.title).tag($0) } }
                         Toggle("Run the first few live", isOn: $liveGrid)
                         Toggle("Liked only", isOn: $onlyLiked)
                     } label: { Image(systemName: "line.3.horizontal.decrease.circle") }
@@ -190,6 +212,7 @@ struct NativeCurvesRoom: View {
             Color.secondary.opacity(0.12)
             if live { LivePieceView(pieceID: p.id, fps: 30).allowsHitTesting(false) }
             else if let u = p.still { AsyncImage(url: u) { $0.resizable().scaledToFill() } placeholder: { Color.clear } }
+            else if let g = p.ground { Color(hex: g) ?? Color.secondary.opacity(0.12) }
             Text(p.name).font(.system(size: 9, weight: .semibold)).tracking(0.5).foregroundStyle(.white).lineLimit(1)
                 .padding(.horizontal, 6).padding(.vertical, 3).frame(maxWidth: .infinity)
                 .background(LinearGradient(colors: [.clear, .black.opacity(0.55)], startPoint: .top, endPoint: .bottom))
@@ -245,6 +268,9 @@ struct PieceStage: View {
                         .accessibilityLabel(likes.liked.contains(current.id) ? "Unlike" : "Like")
                 }
                 ToolbarItem(placement: .secondaryAction) { NavigationLink("The code") { SourceView(model: model, id: current.id) } }
+                ToolbarItem(placement: .secondaryAction) {
+                    if let u = URL(string: LibraryData.shared.base(model) + "/pieces/embed?id=" + current.id) { ShareLink("Share the link", item: u) }
+                }
                 ToolbarItem(placement: .bottomBar) { AudioSourceMenu(model: model) }
                 ToolbarItem(placement: .bottomBar) { Text("\(index + 1) of \(entries.count)").font(.caption).monospacedDigit() }
             }

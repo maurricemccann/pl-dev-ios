@@ -306,8 +306,10 @@ enum CanvasPrelude {
   const INST = new Map(); let HID = 0;
   const allPieces = () => [].concat(G.PL_PIECES || [], G.PL_ARCHIVE || []);
   G.__listPieces = () => {
-    const live = new Set((G.PL_PIECES || []).map((p) => p.id)); const seen = new Set(); const out = [];
-    for (const p of allPieces()) { if (seen.has(p.id)) continue; seen.add(p.id); out.push({ id: p.id, name: p.name || p.id, sub: p.sub || '', tags: p.tags || [], pal: p.pal || null, comp: p.needsComp || null, warm: p.warm == null ? 60 : p.warm, live: live.has(p.id) }); }
+    const live = new Set((G.PL_PIECES || []).map((p) => p.id)); const seen = new Set(); const out = []; const ai = G.PL_AI_IDS || new Set(); const H2X = new Set(['dir-01', 'dir-02']);
+    // the gallery's own sets (app/curves/page.tsx): wave-one by prefix, then wave-two, then jarvis-crafted, then the rest of the archive; canon is the live remainder
+    const setOf = (p) => (p.id.startsWith('w1-') ? 'wave-one' : (p.id.startsWith('h2-') || H2X.has(p.id)) ? 'wave-two' : live.has(p.id) ? 'canon' : ai.has(p.id) ? 'jarvis-crafted' : 'curve-archive');
+    for (const p of allPieces()) { if (seen.has(p.id)) continue; seen.add(p.id); out.push({ id: p.id, name: p.name || p.id, sub: p.sub || '', tags: p.tags || [], pal: p.pal || null, comp: p.needsComp || null, warm: p.warm == null ? 60 : p.warm, live: live.has(p.id), set: setOf(p) }); }
     return JSON.stringify(out);
   };
   // pxW/pxH: bitmap size; dpr: bitmap pixels per css px. Returns the handle and the native canvas id.

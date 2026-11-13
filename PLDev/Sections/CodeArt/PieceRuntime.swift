@@ -17,6 +17,7 @@ struct PieceInfo: Identifiable, Hashable, Sendable {
     let comp: String?
     let warm: Int
     let live: Bool
+    let set: String
     let ground: String
     let ink: String
     let body: String
@@ -108,7 +109,7 @@ final class PieceRuntime: @unchecked Sendable {
             let pal = o["pal"] as? [String: Any]
             let comp: String? = (o["comp"] as? String) ?? (o["comp"] as? NSNumber).map { String(format: "%02d", $0.intValue) }
             out.append(PieceInfo(id: id, name: (o["name"] as? String) ?? id, sub: (o["sub"] as? String) ?? "", tags: (o["tags"] as? [String]) ?? [], comp: comp,
-                                 warm: (o["warm"] as? NSNumber)?.intValue ?? 60, live: (o["live"] as? Bool) ?? false,
+                                 warm: (o["warm"] as? NSNumber)?.intValue ?? 60, live: (o["live"] as? Bool) ?? false, set: (o["set"] as? String) ?? "curve-archive",
                                  ground: (pal?["g"] as? String) ?? "#0e0c08", ink: (pal?["ink"] as? String) ?? "#e8dfce", body: (pal?["body"] as? String) ?? "#c9a84c", hi: (pal?["hi"] as? String) ?? "#7a5c1e"))
         }
         pieces = out
@@ -211,7 +212,7 @@ final class PieceRuntime: @unchecked Sendable {
                 if let json = ctx.objectForKeyedSubscript("__listPieces").call(withArguments: [])?.toString(),
                    let arr = (try? JSONSerialization.jsonObject(with: Data(json.utf8))) as? [[String: Any]], let row = arr.first(where: { ($0["id"] as? String) == id }) {
                     let pal = row["pal"] as? [String: Any]
-                    let info = PieceInfo(id: id, name: (row["name"] as? String) ?? id, sub: (row["sub"] as? String) ?? "", tags: (row["tags"] as? [String]) ?? [], comp: nil, warm: (row["warm"] as? NSNumber)?.intValue ?? 60, live: false,
+                    let info = PieceInfo(id: id, name: (row["name"] as? String) ?? id, sub: (row["sub"] as? String) ?? "", tags: (row["tags"] as? [String]) ?? [], comp: nil, warm: (row["warm"] as? NSNumber)?.intValue ?? 60, live: false, set: "forge",
                                          ground: (pal?["g"] as? String) ?? "#0e0c08", ink: (pal?["ink"] as? String) ?? "#e8dfce", body: (pal?["body"] as? String) ?? "#c9a84c", hi: (pal?["hi"] as? String) ?? "#7a5c1e")
                     self.byID[id] = info
                     if !self.pieces.contains(where: { $0.id == id }) { self.pieces.append(info) }
