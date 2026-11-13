@@ -31,6 +31,7 @@ import UserNotifications
     static func handle(link: DeepLink, model: AppModel) -> Bool {
         guard case .section(_, let path, _) = link, let first = path.first else { return true }
         if first == "piece", path.count > 1 { state.tab = .shop; state.pieceSlug = path[1]; return true }
+        if first == "collection", path.count > 1 { state.tab = .shop; state.collectionSlug = path[1]; return true }
         if let room = ShopRoom(rawValue: first) { state.open(room) }
         return true
     }
@@ -60,6 +61,7 @@ import UserNotifications
     var tab: Tab = .shop
     var room: ShopRoom?
     var pieceSlug: String?
+    var collectionSlug: String?
     var tick = 0
 
     /// A room by name: the three that are tabs switch the tab, the rest are pushed.
@@ -93,6 +95,7 @@ struct ShopView: View {
         .sensoryFeedback(PLHaptic.commit, trigger: state.tick)
         .navigationDestination(item: $state.room) { room in room.view(model) }
         .navigationDestination(item: $state.pieceSlug) { slug in PieceView(slug: slug, state: state) }
+        .navigationDestination(item: $state.collectionSlug) { slug in CollectionView(slug: slug, state: state) }
     }
 }
 
