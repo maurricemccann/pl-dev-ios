@@ -43,6 +43,22 @@ Apple's guidance behind each line was read at the source on 11-13 (Human Interfa
 - Use the system colours (`PLTone`), so light, dark and Increase Contrast work for free. His orange (`Wallpaper.line`) is the one accent: the wallpaper, the tile wash, the founder's own bubbles and the Live Activity tint.
 - Use the system text styles. His title face is used only where a theme pack loads it. Every screen must work at the largest accessibility size, where Home switches to two across.
 
+## 5b. Apple's iOS 27 tokens (his ruling 11-13: "complete Apple iOS 27 design token and kits")
+
+- **One source:** Apple's iOS 27 UI-kit export in the Design Kit (`reference/apple-ios27/apple-ios-27-ui-kit.tokens.json`), the same file the R1 apps follow. `python scripts/apple_tokens.py` writes `Shared/AppleTokens.swift` (`IOS27.*`), so the app, the widgets and the extensions all read the same values. Re-run it when Apple's kit is re-exported. Never type a token by hand.
+- **Native first.** Where iOS has the real thing, use it:
+  - Liquid Glass: `glassEffect`, with `GlassEffectContainer` where pieces sit together.
+  - Type: the system text styles, which already carry the kit's sizes and normal leading.
+  - Materials: `.thinMaterial` and its siblings.
+  - Separators and backgrounds: the List and system colours.
+- **`IOS27.*` covers what has no API:**
+  - `IOS27.Glass.dock` tints the floating control row, which is drawn as the Dock.
+  - `IOS27.LabelsLiquidGlass` colours text on glass.
+  - `plReading()` gives long text (captions, messages, answers) the kit's loose body leading.
+  - `IOS27.MaterialTint`, `IOS27.Glass.*` and `IOS27.TypeRamp` serve any custom drawing.
+- **The house stays only where he ruled it:** his curve-tile wallpaper, his orange as the one accent, and his title face from a theme pack.
+- **The app icon has all three appearances:** default, dark (the glyph on clear) and tinted (grayscale), so it sits in his tinted Home Screen like Apple's own apps.
+
 ## 6. The system add-ons every app gets (the premium pass)
 
 An app is not done until each line below is built, or is marked "not fitting" with a reason, in its gap check:

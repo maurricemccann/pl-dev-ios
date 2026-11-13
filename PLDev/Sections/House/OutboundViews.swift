@@ -167,7 +167,7 @@ struct TempoView: View {
                     Section {
                         Text(e.subject ?? "").font(.headline)
                         LabeledContent("Status", value: (e.status ?? "").capitalized)
-                        if let p = preview?.body_text { Text(p).font(.callout).lineLimit(12) }
+                        if let p = preview?.body_text { Text(p).font(.callout).plReading().lineLimit(12) }
                         HStack {
                             Button("Approve") { Task { await act { try await Console.post("api/email/moderate", ["email_id": e.id, "action": "approve"], model: model); return "Approved." } } }
                             Button("Hold") { Task { await act { try await Console.post("api/email/moderate", ["email_id": e.id, "action": "hold"], model: model); return "Held." } } }

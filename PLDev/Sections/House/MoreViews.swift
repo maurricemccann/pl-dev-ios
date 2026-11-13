@@ -53,7 +53,7 @@ struct CouncilView: View {
                 TextField(seats.first { $0.0 == seat }?.2 ?? "", text: $query, axis: .vertical).lineLimit(3...10)
                 Button(busy ? "Asking…" : "Ask the \(seats.first { $0.0 == seat }?.1 ?? "") seat") { Task { await ask() } }.disabled(query.isEmpty || busy)
             }
-            if let answer { Section("Answer") { Text(answer).textSelection(.enabled) } }
+            if let answer { Section("Answer") { Text(answer).plReading().textSelection(.enabled) } }
         }
         .navigationTitle("Council")
     }
@@ -79,7 +79,7 @@ struct OpsView: View {
         List {
             if turns.isEmpty { Text("Ask how anything in the house works: a job, a route, a number.").foregroundStyle(.secondary) }
             ForEach(turns) { t in
-                Text(t.text).textSelection(.enabled)
+                Text(t.text).plReading().textSelection(.enabled)
                     .padding(10)
                     .frame(maxWidth: .infinity, alignment: t.you ? .trailing : .leading)
                     .background(t.you ? Color.orange.opacity(0.2) : Color.secondary.opacity(0.12), in: RoundedRectangle(cornerRadius: 14, style: .continuous))

@@ -135,39 +135,45 @@ struct HomeView: View {
     }
 
     /// The floating control layer: the only glass on this screen.
+    /// The floating control layer, drawn as the Home Screen's Dock: one glass container (so the pieces merge and morph),
+    /// tinted with the iOS 27 kit's Dock fill, glass label colours on it. The only glass on this screen.
     private var controls: some View {
-        HStack(spacing: PLSpace.pad) {
-            if model.inboxCount > 0 {
-                Button {
-                    sheetTick += 1
-                    showInbox = true
-                } label: {
-                    HStack(spacing: PLSpace.gap) {
-                        Image(systemName: "tray.full")
-                        Text("\(model.inboxCount) waiting")
-                            .plFont(.callout, emphasized: true)
-                            .monospacedDigit()
-                            .contentTransition(.numericText())
+        GlassEffectContainer(spacing: PLSpace.pad) {
+            HStack(spacing: PLSpace.pad) {
+                if model.inboxCount > 0 {
+                    Button {
+                        sheetTick += 1
+                        showInbox = true
+                    } label: {
+                        HStack(spacing: PLSpace.gap) {
+                            Image(systemName: "tray.full")
+                            Text("\(model.inboxCount) waiting")
+                                .plFont(.callout, emphasized: true)
+                                .monospacedDigit()
+                                .contentTransition(.numericText())
+                        }
+                        .foregroundStyle(IOS27.LabelsLiquidGlass.primary)
+                        .padding(.horizontal, PLSpace.margin)
+                        .frame(minHeight: 50)
+                        .contentShape(Capsule())
                     }
-                    .padding(.horizontal, PLSpace.margin)
-                    .frame(minHeight: 50)
-                    .contentShape(Capsule())
+                    .glassControl(tint: IOS27.Glass.dock.tint)
+                    .accessibilityLabel("\(model.inboxCount) items waiting to send")
+                    .transition(.scale(scale: 0.8).combined(with: .opacity))
                 }
-                .glassControl()
-                .accessibilityLabel("\(model.inboxCount) items waiting to send")
-                .transition(.scale(scale: 0.8).combined(with: .opacity))
+                Spacer(minLength: 0)
+                Button {
+                    openSettings()
+                } label: {
+                    Label("Settings", systemImage: "gearshape")
+                        .plFont(.callout, emphasized: true)
+                        .foregroundStyle(IOS27.LabelsLiquidGlass.primary)
+                        .padding(.horizontal, PLSpace.margin)
+                        .frame(minHeight: 50)
+                        .contentShape(Capsule())
+                }
+                .glassControl(tint: IOS27.Glass.dock.tint)
             }
-            Spacer(minLength: 0)
-            Button {
-                openSettings()
-            } label: {
-                Label("Settings", systemImage: "gearshape")
-                    .plFont(.callout, emphasized: true)
-                    .padding(.horizontal, PLSpace.margin)
-                    .frame(minHeight: 50)
-                    .contentShape(Capsule())
-            }
-            .glassControl()
         }
         .padding(.horizontal, PLSpace.margin)
         .padding(.bottom, PLSpace.gap)

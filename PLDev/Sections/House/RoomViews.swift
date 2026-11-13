@@ -213,7 +213,7 @@ struct CommentsView: View {
                     VStack(alignment: .leading, spacing: 6) {
                         HStack { Text(it.account).font(.headline); Spacer(); if posted { Label("Posted", systemImage: "checkmark").font(.caption).foregroundStyle(.green) } }
                         if let c = it.context { Text(c).font(.caption).foregroundStyle(.secondary) }
-                        Text(it.text)
+                        Text(it.text).plReading()
                         HStack {
                             Button("Copy", systemImage: "doc.on.doc") { UIPasteboard.general.string = it.text }
                             Button("Open the post", systemImage: "arrow.up.forward.app") { if let u = URL(string: it.post) { openURL(u) } }

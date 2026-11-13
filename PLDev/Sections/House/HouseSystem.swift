@@ -2,7 +2,6 @@ import ActivityKit
 import AppIntents
 import CoreSpotlight
 import SwiftUI
-import TipKit
 
 // House's system add-ons (his loop, 11-13: build in full, test, then the premium feel and system add-ons).
 // Built to Apple's guidance read 11-13: Live Activities (defined start and end, update only on new content, end at once),
@@ -122,7 +121,7 @@ enum HouseRoom: String, CaseIterable, Identifiable, Hashable {
 
 // MARK: - Siri, Shortcuts and the Action button (app target only, so they run in the app's process with its keys)
 
-private func readyModel() async throws -> AppModel {
+@MainActor private func readyModel() async throws -> AppModel {
     let m = AppModel.shared
     await m.restoreIfNeeded()
     guard m.http != nil else { throw Console.Problem.notSetUp }
@@ -239,18 +238,4 @@ enum HouseSpotlight {
         guard let nonce = try JSONDecoder().decode(Armed.self, from: try await post([:])).confirm else { return 0 }
         return try JSONDecoder().decode(Done.self, from: try await post(["confirm": nonce])).started ?? 0
     }
-}
-
-// MARK: - Tips (only for what cannot be seen)
-
-struct DraftGesturesTip: Tip {
-    var title: Text { Text("More on every draft") }
-    var message: Text? { Text("Touch and hold a draft for Post now, Rewrite the caption and Change the picture.") }
-    var image: Image? { Image(systemName: "hand.tap") }
-}
-
-struct ShiftLockScreenTip: Tip {
-    var title: Text { Text("Keep the shift on your Lock Screen") }
-    var message: Text? { Text("It ticks along as you finish tasks and leaves when the shift is done.") }
-    var image: Image? { Image(systemName: "lock.iphone") }
 }

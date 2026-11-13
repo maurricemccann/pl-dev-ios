@@ -160,7 +160,7 @@ struct DMThreadView: View {
                 ForEach(messages) { m in
                     HStack {
                         if m.sender == "founder" { Spacer(minLength: 40) }
-                        Text(m.body)
+                        Text(m.body).plReading()
                             .padding(10)
                             .background(m.sender == "founder" ? Color.orange.opacity(0.25) : Color.secondary.opacity(0.15), in: RoundedRectangle(cornerRadius: 16, style: .continuous))
                         if m.sender != "founder" { Spacer(minLength: 40) }

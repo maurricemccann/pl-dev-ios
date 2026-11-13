@@ -321,7 +321,7 @@ private struct DraftRow: View {
             }
             .foregroundStyle(.secondary)
             if let t = d.title, !t.isEmpty { Text(t).font(.headline) }
-            Text(d.caption ?? "").font(.body)
+            Text(d.caption ?? "").font(.body).plReading()
             if let s = d.similar_to { Label("Close to \(s)", systemImage: "square.on.square").font(.caption).foregroundStyle(.orange) }
         }
         .padding(.vertical, 4)

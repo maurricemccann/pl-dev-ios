@@ -149,6 +149,12 @@ extension View {
         modifier(PLFontModifier(text: text, emphasized: true, isTitle: true))
     }
 
+    /// Reading text (captions, messages, answers): the iOS 27 kit's loose leading for the body style, so long text breathes.
+    func plReading() -> some View {
+        let t = IOS27.TypeRamp.body
+        return lineSpacing((t.loose - t.leading) * t.size)
+    }
+
     /// Liquid Glass for a custom control on the floating layer: controls only, never content, never glass on glass.
     func glassControl(tint: Color? = nil, in shape: some Shape = Capsule()) -> some View {
         buttonStyle(.plain).modifier(GlassControl(tint: tint, shape: shape))
