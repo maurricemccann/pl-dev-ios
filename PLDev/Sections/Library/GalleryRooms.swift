@@ -137,6 +137,7 @@ struct GalleryWeb: UIViewRepresentable {
         if let key = model.config?.key("vault") {
             let token = SHA256.hash(data: Data("pl-lib-unlock:\(key)".utf8)).map { String(format: "%02x", $0) }.joined()
             let cookie = HTTPCookie(properties: [.name: "pl_lib", .value: token, .domain: host, .path: "/", .secure: "TRUE",
+                                                 HTTPCookiePropertyKey("HttpOnly"): "TRUE", .sameSitePolicy: "Lax",
                                                  .expires: Date().addingTimeInterval(400 * 86400)])
             if let cookie {
                 web.configuration.websiteDataStore.httpCookieStore.setCookie(cookie) { web.load(URLRequest(url: url)) }
@@ -453,7 +454,7 @@ struct CinematicRoom: View {
         }
         .fullScreenCover(item: $open) { it in
             NavigationStack {
-                VideoPlayer(player: AVPlayer(url: video(it)!)).ignoresSafeArea()
+                Group { if let u = video(it) { VideoPlayer(player: AVPlayer(url: u)).ignoresSafeArea() } else { ContentUnavailableView("No video for this one", systemImage: "film") } }
                     .toolbar { Button("Close") { open = nil } }
             }
         }
@@ -646,7 +647,7 @@ struct ClassifyRoom: View {
                 } footer: { Text("The body of work is your designation; the classifier never guesses it for you.") }
                 Section {
                     Button(busy ? "Saving…" : "Save and next") { Task { await save(p) } }.disabled(!valid || busy).bold()
-                    Button("Skip for now") { queue.append(queue.removeFirst()); load(queue.first) }
+                    Button("Skip for now") { queue.append(queue.removeFirst()); load(queue.first) }.disabled(busy)
                 }
             } else if !busy {
                 Section { Text("Every piece is classified. Publish to push them to the live manifest.") }
@@ -681,8 +682,8 @@ struct ClassifyRoom: View {
         if let y = Int(year) { payload["year"] = y } else { payload["year"] = NSNull() }
         do {
             try await Console.post("api/archive/classify", payload, model: model)
-            queue.removeFirst(); reviewed += 1; load(queue.first); result = "Saved \(p.cr)."
-        } catch { result = "Not saved. \(error.localizedDescription)" }
+            queue.removeAll { $0.cr == p.cr }; reviewed += 1; load(queue.first); result = "Saved \(p.cr)."
+        } catch { result = "Not saved. \(plainSentence(error))" }
     }
 
     private func publish() async {

@@ -34,7 +34,7 @@ import SwiftUI
                                                    body: try JSONSerialization.data(withJSONObject: body)),
                                        idempotent: false, timeout: timeout)
         } catch {
-            throw Problem.refused("\(path.split(separator: "/").last.map(String.init) ?? path) failed: \(error.localizedDescription)")
+            throw Problem.refused(plainSentence(error))
         }
         if let o = try? JSONSerialization.jsonObject(with: data) as? [String: Any], (o["ok"] as? Bool) == false {
             throw Problem.refused((o["error"] as? String) ?? (o["message"] as? String) ?? "The server said no.")
@@ -46,12 +46,12 @@ import SwiftUI
     static func run(_ path: String, model: AppModel) async -> String {
         guard let http = model.http else { return Problem.notSetUp.localizedDescription }
         do {
-            let d = try await http.send(RequestPlan(origin: "console", path: path), idempotent: false, timeout: 120)
+            let d = try await http.send(RequestPlan(origin: "console", path: path), idempotent: false, timeout: 120, cache: false)   // a job run is never answered by an old copy
             if let o = try? JSONSerialization.jsonObject(with: d) as? [String: Any] {
                 return (o["message"] as? String) ?? (o["summary"] as? String) ?? ((o["ok"] as? Bool) == false ? "It reported a failure." : "Done.")
             }
             return "Done."
-        } catch { return "It did not run: \(error.localizedDescription)" }
+        } catch { return "It did not run: \(plainSentence(error))" }
     }
 }
 
@@ -94,6 +94,23 @@ struct ResultLine: View {
     }
 }
 
+/// A button that asks before it acts: for anything that sends, publishes, or changes what the public sees.
+struct ConfirmButton: View {
+    let title: String
+    let question: String
+    var confirm: String? = nil
+    var role: ButtonRole? = nil
+    let action: () async -> Void
+    @State private var asking = false
+    var body: some View {
+        Button(title, role: role) { asking = true }
+            .confirmationDialog(question, isPresented: $asking, titleVisibility: .visible) {
+                Button(confirm ?? title, role: role) { Task { await action() } }
+                Button("Cancel", role: .cancel) {}
+            }
+    }
+}
+
 /// A screen that loads once, refreshes on pull, and shows a plain sentence when the read fails.
 struct Loaded<T, Content: View>: View {
     let load: () async throws -> T
@@ -108,7 +125,14 @@ struct Loaded<T, Content: View>: View {
     var body: some View {
         Group {
             if let value { content(value, reload) }
-            else if let failure { ContentUnavailableView("Could not load", systemImage: "wifi.exclamationmark", description: Text(failure)) }
+            else if let failure {
+                ScrollView {   // a scroll view under .refreshable, so "pull to try again" can really be pulled
+                    ContentUnavailableView {
+                        Label("Could not load", systemImage: "wifi.exclamationmark")
+                    } description: { Text(failure) } actions: { Button("Try again") { Task { await reload() } } }
+                    .padding(.top, 60)
+                }
+            }
             else { ProgressView().frame(maxWidth: .infinity, minHeight: 120) }
         }
         .plGround()
@@ -118,6 +142,6 @@ struct Loaded<T, Content: View>: View {
 
     private func reload() async {
         do { value = try await load(); failure = nil }
-        catch { if value == nil { failure = error.localizedDescription } }
+        catch { if value == nil { failure = plainSentence(error) } }
     }
 }

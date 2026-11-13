@@ -171,7 +171,8 @@ struct PaintWeb: UIViewRepresentable {
         cfg.allowsInlineMediaPlayback = true
         if let key = model.config?.key("paintSync"), key.range(of: #"^[0-9a-f]{64}$"#, options: .regularExpression) != nil {
             // The app reads {key, device, last} from localStorage "plpaint-sync" (src/sync.js); only fill it when empty.
-            let js = "try{var s=JSON.parse(localStorage.getItem('plpaint-sync')||'{}');if(!s.key){s.key='\(key)';s.device=s.device||'iphone-pldev';s.last=s.last||0;localStorage.setItem('plpaint-sync',JSON.stringify(s));}}catch(e){}"
+            let host = URL(string: LibraryData.shared.base(model))?.host ?? ""
+            let js = "try{if(location.host==='\(host)'&&location.pathname.indexOf('/paint/')===0){var s=JSON.parse(localStorage.getItem('plpaint-sync')||'{}');if(!s.key){s.key='\(key)';s.device=s.device||'iphone-pldev';s.last=s.last||0;localStorage.setItem('plpaint-sync',JSON.stringify(s));}}}catch(e){}"
             cfg.userContentController.addUserScript(WKUserScript(source: js, injectionTime: .atDocumentStart, forMainFrameOnly: true))
         }
         let web = WKWebView(frame: .zero, configuration: cfg)

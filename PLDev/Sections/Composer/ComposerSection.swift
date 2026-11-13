@@ -106,7 +106,7 @@ struct ComposerView: View {
 
     nonisolated static func sync(_ cards: [ComposerModel.Card]) async {   // off the main actor: Activity is not Sendable
         for a in Activity<RenderAttributes>.activities {
-            guard let c = cards.first(where: { $0.id == a.attributes.cardID }) else { continue }
+            guard let c = cards.first(where: { $0.id == a.attributes.cardID }) else { await a.end(nil, dismissalPolicy: .immediate); continue }
             let s = RenderAttributes.ContentState(lane: c.lane, progress: c.progress)
             if ["filed", "ruled", "failed"].contains(c.lane) { await a.end(.init(state: s, staleDate: nil), dismissalPolicy: .after(.now.addingTimeInterval(900))) }
             else if a.content.state != s { await a.update(.init(state: s, staleDate: .now.addingTimeInterval(2 * 3600))) }

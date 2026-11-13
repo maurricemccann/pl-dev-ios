@@ -377,9 +377,9 @@ struct SeedAuthView: View {
             if let preview { Section("Preview") { Image(uiImage: preview).resizable().scaledToFit() } }
             if let r = result { Section { ResultLine(text: r) } }
             Section {
-                Button("Authenticate and send") { Task { await act("authenticate") } }.disabled(busy || piece.isEmpty).bold()
+                ConfirmButton(title: "Authenticate and send", question: "Authenticate this piece and email the certificate?") { await act("authenticate") }.disabled(busy || piece.isEmpty).bold()
                 Button("Resend the certificate") { Task { await act("resend") } }.disabled(busy)
-                Button("Reject", role: .destructive) { Task { await act("reject") } }.disabled(busy)
+                ConfirmButton(title: "Reject", question: "Reject this registration?", role: .destructive) { await act("reject") }.disabled(busy)
             }
         }
         .navigationTitle(item.holder_name ?? "Registration")
@@ -512,11 +512,12 @@ struct TallyView: View {
 
     private func choose(_ p: Piece, mode: String, reload: () async -> Void) async {
         let product = p.products?.first?.product ?? ""
+        do { try await Console.post("api/chosen", ["cr": p.cr, "product": product, "url": url, "offerId": ""], model: model) }
+        catch { result = "Not done. \(plainSentence(error))"; return }
         do {
-            try await Console.post("api/chosen", ["cr": p.cr, "product": product, "url": url, "offerId": ""], model: model)
             try await Console.post("run/drop-notice", ["cr": p.cr, "mode": mode, "url": url], model: model, timeout: 60)
             result = "\(p.cr) chosen; the notice went to \(mode == "wide" ? "everyone" : "the founders")."; url = ""
             await reload()
-        } catch { result = "Not done. \(error.localizedDescription)" }
+        } catch { result = "\(p.cr) is marked chosen, but the notice did not go out: \(plainSentence(error)). Send it from Automation, not by choosing again."; await reload() }
     }
 }

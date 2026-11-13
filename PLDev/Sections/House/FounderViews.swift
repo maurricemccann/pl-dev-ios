@@ -426,13 +426,14 @@ struct SiteControlsView: View {
     @State private var confirmMaintenance = false
     @State private var beta = ""
     @State private var tick = 0
+    @State private var pendingShop: Bool?
 
     var body: some View {
         Form {
             if let r = result { ResultLine(text: r) }
             if c != nil {
                 Section {
-                    Toggle("Shop open", isOn: bool(\.shop_enabled, "shop_enabled"))
+                    Toggle("Shop open", isOn: Binding(get: { c?.shop_enabled ?? false }, set: { v in pendingShop = v }))
                     Toggle("Pause outbound posting", isOn: bool(\.outbound_paused, "outbound_paused"))
                     Toggle("Maintenance mode", isOn: Binding(get: { c?.maintenance_mode ?? false }, set: { v in
                         if v { confirmMaintenance = true } else { Task { await set("maintenance_mode", false) } }
@@ -450,10 +451,14 @@ struct SiteControlsView: View {
             }
             Section {
                 TextField("Email", text: $beta).keyboardType(.emailAddress).textInputAutocapitalization(.never).textContentType(.emailAddress)
-                Button("Grant beta access") { Task { await invite() } }.disabled(beta.isEmpty)
+                ConfirmButton(title: "Grant beta access", question: "Give \(beta) Kin access and put them on the signal?") { await invite() }.disabled(beta.isEmpty)
             } header: { Text("Beta tester") } footer: { Text("Gives them Kin access and puts them on the signal. A founder or member keeps their role.") }
         }
         .navigationTitle("Site controls")
+        .confirmationDialog(pendingShop == true ? "Open the shop to the public?" : "Close the shop? Products stop being buyable.", isPresented: Binding(get: { pendingShop != nil }, set: { if !$0 { pendingShop = nil } }), titleVisibility: .visible) {
+            Button(pendingShop == true ? "Open the shop" : "Close the shop") { if let v = pendingShop { c?.shop_enabled = v; Task { await set("shop_enabled", v) } }; pendingShop = nil }
+            Button("Cancel", role: .cancel) { pendingShop = nil }
+        }
         .task { await load() }
         .refreshable { await load() }
         .sensoryFeedback(PLHaptic.commit, trigger: tick)
@@ -479,9 +484,11 @@ struct SiteControlsView: View {
     }
 
     private func text(_ label: String, _ kp: WritableKeyPath<Config, String?>, _ key: String) -> some View {
-        TextField(label, text: Binding(get: { c?[keyPath: kp] ?? "" }, set: { c?[keyPath: kp] = $0 }), axis: .vertical)
-            .onSubmit { Task { await set(key, c?[keyPath: kp] ?? "") } }
-            .submitLabel(.done)
+        VStack(alignment: .leading, spacing: 6) {
+            TextField(label, text: Binding(get: { c?[keyPath: kp] ?? "" }, set: { c?[keyPath: kp] = $0 }), axis: .vertical)
+            ConfirmButton(title: "Put it on the site", question: "Change the \(label.lowercased()) on the live site?") { await set(key, c?[keyPath: kp] ?? "") }
+                .font(.caption)
+        }
     }
 
     private func invite() async {

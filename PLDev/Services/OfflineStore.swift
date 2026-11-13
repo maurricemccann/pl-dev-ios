@@ -20,6 +20,12 @@ enum OfflineCache {
         dir.appendingPathComponent(SHA256.hash(data: Data(key.utf8)).map { String(format: "%02x", $0) }.joined())
     }
 
+    /// Set by the network watcher: true while the phone has no path at all (read without hopping actors).
+    nonisolated(unsafe) static var offlineNow = false
+
+    /// Forget config removes every saved copy with it (members' messages, the record, support mail must not outlive the config).
+    static func clearAll() { try? FileManager.default.removeItem(at: dir); try? FileManager.default.createDirectory(at: dir, withIntermediateDirectories: true) }
+
     static func key(_ plan: RequestPlan) -> String {
         plan.origin + "|" + plan.path + "?" + plan.query.sorted { $0.key < $1.key }.map { "\($0.key)=\($0.value)" }.joined(separator: "&")
     }
@@ -48,12 +54,17 @@ enum OfflineCache {
     private init() {
         monitor.pathUpdateHandler = { path in
             let up = path.status == .satisfied
+            OfflineCache.offlineNow = !up
             Task { @MainActor in
                 OfflineState.shared.online = up
                 if up { OfflineState.shared.servedSince = nil; await MarkOutbox.flush(model: AppModel.shared); _ = await PracticeOutbox.flush(model: AppModel.shared) }
             }
         }
         monitor.start(queue: DispatchQueue(label: "pldev.offline"))
+    }
+
+    nonisolated static func answeredLive() {
+        Task { @MainActor in if shared.servedSince != nil { shared.servedSince = nil } }
     }
 
     nonisolated static func servedCopy(from date: Date) {
@@ -93,9 +104,14 @@ struct OfflineLine: View {
 
     static func add(_ body: [String: String]) { pending.append(body) }
 
-    /// Sends what waits, oldest first; stops at the first refusal so the order is kept.
+    private static var flushing = false
+
+    /// Sends what waits, oldest first, one flush at a time (two at once could send one mark twice and drop the next).
+    /// No network: stop and keep the rest in order. The gallery refusing a mark: count it as not saved and go on, so one bad
+    /// mark never blocks the queue.
     static func flush(model: AppModel) async {
-        guard !pending.isEmpty, let http = model.http else { return }
+        guard !flushing, !pending.isEmpty, let http = model.http else { return }
+        flushing = true; defer { flushing = false }
         let base = LibraryData.shared.base(model)
         while let body = pending.first {
             guard let data = try? JSONSerialization.data(withJSONObject: body) else { pending.removeFirst(); continue }
@@ -103,7 +119,11 @@ struct OfflineLine: View {
                 _ = try await http.send(RequestPlan(origin: "gallery", method: "POST", path: "api/taste",
                                                     headers: ["content-type": "application/json", "Origin": base], body: data), idempotent: false)
                 pending.removeFirst()
-            } catch { return }
+            } catch is URLError {
+                return
+            } catch {
+                pending.removeFirst(); LibraryData.shared.notSaved += 1
+            }
         }
     }
 }

@@ -60,10 +60,12 @@ actor HTTPClient {
     }
 
     /// Runs the plan and returns the body. Throws on anything but a 2xx, as one of `Failure` or a `URLError`.
-    func send(_ plan: RequestPlan, idempotent: Bool? = nil, extraHeaders: [String: String] = [:], timeout: TimeInterval = 20) async throws -> Data {
+    func send(_ plan: RequestPlan, idempotent: Bool? = nil, extraHeaders: [String: String] = [:], timeout: TimeInterval = 20, cache: Bool = true) async throws -> Data {
         // Offline for every app: a read that fails for want of a network (or a server error) answers with its last saved copy.
-        let isRead = plan.method.uppercased() == "GET"
+        // Never for a job run (cache: false) and never for the marks, whose 503 deliberately forbids a stale read.
+        let isRead = cache && plan.method.uppercased() == "GET" && !plan.path.hasPrefix("api/taste")
         let key = OfflineCache.key(plan)
+        if isRead, OfflineCache.offlineNow, let (saved, at) = OfflineCache.load(key) { OfflineState.servedCopy(from: at); return saved }   // no 7 s of retries when the phone knows it is offline
         let answer: (Int, Data)
         do {
             answer = try await exchange(plan, idempotent: idempotent, extraHeaders: extraHeaders, timeout: timeout, attempts: Self.maxAttempts)
@@ -78,6 +80,7 @@ actor HTTPClient {
             throw Failure.http(status)
         }
         if isRead { OfflineCache.save(data, for: key) }
+        OfflineState.answeredLive()   // a live answer clears the "showing what was saved" line
         return data
     }
 

@@ -88,8 +88,11 @@ import UserNotifications
     }
 
     /// keep / cut / maybe / fav. In the favs deck a keep posts nothing (it already is one).
+    private var committing = false
+
     func commit(_ dir: String, model: AppModel) async {
-        guard let it = current else { return }
+        guard !committing, let it = current else { return }
+        committing = true; defer { committing = false }
         await saveComment(model: model)
         let prev = marks[it.vault_id]
         if dir == "fav" {
@@ -113,7 +116,8 @@ import UserNotifications
     }
 
     func undo(model: AppModel) async {
-        guard let last = history.popLast() else { return }
+        guard !committing, let last = history.popLast() else { return }
+        committing = true; defer { committing = false }
         // one rule for every deck: put back the mark the card had before (with its note), or clear it if it had none
         if let p = last.prev, !p.v.isEmpty {
             await post(["id": last.item.vault_id, "v": p.v].merging(p.note.map { ["note": $0] } ?? [:]) { a, _ in a }, model: model)

@@ -61,7 +61,7 @@ struct AtlasView: View {
     }
 
     private func days(_ d: [Int]) -> String {
-        d.count == 7 ? "Every day" : d.map { Calendar.current.shortWeekdaySymbols[($0 % 7)] }.joined(separator: ", ")
+        d.count == 7 ? "Every day" : d.map { Calendar.current.shortWeekdaySymbols[(($0 % 7) + 7) % 7] }.joined(separator: ", ")
     }
 
     private func node(_ n: Node, _ a: Atlas) -> some View {
@@ -151,10 +151,15 @@ struct SourceInterviewView: View {
     struct Q: Decodable, Identifiable { let id: String; let section: String; let prompt: String }
     struct QSet: Decodable { let sections: [String]; let questions: [Q] }
     @State private var answers: [String: String] = [:]
+    @State private var answersLoaded = false
 
     var body: some View {
         Loaded(load: { try await OS.get("interview", QSet.self, model: model) }) { s, _ in
             List {
+                if !answersLoaded {
+                    Section { Text("Your saved answers did not load, so answering is closed until they do (it would replace them).").foregroundStyle(.secondary)
+                        Button("Try again") { Task { await loadAnswers() } } }
+                }
                 ForEach(s.sections, id: \.self) { sec in
                     let qs = s.questions.filter { $0.section == sec }
                     NavigationLink {
@@ -174,7 +179,11 @@ struct SourceInterviewView: View {
             }
         }
         .navigationTitle("Source interview")
-        .task { answers = (try? await Console.q("interview", [String: String].self, model: model)) ?? [:] }
+        .task { await loadAnswers() }
+    }
+
+    private func loadAnswers() async {
+        if let a = try? await Console.q("interview", [String: String].self, model: model) { answers = a; answersLoaded = true }
     }
 
     struct AnswerView: View {

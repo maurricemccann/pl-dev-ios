@@ -25,7 +25,11 @@ import UserNotifications
     /// The drafts notice carries one button: approve all (Face ID first, never on a locked phone; Pins still wait).
     static func notificationCategories() -> Set<UNNotificationCategory> {
         NotificationHub.actions["house.approveAll"] = {
-            guard let started = try? await HouseActions.approveAll(model: AppModel.shared) else { return }
+            await AppModel.shared.restoreIfNeeded()
+            guard let started = try? await HouseActions.approveAll(model: AppModel.shared) else {
+                _ = await NotificationHub.shared.post(id: "house.approved", title: "Nothing approved", body: "The console did not answer. Open House and try again.", category: nil, link: nil)
+                return
+            }
             _ = await NotificationHub.shared.post(id: "house.approved", title: "Approving \(started) drafts", body: "Slack reports when it finishes. Pins still wait for you.", category: nil, link: nil)
         }
         let approve = UNNotificationAction(identifier: "house.approveAll", title: "Approve all", options: [.authenticationRequired],
@@ -310,7 +314,7 @@ struct FounderTab: View {
             }
             Section("Doors") {
                 Link(destination: URL(string: "https://psychedluxuries.com/shop?debug=open")!) { Label("Shop debug", systemImage: "ladybug") }
-                Link(destination: URL(string: "http://tailnet-board:8800")!) { Label("V.A.U.L.T. board (over Tailscale)", systemImage: "rectangle.3.group") }
+                if let u = model.config?.origins["board"].flatMap(URL.init(string:)) { Link(destination: u) { Label("V.A.U.L.T. board (over Tailscale)", systemImage: "rectangle.3.group") } }
             }
             if !state.digests.isEmpty {
                 Section("What the sessions did today") {

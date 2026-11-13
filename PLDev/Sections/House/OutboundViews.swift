@@ -256,10 +256,10 @@ struct TempoView: View {
                         LabeledContent("Status", value: (e.status ?? "").capitalized)
                         if let p = preview?.body_text { Text(p).font(.callout).plReading().lineLimit(12) }
                         HStack {
-                            Button("Approve") { Task { await act { try await Console.post("api/email/moderate", ["email_id": e.id, "action": "approve"], model: model); return "Approved." } } }
+                            ConfirmButton(title: "Approve", question: "Approve this email to go out to the list?") { await act { try await Console.post("api/email/moderate", ["email_id": e.id, "action": "approve"], model: model); return "Approved." } }
                             Button("Hold") { Task { await act { try await Console.post("api/email/moderate", ["email_id": e.id, "action": "hold"], model: model); return "Held." } } }
                             Spacer()
-                            Button("Send now") { Task { await act { try await Console.post("api/email/send", ["email_id": e.id], model: model, timeout: 90); return "Sent." } } }
+                            ConfirmButton(title: "Send now", question: "Send this email to everyone on the list now? It cannot be called back.") { await act { try await Console.post("api/email/send", ["email_id": e.id], model: model, timeout: 90); return "Sent." } }
                                 .disabled(e.status != "approved")
                         }
                         .buttonStyle(.bordered)
@@ -271,7 +271,7 @@ struct TempoView: View {
                     LabeledContent("Next reel", value: n.file ?? "")
                     if let c = n.collection { LabeledContent("From", value: c) }
                     if let u = n.url.flatMap(URL.init(string:)) { Link("Watch it", destination: u) }
-                    Button("Queue it") { Task { await act { try await Console.post("api/reels/queue-next", [:], model: model, timeout: 60); return "Queued." } } }
+                    ConfirmButton(title: "Queue it", question: "Queue this reel to post?") { await act { try await Console.post("api/reels/queue-next", [:], model: model, timeout: 60); return "Queued." } }
                 } header: { Text("Reels · \(reel?.remaining ?? 0) left") }
             }
             Section {
@@ -309,6 +309,7 @@ struct FeedView: View {
     struct D: Decodable { let drafts: [Draft]? }
     struct P: Decodable { let posts: [Post]? }
     @State private var drafts: [Draft] = []
+    @State private var publishing: String?
     @State private var posts: [Post] = []
     @State private var result: String?
 
@@ -325,8 +326,8 @@ struct FeedView: View {
                         Text(d.caption ?? "")
                     }
                     .swipeActions(edge: .trailing) {
-                        Button("Publish") { Task { await act("api/feed/publish", ["id": d.id], "Published.") } }.tint(.green)
                         Button("Schedule") { Task { await act("api/feed/approve", ["id": d.id], "Scheduled.") } }.tint(.blue)
+                        Button("Publish") { publishing = d.id }.tint(.green)
                     }
                     .swipeActions(edge: .leading) { Button("Deny", role: .destructive) { Task { await act("api/feed/deny", ["id": d.id], "Denied.") } } }
                 }
@@ -338,6 +339,10 @@ struct FeedView: View {
             }
         }
         .navigationTitle("PL feed")
+        .confirmationDialog("Publish this post now, everywhere it is set to go?", isPresented: Binding(get: { publishing != nil }, set: { if !$0 { publishing = nil } }), titleVisibility: .visible) {
+            Button("Publish") { if let id = publishing { Task { await act("api/feed/publish", ["id": id], "Published.") } }; publishing = nil }
+            Button("Cancel", role: .cancel) { publishing = nil }
+        }
         .task { await load() }
         .refreshable { await load() }
     }

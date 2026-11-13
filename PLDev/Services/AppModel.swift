@@ -53,6 +53,7 @@ enum OriginReach: Equatable {
     func forgetConfig() {
         Task { await store.forget() }
         SharedState.clearPublicConfig()   // the extensions lose their keyless copy too
+        OfflineCache.clearAll()            // and every saved copy of what the config could read
         config = nil
         http = nil
         configError = nil

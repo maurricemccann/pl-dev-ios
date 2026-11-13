@@ -261,16 +261,16 @@ struct LibraryView: View {
             default: data.marks[id] = TasteMark(v: v, comment: data.marks[id]?.comment)
             }
         }
-        var failed = false
+        var refused: [String] = []
         for chunk in stride(from: 0, to: ids.count, by: 50).map({ Array(ids[$0..<min($0 + 50, ids.count)]) }) {
             let marks: [[String: String]] = chunk.map { v == "fav" ? ["id": $0, "v": "keep", "note": "fav"] : ["id": $0, "v": v] }
             guard let body = try? JSONSerialization.data(withJSONObject: ["marks": marks]) else { continue }
             do {
                 _ = try await http.send(RequestPlan(origin: "gallery", method: "POST", path: "api/taste",
                                                     headers: ["content-type": "application/json", "Origin": data.base(model)], body: body), idempotent: false)
-            } catch { failed = true }
+            } catch { refused += chunk }
         }
-        if failed { for (id, m) in before { data.marks[id] = m }; data.notSaved += 1 }
+        if !refused.isEmpty { for id in refused { data.marks[id] = before[id] }; data.notSaved += 1 }
         picked.removeAll(); bulkTick += 1
     }
 
@@ -369,8 +369,11 @@ struct PieceViewer: View {
 
     private var controls: some View {
         VStack(spacing: 8) {
-            TextField("Comment", text: $comment, axis: .vertical).lineLimit(1...3).textFieldStyle(.roundedBorder)
-                .onSubmit { saveComment() }
+            HStack(alignment: .bottom) {
+                TextField("Comment", text: $comment, axis: .vertical).lineLimit(1...3).textFieldStyle(.roundedBorder)
+                    .onSubmit { saveComment() }
+                Button("Save") { saveComment() }.buttonStyle(.bordered)
+            }
             HStack {
                 mark("Cut", "cut", .red); mark("Maybe", "maybe", .yellow); mark("Keep", "keep", .green); mark("Fav", "fav", .orange)
             }
