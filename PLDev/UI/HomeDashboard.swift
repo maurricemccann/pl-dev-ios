@@ -1,9 +1,8 @@
 import SwiftUI
-import RealityKit
 import Charts
 
 /// Under the Home grid (his ask 11-13: "the 3D heart model also on our home app to make it less empty, we can add a dashboard with
-/// my PC's stats and stats of anything you think is useful"): his heart turning in gold, the PC's own numbers from the PL Call
+/// my PC's stats and stats of anything you think is useful"): the PC's own numbers from the PL Call
 /// server (tailnet, keyed), and the house at a glance. Every card says when it could not be read; nothing here writes.
 struct HomeDashboard: View {
     let model: AppModel
@@ -23,7 +22,6 @@ struct HomeDashboard: View {
 
     var body: some View {
         VStack(spacing: 14) {
-            HomeHeart().frame(height: 190).accessibilityLabel("The heart, turning in gold")
             pcCard
             houseCard
         }
@@ -128,69 +126,5 @@ struct HomeDashboard: View {
         h.standing = standing?.total ?? 0
         h.needs = (counts?.desiresPending ?? 0) + (counts?.captures ?? 0)
         if stats != nil || standing != nil { house = h }
-    }
-}
-
-/// His heart model, gold, swaying slowly and breathing (the web's pulse: 1 ± 3 %). Not a control: no gestures, it is the room's centre.
-/// The pose is read off the mesh itself (HeartPose), so his heart stands point down with its face to the camera whatever axes the
-/// file came with (his reports 11-13: first only its edge showed, then it stood the wrong way). Motion runs on RealityKit's own frame clock (120 Hz).
-struct HomeHeart: View {
-    @State private var sub: EventSubscription?
-    @Environment(\.accessibilityReduceMotion) private var reduce
-    var body: some View {
-        RealityView { content in
-            content.camera = .virtual
-            guard let e = await ThreeDModels.load("heart1") else { return }
-            ThreeDModels.paint(e, ThreeDModels.goldMaterial(rough: 0.28))
-            e.orientation = HeartPose.upright(e)
-            let f = ThreeDModels.fitted(e, longest: 1.1)
-            f.position = [0, -0.55, -1.5]
-            content.add(f)
-            let light = DirectionalLight(); light.light.intensity = 2600; light.look(at: .zero, from: [0.8, 1.2, 1.5], relativeTo: nil)
-            content.add(light)
-            guard !reduce else { return }
-            var t: Float = 0
-            sub = content.subscribe(to: SceneEvents.Update.self) { ev in
-                t += Float(ev.deltaTime)
-                f.orientation = simd_quatf(angle: sin(t * 0.5) * 0.6, axis: [0, 1, 0])   // about 35° each way, never edge-on
-                f.scale = SIMD3<Float>(repeating: 1 + sin(t * 1.2) * 0.03)
-            }
-        }
-        .allowsHitTesting(false)
-    }
-}
-
-
-/// Stands a heart up from its own shape: the longest side is up, the thinnest side faces the camera, and the up direction is the
-/// side where the shape's mass sits (the two lobes outweigh the point). Pure geometry, so it holds for any export's axes.
-@MainActor enum HeartPose {
-    static func upright(_ root: Entity) -> simd_quatf {
-        var pts: [SIMD3<Float>] = []
-        func walk(_ e: Entity) {
-            if let m = e.components[ModelComponent.self] {
-                for model in m.mesh.contents.models {
-                    for part in model.parts {
-                        let all = part.positions.elements
-                        let step = max(1, all.count / 4000)
-                        for i in stride(from: 0, to: all.count, by: step) { pts.append(e.convert(position: all[i], to: root)) }
-                    }
-                }
-            }
-            e.children.forEach(walk)
-        }
-        walk(root)
-        guard pts.count > 10 else { return simd_quatf(angle: .pi / 2, axis: [1, 0, 0]) }   // the web's turn when the mesh cannot be read
-        var lo = pts[0], hi = pts[0], sum = SIMD3<Float>(repeating: 0)
-        for p in pts { lo = simd_min(lo, p); hi = simd_max(hi, p); sum += p }
-        let ext = hi - lo, centre = (lo + hi) / 2, mean = sum / Float(pts.count)
-        let axes: [SIMD3<Float>] = [[1, 0, 0], [0, 1, 0], [0, 0, 1]]
-        let order = [0, 1, 2].sorted { ext[$0] < ext[$1] }          // thinnest … longest
-        let thin = axes[order[0]], long = axes[order[2]]
-        let up = (mean[order[2]] - centre[order[2]]) >= 0 ? long : -long   // the lobes' side is up
-        let face = thin
-        let side = simd_cross(up, face)
-        // the rotation that sends side → +X, up → +Y, face → +Z
-        let m = simd_float3x3(rows: [side, up, face])
-        return simd_quatf(m)
     }
 }
