@@ -317,10 +317,17 @@ struct StillsRoom: View {
         .navigationTitle("The Generated")
         .searchable(text: $jump, prompt: "Jump to # (e.g. 042)")
         .safeAreaInset(edge: .top) {
-            Picker("View", selection: $view) { Text("Featured").tag("featured"); Text("All").tag("all"); Text("Favourites").tag("fav"); Text("Hidden").tag("hidden") }
+            Picker("View", selection: $view) { Text("Featured").tag("featured"); Text("All").tag("all"); Text("★ \(favSet.count)").tag("fav"); Text("Hidden \(hideSet.count)").tag("hidden") }
                 .pickerStyle(.segmented).padding(.horizontal).padding(.vertical, 6).background(.bar)
         }
-        .toolbar { Menu { Picker("Collection", selection: $collection) { Text("All").tag(String?.none); ForEach(cols, id: \.self) { Text($0).tag(String?.some($0)) } } } label: { Image(systemName: "line.3.horizontal.decrease.circle") } }
+        .toolbar {
+            Menu {
+                Picker("Collection", selection: $collection) { Text("All").tag(String?.none); ForEach(cols, id: \.self) { Text($0).tag(String?.some($0)) } }
+                Button("Copy \(favSet.count) favourite ids", systemImage: "star") { UIPasteboard.general.string = ids(favSet) }.disabled(favSet.isEmpty)
+                Button("Copy \(hideSet.count) hidden ids", systemImage: "eye.slash") { UIPasteboard.general.string = ids(hideSet) }.disabled(hideSet.isEmpty)
+                Button("Restore all hidden", systemImage: "arrow.uturn.backward") { hides = "" }.disabled(hideSet.isEmpty)
+            } label: { Image(systemName: "line.3.horizontal.decrease.circle") }
+        }
         .task {
             guard items.isEmpty, let http = model.http, let d = try? await http.send(RequestPlan(origin: "gallery", path: "generated/manifest.json"), timeout: 60),
                   let m = try? JSONDecoder().decode(M.self, from: d) else { return }
@@ -335,6 +342,10 @@ struct StillsRoom: View {
         }
     }
 
+    private var favSet: Set<String> { Set(favs.split(separator: ",").map(String.init)) }
+    private var hideSet: Set<String> { Set(hides.split(separator: ",").map(String.init)) }
+    /// The ids of the pieces in a set, sorted, as the web's "Copy IDs" gives them.
+    private func ids(_ set: Set<String>) -> String { items.filter { set.contains($0.id) }.map(\.id).sorted().joined(separator: ", ") }
     private func url(_ it: Item) -> URL? { URL(string: LibraryData.shared.base(model) + "/generated/" + it.file) }
 }
 

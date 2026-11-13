@@ -9,6 +9,11 @@ import UserNotifications
     private(set) var marksLoaded = false
     private(set) var loading = false
     var notSaved = 0
+    /// His own tags (/api/tags, a table of their own), by vault id. A failed load leaves the last ones.
+    var tags: [String: [String]] = [:]
+    /// Each piece's batch: its cloud batch, or the date stamp in its own file name (both start YYYYMMDD, so one compare orders all).
+    private(set) var batchOf: [String: String] = [:]
+    private(set) var unrenderable: Set<String> = []
 
     func load(model: AppModel, force: Bool = false) async throws {
         guard let http = model.http else { throw URLError(.notConnectedToInternet) }
@@ -20,6 +25,7 @@ import UserNotifications
             let data = try await http.send(RequestPlan(origin: "gallery", path: "library-index.json"), timeout: 60)
             struct Index: Decodable { let items: [LibraryItem] }
             items = try await Task.detached { try JSONDecoder().decode(Index.self, from: data).items }.value
+            indexDerived()
         }
         let tdata = try await http.send(RequestPlan(origin: "gallery", path: "api/taste"), timeout: 60)
         struct Taste: Decodable { let marks: [String: TasteMark]? }
@@ -29,7 +35,64 @@ import UserNotifications
         }
         marks = m
         marksLoaded = true
+        await loadTags(model: model)
         LibraryGlanceWriter.publish(self)   // the Curate widget's numbers
+    }
+
+    private func indexDerived() {
+        let re = try? NSRegularExpression(pattern: #"(20\d{6}[a-z]{1,3})(?=-\d+\.)"#)
+        var b: [String: String] = [:], u: Set<String> = []
+        for it in items {
+            if let x = it.batch { b[it.vault_id] = x }
+            else if let n = it.name, let m = re?.firstMatch(in: n, range: NSRange(n.startIndex..., in: n)), let r = Range(m.range(at: 1), in: n) { b[it.vault_id] = String(n[r]) }
+            if it.tags?.contains("unrenderable") == true { u.insert(it.vault_id) }
+        }
+        batchOf = b; unrenderable = u
+    }
+
+    func loadTags(model: AppModel) async {
+        guard let http = model.http, let d = try? await http.send(RequestPlan(origin: "gallery", path: "api/tags"), timeout: 30) else { return }
+        struct T: Decodable { let tags: [String: [String]]? }
+        if let t = (try? JSONDecoder().decode(T.self, from: d))?.tags { tags = t }
+    }
+
+    /// Add or remove one tag on many pieces (500 to a write, as the route allows). Optimistic; put back when the store refuses.
+    func tag(_ ids: [String], add: Bool, tag t: String, model: AppModel) async -> String {
+        guard let http = model.http, !ids.isEmpty else { return "Not saved. Nothing chosen." }
+        let prev = tags
+        for id in ids { var c = Set(tags[id] ?? []); if add { c.insert(t) } else { c.remove(t) }; tags[id] = c.isEmpty ? nil : c.sorted() }
+        for chunk in stride(from: 0, to: ids.count, by: 500).map({ Array(ids[$0..<min($0 + 500, ids.count)]) }) {
+            let body = try? JSONSerialization.data(withJSONObject: ["ids": chunk, (add ? "add" : "remove"): t])
+            do { _ = try await http.send(RequestPlan(origin: "gallery", method: "POST", path: "api/tags", headers: ["content-type": "application/json", "Origin": base(model)], body: body), idempotent: false) }
+            catch { tags = prev; notSaved += 1; return "Not saved. The store refused the tag; it was put back." }
+        }
+        return "\(add ? "Tagged" : "Untagged") \(ids.count) · \(t)"
+    }
+
+    /// Rename a tag everywhere; renaming onto a tag that exists merges the two.
+    func rename(_ from: String, to: String, model: AppModel) async -> String {
+        guard let http = model.http else { return "Not saved." }
+        let body = try? JSONSerialization.data(withJSONObject: ["rename": ["from": from, "to": to]])
+        do {
+            _ = try await http.send(RequestPlan(origin: "gallery", method: "POST", path: "api/tags", headers: ["content-type": "application/json", "Origin": base(model)], body: body), idempotent: false)
+            for (id, l) in tags { tags[id] = Array(Set(l.map { $0 == from ? to : $0 })).sorted() }
+            return "Renamed \(from) to \(to)."
+        } catch { notSaved += 1; return "Not saved. The store refused the rename." }
+    }
+
+    /// Many marks at once, 50 to a write as the web sends them. Offline, each waits in the outbox. Returns the ids the store refused.
+    func writeMarks(_ wire: [[String: String]], model: AppModel) async -> Set<String> {
+        guard let http = model.http else { return Set(wire.compactMap { $0["id"] }) }
+        var refused = Set<String>()
+        for chunk in stride(from: 0, to: wire.count, by: 50).map({ Array(wire[$0..<min($0 + 50, wire.count)]) }) {
+            if !OfflineState.shared.online { chunk.forEach { MarkOutbox.add($0) }; continue }
+            guard let body = try? JSONSerialization.data(withJSONObject: ["marks": chunk]) else { continue }
+            do { _ = try await http.send(RequestPlan(origin: "gallery", method: "POST", path: "api/taste", headers: ["content-type": "application/json", "Origin": base(model)], body: body), idempotent: false) }
+            catch let e as URLError where [.notConnectedToInternet, .networkConnectionLost, .dataNotAllowed, .timedOut].contains(e.code) { chunk.forEach { MarkOutbox.add($0) } }
+            catch { refused.formUnion(chunk.compactMap { $0["id"] }) }
+        }
+        if !refused.isEmpty { notSaved += 1 }
+        return refused
     }
 
     func base(_ model: AppModel) -> String {
@@ -83,348 +146,3 @@ import UserNotifications
     static func refresh(model: AppModel) async -> SectionRefresh { SectionRefresh(badge: nil, notify: []) }
 }
 
-enum Verdict: String, CaseIterable, Identifiable {
-    case all = "All", unmarked = "Unmarked", keep = "Keep", fav = "Favourite", maybe = "Maybe", cut = "Cut", replaced = "Replaced"
-    var id: String { rawValue }
-    func matches(_ m: TasteMark?) -> Bool {
-        switch self {
-        case .all: return true
-        case .unmarked: return m == nil || m?.v == ""
-        case .keep: return m?.v == "keep" && m?.note != "fav"
-        case .fav: return m?.isFav == true
-        case .maybe: return m?.v == "maybe"
-        case .cut: return m?.v == "cut"
-        case .replaced: return m?.v == "replaced"
-        }
-    }
-}
-
-struct LibraryView: View {
-    let model: AppModel
-    @State private var data = LibraryData.shared
-    @State private var nav = GalleryNav.shared
-    @State private var verdict: Verdict = .all
-    @State private var cls: String? = nil
-    @State private var search = ""
-    @State private var failed = false
-    @State private var open: LibraryItem?
-    @State private var batch: String?
-    @State private var source: String?
-    @State private var selecting = false
-    @State private var picked = Set<String>()
-    @State private var tagName = ""
-    @State private var askTag = false
-    @State private var bulkTick = 0
-    @Environment(\.colorScheme) private var scheme
-    private let classes: [(String?, String)] = [(nil, "All classes"), ("still", "Stills"), ("cinematic", "Shorts"), ("code-piece", "Code"), ("font", "Fonts"), ("archive-work", "Archive")]
-
-    /// Archive works stay hidden unless the class filter picks them; unrenderable pieces never show. Newest batch first.
-    private var shown: [LibraryItem] {
-        let q = search.lowercased()
-        return data.items.filter { it in
-            (cls == nil ? it.class != "archive-work" : it.class == cls) && !it.tagList.contains("unrenderable")
-                && verdict.matches(data.marks[it.vault_id])
-                && (batch == nil || it.batch == batch) && (source == nil || it.source == source)
-                && (q.isEmpty || (it.name ?? "").lowercased().contains(q) || it.vault_id.lowercased().contains(q))
-        }.sorted { ($0.batch ?? "") > ($1.batch ?? "") }
-    }
-
-    private static func verdictTint(_ v: Verdict) -> Color? {
-        switch v { case .keep: return PLG.teal; case .fav: return PLG.gold; case .maybe: return PLG.amber; case .cut: return PLG.red; default: return nil }
-    }
-
-    private func count(_ v: Verdict) -> Int {
-        data.items.filter { (cls == nil ? $0.class != "archive-work" : $0.class == cls) && v.matches(data.marks[$0.vault_id]) }.count
-    }
-
-    var body: some View {
-        let list = shown
-        ScrollView {
-            GalleryHeading(eyebrow: "The Curve Library", title: "Library").padding(.horizontal, 16).padding(.top, 4)
-            if failed {
-                ContentUnavailableView("YOUR MARKS DID NOT LOAD", systemImage: "exclamationmark.triangle", description: Text("Nothing can be marked until they do. Pull to try again."))
-            } else if data.items.isEmpty {
-                ProgressView("Loading the library…").padding(.top, 80)
-            }
-            if !data.items.isEmpty { shelf }
-            Text("\(list.count.formatted()) shown · orange ring = cloud batch or API render").font(.system(size: 11)).foregroundStyle(PLG.dim(scheme))
-                .frame(maxWidth: .infinity, alignment: .leading).padding(.horizontal, 16).padding(.top, 8)
-            LazyVGrid(columns: [GridItem(.adaptive(minimum: 104), spacing: 8)], spacing: 8) {
-                ForEach(list) { it in
-                    Button { if selecting { toggle(it.vault_id) } else { open = it } } label: {
-                        Tile(item: it, mark: data.marks[it.vault_id], url: data.media(it, model: model).still)
-                            .overlay(alignment: .bottomTrailing) {
-                                if selecting {
-                                    Image(systemName: picked.contains(it.vault_id) ? "checkmark.circle.fill" : "circle")
-                                        .font(.title3).foregroundStyle(.white, picked.contains(it.vault_id) ? Color.accentColor : .black.opacity(0.3)).padding(6)
-                                }
-                            }
-                    }
-                    .buttonStyle(.plain)
-                }
-            }
-            .padding(.horizontal, 16).padding(.bottom, 24)
-        }
-        .gScreen()
-        .navigationTitle("Library").navigationBarTitleDisplayMode(.inline)
-        .toolbar {
-            ToolbarItem(placement: .topBarLeading) {
-                NavigationLink { GalleryRoomsView(model: model) } label: { Label("Rooms", systemImage: "square.grid.2x2") }
-            }
-            ToolbarItem(placement: .topBarTrailing) {
-                Button(selecting ? "Done" : "Select") { withAnimation { selecting.toggle(); picked.removeAll() } }
-            }
-            if selecting {
-                ToolbarItemGroup(placement: .bottomBar) {
-                    Menu("\(picked.count) chosen") {
-                        Button("Choose all shown") { picked = Set(list.map(\.vault_id)) }
-                        Button("Choose none") { picked.removeAll() }
-                        Button("Tag…", systemImage: "tag") { askTag = true }
-                    }
-                    Spacer()
-                    Button { Task { await bulk("cut") } } label: { Image(systemName: "xmark") }.tint(.red).accessibilityLabel("Cut")
-                    Button { Task { await bulk("maybe") } } label: { Image(systemName: "questionmark") }.tint(.yellow).accessibilityLabel("Maybe")
-                    Button { Task { await bulk("keep") } } label: { Image(systemName: "checkmark") }.tint(.green).accessibilityLabel("Keep")
-                    Button { Task { await bulk("fav") } } label: { Image(systemName: "star.fill") }.tint(PLTone.house).accessibilityLabel("Favourite")
-                    Button { Task { await bulk("clear") } } label: { Image(systemName: "eraser") }.accessibilityLabel("Clear the mark")
-                }
-            }
-        }
-        .alert("Tag \(picked.count) pieces", isPresented: $askTag) {
-            TextField("tag (a-z, 0-9, dashes)", text: $tagName).textInputAutocapitalization(.never)
-            Button("Add the tag") { Task { await tag(add: true) } }
-            Button("Remove the tag") { Task { await tag(add: false) } }
-            Button("Cancel", role: .cancel) {}
-        }
-        .sensoryFeedback(.impact(weight: .medium), trigger: bulkTick)
-        .searchable(text: $search, prompt: "Name or id")
-        .safeAreaInset(edge: .top) {
-            ScrollView(.horizontal, showsIndicators: false) {
-                HStack(spacing: 8) {
-                    Menu { Picker("Class", selection: $cls) { ForEach(classes, id: \.1) { Text($0.1).tag($0.0) } } }
-                        label: { HStack(spacing: 6) { Text(classes.first { $0.0 == cls }?.1 ?? "Class").font(.system(size: 14, weight: .medium)); Image(systemName: "chevron.down").font(.caption2) }
-                            .foregroundStyle(PLG.ink(scheme)).padding(.horizontal, 14).frame(minHeight: 40)
-                            .overlay { Capsule().strokeBorder(PLG.gold.opacity(0.45), lineWidth: 0.9) } }
-                    ForEach(Verdict.allCases) { v in
-                        Button { verdict = v } label: { GalleryChip(title: v.rawValue, count: count(v), on: verdict == v, tint: Self.verdictTint(v)) }.buttonStyle(.plain)
-                    }
-                }.padding(.horizontal, 16)
-            }.padding(.vertical, 6).background(.ultraThinMaterial)
-        }
-        .overlay(alignment: .bottom) {
-            if data.notSaved > 0 { Text("\(data.notSaved) not saved").gEyebrow(11).padding(.horizontal, 14).padding(.vertical, 8).background(PLG.red, in: Capsule()).foregroundStyle(.white).padding() }
-        }
-        .refreshable { await reload(force: true) }
-        .task { if data.items.isEmpty || !data.marksLoaded { await reload(force: false) } }
-        .fullScreenCover(item: $open) { it in PieceViewer(model: model, list: list, start: it) }
-        .navigationDestination(item: $nav.room) { room in room.view(model) }
-    }
-
-    /// The web Library's "Latest batches" shelf (the ten newest, with what is new, kept, maybe and cut) and the source chips.
-    private var shelf: some View {
-        let batches = Array(Set(data.items.compactMap(\.batch))).sorted(by: >).prefix(10)
-        return VStack(alignment: .leading, spacing: 8) {
-            Text("Latest batches").gEyebrow(10).foregroundStyle(PLG.goldDim(scheme))
-            ScrollView(.horizontal, showsIndicators: false) {
-                HStack(spacing: 8) {
-                    ForEach(Array(batches), id: \.self) { b in
-                        let its = data.items.filter { $0.batch == b }
-                        let n = its.filter { data.marks[$0.vault_id] == nil }.count, k = its.filter { data.marks[$0.vault_id]?.v == "keep" }.count
-                        let m = its.filter { data.marks[$0.vault_id]?.v == "maybe" }.count, c = its.filter { data.marks[$0.vault_id]?.v == "cut" }.count
-                        Button { batch = batch == b ? nil : b } label: {
-                            VStack(alignment: .leading, spacing: 3) {
-                                Text(b).gMono(12).foregroundStyle(PLG.ink(scheme))
-                                (Text("\(n) new ").foregroundStyle(PLG.red) + Text("\(k)✓ ").foregroundStyle(PLG.teal) + Text("\(m)~ ").foregroundStyle(PLG.amber) + Text("\(c)×").foregroundStyle(PLG.red))
-                                    .font(.system(size: 11, weight: .semibold, design: .monospaced)).monospacedDigit()
-                            }
-                            .gCard(padding: 12, radius: 18, active: batch == b)
-                            .fixedSize()
-                        }
-                        .buttonStyle(.plain)
-                    }
-                    ForEach([("cloud-batch", "Cloud batches"), ("on-model", "API renders")], id: \.0) { s in
-                        Button { source = source == s.0 ? nil : s.0 } label: {
-                            Text("\(s.1) \(data.items.filter { $0.source == s.0 }.count)").gEyebrow(10.5).foregroundStyle(PLG.orange)
-                                .padding(.horizontal, 14).frame(minHeight: 40)
-                                .background(PLG.orange.opacity(source == s.0 ? 0.28 : 0.08), in: Capsule())
-                                .overlay(Capsule().strokeBorder(PLG.orange.opacity(0.7), lineWidth: 1))
-                        }
-                        .buttonStyle(.plain)
-                    }
-                }
-            }
-        }
-        .padding(.horizontal, 16).padding(.top, 8)
-    }
-
-    private func toggle(_ id: String) { if picked.contains(id) { picked.remove(id) } else { picked.insert(id) } }
-
-    /// Many marks at once, 50 to a write as the web sends them. Optimistic; a refused batch is put back.
-    private func bulk(_ v: String) async {
-        let ids = Array(picked)
-        guard !ids.isEmpty, data.marksLoaded, let http = model.http else { return }
-        let before = ids.map { ($0, data.marks[$0]) }
-        for id in ids {
-            switch v {
-            case "clear": data.marks[id] = nil
-            case "fav": data.marks[id] = TasteMark(v: "keep", note: "fav", comment: data.marks[id]?.comment)
-            default: data.marks[id] = TasteMark(v: v, comment: data.marks[id]?.comment)
-            }
-        }
-        var refused: [String] = []
-        for chunk in stride(from: 0, to: ids.count, by: 50).map({ Array(ids[$0..<min($0 + 50, ids.count)]) }) {
-            let marks: [[String: String]] = chunk.map { v == "fav" ? ["id": $0, "v": "keep", "note": "fav"] : ["id": $0, "v": v] }
-            guard let body = try? JSONSerialization.data(withJSONObject: ["marks": marks]) else { continue }
-            do {
-                _ = try await http.send(RequestPlan(origin: "gallery", method: "POST", path: "api/taste",
-                                                    headers: ["content-type": "application/json", "Origin": data.base(model)], body: body), idempotent: false)
-            } catch { refused += chunk }
-        }
-        if !refused.isEmpty { let was = Dictionary(before, uniquingKeysWith: { a, _ in a }); for id in refused { data.marks[id] = was[id] ?? nil }; data.notSaved += 1 }
-        picked.removeAll(); bulkTick += 1
-    }
-
-    private func tag(add: Bool) async {
-        let t = tagName.lowercased().trimmingCharacters(in: .whitespaces)
-        guard t.range(of: #"^[a-z0-9-]{1,24}$"#, options: .regularExpression) != nil, let http = model.http else { return }
-        let body = try? JSONSerialization.data(withJSONObject: ["ids": Array(picked.prefix(500)), (add ? "add" : "remove"): t])
-        if (try? await http.send(RequestPlan(origin: "gallery", method: "POST", path: "api/tags", headers: ["content-type": "application/json"], body: body), idempotent: false)) == nil {
-            data.notSaved += 1
-        }
-        tagName = ""; bulkTick += 1
-    }
-
-    private func reload(force: Bool) async {
-        do { try await data.load(model: model, force: force); failed = false } catch { failed = true }
-    }
-}
-
-/// A library tile as the web draws it: the piece, its name, a play badge on clips, the mark's dot, an orange ring on cloud and API renders.
-struct Tile: View {
-    let item: LibraryItem
-    let mark: TasteMark?
-    let url: URL?
-    var body: some View {
-        ZStack(alignment: .topTrailing) {
-            Color(hex: 0x1a1610)
-            if let url { AsyncImage(url: url) { $0.resizable().scaledToFill() } placeholder: { Color.clear } }
-            else { Text(item.name ?? item.vault_id).font(.caption2).padding(4) }
-            if let c = dot { Circle().fill(c).frame(width: 10, height: 10).padding(6) }
-        }
-        .overlay(alignment: .topLeading) {
-            if item.class == "cinematic" || item.class == "code-piece" {
-                Image(systemName: "play.fill").font(.system(size: 9, weight: .bold)).foregroundStyle(.white).padding(5).background(.black.opacity(0.5), in: RoundedRectangle(cornerRadius: 4)).padding(5)
-            }
-        }
-        .overlay(alignment: .bottom) {
-            Text(item.name ?? item.vault_id).font(.system(size: 9, weight: .semibold)).tracking(0.5).foregroundStyle(.white)
-                .lineLimit(1).padding(.horizontal, 6).padding(.vertical, 3).frame(maxWidth: .infinity)
-                .background(LinearGradient(colors: [.clear, .black.opacity(0.55)], startPoint: .top, endPoint: .bottom))
-        }
-        .aspectRatio(4.0 / 5.0, contentMode: .fit)
-        .clipShape(RoundedRectangle(cornerRadius: 14, style: .continuous))
-        .overlay(RoundedRectangle(cornerRadius: 14, style: .continuous).strokeBorder(item.source == "cloud-batch" || item.source == "on-model" ? PLG.orange : PLG.gold.opacity(0.22), lineWidth: item.source == "cloud-batch" || item.source == "on-model" ? 2 : 0.8))
-    }
-    private var dot: Color? {
-        guard let m = mark else { return nil }
-        if m.isFav { return PLG.gold }
-        switch m.v { case "keep": return PLG.teal; case "maybe": return PLG.amber; case "cut": return PLG.red; default: return nil }
-    }
-}
-
-/// Full screen: swipe between pieces, mark each. Favourite = keep with the note "fav"; tapping the active verdict clears it;
-/// a favourite is never overwritten by a plain keep.
-struct PieceViewer: View {
-    let model: AppModel
-    let list: [LibraryItem]
-    @State var selection: String
-    @State private var data = LibraryData.shared
-    @State private var comment = ""
-    @State private var tick = 0
-    @Environment(\.dismiss) private var dismiss
-
-    init(model: AppModel, list: [LibraryItem], start: LibraryItem) {
-        self.model = model; self.list = list; _selection = State(initialValue: start.vault_id)
-    }
-
-    private var current: LibraryItem? { list.first { $0.vault_id == selection } }
-
-    var body: some View {
-        NavigationStack {
-            TabView(selection: $selection) {
-                ForEach(list) { it in
-                    let m = data.media(it, model: model)
-                    Group {
-                        if it.class == "code-piece" { LivePieceCard(model: model, pieceID: it.item_id, thumb: m.still) } else if let v = m.video { LoopingClip(url: v) }
-                        else if let s = m.still { AsyncImage(url: s) { $0.resizable().scaledToFit() } placeholder: { ProgressView() } }
-                        else { Text(it.name ?? it.vault_id) }
-                    }
-                    .tag(it.vault_id)
-                }
-            }
-            .tabViewStyle(.page(indexDisplayMode: .never))
-            .background { GalleryGround() }
-            .safeAreaInset(edge: .bottom) { controls }
-            .navigationTitle(current?.name ?? "")
-            .navigationBarTitleDisplayMode(.inline)
-            .toolbar {
-                ToolbarItem(placement: .cancellationAction) { Button("Close") { dismiss() } }
-                if let it = current, let u = data.media(it, model: model).video ?? data.media(it, model: model).still {
-                    ToolbarItem(placement: .primaryAction) { ShareLink(item: u) }
-                }
-            }
-            .sensoryFeedback(.impact(weight: .medium), trigger: tick)
-            .onChange(of: selection, initial: true) { _, id in comment = data.marks[id]?.comment ?? "" }
-        }
-    }
-
-    private var controls: some View {
-        VStack(spacing: 8) {
-            HStack(alignment: .bottom) {
-                TextField("A word about this piece", text: $comment, axis: .vertical).lineLimit(1...3)
-                    .gCard(padding: 12, radius: 16, active: !comment.isEmpty)
-                    .onSubmit { saveComment() }
-                Button { saveComment() } label: { Text("Save").gEyebrow(11).foregroundStyle(PLG.gold).padding(.horizontal, 14).frame(minHeight: 44).overlay { Capsule().strokeBorder(PLG.gold.opacity(0.45)) } }
-                    .buttonStyle(.plain)
-            }
-            HStack(spacing: 8) {
-                mark("Cut", "cut", PLG.red); mark("Maybe", "maybe", PLG.amber); mark("Keep", "keep", PLG.teal); mark("Fav", "fav", PLG.gold)
-            }
-        }
-        .padding().background(.ultraThinMaterial)
-    }
-
-    private func isActive(_ v: String) -> Bool {
-        let m = data.marks[selection]
-        return v == "fav" ? m?.isFav == true : (m?.v == v && !(v == "keep" && m?.isFav == true))
-    }
-
-    private func mark(_ label: String, _ v: String, _ tint: Color) -> some View {
-        Button { Task { await set(v) } } label: { Label { Text(label) } icon: { PLIcon.mark(v).resizable().scaledToFit().frame(width: 16, height: 16) } }
-            .buttonStyle(.borderedProminent).tint(isActive(v) ? tint : tint.opacity(0.35))
-            .frame(maxWidth: .infinity)
-    }
-
-    private func set(_ v: String) async {
-        let id = selection, prev = data.marks[id]
-        saveComment()
-        if isActive(v) {   // tapping the active verdict clears it
-            data.marks[id] = nil
-            if await !data.post(["id": id, "v": "clear"], model: model) { data.marks[id] = prev }
-        } else if v == "fav" {
-            data.marks[id] = TasteMark(v: "keep", note: "fav", comment: prev?.comment)
-            if await !data.post(["id": id, "v": "keep", "note": "fav"], model: model) { data.marks[id] = prev }
-        } else {
-            data.marks[id] = TasteMark(v: v, comment: prev?.comment)
-            if await !data.post(["id": id, "v": v], model: model) { data.marks[id] = prev }
-        }
-        tick += 1
-    }
-
-    private func saveComment() {
-        let id = selection, t = comment.trimmingCharacters(in: .whitespacesAndNewlines)
-        guard t != (data.marks[id]?.comment ?? "") else { return }
-        data.marks[id, default: TasteMark(v: "")].comment = t
-        Task { _ = await data.post(["only": "comment", "id": id, "comment": String(t.prefix(1000))], model: model) }
-    }
-}
