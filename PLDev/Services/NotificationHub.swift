@@ -8,6 +8,8 @@ final class NotificationHub: NSObject, UNUserNotificationCenterDelegate, @unchec
     static let probePrefix = "probe."
     static let linkKey = "link"
     static let generalType = "general"   // the per-type switch used by a notice with no category
+    /// Notification buttons: action id → what it does. Sections fill it when they declare their categories.
+    @MainActor static var actions: [String: @MainActor () async -> Void] = [:]
 
     /// Called from the app's init: the delegate and the categories must exist before launch ends.
     @MainActor func start() {
@@ -66,7 +68,9 @@ final class NotificationHub: NSObject, UNUserNotificationCenterDelegate, @unchec
                                 withCompletionHandler completionHandler: @escaping @Sendable () -> Void) {
         // The response is not Sendable: copy plain strings out before the task.
         let link = response.notification.request.content.userInfo[Self.linkKey] as? String
+        let action = response.actionIdentifier
         Task { @MainActor in
+            if let run = Self.actions[action] { await run(); completionHandler(); return }   // a button: act, do not open
             if let link, let url = URL(string: link), let target = DeepLink(url: url) {
                 AppModel.shared.open(target)
             }

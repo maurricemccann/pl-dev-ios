@@ -1,11 +1,13 @@
 import SwiftUI
 import WidgetKit
 
-/// Everything the one extension offers: the snapshot widget and the control. No Live Activity yet.
+/// Everything the one extension offers: the snapshot widget, the House widget, the control, and the shift Live Activity.
 @main
 struct PLDevWidgetsBundle: WidgetBundle {
     var body: some Widget {
         SnapshotWidget()
+        HouseWidget()
         HomeControl()
+        ShiftLiveActivity()
     }
 }

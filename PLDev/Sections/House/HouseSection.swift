@@ -1,4 +1,5 @@
 import SwiftUI
+import TipKit
 import UserNotifications
 
 /// House: the whole pl-os console on the phone (his order 11-13, "build everything in plos in full"). The web's three tabs,
@@ -11,11 +12,20 @@ import UserNotifications
     static func makeRoot(model: AppModel) -> AnyView { AnyView(HouseView(model: model, state: state)) }
     static func probes(model: AppModel) -> [ProbeModel.Item] { [] }
     static func settingsRows(model: AppModel) -> AnyView? { nil }
-    static func notificationCategories() -> Set<UNNotificationCategory> { [] }
+    /// The drafts notice carries one button: approve all (Face ID first, never on a locked phone; Pins still wait).
+    static func notificationCategories() -> Set<UNNotificationCategory> {
+        NotificationHub.actions["house.approveAll"] = {
+            guard let started = try? await HouseActions.approveAll(model: AppModel.shared) else { return }
+            _ = await NotificationHub.shared.post(id: "house.approved", title: "Approving \(started) drafts", body: "Slack reports when it finishes. Pins still wait for you.", category: nil, link: nil)
+        }
+        let approve = UNNotificationAction(identifier: "house.approveAll", title: "Approve all", options: [.authenticationRequired],
+                                           icon: UNNotificationActionIcon(systemImageName: "checkmark.seal"))
+        return [UNNotificationCategory(identifier: "drafts", actions: [approve], intentIdentifiers: [])]
+    }
     static func handle(link: DeepLink, model: AppModel) -> Bool {
         if case .section(_, let path, _) = link, let first = path.first {
             if let tab = HouseModel.Tab(rawValue: first) { state.tab = tab }
-            if first == "approvals" { state.tab = .founder; state.openApprovals = true }
+            if let room = HouseRoom(rawValue: first) { state.room = room }
         }
         return true
     }
@@ -23,6 +33,7 @@ import UserNotifications
     static func refresh(model: AppModel) async -> SectionRefresh {
         await state.loadCounts(model: model)
         let n = state.stats?.pending ?? 0
+        ShiftLive.publish(drafts: state.stats?.pending, plan: nil)
         var notify: [LocalNotice] = []
         if n > 0, n != state.lastNotified {
             state.lastNotified = n
@@ -55,7 +66,8 @@ import UserNotifications
     struct FounderTask: Decodable, Identifiable { let notion_page_id: String; let title: String?; let status: String?; let due_date: String?; let priority: String?; let project: String?; var id: String { notion_page_id } }
 
     var tab: Tab = .founder
-    var openApprovals = false
+    var room: HouseRoom?
+    var live = false
     var stats: DraftStats?
     var walls: Declarations?
     var creator: Creator?
@@ -83,7 +95,10 @@ import UserNotifications
         async let dg = try? Console.get("api/session-digest", Digests.self, model: model)
         let (s1, w1, c1, p1, sc1, r1, t1, dg1) = await (s, w, c, p, sc, r, t, dg)
         digests = dg1?.digests ?? []
+        live = ShiftLive.running != nil
         stats = s1; walls = w1; creator = c1; plan = p1; schedule = sc1?.days ?? []; record = r1; tasks = t1 ?? []
+        ShiftLive.publish(drafts: s1?.pending, plan: p1)
+        await ShiftLive.sync(p1)
         message = (s1 == nil && p1 == nil) ? "Could not reach the console. Pull to try again." : nil
     }
 
@@ -91,7 +106,10 @@ import UserNotifications
         guard let i = plan?.tasks?.firstIndex(where: { $0.id == t.id }) else { return }
         let before = plan?.tasks?[i].status
         plan?.tasks?[i].status = status
-        do { try await Console.post("api/day-plan/complete", ["id": t.id, "status": status], model: model); tick += 1 }
+        do {
+            try await Console.post("api/day-plan/complete", ["id": t.id, "status": status], model: model); tick += 1
+            ShiftLive.publish(drafts: stats?.pending, plan: plan); await ShiftLive.sync(plan)
+        }
         catch { plan?.tasks?[i].status = before; message = "Not saved. \(error.localizedDescription)" }
     }
 
@@ -99,6 +117,17 @@ import UserNotifications
         do { try await Console.post("api/schedule", ["date": d.date, "work": work], model: model); tick += 1
             schedule = (try? await Console.get("api/schedule", Schedule.self, model: model, query: ["days": "7"]))?.days ?? schedule }
         catch { message = "Not saved. \(error.localizedDescription)" }
+    }
+
+    /// The shift on the Lock Screen and in the Dynamic Island, on his switch.
+    func setLive(_ on: Bool) async {
+        if on, let plan {
+            do { try ShiftLive.start(plan) } catch {
+                message = ShiftLive.allowed ? "The Lock Screen would not take it: \(error.localizedDescription)" : "Live Activities are off for PL DEV in Settings."
+            }
+        } else { await ShiftLive.stop() }
+        live = ShiftLive.running != nil
+        tick += 1
     }
 
     func setCreator(awake: Bool, model: AppModel) async {
@@ -139,7 +168,7 @@ struct HouseView: View {
         .navigationTitle("House")
         .navigationBarTitleDisplayMode(.inline)
         .sensoryFeedback(PLHaptic.commit, trigger: state.tick)
-        .navigationDestination(isPresented: $state.openApprovals) { ApprovalsView(model: model) }
+        .navigationDestination(item: $state.room) { room in room.view(model) }
     }
 }
 
@@ -158,7 +187,7 @@ struct FounderTab: View {
             Section {
                 NavigationLink { ApprovalsView(model: model) } label: {
                     LabeledContent {
-                        Text("\(state.stats?.pending ?? 0)").monospacedDigit()
+                        Text("\(state.stats?.pending ?? 0)").monospacedDigit().contentTransition(.numericText())
                     } label: {
                         Label("Approvals", systemImage: "checkmark.seal")
                         if let s = state.stats { Text("\(s.queued ?? 0) in the drip · \(s.held ?? 0) held · \(s.week_total ?? 0) made this week") }
@@ -239,6 +268,8 @@ struct FounderTab: View {
                     Image(systemName: t.status == "done" ? "checkmark.circle.fill" : t.status == "skipped" ? "minus.circle" : "circle")
                         .foregroundStyle(t.status == "done" ? .green : .secondary)
                         .font(.title3)
+                        .contentTransition(.symbolEffect(.replace))
+                        .symbolEffect(.bounce, value: t.status)
                     VStack(alignment: .leading, spacing: 2) {
                         Text(t.title ?? "").strikethrough(t.status == "done" || t.status == "skipped")
                         if let why = t.why, !why.isEmpty { Text(why).font(.caption).foregroundStyle(.secondary).lineLimit(3) }
@@ -250,6 +281,14 @@ struct FounderTab: View {
             }
         } header: { Text(state.plan?.plan_date.map { "Shift · \($0)" } ?? "Shift") } footer: {
             if !tasks.isEmpty { Text("Swipe left for done, right to skip.") }
+        }
+        if !tasks.isEmpty {
+            Section {
+                TipView(ShiftLockScreenTip())
+                Toggle(isOn: Binding(get: { state.live }, set: { v in Task { await state.setLive(v) } })) {
+                    Label("Shift on the Lock Screen", systemImage: "lock.iphone")
+                }
+            }
         }
     }
 }

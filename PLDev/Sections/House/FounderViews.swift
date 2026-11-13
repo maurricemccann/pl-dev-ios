@@ -1,4 +1,5 @@
 import SwiftUI
+import TipKit
 
 // MARK: - Approvals (pl-os ModerationPanel, AdApprovalsPanel, ManualPostPanel)
 
@@ -157,6 +158,7 @@ struct ApprovalsView: View {
                 }
             }
             Section {
+                if !state.drafts.isEmpty { TipView(DraftGesturesTip()).selectionDisabled() }
                 if state.loaded && state.drafts.isEmpty {
                     ContentUnavailableView("Nothing waiting", systemImage: "checkmark.seal", description: Text("No drafts need you."))
                 }

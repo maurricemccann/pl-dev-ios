@@ -44,6 +44,8 @@
 	<array>
 		<string>com.psychedluxuries.dev.refresh</string>
 	</array>
+	<key>NSSupportsLiveActivities</key>
+	<true/>
 	<key>NSFaceIDUsageDescription</key>
 	<string>PL DEV asks for Face ID when it opens, because it holds your keys.</string>
 	<key>UIAppFonts</key>

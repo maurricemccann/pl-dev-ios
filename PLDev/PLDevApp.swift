@@ -1,4 +1,5 @@
 import SwiftUI
+import TipKit
 
 @main
 struct PLDevApp: App {
@@ -8,6 +9,8 @@ struct PLDevApp: App {
         NotificationHub.shared.start()     // the delegate and the sections' categories must exist before launch ends
         IntentBridge.open = { link in AppModel.shared.open(link) }   // intents and controls route through the same door as links
         _ = AppModel.shared                // starts reading the saved config back, also on a background launch
+        try? Tips.configure([.displayFrequency(.daily)])   // tips only for gestures that cannot be seen, one a day at most
+        Task { await HouseSpotlight.index() }   // House rooms in Spotlight
     }
 
     var body: some Scene {
