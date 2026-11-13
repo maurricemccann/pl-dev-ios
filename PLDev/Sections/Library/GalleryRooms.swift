@@ -170,7 +170,10 @@ struct WebListRoom: View {
             }
             Section {
                 ForEach(items.filter { title != "Labs" || $0.0 != "lab" }, id: \.0) { it in
-                    NavigationLink { GalleryCanvas(model: model, path: it.0, title: it.1) } label: {
+                    NavigationLink {   // his GlyphGuy labs run natively on his own model; the rest stay his web pieces
+                        if it.0 == "lab/dance" { GlyphGuyRoom(kind: .dance) } else if it.0 == "lab/glyphbot" { GlyphGuyRoom(kind: .glyphbot) }
+                        else { GalleryCanvas(model: model, path: it.0, title: it.1) }
+                    } label: {
                         VStack(alignment: .leading) { Text(it.1); Text("/" + it.0).font(.caption.monospaced()).foregroundStyle(.secondary) }
                     }
                 }

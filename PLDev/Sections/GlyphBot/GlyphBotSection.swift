@@ -104,8 +104,8 @@ struct GlyphBotView: View {
         .navigationTitle("GlyphBot")
         .navigationBarTitleDisplayMode(.inline)
         .toolbar {
-            // his own rigged GlyphGuy (the gallery's /lab/glyphbot, Three.js on his model): shown, never redrawn ("Not my model")
-            NavigationLink { GalleryCanvas(model: model, path: "lab/glyphbot", title: "GlyphGuy") } label: { Image(systemName: "figure.stand") }
+            // his own rigged GlyphGuy (his GLB converted to USDZ, the gallery lab's clips): shown, never redrawn ("Not my model")
+            NavigationLink { GlyphGuyRoom(kind: .glyphbot) } label: { Image(systemName: "figure.stand") }   // native now: his model, his clips, in RealityKit
                 .accessibilityLabel("See GlyphGuy")
         }
     }
