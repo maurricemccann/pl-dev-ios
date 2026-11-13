@@ -69,6 +69,8 @@ struct NativeCanvasView: View {
                     .glassControl(in: Circle()).disabled(!canvas.canUndo).accessibilityLabel("Undo")
                 Button { canvas.redoStroke() } label: { Image(systemName: "arrow.uturn.forward").frame(width: 36, height: 36) }
                     .glassControl(in: Circle()).disabled(!canvas.canRedo).accessibilityLabel("Redo")
+                Button { share() } label: { Image(systemName: "square.and.arrow.up").frame(width: 36, height: 36) }
+                    .glassControl(in: Circle()).accessibilityLabel("Share the picture")
                 Button { canvas.stage?.fit() } label: { Image(systemName: "arrow.up.left.and.down.right.magnifyingglass").frame(width: 36, height: 36) }
                     .glassControl(in: Circle()).accessibilityLabel("Fit to screen")
             }
@@ -102,6 +104,17 @@ struct NativeCanvasView: View {
             }
         }
         .padding(12).glassControl(in: RoundedRectangle(cornerRadius: 22, style: .continuous))
+    }
+
+    /// The flat picture, blends and clips applied, through the share sheet (Photos, Files, Messages).
+    private func share() {
+        guard let d = canvas.doc, let png = d.flatPNG() else { canvas.say("Not shared. The picture could not be made."); return }
+        let safe = canvas.name.replacingOccurrences(of: "/", with: "-")
+        let url = FileManager.default.temporaryDirectory.appendingPathComponent("\(safe.isEmpty ? "Untitled" : safe).png")
+        do { try png.write(to: url) } catch { canvas.say("Not shared. The file could not be written."); return }
+        var top = UIApplication.shared.connectedScenes.compactMap { $0 as? UIWindowScene }.flatMap(\.windows).first(where: \.isKeyWindow)?.rootViewController
+        while let p = top?.presentedViewController { top = p }
+        top?.present(UIActivityViewController(activityItems: [url], applicationActivities: nil), animated: true)
     }
 
     /// The work he had open last time, if the phone still has it.
