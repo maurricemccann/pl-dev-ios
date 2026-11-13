@@ -10,5 +10,6 @@ struct PLDevWidgetsBundle: WidgetBundle {
         LibraryWidget()
         HomeControl()
         ShiftLiveActivity()
+        RenderLiveActivity()
     }
 }
