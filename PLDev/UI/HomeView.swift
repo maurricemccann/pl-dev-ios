@@ -68,8 +68,9 @@ struct HomeView: View {
                 .padding(.horizontal, PLSpace.margin)
                 .padding(.top, PLSpace.gap)
                 .padding(.bottom, PLSpace.block)
+                .environment(\.colorScheme, .dark)   // light text on the wallpaper, as on the Home Screen; pushed screens keep his setting
             }
-            .background(Backdrop())
+            .background(Wallpaper(model: model))
             .refreshable { await Poller.shared.refreshAll() }
             .safeAreaInset(edge: .bottom) { controls }
             .toolbar(.hidden, for: .navigationBar)

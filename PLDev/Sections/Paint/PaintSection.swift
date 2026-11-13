@@ -37,7 +37,7 @@ struct ComingSection: View {
                     Image(systemName: symbol)
                         .font(.system(size: 44, weight: .semibold)).foregroundStyle(.white)
                         .frame(width: 96, height: 96)
-                        .background(SectionTile.tint(title.lowercased()).gradient, in: RoundedRectangle(cornerRadius: 22, style: .continuous))
+                        .background(Wallpaper.line.gradient, in: RoundedRectangle(cornerRadius: 22, style: .continuous))
                     Text("\(title) is being built").font(.title2.bold())
                     Text("A native version is on the way. This tile is its place on the grid.")
                         .font(.callout).foregroundStyle(.secondary).multilineTextAlignment(.center)

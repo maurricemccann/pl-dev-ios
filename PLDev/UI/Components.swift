@@ -112,33 +112,14 @@ struct PressableStyle: ButtonStyle {
     }
 }
 
-/// One section on the home grid: its symbol, title, badge, and a quiet line when the config does not let it run yet.
-/// One app on the Home grid, drawn the way iOS draws an app: a squircle icon in the app's own colour, a white symbol,
-/// the name underneath, the red badge on the icon's corner. A section that cannot run yet is dimmed and says why.
+/// One app on the Home grid, drawn the way iOS draws a tinted Home Screen: a glass squircle, a frosted white symbol,
+/// the name underneath in white, the red badge on the icon's corner. A section that cannot run yet is dimmed with a key.
 struct SectionTile: View {
     let entry: SectionEntry
 
     init(entry: SectionEntry) { self.entry = entry }
 
     private var ready: Bool { entry.readiness.isReady }
-
-    /// Each app's colour, from the system palette so it follows light, dark and increased contrast.
-    static func tint(_ id: String) -> Color {
-        switch id {
-        case "house": return .indigo
-        case "capture": return .blue
-        case "curate": return .pink
-        case "library": return .purple
-        case "composer": return .teal
-        case "town": return .green
-        case "pick": return .yellow
-        case "paint": return .red
-        case "status": return .gray
-        case "shop": return .orange
-        case "congregation": return .cyan
-        default: return .accentColor
-        }
-    }
 
     private var spoken: String {
         var parts = [entry.manifest.title]
@@ -147,25 +128,27 @@ struct SectionTile: View {
         return parts.joined(separator: ", ")
     }
 
+    @AppStorage("pldev.glassBlur") private var glass = true
+
+    /// The Home Screen's tinted look (his reference, 11-13): every icon the same glass, washed in the wallpaper's colour,
+    /// a frosted white glyph on it. One colour for every app; the symbol tells them apart.
     var body: some View {
-        let tint = Self.tint(entry.id)
         let icon = RoundedRectangle(cornerRadius: 15, style: .continuous)
         VStack(spacing: 6) {
             ZStack {
-                icon.fill(tint.gradient)
                 Image(systemName: entry.manifest.symbol)
-                    .font(.system(size: 28, weight: .semibold))
-                    .foregroundStyle(.white)
+                    .font(.system(size: 30, weight: .medium))
                     .symbolRenderingMode(.hierarchical)
+                    .foregroundStyle(LinearGradient(colors: [.white, Color(red: 1, green: 0.93, blue: 0.86)], startPoint: .top, endPoint: .bottom))
+                    .shadow(color: .black.opacity(0.25), radius: 1.5, y: 1)
                 if !ready {
-                    icon.fill(.black.opacity(0.45))
-                    Image(systemName: "key.fill").font(.caption.bold()).foregroundStyle(.white)
+                    Image(systemName: "key.fill").font(.caption.bold()).foregroundStyle(.white.opacity(0.9))
                         .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .bottomTrailing).padding(6)
                 }
             }
             .frame(width: 64, height: 64)
-            .overlay(icon.strokeBorder(.white.opacity(0.12), lineWidth: 0.5))
-            .shadow(color: .black.opacity(0.18), radius: 3, y: 1)
+            .modifier(TileGlass(shape: icon, on: glass))
+            .opacity(ready ? 1 : 0.55)
             .overlay(alignment: .topTrailing) {
                 if let badge = entry.badge, badge > 0 {
                     CountBadge(count: badge)
@@ -175,7 +158,8 @@ struct SectionTile: View {
             }
             Text(entry.manifest.title)
                 .plFont(.caption)
-                .foregroundStyle(ready ? .primary : .secondary)
+                .foregroundStyle(.white.opacity(ready ? 1 : 0.7))
+                .shadow(color: .black.opacity(0.45), radius: 2, y: 1)   // white on a busy wallpaper, as Springboard draws it
                 .lineLimit(1)
         }
         .frame(maxWidth: .infinity)
@@ -183,6 +167,70 @@ struct SectionTile: View {
         .accessibilityElement(children: .ignore)
         .accessibilityLabel(spoken)
         .accessibilityAddTraits(.isButton)
+    }
+}
+
+/// The icon plate: Liquid Glass washed in the wallpaper's line colour; a solid plate when glass is off in Settings.
+private struct TileGlass<S: Shape>: ViewModifier {
+    let shape: S
+    let on: Bool
+
+    func body(content: Content) -> some View {
+        if on {
+            content.glassEffect(.regular.tint(Wallpaper.line.opacity(0.45)), in: shape)
+        } else {
+            content.background(Wallpaper.line.gradient, in: shape)
+        }
+    }
+}
+
+/// Home's wallpaper: his curve tile (the Design Kit's psyground stencil, read from the gallery's /kit, so none of his art
+/// ships in this public repo) in his reference's colours, lines over a deep ground. Before the tile arrives, the ground alone.
+struct Wallpaper: View {
+    static let ground = Color(red: 0.35, green: 0.12, blue: 0.055)   // sampled from his 11-13 reference
+    static let line = Color(red: 0.72, green: 0.33, blue: 0.21)
+    let model: AppModel
+    @State private var tile: UIImage?
+
+    init(model: AppModel) { self.model = model }
+
+    var body: some View {
+        ZStack {
+            Self.ground
+            if let tile {
+                Image(uiImage: tile).resizable(resizingMode: .tile)
+            }
+        }
+        .ignoresSafeArea()
+        .accessibilityHidden(true)
+        .task { tile = await Self.load(model: model) }
+    }
+
+    private static var cacheURL: URL? {
+        FileManager.default.urls(for: .cachesDirectory, in: .userDomainMask).first?.appendingPathComponent("psyground.png")
+    }
+
+    /// The stencil, painted in the line colour at 300 pt a repeat. Cached, so later launches draw it at once and offline.
+    private static func load(model: AppModel) async -> UIImage? {
+        if let url = cacheURL, let data = try? Data(contentsOf: url), let img = UIImage(data: data) { return paint(img) }
+        guard let http = model.http,
+              let css = try? await http.send(RequestPlan(origin: "gallery", path: "kit/glass/glass.css")),
+              let text = String(data: css, encoding: .utf8),
+              let start = text.range(of: "--psyground-tile: url(\"data:image/webp;base64,"),
+              let end = text[start.upperBound...].firstIndex(of: "\""),
+              let data = Data(base64Encoded: String(text[start.upperBound..<end])),
+              let img = UIImage(data: data) else { return nil }
+        if let url = cacheURL, let png = img.pngData() { try? png.write(to: url) }
+        return paint(img)
+    }
+
+    private static func paint(_ stencil: UIImage) -> UIImage? {
+        // the tint applies when drawn, not to .cgImage, so draw it once into a bitmap
+        let format = UIGraphicsImageRendererFormat()
+        format.scale = 1
+        guard let cg = UIGraphicsImageRenderer(size: stencil.size, format: format).image(actions: { _ in
+            stencil.withTintColor(UIColor(line)).draw(at: .zero) }).cgImage else { return nil }
+        return UIImage(cgImage: cg, scale: CGFloat(cg.width) / 300, orientation: .up)
     }
 }
 
