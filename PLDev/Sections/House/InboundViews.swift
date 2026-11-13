@@ -121,16 +121,11 @@ struct InboundTab: View {
             if !state.days.isEmpty {
                 Section {
                     Picker("Range", selection: $state.range) { Text("7D").tag(7); Text("30D").tag(30); Text("90D").tag(90) }.pickerStyle(.segmented)
-                    Text("Orders").font(.headline)
-                    Chart(shown) { d in
-                        BarMark(x: .value("Day", Date.pl(d.day) ?? .now, unit: .day), y: .value("Orders", d.orders ?? 0)).foregroundStyle(Wallpaper.line)
-                    }
-                    .frame(height: 130)
-                    Text("Audience").font(.headline)
-                    Chart(shown) { d in
-                        LineMark(x: .value("Day", Date.pl(d.day) ?? .now, unit: .day), y: .value("Subscribers", d.subscribers ?? 0)).interpolationMethod(.monotone)
-                    }
-                    .frame(height: 130)
+                    // Each number is a running total, read once a day (his screenshot 11-13: the old bars read as "16 orders a day").
+                    // So each card says the total, what moved in the range, and draws the total over time.
+                    MetricTrend(title: "Orders, all time", days: shown, value: { $0.orders }, unit: "orders")
+                    MetricTrend(title: "Transmission subscribers", days: shown, value: { $0.subscribers }, unit: "subscribers")
+                    MetricTrend(title: "Instagram followers", days: shown, value: { $0.ig_followers }, unit: "followers")
                 }
             }
             Section {
@@ -525,5 +520,37 @@ struct TallyView: View {
             result = "\(p.cr) chosen; the notice went to \(mode == "wide" ? "everyone" : "the founders")."; url = ""
             await reload()
         } catch { result = "\(p.cr) is marked chosen, but the notice did not go out: \(plainSentence(error)). Send it from Automation, not by choosing again."; await reload() }
+    }
+}
+
+
+/// A running total read once a day: the number now, what it moved over the range in plain words, and its line.
+struct MetricTrend: View {
+    let title: String
+    let days: [InboundModel.Day]
+    let value: (InboundModel.Day) -> Int?
+    let unit: String
+
+    var body: some View {
+        let pts = days.compactMap { d in value(d).flatMap { v in Date.pl(d.day).map { ($0, v) } } }
+        let now = pts.last?.1 ?? 0, first = pts.first?.1 ?? now, moved = now - first
+        VStack(alignment: .leading, spacing: 6) {
+            HStack(alignment: .firstTextBaseline) {
+                Text(title).plLabel(11).foregroundStyle(.secondary)
+                Spacer()
+                Text(now, format: .number).font(.system(.title2, design: .monospaced).weight(.semibold))
+            }
+            Text(moved == 0 ? "No change in these \(pts.count) days." : "\(moved > 0 ? "+" : "")\(moved) \(unit) in these \(pts.count) days.")
+                .font(.caption).foregroundStyle(moved > 0 ? PLOS.ok : moved < 0 ? PLOS.danger : .secondary)
+            if pts.count > 1 && pts.contains(where: { $0.1 != first }) {
+                Chart(pts, id: \.0) { p in
+                    LineMark(x: .value("Day", p.0, unit: .day), y: .value(unit, p.1)).interpolationMethod(.stepEnd).foregroundStyle(PLTone.accent)
+                }
+                .chartYScale(domain: .automatic(includesZero: false))
+                .frame(height: 90)
+            }
+        }
+        .accessibilityElement(children: .combine)
+        .padding(.vertical, 4)
     }
 }

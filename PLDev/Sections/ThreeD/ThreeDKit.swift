@@ -129,7 +129,7 @@ struct OrbitStage: View {
 
     var body: some View {
         RealityView { content in
-            content.environment.background = .color(Color(ThreeDHouse.ground))
+            // the ground shows through: RealityView has no settable background on iOS
             content.add(ThreeDModels.light(intensity: 3200, at: [2, 4, 3], look: [0, 1, 0]))
             content.add(ThreeDModels.light(intensity: 1400, at: [-3, 2, -2], look: [0, 1, 0]))
             content.add(pivot)
