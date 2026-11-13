@@ -1,0 +1,143 @@
+name: build
+
+# Started by hand only. Builds an unsigned .ipa (the app with its three extensions inside), publishes it
+# as a release together with the SideStore source file; SideStore signs the app on the phone.
+on:
+  workflow_dispatch:
+    inputs:
+      app_group:
+        description: "Mark the App Group in the build (lets the widget, the share sheet and the Safari button hand items to the app). Turn off if the install fails."
+        type: boolean
+        default: true
+
+permissions:
+  contents: write
+
+jobs:
+  ios:
+    runs-on: xcode-27
+    timeout-minutes: 30
+    env:
+      APP: build/Release-iphoneos/PLDev.app
+      EXTENSIONS: PLDevWidgets PLDevShare PLDevSafari
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Select Xcode 27.2
+        run: sudo xcode-select -s /Applications/Xcode_27.2.app
+
+      - name: Toolchain
+        run: |
+          xcodebuild -version
+          xcrun --sdk iphoneos --show-sdk-version
+          swift --version
+
+      - name: Check the project file
+        run: python3 scripts/check_pbxproj.py
+
+      # Building the PLDev target also builds the three extensions and embeds them.
+      # On failure the errors are printed here, so `gh run view --log-failed` shows them without the noise.
+      - name: Build (unsigned)
+        run: |
+          if ! xcodebuild \
+            -project PLDev.xcodeproj \
+            -target PLDev \
+            -configuration Release \
+            -sdk iphoneos \
+            SYMROOT="$PWD/build" \
+            CURRENT_PROJECT_VERSION="${{ github.run_number }}" \
+            MARKETING_VERSION="0.1.${{ github.run_number }}" \
+            CODE_SIGNING_ALLOWED=NO \
+            CODE_SIGNING_REQUIRED=NO \
+            CODE_SIGN_IDENTITY="" \
+            build > xcodebuild.log 2>&1; then
+            echo "===== BUILD FAILED: every error in the log, once each ====="
+            grep -E "error:|warning: unre|BUILD FAILED" xcodebuild.log | awk '!seen[$0]++' | head -150
+            echo "===== the last 200 lines, errors only ====="
+            tail -n 200 xcodebuild.log | grep -E "error:|warning: unre|BUILD FAILED" | head -150
+            exit 1
+          fi
+          tail -n 5 xcodebuild.log
+          echo "warnings: $(grep -c "warning:" xcodebuild.log || true)"
+
+      - name: Keep the full build log
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: xcodebuild-log
+          path: xcodebuild.log
+          retention-days: 7
+          if-no-files-found: ignore
+
+      - name: Check the extensions are inside the app
+        run: |
+          /usr/libexec/PlistBuddy -c "Print :CFBundleVersion" "$APP/Info.plist"
+          for name in $EXTENSIONS; do
+            appex="$APP/PlugIns/$name.appex"
+            test -d "$appex" || { echo "MISSING: $appex"; ls -R "$APP" | head -80; exit 1; }
+            echo "== $name"
+            ls "$appex"
+            /usr/libexec/PlistBuddy -c "Print :NSExtension:NSExtensionPointIdentifier" "$appex/Info.plist"
+            /usr/libexec/PlistBuddy -c "Print :CFBundleIdentifier" "$appex/Info.plist"
+            /usr/libexec/PlistBuddy -c "Print :CFBundleVersion" "$appex/Info.plist"
+          done
+          # The principal classes must have been filled in with the module name, not left as a variable.
+          /usr/libexec/PlistBuddy -c "Print :NSExtension:NSExtensionPrincipalClass" "$APP/PlugIns/PLDevShare.appex/Info.plist" | grep -x "PLDevShare.ShareViewController"
+          /usr/libexec/PlistBuddy -c "Print :NSExtension:NSExtensionPrincipalClass" "$APP/PlugIns/PLDevSafari.appex/Info.plist" | grep -x "PLDevSafari.SafariWebExtensionHandler"
+          # Safari needs its web files at the top of the extension.
+          for file in manifest.json background.js icon-48.png; do
+            test -f "$APP/PlugIns/PLDevSafari.appex/$file" || { echo "MISSING: PLDevSafari.appex/$file"; exit 1; }
+          done
+          python3 -c "import json,sys; m=json.load(open(sys.argv[1])); assert m['manifest_version']==3; print('manifest ok:', m['permissions'])" "$APP/PlugIns/PLDevSafari.appex/manifest.json"
+
+      # An unsigned build carries no entitlements, so the App Group is written in with an ad hoc signature
+      # (no identity, nothing private). SideStore replaces the signature and keeps the group.
+      # Inside out: each extension first, then the app, because the app's signature seals what is in it.
+      # If this step cannot sign, the build still ships: the app works, without the widget, share and Safari hand-off.
+      - name: Mark the App Group
+        if: ${{ inputs.app_group }}
+        run: |
+          ok=1
+          for name in $EXTENSIONS; do
+            codesign --force --sign - --entitlements "scripts/$name.entitlements" "$APP/PlugIns/$name.appex" || ok=0
+          done
+          if [ "$ok" = 1 ] && codesign --force --sign - --entitlements scripts/PLDev.entitlements "$APP"; then
+            for bundle in "$APP"/PlugIns/*.appex "$APP"; do
+              echo "== $bundle"
+              codesign -d --entitlements - --xml "$bundle" 2>/dev/null | head -c 800; echo
+            done
+          else
+            echo "::warning::The App Group could not be marked. The app ships without the shared inbox for its extensions."
+          fi
+
+      - name: Package .ipa
+        run: |
+          mkdir -p Payload
+          cp -R "$APP" Payload/
+          zip -qr PLDev.ipa Payload
+          ls -l PLDev.ipa
+
+      - name: Write the SideStore source
+        run: |
+          python3 scripts/make_source.py \
+            --app "$APP" \
+            --ipa PLDev.ipa \
+            --repo "${{ github.repository }}" \
+            --tag "build-${{ github.run_number }}" \
+            --out source.json
+          cat source.json
+
+      - name: Publish the release
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          gh release create "build-${{ github.run_number }}" PLDev.ipa source.json \
+            --title "Build ${{ github.run_number }}" \
+            --notes "Unsigned build, signed on the phone by SideStore." \
+            --latest
+
+      - uses: actions/upload-artifact@v4
+        with:
+          name: PLDev-ipa
+          path: PLDev.ipa
+          retention-days: 14

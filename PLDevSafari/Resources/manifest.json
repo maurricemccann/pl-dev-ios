@@ -1,0 +1,22 @@
+{
+  "manifest_version": 3,
+  "name": "PL DEV",
+  "description": "Sends the page address, its title and the current selection to the PL DEV app on this iPhone.",
+  "version": "1.0",
+  "icons": {
+    "48": "icon-48.png",
+    "96": "icon-96.png",
+    "128": "icon-128.png"
+  },
+  "background": {
+    "service_worker": "background.js"
+  },
+  "action": {
+    "default_title": "Send to PL DEV",
+    "default_icon": {
+      "48": "icon-48.png",
+      "96": "icon-96.png"
+    }
+  },
+  "permissions": ["activeTab", "nativeMessaging", "scripting"]
+}

@@ -1,0 +1,743 @@
+// !$*UTF8*$!
+{
+	archiveVersion = 1;
+	classes = {
+	};
+	objectVersion = 77;
+	objects = {
+
+/* Begin PBXBuildFile section */
+		D10000000000000000000040 /* PLDevWidgets.appex in Embed Foundation Extensions */ = {isa = PBXBuildFile; fileRef = D10000000000000000000031 /* PLDevWidgets.appex */; settings = {ATTRIBUTES = (RemoveHeadersOnCopy, ); }; };
+		D10000000000000000000041 /* PLDevShare.appex in Embed Foundation Extensions */ = {isa = PBXBuildFile; fileRef = D10000000000000000000032 /* PLDevShare.appex */; settings = {ATTRIBUTES = (RemoveHeadersOnCopy, ); }; };
+		D10000000000000000000042 /* PLDevSafari.appex in Embed Foundation Extensions */ = {isa = PBXBuildFile; fileRef = D10000000000000000000033 /* PLDevSafari.appex */; settings = {ATTRIBUTES = (RemoveHeadersOnCopy, ); }; };
+/* End PBXBuildFile section */
+
+/* Begin PBXContainerItemProxy section */
+		D10000000000000000000080 /* PBXContainerItemProxy */ = {
+			isa = PBXContainerItemProxy;
+			containerPortal = D10000000000000000000001 /* Project object */;
+			proxyType = 1;
+			remoteGlobalIDString = D10000000000000000000071;
+			remoteInfo = PLDevWidgets;
+		};
+		D10000000000000000000082 /* PBXContainerItemProxy */ = {
+			isa = PBXContainerItemProxy;
+			containerPortal = D10000000000000000000001 /* Project object */;
+			proxyType = 1;
+			remoteGlobalIDString = D10000000000000000000072;
+			remoteInfo = PLDevShare;
+		};
+		D10000000000000000000084 /* PBXContainerItemProxy */ = {
+			isa = PBXContainerItemProxy;
+			containerPortal = D10000000000000000000001 /* Project object */;
+			proxyType = 1;
+			remoteGlobalIDString = D10000000000000000000073;
+			remoteInfo = PLDevSafari;
+		};
+/* End PBXContainerItemProxy section */
+
+/* Begin PBXCopyFilesBuildPhase section */
+		D10000000000000000000053 /* Embed Foundation Extensions */ = {
+			isa = PBXCopyFilesBuildPhase;
+			buildActionMask = 2147483647;
+			dstPath = "";
+			dstSubfolderSpec = 13;
+			files = (
+				D10000000000000000000040 /* PLDevWidgets.appex in Embed Foundation Extensions */,
+				D10000000000000000000041 /* PLDevShare.appex in Embed Foundation Extensions */,
+				D10000000000000000000042 /* PLDevSafari.appex in Embed Foundation Extensions */,
+			);
+			name = "Embed Foundation Extensions";
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+/* End PBXCopyFilesBuildPhase section */
+
+/* Begin PBXFileReference section */
+		D10000000000000000000030 /* PLDev.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = PLDev.app; sourceTree = BUILT_PRODUCTS_DIR; };
+		D10000000000000000000031 /* PLDevWidgets.appex */ = {isa = PBXFileReference; explicitFileType = "wrapper.app-extension"; includeInIndex = 0; path = PLDevWidgets.appex; sourceTree = BUILT_PRODUCTS_DIR; };
+		D10000000000000000000032 /* PLDevShare.appex */ = {isa = PBXFileReference; explicitFileType = "wrapper.app-extension"; includeInIndex = 0; path = PLDevShare.appex; sourceTree = BUILT_PRODUCTS_DIR; };
+		D10000000000000000000033 /* PLDevSafari.appex */ = {isa = PBXFileReference; explicitFileType = "wrapper.app-extension"; includeInIndex = 0; path = PLDevSafari.appex; sourceTree = BUILT_PRODUCTS_DIR; };
+/* End PBXFileReference section */
+
+/* Begin PBXFileSystemSynchronizedBuildFileExceptionSet section */
+		D10000000000000000000020 /* Exceptions for "PLDev" folder in "PLDev" target */ = {
+			isa = PBXFileSystemSynchronizedBuildFileExceptionSet;
+			membershipExceptions = (
+				Info.plist,
+			);
+			target = D10000000000000000000070 /* PLDev */;
+		};
+		D10000000000000000000021 /* Exceptions for "PLDevWidgets" folder in "PLDevWidgets" target */ = {
+			isa = PBXFileSystemSynchronizedBuildFileExceptionSet;
+			membershipExceptions = (
+				Info.plist,
+			);
+			target = D10000000000000000000071 /* PLDevWidgets */;
+		};
+		D10000000000000000000022 /* Exceptions for "PLDevShare" folder in "PLDevShare" target */ = {
+			isa = PBXFileSystemSynchronizedBuildFileExceptionSet;
+			membershipExceptions = (
+				Info.plist,
+			);
+			target = D10000000000000000000072 /* PLDevShare */;
+		};
+		D10000000000000000000023 /* Exceptions for "PLDevSafari" folder in "PLDevSafari" target */ = {
+			isa = PBXFileSystemSynchronizedBuildFileExceptionSet;
+			membershipExceptions = (
+				Info.plist,
+				Resources/manifest.json,
+				Resources/background.js,
+				"Resources/icon-48.png",
+				"Resources/icon-96.png",
+				"Resources/icon-128.png",
+			);
+			target = D10000000000000000000073 /* PLDevSafari */;
+		};
+		D10000000000000000000024 /* Exceptions for "Shared" folder in "PLDevWidgets" target */ = {
+			isa = PBXFileSystemSynchronizedBuildFileExceptionSet;
+			membershipExceptions = (
+				AppShortcuts.swift,
+			);
+			target = D10000000000000000000071 /* PLDevWidgets */;
+		};
+		D10000000000000000000025 /* Exceptions for "Shared" folder in "PLDevShare" target */ = {
+			isa = PBXFileSystemSynchronizedBuildFileExceptionSet;
+			membershipExceptions = (
+				AppShortcuts.swift,
+			);
+			target = D10000000000000000000072 /* PLDevShare */;
+		};
+		D10000000000000000000026 /* Exceptions for "Shared" folder in "PLDevSafari" target */ = {
+			isa = PBXFileSystemSynchronizedBuildFileExceptionSet;
+			membershipExceptions = (
+				AppShortcuts.swift,
+			);
+			target = D10000000000000000000073 /* PLDevSafari */;
+		};
+/* End PBXFileSystemSynchronizedBuildFileExceptionSet section */
+
+/* Begin PBXFileSystemSynchronizedRootGroup section */
+		D10000000000000000000010 /* PLDev */ = {
+			isa = PBXFileSystemSynchronizedRootGroup;
+			exceptions = (
+				D10000000000000000000020 /* Exceptions for "PLDev" folder in "PLDev" target */,
+			);
+			path = PLDev;
+			sourceTree = "<group>";
+		};
+		D10000000000000000000011 /* Shared */ = {
+			isa = PBXFileSystemSynchronizedRootGroup;
+			exceptions = (
+				D10000000000000000000024 /* Exceptions for "Shared" folder in "PLDevWidgets" target */,
+				D10000000000000000000025 /* Exceptions for "Shared" folder in "PLDevShare" target */,
+				D10000000000000000000026 /* Exceptions for "Shared" folder in "PLDevSafari" target */,
+			);
+			path = Shared;
+			sourceTree = "<group>";
+		};
+		D10000000000000000000012 /* PLDevCore */ = {
+			isa = PBXFileSystemSynchronizedRootGroup;
+			path = PLDevCore;
+			sourceTree = "<group>";
+		};
+		D10000000000000000000013 /* PLDevWidgets */ = {
+			isa = PBXFileSystemSynchronizedRootGroup;
+			exceptions = (
+				D10000000000000000000021 /* Exceptions for "PLDevWidgets" folder in "PLDevWidgets" target */,
+			);
+			path = PLDevWidgets;
+			sourceTree = "<group>";
+		};
+		D10000000000000000000014 /* PLDevShare */ = {
+			isa = PBXFileSystemSynchronizedRootGroup;
+			exceptions = (
+				D10000000000000000000022 /* Exceptions for "PLDevShare" folder in "PLDevShare" target */,
+			);
+			path = PLDevShare;
+			sourceTree = "<group>";
+		};
+		D10000000000000000000015 /* PLDevSafari */ = {
+			isa = PBXFileSystemSynchronizedRootGroup;
+			exceptions = (
+				D10000000000000000000023 /* Exceptions for "PLDevSafari" folder in "PLDevSafari" target */,
+			);
+			path = PLDevSafari;
+			sourceTree = "<group>";
+		};
+/* End PBXFileSystemSynchronizedRootGroup section */
+
+/* Begin PBXFrameworksBuildPhase section */
+		D10000000000000000000051 /* Frameworks */ = {
+			isa = PBXFrameworksBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+		D10000000000000000000061 /* Frameworks */ = {
+			isa = PBXFrameworksBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+		D10000000000000000000065 /* Frameworks */ = {
+			isa = PBXFrameworksBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+		D10000000000000000000069 /* Frameworks */ = {
+			isa = PBXFrameworksBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+/* End PBXFrameworksBuildPhase section */
+
+/* Begin PBXGroup section */
+		D10000000000000000000002 = {
+			isa = PBXGroup;
+			children = (
+				D10000000000000000000010 /* PLDev */,
+				D10000000000000000000011 /* Shared */,
+				D10000000000000000000004 /* PLDevCore */,
+				D10000000000000000000013 /* PLDevWidgets */,
+				D10000000000000000000014 /* PLDevShare */,
+				D10000000000000000000015 /* PLDevSafari */,
+				D10000000000000000000003 /* Products */,
+			);
+			sourceTree = "<group>";
+		};
+		D10000000000000000000003 /* Products */ = {
+			isa = PBXGroup;
+			children = (
+				D10000000000000000000030 /* PLDev.app */,
+				D10000000000000000000031 /* PLDevWidgets.appex */,
+				D10000000000000000000032 /* PLDevShare.appex */,
+				D10000000000000000000033 /* PLDevSafari.appex */,
+			);
+			name = Products;
+			sourceTree = "<group>";
+		};
+		D10000000000000000000004 /* PLDevCore */ = {
+			isa = PBXGroup;
+			children = (
+				D10000000000000000000012 /* PLDevCore */,
+			);
+			name = PLDevCore;
+			path = PLDevCore/Sources;
+			sourceTree = "<group>";
+		};
+/* End PBXGroup section */
+
+/* Begin PBXNativeTarget section */
+		D10000000000000000000070 /* PLDev */ = {
+			isa = PBXNativeTarget;
+			buildConfigurationList = D10000000000000000000091 /* Build configuration list for PBXNativeTarget "PLDev" */;
+			buildPhases = (
+				D10000000000000000000050 /* Sources */,
+				D10000000000000000000051 /* Frameworks */,
+				D10000000000000000000052 /* Resources */,
+				D10000000000000000000053 /* Embed Foundation Extensions */,
+			);
+			buildRules = (
+			);
+			dependencies = (
+				D10000000000000000000081 /* PBXTargetDependency */,
+				D10000000000000000000083 /* PBXTargetDependency */,
+				D10000000000000000000085 /* PBXTargetDependency */,
+			);
+			fileSystemSynchronizedGroups = (
+				D10000000000000000000010 /* PLDev */,
+				D10000000000000000000011 /* Shared */,
+				D10000000000000000000012 /* PLDevCore */,
+			);
+			name = PLDev;
+			productName = PLDev;
+			productReference = D10000000000000000000030 /* PLDev.app */;
+			productType = "com.apple.product-type.application";
+		};
+		D10000000000000000000071 /* PLDevWidgets */ = {
+			isa = PBXNativeTarget;
+			buildConfigurationList = D10000000000000000000092 /* Build configuration list for PBXNativeTarget "PLDevWidgets" */;
+			buildPhases = (
+				D10000000000000000000060 /* Sources */,
+				D10000000000000000000061 /* Frameworks */,
+				D10000000000000000000062 /* Resources */,
+			);
+			buildRules = (
+			);
+			dependencies = (
+			);
+			fileSystemSynchronizedGroups = (
+				D10000000000000000000013 /* PLDevWidgets */,
+				D10000000000000000000011 /* Shared */,
+				D10000000000000000000012 /* PLDevCore */,
+			);
+			name = PLDevWidgets;
+			productName = PLDevWidgets;
+			productReference = D10000000000000000000031 /* PLDevWidgets.appex */;
+			productType = "com.apple.product-type.app-extension";
+		};
+		D10000000000000000000072 /* PLDevShare */ = {
+			isa = PBXNativeTarget;
+			buildConfigurationList = D10000000000000000000093 /* Build configuration list for PBXNativeTarget "PLDevShare" */;
+			buildPhases = (
+				D10000000000000000000064 /* Sources */,
+				D10000000000000000000065 /* Frameworks */,
+				D10000000000000000000066 /* Resources */,
+			);
+			buildRules = (
+			);
+			dependencies = (
+			);
+			fileSystemSynchronizedGroups = (
+				D10000000000000000000014 /* PLDevShare */,
+				D10000000000000000000011 /* Shared */,
+				D10000000000000000000012 /* PLDevCore */,
+			);
+			name = PLDevShare;
+			productName = PLDevShare;
+			productReference = D10000000000000000000032 /* PLDevShare.appex */;
+			productType = "com.apple.product-type.app-extension";
+		};
+		D10000000000000000000073 /* PLDevSafari */ = {
+			isa = PBXNativeTarget;
+			buildConfigurationList = D10000000000000000000094 /* Build configuration list for PBXNativeTarget "PLDevSafari" */;
+			buildPhases = (
+				D10000000000000000000068 /* Sources */,
+				D10000000000000000000069 /* Frameworks */,
+				D1000000000000000000006A /* Resources */,
+				D1000000000000000000006B /* Copy the web extension files */,
+			);
+			buildRules = (
+			);
+			dependencies = (
+			);
+			fileSystemSynchronizedGroups = (
+				D10000000000000000000015 /* PLDevSafari */,
+				D10000000000000000000011 /* Shared */,
+				D10000000000000000000012 /* PLDevCore */,
+			);
+			name = PLDevSafari;
+			productName = PLDevSafari;
+			productReference = D10000000000000000000033 /* PLDevSafari.appex */;
+			productType = "com.apple.product-type.app-extension";
+		};
+/* End PBXNativeTarget section */
+
+/* Begin PBXProject section */
+		D10000000000000000000001 /* Project object */ = {
+			isa = PBXProject;
+			attributes = {
+				BuildIndependentTargetsInParallel = 1;
+				LastSwiftUpdateCheck = 2700;
+				LastUpgradeCheck = 2700;
+				TargetAttributes = {
+					D10000000000000000000070 = {
+						CreatedOnToolsVersion = 27.0;
+					};
+					D10000000000000000000071 = {
+						CreatedOnToolsVersion = 27.0;
+					};
+					D10000000000000000000072 = {
+						CreatedOnToolsVersion = 27.0;
+					};
+					D10000000000000000000073 = {
+						CreatedOnToolsVersion = 27.0;
+					};
+				};
+			};
+			buildConfigurationList = D10000000000000000000090 /* Build configuration list for PBXProject "PLDev" */;
+			developmentRegion = en;
+			hasScannedForEncodings = 0;
+			knownRegions = (
+				en,
+				Base,
+			);
+			mainGroup = D10000000000000000000002;
+			minimizedProjectReferenceProxies = 1;
+			preferredProjectObjectVersion = 77;
+			productRefGroup = D10000000000000000000003 /* Products */;
+			projectDirPath = "";
+			projectRoot = "";
+			targets = (
+				D10000000000000000000070 /* PLDev */,
+				D10000000000000000000071 /* PLDevWidgets */,
+				D10000000000000000000072 /* PLDevShare */,
+				D10000000000000000000073 /* PLDevSafari */,
+			);
+		};
+/* End PBXProject section */
+
+/* Begin PBXResourcesBuildPhase section */
+		D10000000000000000000052 /* Resources */ = {
+			isa = PBXResourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+		D10000000000000000000062 /* Resources */ = {
+			isa = PBXResourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+		D10000000000000000000066 /* Resources */ = {
+			isa = PBXResourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+		D1000000000000000000006A /* Resources */ = {
+			isa = PBXResourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+/* End PBXResourcesBuildPhase section */
+
+/* Begin PBXShellScriptBuildPhase section */
+		D1000000000000000000006B /* Copy the web extension files */ = {
+			isa = PBXShellScriptBuildPhase;
+			alwaysOutOfDate = 1;
+			buildActionMask = 2147483647;
+			files = (
+			);
+			inputFileListPaths = (
+			);
+			inputPaths = (
+			);
+			name = "Copy the web extension files";
+			outputFileListPaths = (
+			);
+			outputPaths = (
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+			shellPath = /bin/sh;
+			shellScript = "# Safari reads manifest.json and its scripts from the top of the extension, byte for byte as written.\nset -e\nDEST=\"${TARGET_BUILD_DIR}/${UNLOCALIZED_RESOURCES_FOLDER_PATH}\"\nmkdir -p \"$DEST\"\ncp -R \"${SRCROOT}/PLDevSafari/Resources/.\" \"$DEST/\"\ntest -f \"$DEST/manifest.json\"\n";
+		};
+/* End PBXShellScriptBuildPhase section */
+
+/* Begin PBXSourcesBuildPhase section */
+		D10000000000000000000050 /* Sources */ = {
+			isa = PBXSourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+		D10000000000000000000060 /* Sources */ = {
+			isa = PBXSourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+		D10000000000000000000064 /* Sources */ = {
+			isa = PBXSourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+		D10000000000000000000068 /* Sources */ = {
+			isa = PBXSourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+/* End PBXSourcesBuildPhase section */
+
+/* Begin PBXTargetDependency section */
+		D10000000000000000000081 /* PBXTargetDependency */ = {
+			isa = PBXTargetDependency;
+			target = D10000000000000000000071 /* PLDevWidgets */;
+			targetProxy = D10000000000000000000080 /* PBXContainerItemProxy */;
+		};
+		D10000000000000000000083 /* PBXTargetDependency */ = {
+			isa = PBXTargetDependency;
+			target = D10000000000000000000072 /* PLDevShare */;
+			targetProxy = D10000000000000000000082 /* PBXContainerItemProxy */;
+		};
+		D10000000000000000000085 /* PBXTargetDependency */ = {
+			isa = PBXTargetDependency;
+			target = D10000000000000000000073 /* PLDevSafari */;
+			targetProxy = D10000000000000000000084 /* PBXContainerItemProxy */;
+		};
+/* End PBXTargetDependency section */
+
+/* Begin XCBuildConfiguration section */
+		D100000000000000000000A0 /* Debug */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				ALWAYS_SEARCH_USER_PATHS = NO;
+				CLANG_ENABLE_MODULES = YES;
+				CLANG_ENABLE_OBJC_ARC = YES;
+				COPY_PHASE_STRIP = NO;
+				CURRENT_PROJECT_VERSION = 1;
+				DEBUG_INFORMATION_FORMAT = dwarf;
+				ENABLE_STRICT_OBJC_MSGSEND = YES;
+				ENABLE_TESTABILITY = YES;
+				ENABLE_USER_SCRIPT_SANDBOXING = NO;
+				GCC_OPTIMIZATION_LEVEL = 0;
+				IPHONEOS_DEPLOYMENT_TARGET = 26.0;
+				MARKETING_VERSION = 0.1.0;
+				ONLY_ACTIVE_ARCH = YES;
+				SDKROOT = iphoneos;
+				SWIFT_ACTIVE_COMPILATION_CONDITIONS = "$(inherited) DEBUG";
+				SWIFT_APPROACHABLE_CONCURRENCY = NO;
+				SWIFT_DEFAULT_ACTOR_ISOLATION = nonisolated;
+				SWIFT_OPTIMIZATION_LEVEL = "-Onone";
+				SWIFT_VERSION = 6.0;
+				TARGETED_DEVICE_FAMILY = 1;
+			};
+			name = Debug;
+		};
+		D100000000000000000000A1 /* Release */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				ALWAYS_SEARCH_USER_PATHS = NO;
+				CLANG_ENABLE_MODULES = YES;
+				CLANG_ENABLE_OBJC_ARC = YES;
+				COPY_PHASE_STRIP = NO;
+				CURRENT_PROJECT_VERSION = 1;
+				DEBUG_INFORMATION_FORMAT = "dwarf-with-dsym";
+				ENABLE_STRICT_OBJC_MSGSEND = YES;
+				ENABLE_USER_SCRIPT_SANDBOXING = NO;
+				GCC_OPTIMIZATION_LEVEL = s;
+				IPHONEOS_DEPLOYMENT_TARGET = 26.0;
+				MARKETING_VERSION = 0.1.0;
+				SDKROOT = iphoneos;
+				SWIFT_APPROACHABLE_CONCURRENCY = NO;
+				SWIFT_COMPILATION_MODE = wholemodule;
+				SWIFT_DEFAULT_ACTOR_ISOLATION = nonisolated;
+				SWIFT_OPTIMIZATION_LEVEL = "-O";
+				SWIFT_VERSION = 6.0;
+				TARGETED_DEVICE_FAMILY = 1;
+				VALIDATE_PRODUCT = YES;
+			};
+			name = Release;
+		};
+		D100000000000000000000A2 /* Debug */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
+				ASSETCATALOG_COMPILER_GENERATE_SWIFT_ASSET_SYMBOL_EXTENSIONS = YES;
+				ASSETCATALOG_COMPILER_GLOBAL_ACCENT_COLOR_NAME = AccentColor;
+				CODE_SIGN_STYLE = Automatic;
+				GENERATE_INFOPLIST_FILE = YES;
+				INFOPLIST_FILE = PLDev/Info.plist;
+				INFOPLIST_KEY_CFBundleDisplayName = "PL DEV";
+				INFOPLIST_KEY_UIApplicationSceneManifest_Generation = YES;
+				LD_RUNPATH_SEARCH_PATHS = (
+					"$(inherited)",
+					"@executable_path/Frameworks",
+				);
+				PRODUCT_BUNDLE_IDENTIFIER = com.psychedluxuries.dev;
+				PRODUCT_NAME = "$(TARGET_NAME)";
+				SWIFT_EMIT_LOC_STRINGS = YES;
+			};
+			name = Debug;
+		};
+		D100000000000000000000A3 /* Release */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
+				ASSETCATALOG_COMPILER_GENERATE_SWIFT_ASSET_SYMBOL_EXTENSIONS = YES;
+				ASSETCATALOG_COMPILER_GLOBAL_ACCENT_COLOR_NAME = AccentColor;
+				CODE_SIGN_STYLE = Automatic;
+				GENERATE_INFOPLIST_FILE = YES;
+				INFOPLIST_FILE = PLDev/Info.plist;
+				INFOPLIST_KEY_CFBundleDisplayName = "PL DEV";
+				INFOPLIST_KEY_UIApplicationSceneManifest_Generation = YES;
+				LD_RUNPATH_SEARCH_PATHS = (
+					"$(inherited)",
+					"@executable_path/Frameworks",
+				);
+				PRODUCT_BUNDLE_IDENTIFIER = com.psychedluxuries.dev;
+				PRODUCT_NAME = "$(TARGET_NAME)";
+				SWIFT_EMIT_LOC_STRINGS = YES;
+			};
+			name = Release;
+		};
+		D100000000000000000000A4 /* Debug */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				APPLICATION_EXTENSION_API_ONLY = YES;
+				CODE_SIGN_STYLE = Automatic;
+				GENERATE_INFOPLIST_FILE = YES;
+				INFOPLIST_FILE = PLDevWidgets/Info.plist;
+				INFOPLIST_KEY_CFBundleDisplayName = "PL DEV";
+				LD_RUNPATH_SEARCH_PATHS = (
+					"$(inherited)",
+					"@executable_path/Frameworks",
+					"@executable_path/../../Frameworks",
+				);
+				PRODUCT_BUNDLE_IDENTIFIER = com.psychedluxuries.dev.widgets;
+				PRODUCT_NAME = "$(TARGET_NAME)";
+				SKIP_INSTALL = YES;
+				SWIFT_EMIT_LOC_STRINGS = YES;
+			};
+			name = Debug;
+		};
+		D100000000000000000000A5 /* Release */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				APPLICATION_EXTENSION_API_ONLY = YES;
+				CODE_SIGN_STYLE = Automatic;
+				GENERATE_INFOPLIST_FILE = YES;
+				INFOPLIST_FILE = PLDevWidgets/Info.plist;
+				INFOPLIST_KEY_CFBundleDisplayName = "PL DEV";
+				LD_RUNPATH_SEARCH_PATHS = (
+					"$(inherited)",
+					"@executable_path/Frameworks",
+					"@executable_path/../../Frameworks",
+				);
+				PRODUCT_BUNDLE_IDENTIFIER = com.psychedluxuries.dev.widgets;
+				PRODUCT_NAME = "$(TARGET_NAME)";
+				SKIP_INSTALL = YES;
+				SWIFT_EMIT_LOC_STRINGS = YES;
+			};
+			name = Release;
+		};
+		D100000000000000000000A6 /* Debug */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				APPLICATION_EXTENSION_API_ONLY = YES;
+				CODE_SIGN_STYLE = Automatic;
+				GENERATE_INFOPLIST_FILE = YES;
+				INFOPLIST_FILE = PLDevShare/Info.plist;
+				INFOPLIST_KEY_CFBundleDisplayName = "PL DEV";
+				LD_RUNPATH_SEARCH_PATHS = (
+					"$(inherited)",
+					"@executable_path/Frameworks",
+					"@executable_path/../../Frameworks",
+				);
+				PRODUCT_BUNDLE_IDENTIFIER = com.psychedluxuries.dev.share;
+				PRODUCT_NAME = "$(TARGET_NAME)";
+				SKIP_INSTALL = YES;
+				SWIFT_EMIT_LOC_STRINGS = YES;
+			};
+			name = Debug;
+		};
+		D100000000000000000000A7 /* Release */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				APPLICATION_EXTENSION_API_ONLY = YES;
+				CODE_SIGN_STYLE = Automatic;
+				GENERATE_INFOPLIST_FILE = YES;
+				INFOPLIST_FILE = PLDevShare/Info.plist;
+				INFOPLIST_KEY_CFBundleDisplayName = "PL DEV";
+				LD_RUNPATH_SEARCH_PATHS = (
+					"$(inherited)",
+					"@executable_path/Frameworks",
+					"@executable_path/../../Frameworks",
+				);
+				PRODUCT_BUNDLE_IDENTIFIER = com.psychedluxuries.dev.share;
+				PRODUCT_NAME = "$(TARGET_NAME)";
+				SKIP_INSTALL = YES;
+				SWIFT_EMIT_LOC_STRINGS = YES;
+			};
+			name = Release;
+		};
+		D100000000000000000000A8 /* Debug */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				APPLICATION_EXTENSION_API_ONLY = YES;
+				CODE_SIGN_STYLE = Automatic;
+				GENERATE_INFOPLIST_FILE = YES;
+				INFOPLIST_FILE = PLDevSafari/Info.plist;
+				INFOPLIST_KEY_CFBundleDisplayName = "PL DEV";
+				LD_RUNPATH_SEARCH_PATHS = (
+					"$(inherited)",
+					"@executable_path/Frameworks",
+					"@executable_path/../../Frameworks",
+				);
+				PRODUCT_BUNDLE_IDENTIFIER = com.psychedluxuries.dev.safari;
+				PRODUCT_NAME = "$(TARGET_NAME)";
+				SKIP_INSTALL = YES;
+				SWIFT_EMIT_LOC_STRINGS = YES;
+			};
+			name = Debug;
+		};
+		D100000000000000000000A9 /* Release */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				APPLICATION_EXTENSION_API_ONLY = YES;
+				CODE_SIGN_STYLE = Automatic;
+				GENERATE_INFOPLIST_FILE = YES;
+				INFOPLIST_FILE = PLDevSafari/Info.plist;
+				INFOPLIST_KEY_CFBundleDisplayName = "PL DEV";
+				LD_RUNPATH_SEARCH_PATHS = (
+					"$(inherited)",
+					"@executable_path/Frameworks",
+					"@executable_path/../../Frameworks",
+				);
+				PRODUCT_BUNDLE_IDENTIFIER = com.psychedluxuries.dev.safari;
+				PRODUCT_NAME = "$(TARGET_NAME)";
+				SKIP_INSTALL = YES;
+				SWIFT_EMIT_LOC_STRINGS = YES;
+			};
+			name = Release;
+		};
+/* End XCBuildConfiguration section */
+
+/* Begin XCConfigurationList section */
+		D10000000000000000000090 /* Build configuration list for PBXProject "PLDev" */ = {
+			isa = XCConfigurationList;
+			buildConfigurations = (
+				D100000000000000000000A0 /* Debug */,
+				D100000000000000000000A1 /* Release */,
+			);
+			defaultConfigurationIsVisible = 0;
+			defaultConfigurationName = Release;
+		};
+		D10000000000000000000091 /* Build configuration list for PBXNativeTarget "PLDev" */ = {
+			isa = XCConfigurationList;
+			buildConfigurations = (
+				D100000000000000000000A2 /* Debug */,
+				D100000000000000000000A3 /* Release */,
+			);
+			defaultConfigurationIsVisible = 0;
+			defaultConfigurationName = Release;
+		};
+		D10000000000000000000092 /* Build configuration list for PBXNativeTarget "PLDevWidgets" */ = {
+			isa = XCConfigurationList;
+			buildConfigurations = (
+				D100000000000000000000A4 /* Debug */,
+				D100000000000000000000A5 /* Release */,
+			);
+			defaultConfigurationIsVisible = 0;
+			defaultConfigurationName = Release;
+		};
+		D10000000000000000000093 /* Build configuration list for PBXNativeTarget "PLDevShare" */ = {
+			isa = XCConfigurationList;
+			buildConfigurations = (
+				D100000000000000000000A6 /* Debug */,
+				D100000000000000000000A7 /* Release */,
+			);
+			defaultConfigurationIsVisible = 0;
+			defaultConfigurationName = Release;
+		};
+		D10000000000000000000094 /* Build configuration list for PBXNativeTarget "PLDevSafari" */ = {
+			isa = XCConfigurationList;
+			buildConfigurations = (
+				D100000000000000000000A8 /* Debug */,
+				D100000000000000000000A9 /* Release */,
+			);
+			defaultConfigurationIsVisible = 0;
+			defaultConfigurationName = Release;
+		};
+/* End XCConfigurationList section */
+	};
+	rootObject = D10000000000000000000001 /* Project object */;
+}
