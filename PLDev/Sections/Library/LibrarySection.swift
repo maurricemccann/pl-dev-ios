@@ -14,6 +14,7 @@ import UserNotifications
         guard let http = model.http else { throw URLError(.notConnectedToInternet) }
         if loading { return }
         loading = true; defer { loading = false }
+        await MarkOutbox.flush(model: model)   // marks made offline go first, so the fresh marks below include them
         if items.isEmpty || force {
             URLCache.shared = URLCache(memoryCapacity: 64 << 20, diskCapacity: 512 << 20)   // 9.5k tiles: keep them on disk
             let data = try await http.send(RequestPlan(origin: "gallery", path: "library-index.json"), timeout: 60)
@@ -37,14 +38,17 @@ import UserNotifications
         return b
     }
 
-    /// One write to /api/taste. Counts a failure instead of hiding it.
+    /// One write to /api/taste. Offline, the mark waits in the outbox (and counts as made); any other failure is counted, never hidden.
     func post(_ body: [String: String], model: AppModel) async -> Bool {
         guard marksLoaded, let http = model.http, let data = try? JSONSerialization.data(withJSONObject: body) else { notSaved += 1; return false }
+        if !OfflineState.shared.online { MarkOutbox.add(body); return true }
         do {
             _ = try await http.send(RequestPlan(origin: "gallery", method: "POST", path: "api/taste",
                                                 headers: ["content-type": "application/json", "Origin": base(model)], body: data),
                                     idempotent: false)
             return true
+        } catch let e as URLError where [.notConnectedToInternet, .networkConnectionLost, .dataNotAllowed, .timedOut].contains(e.code) {
+            MarkOutbox.add(body); return true
         } catch { notSaved += 1; return false }
     }
 

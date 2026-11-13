@@ -61,9 +61,23 @@ actor HTTPClient {
 
     /// Runs the plan and returns the body. Throws on anything but a 2xx, as one of `Failure` or a `URLError`.
     func send(_ plan: RequestPlan, idempotent: Bool? = nil, extraHeaders: [String: String] = [:], timeout: TimeInterval = 20) async throws -> Data {
-        let (status, data) = try await exchange(plan, idempotent: idempotent, extraHeaders: extraHeaders, timeout: timeout, attempts: Self.maxAttempts)
+        // Offline for every app: a read that fails for want of a network (or a server error) answers with its last saved copy.
+        let isRead = plan.method.uppercased() == "GET"
+        let key = OfflineCache.key(plan)
+        let answer: (Int, Data)
+        do {
+            answer = try await exchange(plan, idempotent: idempotent, extraHeaders: extraHeaders, timeout: timeout, attempts: Self.maxAttempts)
+        } catch {
+            if isRead, !Self.wasCancelled(error), let (saved, at) = OfflineCache.load(key) { OfflineState.servedCopy(from: at); return saved }
+            throw error
+        }
+        let (status, data) = answer
         if status == 401 { throw Failure.unauthorized }
-        guard (200..<300).contains(status) else { throw Failure.http(status) }
+        guard (200..<300).contains(status) else {
+            if isRead, status >= 500, let (saved, at) = OfflineCache.load(key) { OfflineState.servedCopy(from: at); return saved }
+            throw Failure.http(status)
+        }
+        if isRead { OfflineCache.save(data, for: key) }
         return data
     }
 

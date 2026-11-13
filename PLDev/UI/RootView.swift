@@ -36,6 +36,7 @@ struct RootView: View {
                     .transition(.opacity)
             }
         }
+        .overlay(alignment: .top) { OfflineLine() }   // every app: says when it is showing saved copies
         .animation(PLMotion.standard(reduce: reduce), value: unlocked)
         .animation(PLMotion.standard(reduce: reduce), value: hasConfig)
         .tint(PLTone.accent)
