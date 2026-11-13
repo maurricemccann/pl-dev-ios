@@ -85,7 +85,7 @@ enum ThreeDPictures {
 
 // MARK: - The archive list (his real works), shared by the Haul, the Weight and the archive space
 
-struct ArchiveWork: Decodable, Identifiable, Hashable, Sendable {
+struct ThreeDArchiveWork: Decodable, Identifiable, Hashable, Sendable {
     let cr: String
     let thumb: String?
     let title: String?
@@ -97,10 +97,10 @@ struct ArchiveWork: Decodable, Identifiable, Hashable, Sendable {
 
 @MainActor @Observable final class ArchiveList {
     static let shared = ArchiveList()
-    private(set) var works: [ArchiveWork] = []
+    private(set) var works: [ThreeDArchiveWork] = []
     private(set) var failed = false
 
-    private struct Manifest: Decodable { let pieces: [ArchiveWork] }
+    private struct Manifest: Decodable { let pieces: [ThreeDArchiveWork] }
 
     func load(model: AppModel) async {
         guard works.isEmpty, let http = model.http else { return }
