@@ -58,7 +58,7 @@ struct HomeView: View {
                             .padding(.top, PLSpace.block)
                     } else {
                         LazyVGrid(columns: columns, spacing: PLSpace.roomy + PLSpace.pad) {
-                            ForEach(model.sections) { entry in
+                            ForEach(model.sections.filter { $0.id != "status" }) { entry in   // Status lives in the strip under the grid (his mockup 11-13)
                                 tile(entry)
                             }
                         }

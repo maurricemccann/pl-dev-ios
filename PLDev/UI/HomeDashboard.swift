@@ -22,6 +22,7 @@ struct HomeDashboard: View {
 
     var body: some View {
         VStack(spacing: 14) {
+            HomeStatusStrip(model: model)
             pcCard
             houseCard
         }
@@ -126,5 +127,69 @@ struct HomeDashboard: View {
         h.standing = standing?.total ?? 0
         h.needs = (counts?.desiresPending ?? 0) + (counts?.captures ?? 0)
         if stats != nil || standing != nil { house = h }
+    }
+}
+
+
+/// Status as one strip on Home (his mockup 11-13: the Status tile crossed out, its checks shown in a row): a green check for each
+/// address that answers, red for one that does not, and a gold check for each key that is set. Tap it for the full Status screen.
+struct HomeStatusStrip: View {
+    let model: AppModel
+    private var state: StatusModel { StatusSection.state }
+
+    var body: some View {
+        let origins = model.config?.origins.keys.sorted() ?? []
+        let keys = (model.config?.keys ?? [:]).sorted { $0.key < $1.key }
+        NavigationLink { StatusSection.makeRoot(model: model) } label: {
+            VStack(alignment: .leading, spacing: 8) {
+                HStack {
+                    Text("Status").plHand(18)
+                    Spacer()
+                    let down = state.downCount
+                    Text(state.checkedAt == nil ? "checking" : down == 0 ? "all answering" : "\(down) not answering")
+                        .plLabel(10).foregroundStyle(down == 0 ? PLTone.good : PLTone.bad)
+                }
+                FlowRow {
+                    ForEach(origins, id: \.self) { name in mark(reach: state.reach[name]).accessibilityLabel("\(name): \(label(state.reach[name]))") }
+                }
+                FlowRow {
+                    ForEach(keys, id: \.key) { k in
+                        Image(systemName: k.value.isEmpty ? "circle.dashed" : "checkmark.circle.fill")
+                            .font(.system(size: 18)).foregroundStyle(k.value.isEmpty ? Color.secondary : Color(hex: 0xc9a84c))
+                            .accessibilityLabel("\(k.key) key \(k.value.isEmpty ? "not set" : "set")")
+                    }
+                }
+            }
+            .padding(14)
+            .glassEffect(.regular, in: RoundedRectangle(cornerRadius: PLRadius.card, style: .continuous))
+        }
+        .buttonStyle(.plain)
+        .task { if state.checkedAt == nil { await state.check(model: model) } }
+    }
+
+    private func mark(reach: OriginReach?) -> some View {
+        let (symbol, tint): (String, Color) = {
+            switch reach { case .up?: return ("checkmark.circle.fill", PLTone.good); case .down?: return ("xmark.circle.fill", PLTone.bad); default: return ("circle.dashed", Color.secondary) }
+        }()
+        return Image(systemName: symbol).font(.system(size: 18)).foregroundStyle(tint)
+    }
+
+    private func label(_ r: OriginReach?) -> String {
+        switch r { case .up?: return "answering"; case .down(let why)?: return "not answering, \(why)"; default: return "not asked yet" }
+    }
+}
+
+/// Wraps its marks onto as many lines as they need.
+struct FlowRow: Layout {
+    var spacing: CGFloat = 6
+    func sizeThatFits(proposal: ProposedViewSize, subviews: Subviews, cache: inout ()) -> CGSize {
+        let w = proposal.width ?? 320; var x: CGFloat = 0, y: CGFloat = 0, line: CGFloat = 0
+        for v in subviews { let s = v.sizeThatFits(.unspecified); if x + s.width > w, x > 0 { x = 0; y += line + spacing; line = 0 }; x += s.width + spacing; line = max(line, s.height) }
+        return CGSize(width: w, height: y + line)
+    }
+    func placeSubviews(in b: CGRect, proposal: ProposedViewSize, subviews: Subviews, cache: inout ()) {
+        var x = b.minX, y = b.minY, line: CGFloat = 0
+        for v in subviews { let s = v.sizeThatFits(.unspecified); if x + s.width > b.maxX, x > b.minX { x = b.minX; y += line + spacing; line = 0 }
+            v.place(at: CGPoint(x: x, y: y), proposal: .unspecified); x += s.width + spacing; line = max(line, s.height) }
     }
 }
