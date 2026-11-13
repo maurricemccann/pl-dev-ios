@@ -4,7 +4,7 @@ import SwiftUI
 
 @MainActor @Observable final class ApprovalsModel {
     struct Draft: Decodable, Identifiable, Equatable {
-        let id: String; let title: String?; var caption: String?; let media_url: String?; let media_type: String?
+        let id: String; let title: String?; var caption: String?; var media_url: String?; let media_type: String?
         let platform: String?; let created_at: String?; let similar_to: String?; let family_platforms: [String]?
     }
     struct Lane: Identifiable { let platform: String; let days: Double; var id: String { platform } }
@@ -86,6 +86,14 @@ import SwiftUI
         } catch { result = "Not rewritten. \(error.localizedDescription)" }
     }
 
+    func swapImage(_ d: Draft, to url: String, model: AppModel) async {
+        do {
+            try await Console.post("api/drafts/update-image", ["id": d.id, "media_url": url], model: model)
+            if let i = drafts.firstIndex(where: { $0.id == d.id }) { drafts[i].media_url = url }
+            result = "Picture changed."; tick += 1
+        } catch { result = "Not changed. \(error.localizedDescription)" }
+    }
+
     func capture(_ c: Capture, _ action: String, model: AppModel) async {
         captures.removeAll { $0.id == c.id }
         do { try await Console.post("api/captures/moderate", ["capture_id": c.id, "action": action], model: model); tick += 1 }
@@ -130,6 +138,7 @@ struct ApprovalsView: View {
     @State private var state = ApprovalsModel()
     @State private var editing: EditMode = .inactive
     @State private var nowTarget: ApprovalsModel.Draft?
+    @State private var pictureFor: ApprovalsModel.Draft?
 
     var body: some View {
         List(selection: $state.selection) {
@@ -161,6 +170,7 @@ struct ApprovalsView: View {
                             Button("Post now", systemImage: "bolt") { nowTarget = d }
                             Button("Hold", systemImage: "pause") { Task { await state.moderate(d, "hold", model: model) } }
                             Button("Rewrite the caption", systemImage: "arrow.triangle.2.circlepath") { Task { await state.regenerate(d, model: model) } }
+                            Button("Change the picture", systemImage: "photo.on.rectangle") { pictureFor = d }
                             Button("Copy caption", systemImage: "doc.on.doc") { UIPasteboard.general.string = d.caption }
                         }
                 }
@@ -250,6 +260,43 @@ struct ApprovalsView: View {
         .refreshable { await state.load(model: model) }
         .task { await state.load(model: model) }
         .sensoryFeedback(PLHaptic.commit, trigger: state.tick)
+        .sheet(item: $pictureFor) { d in
+            PicturePicker { url in pictureFor = nil; Task { await state.swapImage(d, to: url, model: model) } }
+        }
+    }
+}
+
+/// Pick a piece from the archive for a draft (pl-os VisualPicker, archive tab).
+struct PicturePicker: View {
+    let picked: (String) -> Void
+    struct Piece: Decodable, Identifiable { let cr: String; let url: String; let thumb: String?; let title: String?; let shareable: Bool?; var id: String { cr } }
+    struct Manifest: Decodable { let pieces: [Piece] }
+    @State private var pieces: [Piece] = []
+    @State private var search = ""
+    @Environment(\.dismiss) private var dismiss
+
+    var body: some View {
+        NavigationStack {
+            ScrollView {
+                LazyVGrid(columns: [GridItem(.adaptive(minimum: 100), spacing: 6)], spacing: 6) {
+                    ForEach(pieces.filter { search.isEmpty || ($0.title ?? $0.cr).localizedCaseInsensitiveContains(search) || $0.cr.localizedCaseInsensitiveContains(search) }) { p in
+                        Button { picked(p.url) } label: {
+                            AsyncImage(url: URL(string: p.thumb ?? p.url)) { $0.resizable().scaledToFill() } placeholder: { Color.secondary.opacity(0.12) }
+                                .frame(height: 100).clipped()
+                        }
+                        .accessibilityLabel(p.title ?? p.cr)
+                    }
+                }
+                .padding(6)
+            }
+            .searchable(text: $search, prompt: "Title or PL number")
+            .navigationTitle("Choose a picture").navigationBarTitleDisplayMode(.inline)
+            .toolbar { Button("Cancel") { dismiss() } }
+            .task {
+                if let r = try? await URLSession.shared.data(from: URL(string: "https://assets.psychedluxuries.com/manifest.json")!),
+                   let m = try? JSONDecoder().decode(Manifest.self, from: r.0) { pieces = m.pieces.filter { $0.shareable != false } }
+            }
+        }
     }
 }
 

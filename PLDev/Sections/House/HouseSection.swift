@@ -50,6 +50,8 @@ import UserNotifications
     struct Day: Decodable, Identifiable { let date: String; let dow: Int?; let work: Bool?; let exception: Bool?; var id: String { date } }
     struct Schedule: Decodable { let days: [Day]? }
     struct Record: Decodable { let days: Int?; let total: Int?; let done: Int?; let skipped: Int?; let since: String?; let streak: Int? }
+    struct Digest: Decodable, Identifiable { let id: Int; let session_id: String?; let title: String?; let summary: String?; let closed_at: String? }
+    struct Digests: Decodable { let digests: [Digest]? }
     struct FounderTask: Decodable, Identifiable { let notion_page_id: String; let title: String?; let status: String?; let due_date: String?; let priority: String?; let project: String?; var id: String { notion_page_id } }
 
     var tab: Tab = .founder
@@ -61,6 +63,7 @@ import UserNotifications
     var schedule: [Day] = []
     var record: Record?
     var tasks: [FounderTask] = []
+    var digests: [Digest] = []
     var message: String?
     var tick = 0
     var lastNotified = 0
@@ -77,7 +80,9 @@ import UserNotifications
         async let sc = try? Console.get("api/schedule", Schedule.self, model: model, query: ["days": "7"])
         async let r = try? Console.get("api/record", Record.self, model: model)
         async let t = try? Console.q("foundertasks", [FounderTask].self, model: model)
-        let (s1, w1, c1, p1, sc1, r1, t1) = await (s, w, c, p, sc, r, t)
+        async let dg = try? Console.get("api/session-digest", Digests.self, model: model)
+        let (s1, w1, c1, p1, sc1, r1, t1, dg1) = await (s, w, c, p, sc, r, t, dg)
+        digests = dg1?.digests ?? []
         stats = s1; walls = w1; creator = c1; plan = p1; schedule = sc1?.days ?? []; record = r1; tasks = t1 ?? []
         message = (s1 == nil && p1 == nil) ? "Could not reach the console. Pull to try again." : nil
     }
@@ -196,6 +201,17 @@ struct FounderTab: View {
                     LabeledContent("Streak", value: "\(r.streak ?? 0) days")
                     LabeledContent("Done", value: "\(r.done ?? 0) of \(r.total ?? 0)")
                     if let since = r.since { LabeledContent("Since", value: since) }
+                }
+            }
+            if !state.digests.isEmpty {
+                Section("What the sessions did today") {
+                    ForEach(state.digests) { d in
+                        DisclosureGroup {
+                            Text(d.summary ?? "").font(.callout).textSelection(.enabled)
+                        } label: {
+                            VStack(alignment: .leading) { Text(d.title ?? d.session_id ?? "Session"); Ago(text: d.closed_at).font(.caption).foregroundStyle(.secondary) }
+                        }
+                    }
                 }
             }
             if !state.tasks.isEmpty {
