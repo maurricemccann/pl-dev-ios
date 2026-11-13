@@ -6,7 +6,7 @@ import Foundation
 @MainActor final class PixelBuffer {
     static let tile = 128
     let w: Int, h: Int
-    let ptr: UnsafeMutablePointer<UInt8>
+    nonisolated(unsafe) let ptr: UnsafeMutablePointer<UInt8>   // freed in deinit only
     let ctx: CGContext
 
     init?(w: Int, h: Int) {
