@@ -583,7 +583,7 @@ struct FlowChips: View {
     let pick: (String) -> Void
 
     var body: some View {
-        FlowLayout(spacing: 8) {
+        ShopFlowLayout(spacing: 8) {
             ForEach(items, id: \.self) { i in
                 SiteChip(title: i, on: selected == i, dim: disabled(i)) { if !disabled(i) { pick(i) } }
                     .accessibilityHint(disabled(i) ? "Not available for a seed" : "")
@@ -592,7 +592,7 @@ struct FlowChips: View {
     }
 }
 
-struct FlowLayout: Layout {
+struct ShopFlowLayout: Layout {
     var spacing: CGFloat = 8
 
     func sizeThatFits(proposal: ProposedViewSize, subviews: Subviews, cache: inout ()) -> CGSize {
