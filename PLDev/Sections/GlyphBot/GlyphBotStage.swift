@@ -43,36 +43,50 @@ struct GlyphStageFigure: View {
     @Environment(\.accessibilityReduceMotion) private var reduceMotion
 
     var body: some View {
-        RealityView { content in
-            content.camera = .virtual
-            content.environment.background = .color(.clear)
-            let cam = Entity()
-            cam.components.set(PerspectiveCameraComponent(near: 0.05, far: 50, fieldOfViewInDegrees: 33))
-            cam.position = [0, 0, 2.6]
-            content.add(cam)
-            content.add(Self.light(1800, [2.5, 4, 5]))     // warm key
-            content.add(Self.light(900, [-4, 1, 3], tint: UIColor(red: 0.74, green: 0.83, blue: 1, alpha: 1)))   // cool fill
-            content.add(Self.light(800, [-2, 4, -5], tint: .white))     // rim
-            content.add(seat.root)
-            if await seat.load() { ready = true } else { missing = true }
-        }
-        .task {
-            let start = Date()
-            while !Task.isCancelled {
-                if seat.loaded && !reduceMotion { seat.breathe(Float(Date().timeIntervalSince(start))) }
-                try? await Task.sleep(for: .milliseconds(33))
+        GlyphARStage(seat: seat, onLoaded: { ok in if ok { ready = true } else { missing = true } })
+            .task {
+                let start = Date()
+                while !Task.isCancelled {
+                    if seat.loaded && !reduceMotion { seat.breathe(Float(Date().timeIntervalSince(start))) }
+                    try? await Task.sleep(for: .milliseconds(33))
+                }
             }
-        }
-        .overlay {
-            if missing { Image(systemName: "figure.seated.side").font(.system(size: 44)).foregroundStyle(PLOS.gold.opacity(0.4)) }
-            else if !ready { ProgressView().tint(PLOS.gold.opacity(0.5)) }
-        }
-        .shadow(color: PLOS.gold.opacity(speaking ? 0.5 : 0.22), radius: speaking ? 22 : 16)
-        .animation(.easeInOut(duration: 0.5), value: speaking)
-        .accessibilityLabel("GlyphGuy")
+            .overlay {
+                if missing { Image(systemName: "figure.seated.side").font(.system(size: 44)).foregroundStyle(PLOS.gold.opacity(0.4)) }
+                else if !ready { ProgressView().tint(PLOS.gold.opacity(0.5)) }
+            }
+            .shadow(color: PLOS.gold.opacity(speaking ? 0.5 : 0.22), radius: speaking ? 22 : 16)
+            .animation(.easeInOut(duration: 0.5), value: speaking)
+            .accessibilityLabel("GlyphGuy")
+    }
+}
+
+/// A non-AR RealityKit view with a clear background (the web's transparent three.js canvas).
+private struct GlyphARStage: UIViewRepresentable {
+    let seat: GlyphSeat
+    let onLoaded: (Bool) -> Void
+
+    func makeUIView(context: Context) -> ARView {
+        let v = ARView(frame: .zero, cameraMode: .nonAR, automaticallyConfigureSession: false)
+        v.environment.background = .color(.clear)
+        v.isOpaque = false; v.backgroundColor = .clear
+        let anchor = AnchorEntity(world: .zero)
+        let cam = PerspectiveCamera()
+        cam.camera.fieldOfViewInDegrees = 33
+        cam.position = [0, 0, 2.6]
+        anchor.addChild(cam)
+        anchor.addChild(Self.light(1800, [2.5, 4, 5], UIColor(red: 1, green: 0.9, blue: 0.68, alpha: 1)))     // warm key
+        anchor.addChild(Self.light(900, [-4, 1, 3], UIColor(red: 0.74, green: 0.83, blue: 1, alpha: 1)))      // cool fill
+        anchor.addChild(Self.light(800, [-2, 4, -5], .white))                                                  // rim
+        anchor.addChild(seat.root)
+        v.scene.addAnchor(anchor)
+        Task { @MainActor in onLoaded(await seat.load()) }
+        return v
     }
 
-    private static func light(_ intensity: Float, _ p: SIMD3<Float>, tint: UIColor = UIColor(red: 1, green: 0.9, blue: 0.68, alpha: 1)) -> Entity {
+    func updateUIView(_ v: ARView, context: Context) {}
+
+    private static func light(_ intensity: Float, _ p: SIMD3<Float>, _ tint: UIColor) -> Entity {
         let e = Entity()
         var l = DirectionalLightComponent(); l.intensity = intensity; l.color = tint
         e.components.set(l); e.look(at: .zero, from: p, relativeTo: nil)
