@@ -16,7 +16,8 @@ enum NativeTool: String, CaseIterable, Sendable { case paint, erase }
     var fingerPaints = false         // fingers draw only if "Finger paints" (the laptop's rule)
     var name = "Untitled"
     var line: String?                // the one-line result under the toolbar
-    var canUndo = false, canRedo = false
+    var canUndo = false
+    var canRedo = false
     var layerNames: [(name: String, visible: Bool)] = []
     var activeLayer = 0
     var hasDoc = false
