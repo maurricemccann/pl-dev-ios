@@ -8,7 +8,7 @@ enum TownMode: String, CaseIterable, Identifiable, Sendable { case tasks = "Task
 /// session and walks to the building of every tool call, steps in at the door and works at a lit window; townspeople are the Roadmap
 /// (open ones stroll, the ones waiting on him stand at HOME and blink "!", blocked ones stand under the watchtower lamp and blink "X",
 /// anything a week old stands big and red in the stale lot); orange visitors arrive at the dock on the cart; ghosts replay the routes of
-/// earlier sessions; the sky and the lights follow the real sun over the town. Units are street pixels, y up.
+/// earlier sessions; the sky and the lights follow the real sun where the phone is. Units are street pixels, y up.
 @MainActor final class TownScene: SKScene {
     private let LH = TownStreet.LH
     private var feet: CGFloat { TownStreet.LH - TownStreet.WALK + 4 }

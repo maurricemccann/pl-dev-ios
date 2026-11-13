@@ -2,7 +2,7 @@ import Foundation
 import SwiftUI
 import UIKit
 
-/// Task Town's data, ported from the web page (`app/town/page.tsx` in the gallery): the street, the feed, the sun over the town.
+/// Task Town's data, ported from the web page (`app/town/page.tsx` in the gallery): the street, the feed, the sun.
 
 struct TownBuilding: Identifiable, Hashable {
     enum Roof { case flat, gable, tiles, tower, dome }
@@ -86,12 +86,15 @@ enum TownStreet {
     ]
 }
 
-// MARK: - The sun over the town: sky, light and windows follow it
+// MARK: - The sun where the phone is: sky, light and windows follow it
 
 enum TownLight: String, CaseIterable { case day, dusk, night, dawn }
 
 enum TownSun {
-    static let lat = 35.0, lon = -120.0
+    /// No place is written in this public repo (its scan forbids it): the longitude comes from the phone's own time zone
+    /// (15 degrees an hour), the latitude is a mid-latitude, close enough for sunrise and sunset to within minutes.
+    static var lon: Double { Double(TimeZone.current.secondsFromGMT(for: Date())) / 3600 * 15 - (TimeZone.current.isDaylightSavingTime() ? 15 : 0) }
+    static let lat = 35.0
 
     static func times(_ now: Date = Date()) -> (rise: Date, set: Date) {
         let r = Double.pi / 180
