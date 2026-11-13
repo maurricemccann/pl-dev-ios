@@ -166,46 +166,69 @@ struct CalendarView: View {
     struct Cell: Decodable { let items: [Item]?; let target: [String: Int]?; let short: [String: Int]?; let paused: Bool? }
     struct Day: Decodable, Identifiable { let date: String; let today: Bool?; let platforms: [String: Cell]?; var id: String { date } }
     struct Out: Decodable { let days: [Day]? }
+    @State private var page: String?
 
     var body: some View {
-        Loaded(load: { try await Console.get("api/content-calendar", Out.self, model: model, query: ["days": "14", "back": "1"]).days ?? [] }) { days, _ in
-            List {
-                ForEach(days) { d in
-                    Section {
-                        ForEach((d.platforms ?? [:]).keys.sorted(), id: \.self) { p in
-                            let cell = d.platforms?[p]
-                            let short = (cell?.short ?? [:]).values.reduce(0, +)
-                            DisclosureGroup {
-                                ForEach(cell?.items ?? []) { it in
-                                    HStack(spacing: 10) {
-                                        if let t = it.thumb, let u = URL(string: t) {
-                                            AsyncImage(url: u) { $0.resizable().scaledToFill() } placeholder: { Color.secondary.opacity(0.15) }
-                                                .frame(width: 44, height: 44).clipShape(RoundedRectangle(cornerRadius: 8, style: .continuous))
-                                        }
-                                        VStack(alignment: .leading, spacing: 2) {
-                                            Text(it.line ?? "").lineLimit(2).font(.callout)
-                                            Text("\(it.format ?? "") · \(it.status ?? "")\(Date.pl(it.at).map { " · " + $0.formatted(date: .omitted, time: .shortened) } ?? "")")
-                                                .font(.caption).foregroundStyle(.secondary)
-                                        }
-                                    }
+        Loaded(load: { try await Console.get("api/content-calendar", Out.self, model: model, query: ["days": "14", "back": "3"]).days ?? [] }) { days, _ in
+            // pl-os's day pager: one day a page, swiped sideways, opening at today
+            ScrollView(.horizontal) {
+                LazyHStack(spacing: 0) {
+                    ForEach(days) { d in dayPage(d).containerRelativeFrame(.horizontal).id(d.date) }
+                }
+                .scrollTargetLayout()
+            }
+            .scrollTargetBehavior(.paging)
+            .scrollIndicators(.hidden)
+            .scrollPosition(id: $page)
+            .onAppear { if page == nil { page = days.first(where: { $0.today == true })?.date ?? days.first?.date } }
+        }
+        .navigationTitle("Calendar")
+    }
+
+    private func dayPage(_ d: Day) -> some View {
+        let shortAll = (d.platforms ?? [:]).filter { $0.value.paused != true }.values.flatMap { ($0.short ?? [:]).values }.reduce(0, +)
+        return List {
+            Section {
+                ForEach((d.platforms ?? [:]).keys.sorted(), id: \.self) { p in
+                    let cell = d.platforms?[p]
+                    let short = (cell?.short ?? [:]).values.reduce(0, +)
+                    DisclosureGroup {
+                        if (cell?.items ?? []).isEmpty { Text("Nothing scheduled.").foregroundStyle(.secondary) }
+                        ForEach(cell?.items ?? []) { it in
+                            HStack(spacing: 10) {
+                                if let t = it.thumb, let u = URL(string: t) {
+                                    AsyncImage(url: u) { $0.resizable().scaledToFill() } placeholder: { Color.secondary.opacity(0.15) }
+                                        .frame(width: 44, height: 44).clipShape(RoundedRectangle(cornerRadius: 8, style: .continuous))
                                 }
-                            } label: {
-                                HStack {
-                                    Text(p.capitalized)
-                                    Spacer()
-                                    if cell?.paused == true { Image(systemName: "pause.circle").foregroundStyle(.secondary) }
-                                    Text("\(cell?.items?.count ?? 0)").monospacedDigit()
-                                    if short > 0 { Text("\(short) short").font(.caption.bold()).foregroundStyle(PLTone.house) }
+                                VStack(alignment: .leading, spacing: 2) {
+                                    Text(it.line ?? "").lineLimit(2).font(.callout)
+                                    Text("\(it.format ?? "") · \(it.status ?? "")\(Date.pl(it.at).map { " · " + $0.formatted(date: .omitted, time: .shortened) } ?? "")")
+                                        .font(.caption).foregroundStyle(.secondary)
                                 }
                             }
                         }
-                    } header: {
-                        Text((Date.pl(d.date)?.formatted(.dateTime.weekday(.wide).month().day()) ?? d.date) + (d.today == true ? " · today" : ""))
+                    } label: {
+                        HStack {
+                            Circle().fill(PLOS.platform(p)).frame(width: 9, height: 9)
+                            Text(p == "pl_feed" ? "PL feed" : p.capitalized)
+                            Spacer()
+                            if cell?.paused == true { Text("paused").font(.caption).foregroundStyle(.secondary) }
+                            else {
+                                let target = (cell?.target ?? [:]).map { "\($0.value) \($0.key == "any" ? "" : $0.key)".trimmingCharacters(in: .whitespaces) }.sorted().joined(separator: " + ")
+                                Text("\(cell?.items?.count ?? 0)\(target.isEmpty ? "" : " of " + target)").font(.callout.monospacedDigit())
+                                if short > 0 { Text("\(short) short").font(.caption.bold()).foregroundStyle(PLOS.warn) }
+                            }
+                        }
                     }
+                }
+            } header: {
+                HStack {
+                    Text((Date.pl(d.date)?.formatted(.dateTime.weekday(.wide).month().day()) ?? d.date) + (d.today == true ? " · today" : ""))
+                    Spacer()
+                    Text(shortAll == 0 ? "full" : "\(shortAll) short").foregroundStyle(shortAll == 0 ? PLOS.ok : PLOS.warn)
                 }
             }
         }
-        .navigationTitle("Calendar")
     }
 }
 

@@ -469,13 +469,18 @@ struct TallyView: View {
     @State private var result: String?
     @State private var choosing: Piece?
     @State private var url = ""
+    @State private var month = Self.months.first ?? ""
+    /// This month and the eleven before it, as the tally's month param (YYYY-MM).
+    static let months: [String] = (0..<12).compactMap { Calendar.current.date(byAdding: .month, value: -$0, to: .now) }.map {
+        let c = Calendar.current.dateComponents([.year, .month], from: $0); return String(format: "%04d-%02d", c.year ?? 0, c.month ?? 0)
+    }
 
     var body: some View {
-        Loaded(load: { try await Console.get("api/tally", Tally.self, model: model) }) { t, reload in
+        Loaded(load: { try await Console.get("api/tally", Tally.self, model: model, query: ["month": month]) }) { t, reload in
             List {
                 if let r = result { ResultLine(text: r) }
                 Section {
-                    LabeledContent("Month", value: t.month ?? "")
+                    Picker("Month", selection: $month) { ForEach(Self.months, id: \.self) { Text($0).tag($0) } }
                     LabeledContent("Founders sealed", value: "\(t.founders_sealed ?? 0)")
                     LabeledContent("Chosen this month", value: "\(t.chosen_count ?? 0)")
                 }
@@ -484,7 +489,7 @@ struct TallyView: View {
                         ForEach(q) { a in
                             VStack(alignment: .leading) {
                                 Text("\(a.cr ?? "") · \(a.product ?? "")").font(.headline)
-                                Text("\(a.email ?? "") · \(Int(a.promise_hours_left ?? 0)) h left on the promise").font(.caption).foregroundStyle(.secondary)
+                                Text("\(a.email ?? "") · \(Int(a.promise_hours_left ?? 0)) h left on the promise").font(.caption).foregroundStyle((a.promise_hours_left ?? 99) < 0 ? PLOS.danger : (a.promise_hours_left ?? 99) < 24 ? PLOS.warn : .secondary)
                             }
                         }
                     }
@@ -507,6 +512,7 @@ struct TallyView: View {
                 Button("Cancel", role: .cancel) {}
             } message: { Text("Marks it chosen for \(choosing?.products?.first?.product ?? "its top product") and sends the drop notice.") }
         }
+        .id(month)   // a new month reads its own tally
         .navigationTitle("Request and vote")
     }
 
