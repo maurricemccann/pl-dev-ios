@@ -725,7 +725,7 @@ enum FontResolver {
         if bold && base != nil { traits.insert(.traitBold) }
         if italic { traits.insert(.traitItalic) }
         if !traits.isEmpty, let d = ui.fontDescriptor.withSymbolicTraits(traits.union(ui.fontDescriptor.symbolicTraits)) { ui = UIFont(descriptor: d, size: size) }
-        let ct = CTFontCreateWithName(ui.fontName as CFString, size, nil)
+        let ct = ui as CTFont   // toll-free: keeps the system face, which cannot be found again by its private name
         if cache.count > 300 { cache.removeAll() }
         cache[spec] = ct
         return ct

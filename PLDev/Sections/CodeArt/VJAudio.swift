@@ -24,6 +24,7 @@ final class VJAudio: @unchecked Sendable {
     private var player = AVAudioPlayerNode()
     private var file: AVAudioFile?
     private var generation = 0
+    private var micTap = false   // touching engine.inputNode before a mic is wanted makes a later track fail to start
     private(set) var source: Source = .off
     private(set) var isPlaying = false
 
@@ -71,7 +72,7 @@ final class VJAudio: @unchecked Sendable {
     func stop() {
         generation += 1
         if engine.isRunning { engine.stop() }
-        engine.inputNode.removeTap(onBus: 0)
+        if micTap { engine.inputNode.removeTap(onBus: 0); micTap = false }
         engine.mainMixerNode.removeTap(onBus: 0)
         player.stop()
         if player.engine != nil { engine.detach(player) }
@@ -92,6 +93,7 @@ final class VJAudio: @unchecked Sendable {
         let fmt = input.outputFormat(forBus: 0)
         guard fmt.sampleRate > 0 else { throw VJAudioError.noInput }
         input.installTap(onBus: 0, bufferSize: 2048, format: fmt) { [weak self] buf, _ in self?.analyze(buf) }
+        micTap = true
         engine.prepare()
         try engine.start()
         source = .mic
