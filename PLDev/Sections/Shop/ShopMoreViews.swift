@@ -11,29 +11,9 @@ struct ShopMoreView: View {
                 ForEach(ShopRoom.moreRooms) { room in
                     NavigationLink { room.view(model) } label: { Label(room.title, systemImage: room.symbol) }
                 }
-            } footer: { Text("Checkout, sign-up and the signal form run on the site, behind its human check. They open in a sheet here.") }
+            } footer: { Text("Checkout, gift cards and the signal form run on the site, behind its human check. They open in a sheet here.") }
         }
         .siteList()
-    }
-}
-
-// MARK: - The signal
-
-struct SignalView: View {
-    @State private var web: WebPage?
-
-    var body: some View {
-        List {
-            Section {
-                Text("The signal goes out as the work does. Sign up with an email and you are the first to see what arrives.").plReading()
-                Button {
-                    if let url = Site.page("transmission") { web = WebPage(url) }
-                } label: { Label("Receive the signal", systemImage: "antenna.radiowaves.left.and.right").frame(minHeight: PLMetric.touch) }
-            } footer: { Text("The form opens on the site, which checks a person is signing up.") }
-        }
-        .siteList()
-        .plScreenTitle("The signal")
-        .sheet(item: $web) { SafariSheet(url: $0.url).ignoresSafeArea() }
     }
 }
 
@@ -71,6 +51,9 @@ struct TrackOrderView: View {
                 ResultLine(text: line)
             } footer: { Text("The order number is in the confirmation email.") }
             if let r = result {
+                Section {
+                    OrderTracker(step: OrderStep.reached(status: r.status, shipped: r.shippedAt, delivered: r.deliveredAt, tracking: r.trackingNumber)).padding(.vertical, 8)
+                }
                 Section("Your order") {
                     LabeledContent("Status", value: (r.status ?? "processing").capitalized)
                     if let t = r.total { LabeledContent("Total", value: Money.text(Int(((Double(t) ?? 0) * 100).rounded()))) }
@@ -99,73 +82,6 @@ struct TrackOrderView: View {
             result = try? JSONDecoder().decode(Found.self, from: r.data)
             if result == nil { line = "Not found. The site answered in a shape this app does not know." }
         } catch { result = nil; line = "Not found. \(error.localizedDescription)" }
-    }
-}
-
-// MARK: - His orders (the signed-in account's own)
-
-struct MyOrdersView: View {
-    struct Order: Decodable, Identifiable {
-        let friendlyId: String?
-        let status: String?
-        let total: Double?
-        let currency: String?
-        let createdAt: String?
-        let itemName: String?
-        let itemImage: String?
-        let itemCount: Int?
-        let trackingNumber: String?
-        let carrier: String?
-        let trackingUrl: String?
-        let shippedAt: String?
-        let deliveredAt: String?
-        var id: String { friendlyId ?? createdAt ?? UUID().uuidString }
-    }
-    struct Orders: Decodable { let orders: [Order] }
-    @State private var web: WebPage?
-    private let account = SiteAccount.shared
-
-    var body: some View {
-        Group {
-            if account.signedIn {
-                Loaded(load: { try await Site.get("api/account/orders", Orders.self).orders }) { orders, _ in
-                    List {
-                        if orders.isEmpty { ContentUnavailableView("No orders yet", systemImage: "shippingbox", description: Text("Orders placed with this account appear here.")).listRowBackground(Color.clear) }
-                        ForEach(orders) { o in
-                            HStack(spacing: PLSpace.pad) {
-                                Color.clear.frame(width: 56, height: 56).overlay { FlatImage(url: o.itemImage.flatMap { ShopCatalogue.isFlat($0) ? URL(string: $0) : nil }, padding: 2) }
-                                    .background(Bone.line(.light).opacity(0.4), in: RoundedRectangle(cornerRadius: 10, style: .continuous))
-                                VStack(alignment: .leading, spacing: 2) {
-                                    Text(o.itemName ?? "Order \(o.friendlyId ?? "")").plFont(.headline)
-                                    Text(status(o)).plFont(.footnote).foregroundStyle(.secondary)
-                                    HStack(spacing: 4) {
-                                        if let t = o.total { Text(Money.text(Int((t * 100).rounded()))).monospacedDigit() }
-                                        Text("·"); Ago(text: o.createdAt)
-                                    }.plFont(.caption).foregroundStyle(.secondary)
-                                }
-                                Spacer(minLength: 0)
-                            }
-                            .swipeActions(edge: .trailing) {
-                                if let u = o.trackingUrl, let url = URL(string: u), url.scheme == "https" {
-                                    Button("Track") { web = WebPage(url) }.tint(.blue)
-                                }
-                            }
-                        }
-                    }
-                    .siteList()
-                }
-            } else {
-                EmptyNote(symbol: "person.crop.circle", title: "Sign in to see your orders", detail: "Orders placed with your site account show here. Sign in from the Congregation.")
-            }
-        }
-        .plScreenTitle("Your orders")
-        .sheet(item: $web) { SafariSheet(url: $0.url).ignoresSafeArea() }
-    }
-
-    private func status(_ o: Order) -> String {
-        if o.deliveredAt != nil { return "Delivered" }
-        if o.shippedAt != nil { return "Shipped" + (o.carrier.map { " with \($0)" } ?? "") }
-        return (o.status ?? "Processing").capitalized
     }
 }
 
@@ -219,7 +135,9 @@ struct SitePagesView: View {
             ForEach(groups) { group in
                 Section(group.name) {
                     ForEach(group.links) { l in
-                        if ["contact", "gift-card"].contains(l.path) {   // a form behind the human check, and Square's gift cards: these stay on the site
+                        if l.path == "contact" {
+                            NavigationLink { ContactView() } label: { Label(l.title, systemImage: l.symbol) }
+                        } else if l.path == "gift-card" {   // Square's gift cards are bought through the site's checkout
                             Button { if let url = Site.page(l.path) { web = WebPage(url) } } label: { Label(l.title, systemImage: l.symbol) }
                         } else {
                             NavigationLink { SiteReaderView(path: l.path, title: l.title) } label: { Label(l.title, systemImage: l.symbol) }

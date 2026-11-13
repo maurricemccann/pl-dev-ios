@@ -15,6 +15,8 @@ struct ShopVariant: Codable, Hashable, Sendable {
     let cents: Int
     let inStock: Bool
     let images: [String]
+    /// The design a family page folds in (the page's first pick, colour second, size last). Nil on a single-design piece.
+    var design: String? = nil
 }
 
 /// What a piece is, for the filter chips and the Closet's slots.
@@ -57,18 +59,29 @@ struct ShopPiece: Codable, Identifiable, Hashable, Sendable {
     let group: ShopGroup
     let variants: [ShopVariant]
     let images: [String]            // transparent PNGs only, the first variant's leading
+    /// The card's own line on the site (the piece's argument, one sentence).
+    var line: String? = nil
+    /// True for a piece the Google feed does not carry: one price and its flats from the shop page until its own page is read.
+    var thin: Bool? = nil
     var id: String { slug }
+
+    /// The designs of a family page, in the order the page lists them.
+    var designs: [String] {
+        var seen = Set<String>()
+        return variants.compactMap(\.design).filter { seen.insert($0).inserted }
+    }
 
     var minCents: Int { variants.map(\.cents).min() ?? 0 }
     var maxCents: Int { variants.map(\.cents).max() ?? 0 }
     var inStock: Bool { variants.contains { $0.inStock } }
     var hero: URL? { images.first.flatMap { URL(string: $0) } }
 
-    /// Colours in the order the feed lists them.
-    var colors: [String] {
+    /// Colours in the order the feed lists them (of one design, on a family page).
+    func colors(design: String? = nil) -> [String] {
         var seen = Set<String>()
-        return variants.compactMap(\.color).filter { seen.insert($0).inserted }
+        return variants.filter { design == nil || $0.design == design }.compactMap(\.color).filter { seen.insert($0).inserted }
     }
+    var colors: [String] { colors() }
 
     /// Sizes in the order the feed lists them (it lists S to XL in order).
     var sizes: [String] {
@@ -88,10 +101,12 @@ struct ShopPiece: Codable, Identifiable, Hashable, Sendable {
         return String(d[...end])
     }
 
-    /// A variant by colour and size, falling back to the closest.
-    func variant(color: String?, size: String?) -> ShopVariant? {
-        variants.first { $0.color == color && $0.size == size }
-            ?? variants.first { $0.color == color }
+    /// A variant by design, colour and size, falling back to the closest.
+    func variant(design: String? = nil, color: String?, size: String?) -> ShopVariant? {
+        let pool = design == nil ? variants : variants.filter { $0.design == design }
+        return pool.first { $0.color == color && $0.size == size }
+            ?? pool.first { $0.color == color }
+            ?? pool.first
             ?? variants.first
     }
 }
@@ -209,7 +224,7 @@ enum ShopCatalogue {
     var failure: String?
     var loading = false
 
-    private let seenKey = "pldev.shop.seen"
+    private let seenKey = "pldev.shop.seen2"   // v2: the list grew from the feed's 52 to the site's 89, so the old record would call 37 pieces new
     private var cacheURL: URL? {
         FileManager.default.urls(for: .cachesDirectory, in: .userDomainMask).first?.appendingPathComponent("shop-catalogue.json")
     }
@@ -225,25 +240,47 @@ enum ShopCatalogue {
 
     func piece(_ slug: String) -> ShopPiece? { pieces.first { $0.slug == slug } }
 
-    /// Reads the feed. The site caches it for an hour, so a pull inside ten minutes keeps what the phone has.
+    /// Reads the shop page (the grid the site shows: 89 pieces, in the site's order) and the product feed (variants, stock and flat
+    /// pictures for the pieces it carries). The site caches both for minutes to an hour, so a pull inside ten minutes keeps what the phone has.
     func load(force: Bool = false) async {
         if !force, let at = loadedAt, !pieces.isEmpty, Date().timeIntervalSince(at) < 600 { return }
         guard !loading else { return }
         loading = true
         defer { loading = false }
-        do {
-            let reply = try await Site.call("GET", "feed/products.xml", timeout: 40)
-            guard (200..<300).contains(reply.status) else { throw Site.Problem.refused("The shop did not answer. Pull to try again.") }
-            let data = reply.data
-            let built = await Task.detached(priority: .userInitiated) { ShopCatalogue.build(data) }.value
-            guard !built.isEmpty else { throw Site.Problem.refused("The shop's list came back empty. Pull to try again.") }
-            pieces = built
-            loadedAt = Date()
-            failure = nil
-            if let url = cacheURL, let saved = try? JSONEncoder().encode(Saved(at: Date(), pieces: built)) { try? saved.write(to: url) }
-        } catch {
-            if pieces.isEmpty { failure = error.localizedDescription } else { failure = nil }   // numbers already on screen stay
+        async let pageReply = try? Site.call("GET", "shop", timeout: 40)
+        async let feedReply = try? Site.call("GET", "feed/products.xml", timeout: 40)
+        let (page, feed) = await (pageReply, feedReply)
+        let pageData = page.flatMap { (200..<300).contains($0.status) ? $0.data : nil }
+        let feedData = feed.flatMap { (200..<300).contains($0.status) ? $0.data : nil }
+        guard pageData != nil || feedData != nil else {
+            if pieces.isEmpty { failure = "The shop did not answer. Pull to try again." } else { failure = nil }   // numbers already on screen stay
+            return
         }
+        let built = await Task.detached(priority: .userInitiated) { ShopCatalogue.merge(page: pageData, feed: feedData) }.value
+        guard !built.isEmpty else {
+            if pieces.isEmpty { failure = "The shop's list came back empty. Pull to try again." } else { failure = nil }
+            return
+        }
+        // a piece whose own page was already read keeps what that read added
+        let known = Dictionary(pieces.map { ($0.slug, $0) }, uniquingKeysWith: { a, _ in a })
+        pieces = built.map { p in
+            guard p.thin == true, let old = known[p.slug], old.thin != true else { return p }
+            return old
+        }
+        loadedAt = Date()
+        failure = nil
+        saveCache()
+    }
+
+    /// A piece's own page was read: keep what it added (its variants, its flats) so the grid and the Closet see it too.
+    func adopt(_ piece: ShopPiece) {
+        guard let i = pieces.firstIndex(where: { $0.slug == piece.slug }) else { return }
+        pieces[i] = piece
+        saveCache()
+    }
+
+    private func saveCache() {
+        if let url = cacheURL, let saved = try? JSONEncoder().encode(Saved(at: loadedAt ?? Date(), pieces: pieces)) { try? saved.write(to: url) }
     }
 
     /// Pieces that appeared since the last time the app looked, for the new-piece notice. The first read only records.

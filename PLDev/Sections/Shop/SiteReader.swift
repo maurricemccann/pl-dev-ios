@@ -76,7 +76,12 @@ struct SiteReaderView: View {
         return out
     }
 
-    private static func clean(_ inner: String) -> String {
+    static func clean(_ inner: String) -> String { SiteHTML.text(inner) }
+}
+
+/// Page text from HTML: tags stripped, entities decoded, whitespace tidied. Pure, so the page readers can run it off the main thread.
+enum SiteHTML {
+    nonisolated static func text(_ inner: String) -> String {
         var t = inner.replacingOccurrences(of: "<br\\s*/?>", with: "\n", options: .regularExpression)
         t = t.replacingOccurrences(of: "<[^>]+>", with: "", options: .regularExpression)
         let entities = ["&amp;": "&", "&lt;": "<", "&gt;": ">", "&quot;": "\"", "&#39;": "'", "&#x27;": "'", "&apos;": "'", "&nbsp;": " ", "&mdash;": "—", "&ndash;": "–", "&rsquo;": "’", "&lsquo;": "‘", "&rdquo;": "”", "&ldquo;": "“", "&hellip;": "…", "&middot;": "·"]
