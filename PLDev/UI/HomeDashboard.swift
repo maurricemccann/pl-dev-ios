@@ -131,31 +131,39 @@ struct HomeDashboard: View {
     }
 }
 
-/// His heart model, gold, turning slowly and breathing (the web's pulse: 1 ± 3 %). Not a control: no gestures, it is the room's centre.
+/// His heart model, gold, swaying slowly and breathing (the web's pulse: 1 ± 3 %). Not a control: no gestures, it is the room's centre.
+/// The face is found, not assumed: of the six ways the model can lie, the one whose thinnest side points at the camera wins, so his
+/// heart always shows its face (his screenshot 11-13: it showed only its edge). Motion runs on RealityKit's own frame clock (120 Hz).
 struct HomeHeart: View {
-    @State private var holder = Entity()
+    @State private var sub: EventSubscription?
     @Environment(\.accessibilityReduceMotion) private var reduce
     var body: some View {
         RealityView { content in
             content.camera = .virtual
             guard let e = await ThreeDModels.load("heart1") else { return }
             ThreeDModels.paint(e, ThreeDModels.goldMaterial(rough: 0.28))
-            e.orientation = simd_quatf(angle: .pi / 2, axis: [1, 0, 0])   // his GLB's up is -Z
+            let turns: [simd_quatf] = [simd_quatf(angle: 0, axis: [1, 0, 0]), simd_quatf(angle: .pi / 2, axis: [1, 0, 0]), simd_quatf(angle: -.pi / 2, axis: [1, 0, 0]),
+                                       simd_quatf(angle: .pi / 2, axis: [0, 1, 0]), simd_quatf(angle: .pi / 2, axis: [0, 0, 1]), simd_quatf(angle: .pi, axis: [1, 0, 0])]
+            var best = turns[0], thinnest = Float.greatestFiniteMagnitude
+            for q in turns {
+                e.orientation = q
+                let b = e.visualBounds(relativeTo: nil)
+                // thinnest toward the camera, and standing taller than wide is a tie-break toward the heart standing up
+                let score = b.extents.z - 0.001 * b.extents.y
+                if score < thinnest { thinnest = score; best = q }
+            }
+            e.orientation = best
             let f = ThreeDModels.fitted(e, longest: 1.1)
             f.position = [0, -0.55, -1.5]
-            holder = f
             content.add(f)
             let light = DirectionalLight(); light.light.intensity = 2600; light.look(at: .zero, from: [0.8, 1.2, 1.5], relativeTo: nil)
             content.add(light)
-        }
-        .task {
             guard !reduce else { return }
             var t: Float = 0
-            while !Task.isCancelled {
-                t += 0.016
-                holder.orientation = simd_quatf(angle: sin(t * 0.5) * 0.6, axis: [0, 1, 0])   // a sway of about 35° each way: his heart never turns edge-on (his screenshot 11-13)
-                holder.scale = SIMD3<Float>(repeating: 1 + sin(t * 1.2) * 0.03)
-                try? await Task.sleep(for: .milliseconds(16))
+            sub = content.subscribe(to: SceneEvents.Update.self) { ev in
+                t += Float(ev.deltaTime)
+                f.orientation = simd_quatf(angle: sin(t * 0.5) * 0.6, axis: [0, 1, 0])   // about 35° each way, never edge-on
+                f.scale = SIMD3<Float>(repeating: 1 + sin(t * 1.2) * 0.03)
             }
         }
         .allowsHitTesting(false)
