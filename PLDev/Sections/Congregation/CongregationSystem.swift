@@ -6,22 +6,22 @@ import SwiftUI
 // IndexedEntity + OpenIntent, deep links by room name (pldev://section/congregation/<room>, and /member/<handle>).
 
 enum CongregationRoom: String, CaseIterable, Identifiable, Hashable {
-    case stream, room, members, me, activity, messages, profile
+    case stream, room, members, me, activity, messages, profile, boards, games, settings
     var id: String { rawValue }
 
     var title: String {
         switch self {
         case .stream: return "The stream"; case .room: return "The room"; case .members: return "Members"; case .me: return "Your page"
         case .activity: return "Activity"; case .messages: return "Messages to the Founder"; case .profile: return "Your profile"
+        case .boards: return "Your boards"; case .games: return "PL Games"; case .settings: return "Your settings"
         }
     }
 
     @MainActor @ViewBuilder func view(_ model: AppModel, state: CongregationModel) -> some View {
         switch self {
-        case .activity: ActivityView()
+        case .activity: ActivityView(state: state)
         case .messages: MessagesView()
-        case .profile: if let me = SiteAccount.shared.me { ProfileEditView(me: me) } else { EmptyNote(symbol: "person.crop.circle", title: "Sign in first", detail: "Your profile is on your page, after you sign in.") }
-        default: EmptyView()   // the four tabs are not pushed
+        default: EmptyView()   // the tabs, and the owner's tabs inside Me, are not pushed
         }
     }
 }

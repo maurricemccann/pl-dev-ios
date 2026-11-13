@@ -74,12 +74,20 @@ struct StreamProbe: Decodable { let total: Int? }
     var tab: Tab = .stream
     var room: CongregationRoom?
     var memberHandle: String?
+    /// The owner's tab inside Me to land on (Boards, Settings, Games), read once by the member hub.
+    var hubTab: String?
     var tick = 0
     var lastHeld = 0
     var lastUnread = 0
 
     func open(_ r: CongregationRoom) {
-        if let t = Tab(rawValue: r.rawValue) { tab = t; room = nil } else { tab = .me; room = r }
+        if let t = Tab(rawValue: r.rawValue) { tab = t; room = nil; return }
+        switch r {
+        case .boards: tab = .me; hubTab = "Boards"
+        case .games: tab = .me; hubTab = "Games"
+        case .settings, .profile: tab = .me; hubTab = "Settings"
+        default: tab = .me; room = r
+        }
     }
 }
 
@@ -91,7 +99,7 @@ struct CongregationView: View {
     var body: some View {
         Group {
             switch state.tab {
-            case .stream: StreamTabView(stream: stream)
+            case .stream: StreamTabView(stream: stream, state: state)
             case .room: RoomTabView(state: state)
             case .members: MembersTabView(state: state)
             case .me: AccountTabView(state: state)
@@ -138,6 +146,6 @@ struct CongregationSettingsRows: View {
 
 struct RoomSwipeTip: Tip {
     var title: Text { Text("Your word on each one") }
-    var message: Text? { Text("Swipe left to approve what is waiting, right to remove it. Touch and hold for more.") }
-    var image: Image? { Image(systemName: "hand.draw") }
+    var message: Text? { Text("Approve or remove what is waiting with the buttons under it. Touch and hold a post to copy it or open its author.") }
+    var image: Image? { Image(systemName: "hand.tap") }
 }
