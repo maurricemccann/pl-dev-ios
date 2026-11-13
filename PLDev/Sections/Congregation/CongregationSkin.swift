@@ -1,6 +1,5 @@
 import AVKit
 import SwiftUI
-import WebKit
 
 // The Congregation's own pieces, built on the site's skin (`SiteSkin.swift`, owned by the shop lane, never edited here): the
 // member's glyph as the site draws it (the real glyph picture, tinted through its alpha as the site's CSS mask does), the round
