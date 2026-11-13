@@ -28,9 +28,9 @@ struct HomeView: View {
             ?? (Bundle.main.object(forInfoDictionaryKey: "CFBundleName") as? String) ?? "Home"
     }
 
-    /// Two tiles across; one across at the accessibility text sizes, where a title needs the whole width.
+    /// Four apps across, as on the Home Screen; two at the accessibility text sizes, where a name needs the room.
     private var columns: [GridItem] {
-        typeSize.isAccessibilitySize ? [GridItem(.flexible())] : [GridItem(.adaptive(minimum: 150), spacing: PLSpace.pad)]
+        typeSize.isAccessibilitySize ? Array(repeating: GridItem(.flexible()), count: 2) : Array(repeating: GridItem(.flexible(), spacing: PLSpace.pad), count: 4)   // the Home Screen's four across
     }
 
     private var summary: String {
@@ -57,7 +57,7 @@ struct HomeView: View {
                                   actionTitle: "Open Settings") { openSettings() }
                             .padding(.top, PLSpace.block)
                     } else {
-                        LazyVGrid(columns: columns, spacing: PLSpace.pad) {
+                        LazyVGrid(columns: columns, spacing: PLSpace.roomy + PLSpace.pad) {
                             ForEach(model.sections) { entry in
                                 tile(entry)
                             }

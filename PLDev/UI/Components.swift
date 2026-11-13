@@ -113,13 +113,30 @@ struct PressableStyle: ButtonStyle {
 }
 
 /// One section on the home grid: its symbol, title, badge, and a quiet line when the config does not let it run yet.
+/// One app on the Home grid, drawn the way iOS draws an app: a squircle icon in the app's own colour, a white symbol,
+/// the name underneath, the red badge on the icon's corner. A section that cannot run yet is dimmed and says why.
 struct SectionTile: View {
     let entry: SectionEntry
-    @AppStorage("pldev.tileStrength") private var strength = 0.5
 
     init(entry: SectionEntry) { self.entry = entry }
 
     private var ready: Bool { entry.readiness.isReady }
+
+    /// Each app's colour, from the system palette so it follows light, dark and increased contrast.
+    static func tint(_ id: String) -> Color {
+        switch id {
+        case "house": return .indigo
+        case "capture": return .blue
+        case "curate": return .pink
+        case "library": return .purple
+        case "composer": return .teal
+        case "town": return .green
+        case "pick": return .yellow
+        case "paint": return .red
+        case "status": return .gray
+        default: return .accentColor
+        }
+    }
 
     private var spoken: String {
         var parts = [entry.manifest.title]
@@ -129,46 +146,38 @@ struct SectionTile: View {
     }
 
     var body: some View {
-        let shape = RoundedRectangle(cornerRadius: PLRadius.card, style: .continuous)
-        VStack(alignment: .leading, spacing: PLSpace.pad) {
-            HStack(alignment: .top) {
+        let tint = Self.tint(entry.id)
+        let icon = RoundedRectangle(cornerRadius: 15, style: .continuous)
+        VStack(spacing: 6) {
+            ZStack {
+                icon.fill(tint.gradient)
                 Image(systemName: entry.manifest.symbol)
-                    .font(.title2.weight(.medium))
+                    .font(.system(size: 28, weight: .semibold))
+                    .foregroundStyle(.white)
                     .symbolRenderingMode(.hierarchical)
-                    .foregroundStyle(ready ? PLTone.accent : PLTone.quiet)
-                    .frame(width: 48, height: 48)
-                    .background(PLTone.well, in: Circle())
-                Spacer(minLength: PLSpace.gap)
+                if !ready {
+                    icon.fill(.black.opacity(0.45))
+                    Image(systemName: "key.fill").font(.caption.bold()).foregroundStyle(.white)
+                        .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .bottomTrailing).padding(6)
+                }
+            }
+            .frame(width: 64, height: 64)
+            .overlay(icon.strokeBorder(.white.opacity(0.12), lineWidth: 0.5))
+            .shadow(color: .black.opacity(0.18), radius: 3, y: 1)
+            .overlay(alignment: .topTrailing) {
                 if let badge = entry.badge, badge > 0 {
                     CountBadge(count: badge)
+                        .offset(x: 8, y: -8)
                         .transition(.scale.combined(with: .opacity))
                 }
             }
-            Spacer(minLength: 0)
-            VStack(alignment: .leading, spacing: PLSpace.tight) {
-                Text(entry.manifest.title)
-                    .plFont(.headline)
-                    .foregroundStyle(.primary)
-                    .lineLimit(2)
-                    .multilineTextAlignment(.leading)
-                if let note = entry.readiness.plNote {
-                    Label(note, systemImage: "key")
-                        .plFont(.caption)
-                        .foregroundStyle(.secondary)
-                        .lineLimit(2)
-                }
-            }
+            Text(entry.manifest.title)
+                .plFont(.caption)
+                .foregroundStyle(ready ? .primary : .secondary)
+                .lineLimit(1)
         }
-        .padding(PLSpace.margin)
-        .frame(maxWidth: .infinity, minHeight: 136, alignment: .topLeading)
-        .background {
-            shape.fill(PLTone.surface)
-            shape.fill(PLTone.tileWash.opacity(ready ? 0.04 + 0.20 * strength : 0))
-        }
-        .overlay {
-            shape.strokeBorder(PLTone.hairline.opacity(0.6), lineWidth: 0.5)
-        }
-        .contentShape(shape)
+        .frame(maxWidth: .infinity)
+        .contentShape(Rectangle())
         .accessibilityElement(children: .ignore)
         .accessibilityLabel(spoken)
         .accessibilityAddTraits(.isButton)
