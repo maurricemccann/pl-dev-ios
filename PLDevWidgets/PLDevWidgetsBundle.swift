@@ -21,6 +21,8 @@ struct PLDevHomeWidgets: WidgetBundle {
         GlyphBotWidget()
         LibraryWidget()
         PaintWidget()
+        PickWidget()
+        TownWidget()
     }
 }
 

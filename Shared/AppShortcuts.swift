@@ -4,14 +4,6 @@ import AppIntents
 struct PLDevShortcuts: AppShortcutsProvider {
     static var appShortcuts: [AppShortcut] {
         AppShortcut(
-            intent: OpenSectionIntent(),
-            phrases: [
-                "Open \(.applicationName)"
-            ],
-            shortTitle: "Open",
-            systemImageName: "square.grid.2x2"
-        )
-        AppShortcut(
             intent: HouseStatusIntent(),
             phrases: ["What's waiting in \(.applicationName)", "\(.applicationName) house status"],
             shortTitle: "House status",
@@ -29,17 +21,23 @@ struct PLDevShortcuts: AppShortcutsProvider {
             shortTitle: "Approve drafts",
             systemImageName: "checkmark.seal"
         )
-        AppShortcut(
-            intent: OpenHouseRoomIntent(),
-            phrases: ["Open \(\.$target) in \(.applicationName)"],
-            shortTitle: "Open a room",
-            systemImageName: "door.left.hand.open"
+        AppShortcut(   // wave 1 (11-13): the deck-aware twin of "Curate waiting"
+            intent: CurateDeckCountIntent(),
+            phrases: ["How many cards are in \(\.$target) in \(.applicationName)", "Cards waiting in \(\.$target) in \(.applicationName)"],
+            shortTitle: "Cards in a deck",
+            systemImageName: "rectangle.stack"
         )
         AppShortcut(
-            intent: CurateWaitingIntent(),
-            phrases: ["How many pieces wait in \(.applicationName)"],
-            shortTitle: "Curate waiting",
-            systemImageName: "rectangle.stack"
+            intent: ColourwayLeaderIntent(),
+            phrases: ["Which colourway is winning in \(.applicationName)"],
+            shortTitle: "Colourway vote",
+            systemImageName: "paintpalette"
+        )
+        AppShortcut(
+            intent: TownStatusIntent(),
+            phrases: ["What is the session doing in \(.applicationName)", "\(.applicationName) town status"],
+            shortTitle: "Town status",
+            systemImageName: "building.2"
         )
         AppShortcut(
             intent: ShopStatusIntent(),
