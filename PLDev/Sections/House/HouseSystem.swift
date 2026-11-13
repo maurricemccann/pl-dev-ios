@@ -74,10 +74,10 @@ enum HouseRoom: String, CaseIterable, Identifiable, Hashable {
 // MARK: - The shift Live Activity and the widget's numbers
 
 @MainActor enum ShiftLive {
-    static var running: Activity<ShiftAttributes>? { Activity<ShiftAttributes>.activities.first }
+    nonisolated static var running: Activity<ShiftAttributes>? { Activity<ShiftAttributes>.activities.first }
     static var allowed: Bool { ActivityAuthorizationInfo().areActivitiesEnabled }
 
-    private static func state(_ plan: HouseModel.Plan) -> ShiftAttributes.ContentState {
+    nonisolated private static func state(_ plan: HouseModel.Plan) -> ShiftAttributes.ContentState {
         let tasks = plan.tasks ?? []
         let open = tasks.first { $0.status != "done" && $0.status != "skipped" }
         let done = tasks.filter { $0.status == "done" || $0.status == "skipped" }.count
@@ -92,7 +92,7 @@ enum HouseRoom: String, CaseIterable, Identifiable, Hashable {
     }
 
     /// Updated only when the shift changes; ended at once when every task is ticked (dismissed 15 minutes later).
-    static func sync(_ plan: HouseModel.Plan?) async {
+    nonisolated static func sync(_ plan: HouseModel.Plan?) async {   // off the main actor: Activity is not Sendable
         guard let plan, let a = running else { return }
         let s = state(plan)
         if s.total > 0 && s.done >= s.total {
@@ -102,7 +102,7 @@ enum HouseRoom: String, CaseIterable, Identifiable, Hashable {
         }
     }
 
-    static func stop() async {
+    nonisolated static func stop() async {
         for a in Activity<ShiftAttributes>.activities { await a.end(nil, dismissalPolicy: .immediate) }
     }
 

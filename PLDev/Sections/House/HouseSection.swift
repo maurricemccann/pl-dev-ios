@@ -54,10 +54,10 @@ import UserNotifications
     struct DraftStats: Decodable { let pending: Int?; let queued: Int?; let held: Int?; let week_total: Int? }
     struct Declarations: Decodable { let approve: String?; let now: String?; let bulk: String?; let madman: String? }
     struct Creator: Decodable { let status: String; let label: String; let updated: String? }
-    struct PlanTask: Decodable, Identifiable, Equatable {
+    struct PlanTask: Decodable, Identifiable, Equatable, Sendable {
         let id: String; let slot: String?; let time_pt: String?; let title: String?; let why: String?; var status: String?; let kind: String?; let action_label: String?
     }
-    struct Plan: Decodable { let plan_date: String?; var tasks: [PlanTask]? }
+    struct Plan: Decodable, Sendable { let plan_date: String?; var tasks: [PlanTask]? }
     struct Day: Decodable, Identifiable { let date: String; let dow: Int?; let work: Bool?; let exception: Bool?; var id: String { date } }
     struct Schedule: Decodable { let days: [Day]? }
     struct Record: Decodable { let days: Int?; let total: Int?; let done: Int?; let skipped: Int?; let since: String?; let streak: Int? }
