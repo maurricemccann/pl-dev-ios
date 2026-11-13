@@ -171,8 +171,8 @@ final class PieceRuntime: @unchecked Sendable {
     }
 
     /// One frame through a transform (a VJ deck: zoom and tilt around the centre, and an alpha), as VJEngine draws it.
-    func drawTransformed(_ inst: PieceInstance, frame: Int, zoom: Double, angle: Double, alpha: Double) {
-        fnDrawXf?.call(withArguments: [inst.handle, frame, zoom, angle, alpha])
+    func drawTransformed(_ inst: PieceInstance, frame: Int, zoom: Double, angle: Double, alpha: Double, warm: Double, beat: Bool) {
+        fnDrawXf?.call(withArguments: [inst.handle, frame, zoom, angle, alpha, warm, beat])
     }
 
     func resize(_ inst: PieceInstance, pxW: Int, pxH: Int, dpr: Double) {
