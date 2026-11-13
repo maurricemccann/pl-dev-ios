@@ -162,6 +162,7 @@ struct CurateView: View {
     @Bindable var state: CurateModel
     @State private var drag: CGSize = .zero
     @FocusState private var commentFocus: Bool
+    @Environment(\.colorScheme) private var scheme
     private let threshold: CGFloat = 110
     private let classes: [(String?, String)] = [(nil, "Everything"), ("still", "Stills"), ("cinematic", "Shorts"), ("code-piece", "Code"), ("font", "Fonts"), ("essay", "Essays"), ("seed", "Seeds"), ("archive-work", "Archive")]
 
@@ -176,12 +177,13 @@ struct CurateView: View {
             } else if let it = state.current {
                 TipView(CurateSwipeTip())
                 TextField("A word about this piece", text: $state.comment, axis: .vertical)
-                    .lineLimit(1...3).textFieldStyle(.roundedBorder).focused($commentFocus)
+                    .lineLimit(1...3).focused($commentFocus)
+                    .gCard(padding: 14, radius: 22, active: commentFocus || !state.comment.isEmpty)
                     .onChange(of: commentFocus) { _, f in if !f { Task { await state.saveComment(model: model) } } }
                 card(it).frame(maxHeight: .infinity)
                 VStack(spacing: 2) {
-                    Text(it.name ?? it.vault_id).font(.title3.weight(.semibold)).italic().lineLimit(1)
-                    if let sub = it.sub, !sub.isEmpty { Text(sub.uppercased()).font(.caption2).tracking(1).foregroundStyle(.secondary).lineLimit(1) }
+                    Text(it.name ?? it.vault_id).gTitle(24).foregroundStyle(PLG.ink(scheme)).lineLimit(1)
+                    if let sub = it.sub, !sub.isEmpty { Text(sub).gEyebrow(9).foregroundStyle(PLG.dim(scheme)).lineLimit(1) }
                 }
                 keys
             } else {
@@ -189,6 +191,8 @@ struct CurateView: View {
             }
         }
         .padding(.horizontal, PLSpace.margin)
+        .background { GalleryGround() }.tint(PLG.gold)
+        .toolbarBackground(.hidden, for: .navigationBar)
         .navigationTitle("Curate").navigationBarTitleDisplayMode(.inline)
         .task { if state.queue.isEmpty { await state.load(model: model) } }
         .refreshable { await state.load(model: model, force: true) }
@@ -220,18 +224,21 @@ struct CurateView: View {
                 Picker("Class", selection: Binding(get: { state.cls }, set: { state.cls = $0; state.deal(); if $0 == "seed" { Task { await state.loadSeeds(model: model) } } })) {
                     ForEach(classes, id: \.1) { Text($0.1).tag($0.0) }
                 }
-            } label: { Label(state.deck.title, systemImage: "line.3.horizontal.decrease.circle") }
+            } label: {
+                HStack(spacing: 6) { Text(state.deck.title).gTitle(22).foregroundStyle(PLG.ink(scheme)); Image(systemName: "chevron.down").font(.system(size: 9, weight: .bold)).foregroundStyle(PLG.gold) }
+            }
             Spacer()
             VStack(alignment: .trailing, spacing: 2) {
-                Text("#\(min(state.index + 1, state.queue.count)) of \(state.queue.count) · \(max(0, state.queue.count - state.index)) left · \(state.kept) kept")
-                    .font(.caption.monospacedDigit())
-                if state.notSaved > 0 { Text("\(state.notSaved) NOT SAVED").font(.caption.bold()).foregroundStyle(.red) }
+                Text("#\(min(state.index + 1, state.queue.count)) of \(state.queue.count) · \(max(0, state.queue.count - state.index)) left")
+                    .gEyebrow(9).foregroundStyle(PLG.dim(scheme))
+                if state.kept > 0 { Text("\(state.kept) kept").gEyebrow(9).foregroundStyle(PLG.teal) }
+                if state.notSaved > 0 { Text("\(state.notSaved) not saved").gEyebrow(9).foregroundStyle(PLG.red) }
             }
         }
     }
 
     private func stamp(_ text: String, _ color: Color, _ amount: CGFloat) -> some View {
-        Text(text).font(.system(size: 34, weight: .heavy)).foregroundStyle(color)
+        Text(text).font(.system(size: 30, weight: .semibold)).tracking(6).foregroundStyle(color)
             .padding(.horizontal, 10).overlay(RoundedRectangle(cornerRadius: 8).stroke(color, lineWidth: 4))
             .opacity(Double(min(1, max(0, amount / threshold))))
     }
@@ -239,7 +246,7 @@ struct CurateView: View {
     private func card(_ it: LibraryItem) -> some View {
         let m = state.media(it, model: model)
         return ZStack {
-            RoundedRectangle(cornerRadius: PLRadius.card, style: .continuous).fill(Color.secondary.opacity(0.12))
+            RoundedRectangle(cornerRadius: PLRadius.card, style: .continuous).fill(Color(hex: 0xece7da))   // the web card's bone ground
             if let v = m.video {
                 LoopingClip(url: v).id(v)
             } else if let s = m.still {
@@ -249,19 +256,20 @@ struct CurateView: View {
             } else if it.class == "seed" {
                 SeedCard(phrase: it.name ?? "")
             } else {
-                Text(it.name ?? it.vault_id).font(.title3).padding()
+                Text(it.name ?? it.vault_id).gTitle(22).foregroundStyle(Color(hex: 0x1a1510)).padding()
             }
             VStack {
                 HStack {
-                    stamp("KEEP", .green, drag.width).rotationEffect(.degrees(-8))
+                    stamp("KEEP", PLG.teal, drag.width).rotationEffect(.degrees(-8))
                     Spacer()
-                    stamp("CUT", .red, -drag.width).rotationEffect(.degrees(8))
+                    stamp("CUT", PLG.red, -drag.width).rotationEffect(.degrees(8))
                 }
-                stamp("MAYBE", .yellow, -drag.height)
+                stamp("MAYBE", PLG.amber, -drag.height)
                 Spacer()
             }.padding(16)
         }
         .clipShape(RoundedRectangle(cornerRadius: PLRadius.card, style: .continuous))
+        .overlay { RoundedRectangle(cornerRadius: PLRadius.card, style: .continuous).strokeBorder(PLG.gold.opacity(0.28), lineWidth: 0.8) }
         .offset(drag)
         .rotationEffect(.degrees(Double(drag.width / 18)))
         .gesture(DragGesture()
@@ -307,7 +315,7 @@ struct KeyCap: View {
         let name: String
         func makeBody(configuration: Configuration) -> some View {
             AsyncImage(url: URL(string: "\(base)/remote/cap-\(name)-\(configuration.isPressed ? "down" : "up")-t3.png")) { $0.resizable().scaledToFit() }
-                placeholder: { RoundedRectangle(cornerRadius: 10, style: .continuous).fill(Color.secondary.opacity(0.2)) }
+                placeholder: { RoundedRectangle(cornerRadius: 10, style: .continuous).fill(PLG.surface(.dark)) }
                 .frame(maxWidth: .infinity).frame(height: 64)
                 .contentShape(Rectangle())
         }
@@ -319,7 +327,7 @@ struct EssayCard: View {
     let url: URL
     @State private var text: String?
     var body: some View {
-        ScrollView { Text(text ?? "Loading…").font(.body).frame(maxWidth: .infinity, alignment: .leading).padding(20) }
+        ScrollView { Text(text ?? "Loading…").font(.system(.body, design: .serif)).foregroundStyle(Color(hex: 0x1a1510)).frame(maxWidth: .infinity, alignment: .leading).padding(20) }
             .task(id: url) {
                 if let (d, _) = try? await URLSession.shared.data(from: url) { text = String(decoding: d, as: UTF8.self) } else { text = "Could not load this essay." }
             }

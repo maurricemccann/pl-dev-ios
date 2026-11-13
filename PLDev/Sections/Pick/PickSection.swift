@@ -115,14 +115,15 @@ struct PickView: View {
     let model: AppModel
     let state: PickModel
     private let cols = [GridItem(.adaptive(minimum: 150), spacing: 14)]
+    @Environment(\.colorScheme) private var scheme
 
     var body: some View {
         ZStack {
             ScrollView {
                 VStack(alignment: .leading, spacing: 12) {
-                    Text(state.showResults ? "The vote so far." : "Pick the next colourway.").font(.largeTitle.bold())
+                    Text(state.showResults ? "The vote so far." : "Pick the next colourway.").plHand(34, relativeTo: .largeTitle).foregroundStyle(PLG.ink(scheme))
                     Text(state.showResults ? "\(state.totalVotes) \(state.totalVotes == 1 ? "pick" : "picks"), most first."
-                                           : "One tap. The most picked becomes the next piece.").foregroundStyle(.secondary)
+                                           : "One tap. The most picked becomes the next piece.").plHand(15, relativeTo: .subheadline).foregroundStyle(PLG.goldDim(scheme))
                     LazyVGrid(columns: cols, spacing: 14) {
                         ForEach(state.showResults ? state.ranked : state.palettes) { p in
                             Button { if !state.showResults { state.selected = p.name } } label: {
@@ -134,7 +135,7 @@ struct PickView: View {
                                         }
                                     }
                                     .overlay(RoundedRectangle(cornerRadius: 16, style: .continuous)
-                                        .strokeBorder(Color.yellow, lineWidth: state.selected == p.name ? 3 : 0))
+                                        .strokeBorder(PLG.gold, lineWidth: state.selected == p.name ? 3 : 0))
                                     .scaleEffect(state.selected == p.name ? 1.02 : 1)
                                     .animation(.spring(duration: 0.25), value: state.selected)
                             }
@@ -143,7 +144,7 @@ struct PickView: View {
                             .accessibilityAddTraits(state.selected == p.name ? .isSelected : [])
                         }
                     }
-                    if let m = state.message { Text(m).foregroundStyle(.red).frame(maxWidth: .infinity) }
+                    if let m = state.message { Text(m).font(.system(size: 14)).foregroundStyle(PLG.red).frame(maxWidth: .infinity) }
                 }
                 .padding(PLSpace.margin)
                 .padding(.bottom, 90)
@@ -156,19 +157,20 @@ struct PickView: View {
                 VStack {
                     Spacer()
                     Button { Task { await state.vote(model: model) } } label: {
-                        Text(state.selected == nil ? "Pick one above" : "This one").font(.title3.bold())
+                        Text(state.selected == nil ? "Pick one above" : "This one").plHand(22, relativeTo: .title3)
+                            .foregroundStyle(state.selected == nil ? PLG.dim(scheme) : PLG.ink(scheme))
                             .padding(.horizontal, 34).frame(minHeight: 52)
                     }
-                    .glassControl(tint: state.selected == nil ? nil : .yellow)
+                    .glassControl(tint: state.selected == nil ? nil : PLG.gold)
                     .disabled(state.selected == nil || state.sending)
                     .padding(.bottom, 16)
                 }
             }
             if state.thanks {
-                Color.black.ignoresSafeArea().overlay(
+                PLG.bg(.dark).ignoresSafeArea().overlay(
                     VStack(spacing: 8) {
-                        Text("Kept.").font(.system(size: 64, weight: .bold))
-                        Text("Your pick is in. Thank you.").foregroundStyle(.secondary)
+                        Text("Kept.").plHand(64, relativeTo: .largeTitle).foregroundStyle(PLG.gold)
+                        Text("Your pick is in. Thank you.").plHand(18, relativeTo: .body).foregroundStyle(PLG.dim(.dark))
                     })
                     .transition(.opacity)
             }
@@ -181,6 +183,8 @@ struct PickView: View {
                 }
             }
         }
+        .background { GalleryGround() }.tint(PLG.gold)
+        .toolbarBackground(.hidden, for: .navigationBar)
         .navigationTitle("Pick").navigationBarTitleDisplayMode(.inline)
         .task { if state.palettes.isEmpty { await state.load(model: model) } }
     }

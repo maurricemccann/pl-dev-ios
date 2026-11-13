@@ -115,6 +115,7 @@ struct LibraryView: View {
     @State private var tagName = ""
     @State private var askTag = false
     @State private var bulkTick = 0
+    @Environment(\.colorScheme) private var scheme
     private let classes: [(String?, String)] = [(nil, "All classes"), ("still", "Stills"), ("cinematic", "Shorts"), ("code-piece", "Code"), ("font", "Fonts"), ("archive-work", "Archive")]
 
     /// Archive works stay hidden unless the class filter picks them; unrenderable pieces never show. Newest batch first.
@@ -128,6 +129,10 @@ struct LibraryView: View {
         }.sorted { ($0.batch ?? "") > ($1.batch ?? "") }
     }
 
+    private static func verdictTint(_ v: Verdict) -> Color? {
+        switch v { case .keep: return PLG.teal; case .fav: return PLG.gold; case .maybe: return PLG.amber; case .cut: return PLG.red; default: return nil }
+    }
+
     private func count(_ v: Verdict) -> Int {
         data.items.filter { (cls == nil ? $0.class != "archive-work" : $0.class == cls) && v.matches(data.marks[$0.vault_id]) }.count
     }
@@ -135,13 +140,16 @@ struct LibraryView: View {
     var body: some View {
         let list = shown
         ScrollView {
+            GalleryHeading(eyebrow: "The Curve Library", title: "Library").padding(.horizontal, 16).padding(.top, 4)
             if failed {
                 ContentUnavailableView("YOUR MARKS DID NOT LOAD", systemImage: "exclamationmark.triangle", description: Text("Nothing can be marked until they do. Pull to try again."))
             } else if data.items.isEmpty {
                 ProgressView("Loading the library…").padding(.top, 80)
             }
             if !data.items.isEmpty { shelf }
-            LazyVGrid(columns: [GridItem(.adaptive(minimum: 104), spacing: 6)], spacing: 6) {
+            Text("\(list.count.formatted()) shown · orange ring = cloud batch or API render").font(.system(size: 11)).foregroundStyle(PLG.dim(scheme))
+                .frame(maxWidth: .infinity, alignment: .leading).padding(.horizontal, 16).padding(.top, 8)
+            LazyVGrid(columns: [GridItem(.adaptive(minimum: 104), spacing: 8)], spacing: 8) {
                 ForEach(list) { it in
                     Button { if selecting { toggle(it.vault_id) } else { open = it } } label: {
                         Tile(item: it, mark: data.marks[it.vault_id], url: data.media(it, model: model).still)
@@ -155,9 +163,10 @@ struct LibraryView: View {
                     .buttonStyle(.plain)
                 }
             }
-            .padding(.horizontal, 6)
+            .padding(.horizontal, 16).padding(.bottom, 24)
         }
-        .navigationTitle("Library")
+        .gScreen()
+        .navigationTitle("Library").navigationBarTitleDisplayMode(.inline)
         .toolbar {
             ToolbarItem(placement: .topBarLeading) {
                 NavigationLink { GalleryRoomsView(model: model) } label: { Label("Rooms", systemImage: "square.grid.2x2") }
@@ -191,19 +200,19 @@ struct LibraryView: View {
         .searchable(text: $search, prompt: "Name or id")
         .safeAreaInset(edge: .top) {
             ScrollView(.horizontal, showsIndicators: false) {
-                HStack {
+                HStack(spacing: 8) {
                     Menu { Picker("Class", selection: $cls) { ForEach(classes, id: \.1) { Text($0.1).tag($0.0) } } }
-                        label: { Label(classes.first { $0.0 == cls }?.1 ?? "Class", systemImage: "line.3.horizontal.decrease") }
-                        .buttonStyle(.bordered)
+                        label: { HStack(spacing: 6) { Text(classes.first { $0.0 == cls }?.1 ?? "Class").font(.system(size: 14, weight: .medium)); Image(systemName: "chevron.down").font(.caption2) }
+                            .foregroundStyle(PLG.ink(scheme)).padding(.horizontal, 14).frame(minHeight: 40)
+                            .overlay { Capsule().strokeBorder(PLG.gold.opacity(0.45), lineWidth: 0.9) } }
                     ForEach(Verdict.allCases) { v in
-                        Button("\(v.rawValue) \(count(v))") { verdict = v }
-                            .buttonStyle(.bordered).tint(verdict == v ? .accentColor : .secondary)
+                        Button { verdict = v } label: { GalleryChip(title: v.rawValue, count: count(v), on: verdict == v, tint: Self.verdictTint(v)) }.buttonStyle(.plain)
                     }
-                }.padding(.horizontal)
-            }.padding(.vertical, 4).background(.bar)
+                }.padding(.horizontal, 16)
+            }.padding(.vertical, 6).background(.ultraThinMaterial)
         }
         .overlay(alignment: .bottom) {
-            if data.notSaved > 0 { Text("\(data.notSaved) NOT SAVED").font(.caption.bold()).padding(8).background(.red, in: Capsule()).foregroundStyle(.white).padding() }
+            if data.notSaved > 0 { Text("\(data.notSaved) not saved").gEyebrow(11).padding(.horizontal, 14).padding(.vertical, 8).background(PLG.red, in: Capsule()).foregroundStyle(.white).padding() }
         }
         .refreshable { await reload(force: true) }
         .task { if data.items.isEmpty || !data.marksLoaded { await reload(force: false) } }
@@ -215,7 +224,7 @@ struct LibraryView: View {
     private var shelf: some View {
         let batches = Array(Set(data.items.compactMap(\.batch))).sorted(by: >).prefix(10)
         return VStack(alignment: .leading, spacing: 8) {
-            Text("LATEST BATCHES").font(.caption2.weight(.semibold)).tracking(1.5).foregroundStyle(.secondary)
+            Text("Latest batches").gEyebrow(10).foregroundStyle(PLG.goldDim(scheme))
             ScrollView(.horizontal, showsIndicators: false) {
                 HStack(spacing: 8) {
                     ForEach(Array(batches), id: \.self) { b in
@@ -223,28 +232,29 @@ struct LibraryView: View {
                         let n = its.filter { data.marks[$0.vault_id] == nil }.count, k = its.filter { data.marks[$0.vault_id]?.v == "keep" }.count
                         let m = its.filter { data.marks[$0.vault_id]?.v == "maybe" }.count, c = its.filter { data.marks[$0.vault_id]?.v == "cut" }.count
                         Button { batch = batch == b ? nil : b } label: {
-                            VStack(alignment: .leading, spacing: 2) {
-                                Text(b).font(.caption.monospaced().weight(.semibold))
-                                Text("\(n) new · \(k)✓ \(m)~ \(c)×").font(.caption2.monospacedDigit()).foregroundStyle(.secondary)
+                            VStack(alignment: .leading, spacing: 3) {
+                                Text(b).gMono(12).foregroundStyle(PLG.ink(scheme))
+                                (Text("\(n) new ").foregroundStyle(PLG.red) + Text("\(k)✓ ").foregroundStyle(PLG.teal) + Text("\(m)~ ").foregroundStyle(PLG.amber) + Text("\(c)×").foregroundStyle(PLG.red))
+                                    .font(.system(size: 11, weight: .semibold, design: .monospaced)).monospacedDigit()
                             }
-                            .padding(.horizontal, 12).padding(.vertical, 8)
-                            .background(batch == b ? Color.accentColor.opacity(0.25) : Color.secondary.opacity(0.12), in: RoundedRectangle(cornerRadius: 14, style: .continuous))
+                            .gCard(padding: 12, radius: 18, active: batch == b)
+                            .fixedSize()
                         }
                         .buttonStyle(.plain)
                     }
                     ForEach([("cloud-batch", "Cloud batches"), ("on-model", "API renders")], id: \.0) { s in
                         Button { source = source == s.0 ? nil : s.0 } label: {
-                            Text("\(s.1) \(data.items.filter { $0.source == s.0 }.count)").font(.caption.weight(.semibold))
-                                .padding(.horizontal, 12).padding(.vertical, 8)
-                                .background(source == s.0 ? PLTone.house.opacity(0.3) : PLTone.house.opacity(0.1), in: Capsule())
-                                .overlay(Capsule().stroke(PLTone.house.opacity(0.6)))
+                            Text("\(s.1) \(data.items.filter { $0.source == s.0 }.count)").gEyebrow(10.5).foregroundStyle(PLG.orange)
+                                .padding(.horizontal, 14).frame(minHeight: 40)
+                                .background(PLG.orange.opacity(source == s.0 ? 0.28 : 0.08), in: Capsule())
+                                .overlay(Capsule().strokeBorder(PLG.orange.opacity(0.7), lineWidth: 1))
                         }
                         .buttonStyle(.plain)
                     }
                 }
             }
         }
-        .padding(.horizontal, 6).padding(.top, 6)
+        .padding(.horizontal, 16).padding(.top, 8)
     }
 
     private func toggle(_ id: String) { if picked.contains(id) { picked.remove(id) } else { picked.insert(id) } }
@@ -296,7 +306,7 @@ struct Tile: View {
     let url: URL?
     var body: some View {
         ZStack(alignment: .topTrailing) {
-            Color.secondary.opacity(0.12)
+            Color(hex: 0x1a1610)
             if let url { AsyncImage(url: url) { $0.resizable().scaledToFill() } placeholder: { Color.clear } }
             else { Text(item.name ?? item.vault_id).font(.caption2).padding(4) }
             if let c = dot { Circle().fill(c).frame(width: 10, height: 10).padding(6) }
@@ -312,13 +322,13 @@ struct Tile: View {
                 .background(LinearGradient(colors: [.clear, .black.opacity(0.55)], startPoint: .top, endPoint: .bottom))
         }
         .aspectRatio(4.0 / 5.0, contentMode: .fit)
-        .clipShape(RoundedRectangle(cornerRadius: 8, style: .continuous))
-        .overlay(RoundedRectangle(cornerRadius: 8, style: .continuous).stroke(PLTone.house, lineWidth: item.source == "cloud-batch" || item.source == "on-model" ? 2 : 0))
+        .clipShape(RoundedRectangle(cornerRadius: 14, style: .continuous))
+        .overlay(RoundedRectangle(cornerRadius: 14, style: .continuous).strokeBorder(item.source == "cloud-batch" || item.source == "on-model" ? PLG.orange : PLG.gold.opacity(0.22), lineWidth: item.source == "cloud-batch" || item.source == "on-model" ? 2 : 0.8))
     }
     private var dot: Color? {
         guard let m = mark else { return nil }
-        if m.isFav { return PLTone.house }
-        switch m.v { case "keep": return .green; case "maybe": return .yellow; case "cut": return .red; default: return nil }
+        if m.isFav { return PLG.gold }
+        switch m.v { case "keep": return PLG.teal; case "maybe": return PLG.amber; case "cut": return PLG.red; default: return nil }
     }
 }
 
@@ -353,6 +363,7 @@ struct PieceViewer: View {
                 }
             }
             .tabViewStyle(.page(indexDisplayMode: .never))
+            .background { GalleryGround() }
             .safeAreaInset(edge: .bottom) { controls }
             .navigationTitle(current?.name ?? "")
             .navigationBarTitleDisplayMode(.inline)
@@ -370,15 +381,17 @@ struct PieceViewer: View {
     private var controls: some View {
         VStack(spacing: 8) {
             HStack(alignment: .bottom) {
-                TextField("Comment", text: $comment, axis: .vertical).lineLimit(1...3).textFieldStyle(.roundedBorder)
+                TextField("A word about this piece", text: $comment, axis: .vertical).lineLimit(1...3)
+                    .gCard(padding: 12, radius: 16, active: !comment.isEmpty)
                     .onSubmit { saveComment() }
-                Button("Save") { saveComment() }.buttonStyle(.bordered)
+                Button { saveComment() } label: { Text("Save").gEyebrow(11).foregroundStyle(PLG.gold).padding(.horizontal, 14).frame(minHeight: 44).overlay { Capsule().strokeBorder(PLG.gold.opacity(0.45)) } }
+                    .buttonStyle(.plain)
             }
-            HStack {
-                mark("Cut", "cut", .red); mark("Maybe", "maybe", .yellow); mark("Keep", "keep", .green); mark("Fav", "fav", PLTone.house)
+            HStack(spacing: 8) {
+                mark("Cut", "cut", PLG.red); mark("Maybe", "maybe", PLG.amber); mark("Keep", "keep", PLG.teal); mark("Fav", "fav", PLG.gold)
             }
         }
-        .padding().background(.bar)
+        .padding().background(.ultraThinMaterial)
     }
 
     private func isActive(_ v: String) -> Bool {

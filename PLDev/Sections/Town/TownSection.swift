@@ -41,6 +41,7 @@ import UserNotifications
 struct TownView: View {
     let model: AppModel
     let state: TownModel
+    @Environment(\.colorScheme) private var scheme
 
     private func building(_ area: String?) -> String {
         switch area ?? "" {
@@ -54,37 +55,58 @@ struct TownView: View {
         }
     }
 
+    /// The town's panel: a gold label over rows on the gallery's glass card (the web page's HUD chips, as cards).
+    private func panel<C: View>(_ title: String, @ViewBuilder _ content: () -> C) -> some View {
+        VStack(alignment: .leading, spacing: 10) {
+            Text(title).gEyebrow(10).foregroundStyle(PLG.goldDim(scheme))
+            content()
+        }
+        .gCard()
+    }
+
+    private func line(_ k: String, _ v: String, tint: Color? = nil) -> some View {
+        HStack {
+            Text(k).gEyebrow(9.5).foregroundStyle(PLG.dim(scheme))
+            Spacer()
+            Text(v).gMono(13).foregroundStyle(tint ?? PLG.ink(scheme))
+        }
+    }
+
     var body: some View {
-        List {
-            if state.failed { Text("Could not reach the town. Pull to try again.").foregroundStyle(.secondary) }
-            if let live = state.town?.live {
-                Section("Now") {
-                    LabeledContent("Session", value: state.town?.working == true ? "Working" : "Quiet")
-                    LabeledContent("At", value: building(live.area))
-                    if let t = live.tool { LabeledContent("Tool", value: t) }
-                    if let s = live.age_s { LabeledContent("Last step", value: s < 90 ? "\(s) s ago" : "\(s / 60) min ago") }
-                    if let c = live.calls { LabeledContent("Steps today", value: "\(c)") }
-                }
-                if let hist = live.hist, !hist.isEmpty {
-                    Section("Recent path") {
-                        ForEach(Array(hist.prefix(8).enumerated()), id: \.offset) { _, s in
-                            Text("\(building(s.a)) · \(s.k ?? "")").font(.callout)
+        ScrollView {
+            VStack(alignment: .leading, spacing: 14) {
+                GalleryHeading(eyebrow: "Task Town", title: "The town")
+                if state.failed { Text("Could not reach the town. Pull to try again.").font(.system(size: 14)).foregroundStyle(PLG.red) }
+                if let live = state.town?.live {
+                    panel("Now") {
+                        line("Session", state.town?.working == true ? "Working" : "Quiet", tint: state.town?.working == true ? PLG.gold : nil)
+                        line("At", building(live.area))
+                        if let t = live.tool { line("Tool", t) }
+                        if let s = live.age_s { line("Last step", s < 90 ? "\(s) s ago" : "\(s / 60) min ago") }
+                        if let c = live.calls { line("Steps today", "\(c)") }
+                    }
+                    if let hist = live.hist, !hist.isEmpty {
+                        panel("Recent path") {
+                            ForEach(Array(hist.prefix(8).enumerated()), id: \.offset) { _, s in
+                                Text("\(building(s.a)) · \(s.k ?? "")").font(.system(size: 13, design: .monospaced)).foregroundStyle(PLG.ink(scheme))
+                            }
                         }
                     }
                 }
-            }
-            Section("Townspeople (the Roadmap)") {
-                let tasks = state.town?.tasks ?? []
-                if tasks.isEmpty { Text("No one in town.").foregroundStyle(.secondary) }
-                ForEach(tasks) { t in
-                    LabeledContent(t.title ?? "", value: t.state ?? "")
+                panel("Townspeople (the Roadmap)") {
+                    let tasks = state.town?.tasks ?? []
+                    if tasks.isEmpty { Text("No one in town.").gTitle(18).foregroundStyle(PLG.dim(scheme)) }
+                    ForEach(tasks) { t in line(t.title ?? "", t.state ?? "") }
+                }
+                if let v = state.town?.visitors, !v.isEmpty {
+                    panel("Visitors") { ForEach(v) { Text($0.name ?? "visitor").font(.system(size: 14)).foregroundStyle(PLG.ink(scheme)) } }
                 }
             }
-            if let v = state.town?.visitors, !v.isEmpty {
-                Section("Visitors") { ForEach(v) { Text($0.name ?? "visitor") } }
-            }
+            .padding(16)
         }
-        .navigationTitle("Town")
+        .background { GalleryGround() }.tint(PLG.gold)
+        .toolbarBackground(.hidden, for: .navigationBar)
+        .navigationTitle("Town").navigationBarTitleDisplayMode(.inline)
         .refreshable { await state.load(model: model) }
         .task {
             while !Task.isCancelled {   // the web polls every 10 s; so does this, only while it is on screen
