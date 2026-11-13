@@ -50,7 +50,7 @@ console.log('pieces:', list.length, 'live:', list.filter((p) => p.live).length, 
       if (p.comp) { try { await sb.PL_loadComp(String(p.comp).padStart(2, '0')); } catch (e) { /* the app proceeds too */ } }
       const r = JSON.parse(sb.__newInstance(p.id, 780, 1688, 2)); if (r.error) { bad.push(p.id + ': ' + r.error); continue; }
       sb.__warm(r.handle, 4); let errs = 0; for (let f = 0; f < FR; f++) errs = sb.__draw(r.handle, -1);
-      sb.__drawXf(r.handle, 99, 1.2, 10, 0.9);
+      sb.__drawXf(r.handle, 99, 1.2, 10, 0.9, 0.2, true);
       sb.__freeInstance(r.handle);
       if (errs > 0 || logs.length > before) bad.push(p.id + ': ' + logs.slice(before).slice(0, 2).join(' | ')); else ok++;
     } catch (e) { bad.push(p.id + ' THREW ' + e.message); }

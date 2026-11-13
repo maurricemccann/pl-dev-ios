@@ -10,6 +10,10 @@ import UIKit
 //
 // Pixels: premultiplied RGBA, 8 bit, row 0 on top, user space y-down like the browser (a flip is the base transform).
 
+extension CGAffineTransform {
+    var caInvertible: Bool { abs(a * d - b * c) > 1e-12 }
+}
+
 /// Every surface, decoded image and font the running pieces can name. One per runtime.
 final class CanvasWorld: @unchecked Sendable {
     var surfaces: [Int: CanvasSurface] = [:]
@@ -226,7 +230,7 @@ final class CanvasSurface: @unchecked Sendable {
 
     /// The matrix that maps what has been added to the current path into the path's own space, when the canvas matrix has moved on.
     private var pathXf: CGAffineTransform {
-        m == pathM ? .identity : (pathM.isInvertible ? m.concatenating(pathM.inverted()) : .identity)
+        m == pathM ? .identity : (pathM.caInvertible ? m.concatenating(pathM.inverted()) : .identity)
     }
 
     private func op(_ code: Int, _ a: UnsafePointer<Double>, _ strs: [String]) {
@@ -242,7 +246,7 @@ final class CanvasSurface: @unchecked Sendable {
         case 7:
             let t = CGAffineTransform(a: a[0], b: a[1], c: a[2], d: a[3], tx: a[4], ty: a[5])
             let cur = gc.ctm
-            if cur.isInvertible { gc.concatenate(cur.inverted()) }
+            if cur.caInvertible { gc.concatenate(cur.inverted()) }
             gc.translateBy(x: 0, y: CGFloat(h)); gc.scaleBy(x: 1, y: -1)
             gc.concatenate(t); m = t
         case 8: path = CGMutablePath(); pathM = m
@@ -376,7 +380,7 @@ final class CanvasSurface: @unchecked Sendable {
 
     private func pathForDraw() -> CGPath {
         if m == pathM { return path }
-        guard m.isInvertible else { return CGMutablePath() }
+        guard m.caInvertible else { return CGMutablePath() }
         var t = pathM.concatenating(m.inverted())
         return path.copy(using: &t) ?? path
     }
@@ -431,7 +435,7 @@ final class CanvasSurface: @unchecked Sendable {
 
     /// Tiles the pattern over the current clip, in the pattern's own space.
     private func drawPattern(_ id: Int) {
-        guard let p = patterns[id], p.w > 0, p.h > 0, p.xf.isInvertible else { return }
+        guard let p = patterns[id], p.w > 0, p.h > 0, p.xf.caInvertible else { return }
         let bb = gc.boundingBoxOfClipPath
         if bb.isNull || bb.isInfinite || bb.isEmpty { return }
         gc.saveGState()
@@ -533,7 +537,7 @@ final class CanvasSurface: @unchecked Sendable {
         // draw into the scratch layer with the same matrix and the same styles, but plain compositing
         let main = gc
         let cur = t.gc.ctm
-        if cur.isInvertible { t.gc.concatenate(cur.inverted()) }
+        if cur.caInvertible { t.gc.concatenate(cur.inverted()) }
         t.gc.concatenate(main.ctm)
         t.gc.setAlpha(1); t.gc.setBlendMode(.normal); t.gc.setShadow(offset: .zero, blur: 0, color: nil)
         t.gc.interpolationQuality = st.smoothing ? .high : .none
@@ -544,7 +548,7 @@ final class CanvasSurface: @unchecked Sendable {
         guard let img = t.gc.makeImage() else { return }
         main.saveGState()
         let ctm = main.ctm
-        if ctm.isInvertible { main.concatenate(ctm.inverted()) }
+        if ctm.caInvertible { main.concatenate(ctm.inverted()) }
         main.draw(img, in: CGRect(x: 0, y: 0, width: w, height: h))   // raw y-up space: the picture lands upright
         main.restoreGState()
     }

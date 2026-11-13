@@ -324,12 +324,15 @@
     try { s.p.draw(s.ctx, s.st, s.w, s.h, frame); } catch (e) { if (s.errors++ < 3) N.log(2, 'draw ' + s.p.id + ': ' + e); }
     G.__flushAll(); return s.errors;
   };
-  // Draw through a transform (the VJ deck's zoom, tilt and breathe), exactly as VJEngine does it.
-  G.__drawXf = (hd, frame, zoom, angleDeg, alpha) => {
+  // Draw through a transform (the VJ deck's zoom, tilt and breathe), then the warm wash and the beat border, exactly as VJEngine does it.
+  G.__drawXf = (hd, frame, zoom, angleDeg, alpha, warm, beat) => {
     const s = INST.get(hd); if (!s) return -1; const ctx = s.ctx; s.frame = Math.max(s.frame, frame + 1);
     ctx.save(); ctx.globalAlpha = alpha; const cx = s.w / 2, cy = s.h / 2; ctx.translate(cx, cy); ctx.scale(zoom, zoom); if (angleDeg) ctx.rotate(angleDeg * Math.PI / 180); ctx.translate(-cx, -cy);
     try { s.p.draw(ctx, s.st, s.w, s.h, frame); } catch (e) { if (s.errors++ < 3) N.log(2, 'draw ' + s.p.id + ': ' + e); }
-    ctx.restore(); G.__flushAll(); return s.errors;
+    ctx.restore();
+    if (warm > 0.005) { ctx.save(); ctx.globalCompositeOperation = 'overlay'; ctx.globalAlpha = Math.min(warm, 0.45); ctx.fillStyle = 'rgba(201,168,76,1)'; ctx.fillRect(0, 0, s.w, s.h); ctx.restore(); }
+    if (beat) { ctx.save(); const g = ctx.createLinearGradient(0, 0, 0, s.h); g.addColorStop(0, 'rgba(201,168,76,0.65)'); g.addColorStop(0.5, 'rgba(201,168,76,0)'); g.addColorStop(1, 'rgba(201,168,76,0.65)'); ctx.strokeStyle = g; ctx.lineWidth = 4; ctx.strokeRect(2, 2, s.w - 4, s.h - 4); ctx.restore(); }
+    G.__flushAll(); return s.errors;
   };
   G.__resizeInstance = (hd, pxW, pxH, dpr) => {
     const s = INST.get(hd); if (!s) return; s.cv.width = pxW; s.cv.height = pxH; s.ctx.setTransform(dpr, 0, 0, dpr, 0, 0); s.dpr = dpr; s.w = pxW / dpr; s.h = pxH / dpr;

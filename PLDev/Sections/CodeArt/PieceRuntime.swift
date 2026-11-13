@@ -1,6 +1,7 @@
 import CoreGraphics
 import Foundation
 import ImageIO
+import QuartzCore
 @preconcurrency import JavaScriptCore
 
 // The code art runtime (his order 11-13: no web view). His piece bundles run unchanged in JavaScriptCore on one serial
