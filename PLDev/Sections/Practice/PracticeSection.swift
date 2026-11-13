@@ -26,8 +26,10 @@ import UserNotifications
 
     static func handle(link: DeepLink, model: AppModel) -> Bool {
         if case .section(_, let path, _) = link, let first = path.first {
-            if let tab = PracticeModel.Tab(rawValue: first) { state.tab = tab }
-            if let room = PracticeRoom(rawValue: first) { state.room = room }
+            state.entryDone = true   // a link to a card goes straight there; the entry is for opening the app
+            if first == "record" { state.tab = .trends }
+            else if let tab = PracticeModel.Tab(rawValue: first) { state.tab = tab }
+            if let room = PracticeRoom(rawValue: first) { state.tab = room.tab; state.scrollTo = room.card }
         }
         return true
     }
@@ -44,9 +46,9 @@ import UserNotifications
 }
 
 struct HabitSwipeTip: Tip {
-    var title: Text { Text("Tick a habit with a swipe") }
-    var message: Text? { Text("Swipe a habit left to tick it. Swipe it back to undo.") }
-    var image: Image? { Image(systemName: "hand.draw") }
+    var title: Text { Text("Habits tick with a tap") }
+    var message: Text? { Text("Tap the box to tick a habit. Touch and hold a habit to archive it.") }
+    var image: Image? { Image(systemName: "hand.tap") }
 }
 
 /// Every Practice destination, by name, so a link, Siri, Spotlight or a notification can land on it.
@@ -72,35 +74,35 @@ enum PracticeRoom: String, CaseIterable, Identifiable, Hashable {
         }
     }
 
-    @MainActor @ViewBuilder func view(_ model: AppModel) -> some View {
+    /// Which screen the room lives on, and which card on it.
+    var tab: PracticeModel.Tab { [.review, .trends].contains(self) ? .trends : .today }
+    var card: String {
         switch self {
-        case .morning: CheckinView(model: model, evening: false)
-        case .evening: CheckinView(model: model, evening: true)
-        case .lesson: LessonView(model: model)
-        case .reframe: ReframeView(model: model)
-        case .affirmations: AffirmationsView(model: model)
-        case .coach: CoachView(model: model)
-        case .desires: DesiresView(model: model)
-        case .habits: HabitsView(model: model)
-        case .rehearsal: RehearsalView(model: model)
-        case .vision: VisionView(model: model)
-        case .notes: NotesView(model: model)
-        case .wins: WinsView(model: model)
-        case .review: ReviewView(model: model)
-        case .trends: TrendsView(model: model)
+        case .morning: return "morning"; case .evening: return "evening"; case .lesson: return "lesson"; case .reframe: return "reframe"
+        case .affirmations: return "affirmations"; case .coach: return "conversation"; case .desires: return "desires"; case .habits: return "habits"
+        case .rehearsal: return "meditation"; case .vision: return "vision"; case .notes: return "scratchpad"; case .wins: return "wins"
+        case .review: return "review"; case .trends: return "story"
         }
     }
 }
 
 @MainActor @Observable final class PracticeModel {
     enum Tab: String, CaseIterable, Identifiable {
-        case today, practice, record
+        case today, trends
         var id: String { rawValue }
         var title: String { rawValue.capitalized }
     }
 
     var tab: Tab = .today
-    var room: PracticeRoom?
+    /// The card a link, Siri or a notification wants in view; the screen scrolls to it and clears this.
+    var scrollTo: String?
+    /// Bumped on pull-to-refresh and after writes other cards care about; every card reloads when it changes.
+    var reload = 0
+    /// Bumped when the desire list changes, so the rehearsal's choice of desire follows.
+    var desiresRev = 0
+    /// The speak-first entry shows once per launch.
+    var entryDone = false
+    static var pinged = false
     var streak: PracticeStreak?
     var today: PracticeCheckin?
     var lesson: PracticeLesson?
@@ -158,14 +160,25 @@ enum PracticeRoom: String, CaseIterable, Identifiable, Hashable {
 struct PracticeView: View {
     let model: AppModel
     @Bindable var state: PracticeModel
+    @State private var started = false
 
     var body: some View {
-        Group {
-            switch state.tab {
-            case .today: TodayTab(model: model, state: state)
-            case .practice: PracticeTab(model: model, state: state)
-            case .record: RecordTab(model: model, state: state)
+        ScrollViewReader { proxy in
+            ScrollView {
+                VStack(spacing: 16) {
+                    if let m = state.message { Text(m).candleHint().frame(maxWidth: .infinity, alignment: .leading) }
+                    switch state.tab {
+                    case .today: TodayScreen(model: model, state: state)
+                    case .trends: TrendsScreen(model: model, state: state)
+                    }
+                }
+                .frame(maxWidth: 640).padding(.horizontal, 20).padding(.top, 8).padding(.bottom, 64).frame(maxWidth: .infinity)
             }
+            .scrollDismissesKeyboard(.interactively)
+            .refreshable { await state.loadToday(model: model); state.reload += 1 }
+            .onChange(of: state.scrollTo) { _, id in jump(proxy, id) }
+            .onChange(of: state.tab) { _, _ in if state.scrollTo == nil { proxy.scrollTo("top", anchor: .top) } }
+            .task { if !started { started = true; await openPing(); jump(proxy, state.scrollTo) } }
         }
         .safeAreaInset(edge: .top, spacing: 0) {
             CandleTabs(titles: PracticeModel.Tab.allCases.map(\.title), index: Binding(
@@ -176,148 +189,50 @@ struct PracticeView: View {
         .preferredColorScheme(.dark)
         .navigationTitle("Practice")
         .navigationBarTitleDisplayMode(.inline)
+        .toolbar(state.entryDone ? .automatic : .hidden, for: .navigationBar)
+        .overlay { if !state.entryDone { PracticeEntry(model: model, state: state).transition(.opacity) } }
         .sensoryFeedback(PLHaptic.commit, trigger: state.tick)
-        .navigationDestination(item: $state.room) { room in room.view(model) }
-    }
-}
-
-/// Today: the loop in the web's order. The streak is soft: days practised this month and in all, nothing to break.
-struct TodayTab: View {
-    let model: AppModel
-    @Bindable var state: PracticeModel
-    @State private var win = ""
-    @State private var result: String?
-
-    var body: some View {
-        List {
-            if let m = state.message { Text(m).font(.footnote).foregroundStyle(.secondary) }
-            if let s = state.streak {
-                Section {
-                    VStack(spacing: 4) {
-                        Text("\(s.practisedThisMonth)").font(.system(size: 38, weight: .light)).foregroundStyle(Candle.goldHi).monospacedDigit().contentTransition(.numericText())
-                        Text("days practised this month").candleHint().font(.system(size: 13))
-                        Text("\(s.practisedTotal) in all \u{00B7} \(s.completedOfLast7) of the last 7 complete").candleHint()
-                    }
-                    .frame(maxWidth: .infinity).padding(.vertical, 8)
-                    .accessibilityElement(children: .combine)
-                    .listRowBackground(Color.clear)
-                } footer: { Text("A day counts when either check-in is done. Missing one costs nothing.") }
-            }
-            Section("Today") {
-                row(.morning, done: state.morningDone, detail: state.today?.mood.flatMap { $0.isEmpty ? nil : $0.capitalized } ?? "Mood and the story running")
-                if let l = state.lesson {
-                    NavigationLink { LessonView(model: model) } label: {
-                        Label { Text(l.lesson.title).lineLimit(2); Text("Day \(l.lesson.day + 1)") } icon: { Image(systemName: "book") }
-                    }
-                }
-                row(.evening, done: state.eveningDone, detail: "Gratitude, and whether the story shifted")
-            }
-            if !state.habits.isEmpty {
-                Section {
-                    TipView(HabitSwipeTip())
-                    ForEach(state.habits) { h in
-                        HabitRow(habit: h)
-                            .swipeActions(edge: .trailing) {
-                                Button(h.tickedToday ? "Undo" : "Done") { Task { await state.tickHabit(h, model: model) } }.tint(h.tickedToday ? .gray : .green)
-                            }
-                    }
-                } header: { Text("Habits · \(state.habits.count - state.habitsOpen) of \(state.habits.count)") } footer: { Text("Swipe left to tick a habit.") }
-            }
-            Section("A win") {
-                HStack {
-                    TextField("A win from today", text: $win, axis: .vertical)
-                    Button("Log") { Task { await logWin() } }.disabled(win.trimmingCharacters(in: .whitespaces).isEmpty)
-                }
-                ResultLine(text: result)
-            }
-            if state.reviewDue {
-                Section { NavigationLink { ReviewView(model: model) } label: { Label("Close the week", systemImage: "calendar.badge.checkmark") } }
-                footer: { Text("Seven days on the record. The weekly review is due.") }
-            }
-        }
-        .practiceList()
-        .overlay { if !state.loaded && state.streak == nil && state.message == nil { ProgressView() } }
-        .refreshable { await PracticeOutbox.flush(model: model); await state.loadToday(model: model) }
         .task { await PracticeOutbox.flush(model: model); await state.loadToday(model: model) }
     }
 
-    private func row(_ room: PracticeRoom, done: Bool, detail: String) -> some View {
-        NavigationLink { room.view(model) } label: {
-            Label { Text(room.title); Text(detail) } icon: {
-                Image(systemName: done ? "checkmark.circle.fill" : room.symbol).foregroundStyle(done ? .green : .secondary)
-                    .contentTransition(.symbolEffect(.replace)).symbolEffect(.bounce, value: done)
-            }
-        }
+    private func jump(_ proxy: ScrollViewProxy, _ id: String?) {
+        guard let id else { return }
+        withAnimation(.smooth) { proxy.scrollTo(id, anchor: .top) }
+        state.scrollTo = nil
     }
 
-    private func logWin() async {
-        let text = win.trimmingCharacters(in: .whitespaces)
-        do { let sent = try await Practice.postQueued("logs", ["kind": "win", "text": text], model: model); win = ""; result = sent ? "Logged." : "Saved on this iPhone. It sends when you are online."; state.tick += 1 }
-        catch { result = error.localizedDescription }
-    }
-}
-
-struct HabitRow: View {
-    let habit: PracticeHabit
-    var body: some View {
-        HStack(alignment: .center, spacing: 10) {
-            Image(systemName: habit.tickedToday ? "checkmark.circle.fill" : "circle")
-                .foregroundStyle(habit.tickedToday ? .green : .secondary).font(.title3)
-                .contentTransition(.symbolEffect(.replace)).symbolEffect(.bounce, value: habit.tickedToday)
-            VStack(alignment: .leading, spacing: 2) {
-                Text(habit.response).strikethrough(habit.tickedToday)
-                if let c = habit.cue, !c.isEmpty { Text("After: \(c)").font(.caption).foregroundStyle(.secondary) }
-            }
-            Spacer(minLength: 0)
-            HStack(spacing: 3) {
-                ForEach(Array(habit.week.enumerated()), id: \.offset) { _, on in
-                    Circle().fill(on ? Candle.gold : Candle.ink.opacity(0.2)).frame(width: 7, height: 7)
-                }
-            }
-            .accessibilityHidden(true)
-        }
-        .accessibilityElement(children: .combine)
-        .accessibilityLabel("\(habit.response), \(habit.tickedToday ? "done today" : "not done today"), \(habit.week.filter { $0 }.count) of 7 days")
+    /// The web's return-moment measure (S322): one quiet ping per cold start, never blocks, fails silent.
+    private func openPing() async {
+        guard !PracticeModel.pinged, let url = URL(string: "https://pl-cron.psychedluxuries.com/api/practice/open") else { return }
+        PracticeModel.pinged = true
+        var r = URLRequest(url: url); r.httpMethod = "POST"; r.setValue("application/json", forHTTPHeaderField: "content-type"); r.timeoutInterval = 10
+        r.httpBody = try? JSONSerialization.data(withJSONObject: ["via": "direct", "local_hour": Calendar.current.component(.hour, from: .now)])
+        _ = try? await URLSession.shared.data(for: r)
     }
 }
 
-/// Practice: the rooms.
-struct PracticeTab: View {
+/// Today: the web's cards, in its order.
+struct TodayScreen: View {
     let model: AppModel
     @Bindable var state: PracticeModel
 
     var body: some View {
-        List {
-            Section("Rooms") {
-                ForEach([PracticeRoom.reframe, .affirmations, .coach, .desires, .habits, .rehearsal, .vision], id: \.self) { r in
-                    NavigationLink { r.view(model) } label: {
-                        Label(r.title, systemImage: r.symbol)
-                    }
-                    .badge(r == .habits && state.habitsOpen > 0 ? state.habitsOpen : 0)
-                }
-            }
+        VStack(spacing: 16) {
+            Color.clear.frame(height: 0).id("top")
+            StreakCard(state: state)
+            ScratchpadCard(model: model, state: state)
+            WinsCard(model: model, state: state)
+            CheckinCard(model: model, state: state, evening: false)
+            LessonCard(model: model, state: state)
+            ReframeCard(model: model, state: state)
+            AffirmationsCard(model: model, state: state)
+            ConversationCard(model: model, state: state)
+            DesireListCard(model: model, state: state)
+            HabitsCard(model: model, state: state)
+            MeditationCard(model: model, state: state)
+            VisionBoardCard(model: model, state: state)
+            CheckinCard(model: model, state: state, evening: true)
         }
-        .practiceList()
-    }
-}
-
-/// Record: what the practice has kept.
-struct RecordTab: View {
-    let model: AppModel
-    @Bindable var state: PracticeModel
-
-    var body: some View {
-        List {
-            Section {
-                ForEach([PracticeRoom.trends, .wins, .notes, .review], id: \.self) { r in
-                    NavigationLink { r.view(model) } label: { Label(r.title, systemImage: r.symbol) }
-                        .badge(r == .review && state.reviewDue ? 1 : 0)
-                }
-            } footer: {
-                Text("Nothing here can be deleted from the phone. The record is the record.\(PracticeOutbox.count > 0 ? " \(PracticeOutbox.count) written offline, waiting to send." : "")")
-            }
-        }
-        .practiceList()
     }
 }
 

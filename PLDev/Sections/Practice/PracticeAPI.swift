@@ -168,10 +168,17 @@ struct PracticeBoardImages: Decodable, Sendable {
         } catch { return "The clip would not load. \(plainSentence(error))" }
     }
 
-    func stop() { player?.stop(); player = nil; playing = nil }
+    func stop() { player?.stop(); player = nil; playing = nil; onFinish = nil }
+
+    /// The player bar reads these on a timeline; nothing here is observed per frame.
+    var position: TimeInterval { player?.currentTime ?? 0 }
+    var length: TimeInterval { player?.duration ?? 0 }
+    func seek(to t: TimeInterval) { player?.currentTime = max(0, min(t, player?.duration ?? 0)) }
+    /// Plays the clip and calls `done` when it ends by itself (the entry screen fades out then).
+    var onFinish: (() -> Void)?
 
     nonisolated func audioPlayerDidFinishPlaying(_ player: AVAudioPlayer, successfully flag: Bool) {
-        Task { @MainActor in self.playing = nil; self.player = nil }
+        Task { @MainActor in self.playing = nil; self.player = nil; let f = self.onFinish; self.onFinish = nil; if flag { f?() } }
     }
 }
 
