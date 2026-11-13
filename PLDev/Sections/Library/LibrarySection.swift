@@ -355,7 +355,7 @@ struct PieceViewer: View {
                 ForEach(list) { it in
                     let m = data.media(it, model: model)
                     Group {
-                        if let v = m.video { LoopingClip(url: v) }
+                        if it.class == "code-piece" { LivePieceCard(model: model, pieceID: it.item_id, thumb: m.still) } else if let v = m.video { LoopingClip(url: v) }
                         else if let s = m.still { AsyncImage(url: s) { $0.resizable().scaledToFit() } placeholder: { ProgressView() } }
                         else { Text(it.name ?? it.vault_id) }
                     }

@@ -208,6 +208,7 @@ struct HouseView: View {
         }
         .osScreen()   // after the tab bar, so it wears the same look
         .toolbar(.hidden, for: .navigationBar)
+        .background(SwipeBackEnabler())   // the left-edge swipe home still works with the bar hidden
         .sensoryFeedback(PLHaptic.commit, trigger: state.tick)
         .sensoryFeedback(.selection, trigger: state.tab)
         .navigationDestination(item: $state.room) { room in room.view(model).osScreen() }
@@ -487,6 +488,19 @@ struct HouseLookPicker: View {
     var body: some View {
         Picker(selection: $look) { Text("Dark, like pl-os at night").tag("dark"); Text("Light, the ivory console").tag("light") } label: {
             SettingsLabel("House look", "circle.lefthalf.filled", Color(hex: 0xc9a84c))
+        }
+    }
+}
+
+
+/// With the navigation bar hidden UIKit also turns off the left-edge swipe back; this turns it on again for House.
+struct SwipeBackEnabler: UIViewControllerRepresentable {
+    func makeUIViewController(context: Context) -> UIViewController { Holder() }
+    func updateUIViewController(_ vc: UIViewController, context: Context) {}
+    final class Holder: UIViewController {
+        override func viewDidAppear(_ animated: Bool) {
+            super.viewDidAppear(animated)
+            if let nav = navigationController { nav.interactivePopGestureRecognizer?.isEnabled = true; nav.interactivePopGestureRecognizer?.delegate = nil }
         }
     }
 }

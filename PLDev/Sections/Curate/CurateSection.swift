@@ -247,7 +247,7 @@ struct CurateView: View {
         let m = state.media(it, model: model)
         return ZStack {
             RoundedRectangle(cornerRadius: PLRadius.card, style: .continuous).fill(Color(hex: 0xece7da))   // the web card's bone ground
-            if let v = m.video {
+            if it.class == "code-piece" { LivePieceCard(model: model, pieceID: it.item_id, thumb: m.still).id(it.item_id) } else if let v = m.video {
                 LoopingClip(url: v).id(v)
             } else if let s = m.still {
                 AsyncImage(url: s) { $0.resizable().scaledToFit() } placeholder: { ProgressView() }

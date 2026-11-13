@@ -148,10 +148,21 @@ struct OSPill: ButtonStyle {
 /// The header: his wordmark in his hand and the live LA clock in the display italic (pl-os `.time-display`).
 struct OSHeader: View {
     @Environment(\.colorScheme) private var scheme
+    @Environment(\.dismiss) private var dismiss
     var body: some View {
         HStack(alignment: .center) {
-            Image("PLIcons/pl-mark").resizable().scaledToFit().frame(width: 30, height: 30).foregroundStyle(PLOS.gold)
-                .accessibilityHidden(true)
+            // the way home, inside the header card, never floating over the page (his word 11-13: "no way to go back home")
+            Button { dismiss() } label: {
+                HStack(spacing: 4) {
+                    Image(systemName: "chevron.left").font(.system(size: 15, weight: .semibold))
+                    Image("PLIcons/pl-mark").resizable().scaledToFit().frame(width: 28, height: 28)
+                }
+                .foregroundStyle(PLOS.gold)
+                .frame(minWidth: 44, minHeight: 44)
+                .contentShape(Rectangle())
+            }
+            .buttonStyle(.plain)
+            .accessibilityLabel("Back to Home")
             Text("Psyched Luxuries").plHand(24, relativeTo: .title2).foregroundStyle(PLOS.gold).lineLimit(1).minimumScaleFactor(0.55)
             Spacer()
             TimelineView(.periodic(from: .now, by: 15)) { ctx in

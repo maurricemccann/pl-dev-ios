@@ -43,9 +43,9 @@ enum GalleryRoom: String, CaseIterable, Identifiable, Hashable {
 
     @MainActor @ViewBuilder func view(_ model: AppModel) -> some View {
         switch self {
-        case .curves: CurvesRoom(model: model)
-        case .live: GalleryCanvas(model: model, path: "live", title: "Live")
-        case .forge: GalleryCanvas(model: model, path: "forge", title: "Forge")
+        case .curves: NativeCurvesRoom(model: model)   // lane D: his pieces run natively, no web view
+        case .live: NativeVJRoom(model: model)
+        case .forge: NativeForgeRoom(model: model)
         case .vault: VaultRoom(model: model)
         case .archive: ArchiveRoom(model: model)
         case .space: GalleryCanvas(model: model, path: "archive/space", title: "Walk the archive")
@@ -160,7 +160,7 @@ struct WebListRoom: View {
         List {
             if title == "Labs" {
                 Section {
-                    NavigationLink { GalleryCanvas(model: model, path: "live", title: "The VJ") } label: {
+                    NavigationLink { NativeVJRoom(model: model) } label: {
                         VStack(alignment: .leading, spacing: 2) { Text("● Live").gEyebrow(10).foregroundStyle(PLG.red); Text("The VJ").gTitle(22); Text("The living set as a controller: tracks, tap tempo, rack.").font(.caption).foregroundStyle(.secondary) }
                     }
                     NavigationLink { GalleryCanvas(model: model, path: "lab", title: "Living Curves") } label: {
@@ -183,77 +183,6 @@ struct WebListRoom: View {
 
 // MARK: - Curves: every live piece, liked filter, full-screen live
 
-struct CurvesRoom: View {
-    let model: AppModel
-    @State private var data = LibraryData.shared
-    @State private var liked = Set<String>()
-    @State private var onlyLiked = false
-    @State private var search = ""
-    @State private var playing: LibraryItem?
-    @State private var tick = 0
-
-    private var pieces: [LibraryItem] {
-        data.items.filter { $0.class == "code-piece" && data.marks[$0.vault_id]?.v != "cut" }
-            .filter { !onlyLiked || liked.contains($0.item_id) }
-            .filter { search.isEmpty || ($0.name ?? "").localizedCaseInsensitiveContains(search) || $0.item_id.localizedCaseInsensitiveContains(search) }
-    }
-
-    var body: some View {
-        ScrollView {
-            LazyVGrid(columns: [GridItem(.adaptive(minimum: 110), spacing: 6)], spacing: 6) {
-                ForEach(pieces) { p in
-                    Button { playing = p } label: {
-                        ZStack(alignment: .bottomLeading) {
-                            Tile(item: p, mark: data.marks[p.vault_id], url: data.media(p, model: model).still)
-                            if liked.contains(p.item_id) { Image(systemName: "heart.fill").foregroundStyle(PLG.gold).padding(6) }
-                        }
-                    }
-                    .buttonStyle(.plain)
-                    .contextMenu { Button(liked.contains(p.item_id) ? "Unlike" : "Like", systemImage: "heart") { Task { await like(p) } } }
-                }
-            }
-            .padding(6)
-        }
-        .gScreen()
-        .searchable(text: $search, prompt: "Piece")
-        .navigationTitle("Curves · \(pieces.count)")
-        .toolbar { Toggle(isOn: $onlyLiked) { Image(systemName: onlyLiked ? "heart.fill" : "heart") }.accessibilityLabel("Liked only") }
-        .task {
-            if data.items.isEmpty { try? await data.load(model: model) }
-            struct L: Decodable { let liked: [String] }
-            if let http = model.http, let d = try? await http.send(RequestPlan(origin: "gallery", path: "api/likes")),
-               let l = try? JSONDecoder().decode(L.self, from: d) { liked = Set(l.liked) }
-        }
-        .fullScreenCover(item: $playing) { p in
-            NavigationStack {
-                GalleryWeb(model: model, path: "pieces/embed?id=\(p.item_id)").ignoresSafeArea()
-                    .navigationTitle(p.name ?? p.item_id).navigationBarTitleDisplayMode(.inline)
-                    .toolbar {
-                        ToolbarItem(placement: .cancellationAction) { Button("Close") { playing = nil } }
-                        ToolbarItem(placement: .primaryAction) {
-                            Button { Task { await like(p) } } label: { Image(systemName: liked.contains(p.item_id) ? "heart.fill" : "heart") }
-                        }
-                        ToolbarItem(placement: .secondaryAction) { NavigationLink("The code") { SourceView(model: model, id: p.item_id) } }
-                    }
-            }
-        }
-        .sensoryFeedback(.impact(weight: .light), trigger: tick)
-    }
-
-    private func like(_ p: LibraryItem) async {
-        guard let http = model.http else { return }
-        struct R: Decodable { let liked: Bool? }
-        let body = try? JSONSerialization.data(withJSONObject: ["id": p.item_id])
-        if let d = try? await http.send(RequestPlan(origin: "gallery", method: "POST", path: "api/likes",
-                                                    headers: ["content-type": "application/json", "Origin": data.base(model)], body: body), idempotent: false),
-           let r = try? JSONDecoder().decode(R.self, from: d) {
-            if r.liked == true { liked.insert(p.item_id) } else { liked.remove(p.item_id) }
-            tick += 1
-        }
-    }
-}
-
-/// The code behind a piece (/api/source/<id>), selectable.
 struct SourceView: View {
     let model: AppModel
     let id: String
