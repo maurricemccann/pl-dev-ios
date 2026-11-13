@@ -9,7 +9,9 @@ import UIKit
     var presets: [VJParams?] = Array(repeating: nil, count: 8)
     var nameA = ""
     var nameB = ""
-    var bass = 0.0, mid = 0.0, high = 0.0
+    var bass = 0.0
+    var mid = 0.0
+    var high = 0.0
     var beat = false
     var playing = false
     var seqStep = 0
