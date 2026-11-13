@@ -7,6 +7,7 @@ import TipKit
 struct TypewriterText: View {
     let text: String
     let animate: Bool
+    var onDone: (() -> Void)? = nil
     @State private var shown = 0
     @Environment(\.accessibilityReduceMotion) private var reduceMotion
 
@@ -20,6 +21,7 @@ struct TypewriterText: View {
                     try? await Task.sleep(for: .milliseconds(15))
                     shown = min(text.count, shown + 2)
                 }
+                if !Task.isCancelled { onDone?() }
             }
     }
 }
@@ -40,38 +42,40 @@ struct AskTab: View {
 
     private var thread: [GlyphTurn] { Array(store.turns.prefix(30).reversed()) }
 
+    private var face: GlyphTurn? { thread.last { !$0.answer.isEmpty } }
+    private var history: [GlyphTurn] { thread.filter { $0.id != face?.id } }
+
     var body: some View {
-        ScrollViewReader { proxy in
-            ScrollView {
-                LazyVStack(spacing: 8) {
-                    status
-                    TipView(AnswerHoldTip())
-                    if thread.isEmpty { ContentUnavailableView("Nothing asked yet", systemImage: "bubbles.and.sparkles", description: Text("Ask. GlyphBot answers from the practice, and from memory when you are offline.")) }
-                    ForEach(thread) { t in
-                        GlyphUserBubble(text: t.question).id("\(t.id)-q")
-                        if !t.answer.isEmpty {
-                            HStack {
-                                VStack(alignment: .leading, spacing: 2) {
-                                    GlyphBubble(mine: false) { TypewriterText(text: t.answer, animate: typingID == t.id) }
-                                    Text(GlyphBot.viaWords(t.via)).osEyebrow(8).foregroundStyle(PLOS.dim(scheme))
+        VStack(spacing: 0) {
+            stage
+            ScrollViewReader { proxy in
+                ScrollView {
+                    LazyVStack(spacing: 8) {
+                        status
+                        TipView(AnswerHoldTip())
+                        ForEach(history) { t in
+                            GlyphUserBubble(text: t.question).id("\(t.id)-q")
+                            if !t.answer.isEmpty {
+                                HStack {
+                                    VStack(alignment: .leading, spacing: 2) {
+                                        GlyphBubble(mine: false) { Text(t.answer).font(.system(size: 14)).foregroundStyle(PLOS.text(scheme).opacity(0.85)).lineSpacing(3).textSelection(.enabled) }
+                                        Text(GlyphBot.viaWords(t.via)).osEyebrow(8).foregroundStyle(PLOS.dim(scheme))
+                                    }
+                                    Spacer(minLength: 40)
                                 }
-                                Spacer(minLength: 40)
-                            }
-                            .id(t.id)
-                            .contextMenu {
-                                if !t.passages.isEmpty { Button("Sources", systemImage: "doc.text.magnifyingglass") { sourcesFor = t } }
-                                if GlyphBot.interviewReady(model) { Button("Hear it", systemImage: "speaker.wave.2") { Task { note = await voice.speak(t.answer, model: model) } } }
-                                Button("Copy", systemImage: "doc.on.doc") { UIPasteboard.general.string = t.answer }
+                                .id(t.id)
+                                .contextMenu { turnMenu(t) }
                             }
                         }
+                        if let f = face { GlyphUserBubble(text: f.question).id("\(f.id)-q") }
+                        if let note { Text(note).font(.footnote).foregroundStyle(.secondary) }
+                        Color.clear.frame(height: 1).id("end")
                     }
-                    if loading { ProgressView().frame(maxWidth: .infinity, alignment: .leading).padding(.leading, 12).id("typing") }
-                    if let note { Text(note).font(.footnote).foregroundStyle(.secondary) }
+                    .padding(.horizontal, PLSpace.margin).padding(.vertical, PLSpace.gap)
                 }
-                .padding(.horizontal, PLSpace.margin).padding(.vertical, PLSpace.gap)
+                .onChange(of: store.turns.first?.answer) { _, _ in withAnimation { proxy.scrollTo("end", anchor: .bottom) } }
+                .onChange(of: loading) { _, _ in withAnimation { proxy.scrollTo("end", anchor: .bottom) } }
             }
-            .onChange(of: store.turns.first?.answer) { _, _ in withAnimation { proxy.scrollTo(thread.last.map { "\($0.id)" }, anchor: .bottom) } }
-            .onChange(of: loading) { _, now in if now { withAnimation { proxy.scrollTo("typing", anchor: .bottom) } } }
         }
         .safeAreaInset(edge: .bottom) {
             HStack(alignment: .bottom, spacing: 8) {
@@ -88,6 +92,30 @@ struct AskTab: View {
         .sensoryFeedback(PLHaptic.select, trigger: sent)
         .sheet(item: $sourcesFor) { t in SourcesSheet(turn: t) }
         .onDisappear { voice.stop() }
+    }
+
+    /// The stage: GlyphGuy seated at the left, the latest answer in his bubble (the web room's top block).
+    private var stage: some View {
+        HStack(alignment: .top, spacing: 8) {
+            GlyphStageFigure(speaking: typingID != nil)
+                .frame(width: 112, height: 176)
+            Group {
+                if let f = face {
+                    GlyphStageBubble(text: f.answer, sources: f.passages, loading: loading, typing: typingID == f.id, onDone: { typingID = nil })
+                        .contextMenu { turnMenu(f) }
+                } else {
+                    GlyphStageBubble(text: "Ask. I answer from the practice.", sources: [], loading: loading, typing: false, onDone: nil)
+                }
+            }
+            .padding(.top, 32)
+        }
+        .padding(.horizontal, PLSpace.margin).padding(.top, 8)
+    }
+
+    @ViewBuilder private func turnMenu(_ t: GlyphTurn) -> some View {
+        if !t.passages.isEmpty { Button("Sources", systemImage: "doc.text.magnifyingglass") { sourcesFor = t } }
+        if GlyphBot.interviewReady(model) { Button("Hear it", systemImage: "speaker.wave.2") { Task { note = await voice.speak(t.answer, model: model) } } }
+        Button("Copy", systemImage: "doc.on.doc") { UIPasteboard.general.string = t.answer }
     }
 
     private var status: some View {
