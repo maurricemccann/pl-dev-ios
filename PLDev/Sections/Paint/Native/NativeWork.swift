@@ -94,13 +94,8 @@ struct WorkFileError: Error { let why: String }
         return "data:image/jpeg;base64," + jpg.base64EncodedString()
     }
 
-    /// The flat picture for the share sheet: transparent where the background is hidden.
-    func flatPNG() -> Data? {
-        guard let c = CGContext(data: nil, width: w, height: h, bitsPerComponent: 8, bytesPerRow: 0, space: CGColorSpaceCreateDeviceRGB(), bitmapInfo: CGImageAlphaInfo.premultipliedLast.rawValue) else { return nil }
-        if bgVis, let col = Hex.color(bg) { c.setFillColor(col); c.fill(CGRect(x: 0, y: 0, width: w, height: h)) }
-        for l in layers where l.visible { if let img = l.pixels.image() { c.setAlpha(CGFloat(l.opacity)); c.draw(img, in: CGRect(x: 0, y: 0, width: w, height: h)) } }
-        return c.makeImage().flatMap { UIImage(cgImage: $0).pngData() }
-    }
+    /// The flat picture for the share sheet: blends, groups and clips applied, transparent where the background is hidden.
+    func flatPNG() -> Data? { flatImage().flatMap { UIImage(cgImage: $0).pngData() } }
 }
 
 enum Hex {

@@ -6,6 +6,8 @@ import UIKit
 
 enum NativeTool: String, CaseIterable, Sendable { case paint, erase }
 
+struct LayerRow: Identifiable { let id: Int; let name: String; let visible: Bool; let opacity: Double; let blend: String; let lock: Bool; let clip: Bool }
+
 /// The painter's state: the open work, the stroke being drawn, undo, autosave. The stage view feeds it touches and shows what it draws.
 @MainActor @Observable final class NativeCanvasModel {
     // what the toolbar shows
@@ -20,7 +22,7 @@ enum NativeTool: String, CaseIterable, Sendable { case paint, erase }
     var line: String?                // the one-line result under the toolbar
     var canUndo = false
     var canRedo = false
-    var layerNames: [(name: String, visible: Bool)] = []
+    var layerRows: [LayerRow] = []
     var activeLayer = 0
     var hasDoc = false
     var docSize = ""
@@ -275,9 +277,29 @@ enum NativeTool: String, CaseIterable, Sendable { case paint, erase }
         syncFlags(); stage?.rebuild(); markChanged()
     }
 
+    /// A structural change: a patch names its layer by position, so the history ends here (said in the line under the toolbar).
+    private func structural(_ ok: Bool, _ words: String) {
+        guard ok else { say("Not changed."); return }
+        undo.reset(); syncFlags(); stage?.rebuild(); markChanged(); say(words)
+    }
+    func addLayer() { guard live == nil, let d = doc else { return }; structural(d.addLayer(), "Layer added. Undo starts again from here.") }
+    func duplicateLayer() { guard live == nil, let d = doc else { return }; structural(d.duplicateActive(), "Layer duplicated. Undo starts again from here.") }
+    func deleteLayer() { guard live == nil, let d = doc else { return }; structural(d.removeActive(), "Layer deleted. Undo starts again from here.") }
+    func moveLayer(_ n: Int) { guard live == nil, let d = doc else { return }; structural(d.moveActive(by: n), "Layer moved. Undo starts again from here.") }
+    func setLayer(_ key: String, _ value: Any, at i: Int? = nil) {
+        guard live == nil, let d = doc else { return }
+        let k = i ?? d.active
+        guard d.layers.indices.contains(k) else { return }
+        d.layers[k].meta[key] = value
+        syncFlags(); stage?.rebuild(); markChanged()
+    }
+
     func syncFlags() {
         canUndo = undo.canUndo; canRedo = undo.canRedo
-        if let d = doc { layerNames = d.layers.map { ($0.name, $0.visible) }; activeLayer = d.active } else { layerNames = []; activeLayer = 0 }
+        if let d = doc {
+            layerRows = d.layers.enumerated().map { LayerRow(id: $0.offset, name: $0.element.name, visible: $0.element.visible, opacity: $0.element.opacity, blend: $0.element.meta["blend"] as? String ?? "source-over", lock: $0.element.alphaLock, clip: $0.element.meta["clip"] as? Bool ?? false) }
+            activeLayer = d.active
+        } else { layerRows = []; activeLayer = 0 }
     }
 
     func say(_ s: String?) { line = s }

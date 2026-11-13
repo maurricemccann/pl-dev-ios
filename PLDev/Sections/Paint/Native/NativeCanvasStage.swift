@@ -9,6 +9,7 @@ import UIKit
     private var xf = CGAffineTransform.identity
     private var wetLayer = CALayer()
     private var layerViews: [CALayer] = []
+    private var clipMasks: [(base: Int, mask: CALayer)] = []
 
     init(model: NativeCanvasModel) {
         self.model = model
@@ -44,7 +45,7 @@ import UIKit
     /// Rebuilds the layer tree from the open work: one CALayer per layer, the stroke buffer above the active one.
     func rebuild() {
         stageView.layer.sublayers?.forEach { $0.removeFromSuperlayer() }
-        layerViews = []
+        layerViews = []; clipMasks = []
         guard let d = model.doc else { stageView.bounds = .zero; return }
         stageView.bounds = CGRect(x: 0, y: 0, width: d.w, height: d.h)
         stageView.center = CGPoint(x: bounds.midX, y: bounds.midY)
@@ -55,9 +56,13 @@ import UIKit
             let c = CALayer()
             c.frame = frame; c.contentsScale = 1; c.contentsGravity = .resize
             c.contents = l.pixels.image()
-            c.isHidden = !l.visible; c.opacity = Float(l.opacity)
+            c.isHidden = !d.isShown(l); c.opacity = Float(d.shownOpacity(l))
+            if let f = NativeBlend.mode(l.meta["blend"] as? String).filter { c.compositingFilter = f }
             if let m = l.mask, let img = NativeDoc.image(fromDataURL: m) {   // a mask he made on the laptop: shown, not editable yet
                 let mk = CALayer(); mk.frame = frame; mk.contents = img; c.mask = mk
+            }
+            if let b = d.clipBase(of: i) {   // clipped to the layer below: that layer's picture is this one's mask
+                let mk = CALayer(); mk.frame = frame; mk.contents = d.layers[b].pixels.image(); c.mask = mk; clipMasks.append((b, mk))
             }
             stageView.layer.addSublayer(c); layerViews.append(c)
             if i == d.active { wetLayer.removeFromSuperlayer(); wetLayer.frame = frame; wetLayer.contentsScale = 1; wetLayer.isHidden = true; stageView.layer.addSublayer(wetLayer) }
@@ -68,6 +73,7 @@ import UIKit
     func refresh(active: Int, wetOpacity: Double) {
         guard let d = model.doc, d.layers.indices.contains(active), layerViews.indices.contains(active) else { return }
         layerViews[active].contents = d.layers[active].pixels.image()
+        for m in clipMasks where m.base == active { m.mask.contents = d.layers[active].pixels.image() }
         if wetOpacity > 0, let w = model.wetBuffer {
             wetLayer.contents = w.image(); wetLayer.opacity = Float(wetOpacity); wetLayer.isHidden = false
         } else { wetLayer.isHidden = true }

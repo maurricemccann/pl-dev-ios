@@ -10,6 +10,7 @@ struct NativeCanvasView: View {
     @State private var showWorks = false
     @State private var showSizes = false
     @State private var showBrushes = false
+    @State private var showLayers = false
     @Environment(\.dismiss) private var dismiss
     @Environment(\.scenePhase) private var phase
 
@@ -39,6 +40,7 @@ struct NativeCanvasView: View {
         .persistentSystemOverlays(.hidden)
         .sheet(isPresented: $showWorks) { NativeWorksSheet(model: model, canvas: canvas) }
         .sheet(isPresented: $showBrushes) { NativeBrushSheet(canvas: canvas) }
+        .sheet(isPresented: $showLayers) { NativeLayersSheet(canvas: canvas).presentationDetents([.medium, .large]) }
         .confirmationDialog("New canvas", isPresented: $showSizes, titleVisibility: .visible) {
             Button("Phone screen") { let s = UIScreen.main.nativeBounds.size; canvas.startNew(w: Int(s.width), h: Int(s.height)) }
             Button("2048 × 2048") { canvas.startNew(w: 2048, h: 2048) }
@@ -61,13 +63,7 @@ struct NativeCanvasView: View {
                 .glassControl(in: Circle()).accessibilityLabel("New canvas")
             Spacer(minLength: 0)
             if canvas.hasDoc {
-                Menu {
-                    ForEach(Array(canvas.layerNames.enumerated().reversed()), id: \.offset) { i, l in
-                        Button { canvas.setActive(i) } label: { Label(l.name, systemImage: i == canvas.activeLayer ? "checkmark" : (l.visible ? "eye" : "eye.slash")) }
-                    }
-                    Divider()
-                    Button { canvas.toggleVisible(canvas.activeLayer) } label: { Label("Show or hide this layer", systemImage: "eye") }
-                } label: { Image(systemName: "square.3.layers.3d").frame(width: 36, height: 36) }
+                Button { showLayers = true } label: { Image(systemName: "square.3.layers.3d").frame(width: 36, height: 36) }
                     .glassControl(in: Circle()).accessibilityLabel("Layers")
                 Button { canvas.undoStroke() } label: { Image(systemName: "arrow.uturn.backward").frame(width: 36, height: 36) }
                     .glassControl(in: Circle()).disabled(!canvas.canUndo).accessibilityLabel("Undo")
