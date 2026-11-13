@@ -159,10 +159,14 @@ struct CurateView: View {
             } else if state.loading && state.queue.isEmpty {
                 ProgressView("Loading the library…").frame(maxHeight: .infinity)
             } else if let it = state.current {
-                card(it).frame(maxHeight: .infinity)
-                TextField("Comment (saved when you leave the box)", text: $state.comment, axis: .vertical)
+                TextField("A word about this piece", text: $state.comment, axis: .vertical)
                     .lineLimit(1...3).textFieldStyle(.roundedBorder).focused($commentFocus)
                     .onChange(of: commentFocus) { _, f in if !f { Task { await state.saveComment(model: model) } } }
+                card(it).frame(maxHeight: .infinity)
+                VStack(spacing: 2) {
+                    Text(it.name ?? it.vault_id).font(.title3.weight(.semibold)).italic().lineLimit(1)
+                    if let sub = it.sub, !sub.isEmpty { Text(sub.uppercased()).font(.caption2).tracking(1).foregroundStyle(.secondary).lineLimit(1) }
+                }
                 keys
             } else {
                 ContentUnavailableView("Queue clear", systemImage: "checkmark.circle", description: Text("Pick another deck above."))
@@ -237,7 +241,6 @@ struct CurateView: View {
                 }
                 stamp("MAYBE", .yellow, -drag.height)
                 Spacer()
-                Text(it.name ?? it.vault_id).font(.caption).lineLimit(1).padding(6).background(.ultraThinMaterial, in: Capsule())
             }.padding(16)
         }
         .clipShape(RoundedRectangle(cornerRadius: PLRadius.card, style: .continuous))
@@ -256,25 +259,40 @@ struct CurateView: View {
         .id(it.vault_id)
     }
 
+    /// His five keycaps, in the web deck's order (cut, maybe, keep, fav, undo), each pressing down under the finger.
     private var keys: some View {
-        HStack(spacing: 10) {
-            key("CUT", "xmark", .red) { act("cut") }
-            key("MAYBE", "questionmark", .yellow) { act("maybe") }
-            key("UNDO", "arrow.uturn.backward", .secondary) { Task { await state.undo(model: model) } }
-                .disabled(state.history.isEmpty)
-            key("FAV", "star.fill", .orange) { act("fav") }
-            key("KEEP", "checkmark", .green) { act("keep") }
+        HStack(spacing: 8) {
+            KeyCap(model: model, name: "cut", label: "Cut") { act("cut") }
+            KeyCap(model: model, name: "maybe", label: "Maybe") { act("maybe") }
+            KeyCap(model: model, name: "keep", label: "Keep") { act("keep") }
+            KeyCap(model: model, name: "fav", label: "Favourite") { act("fav") }
+            KeyCap(model: model, name: "undo", label: "Undo") { Task { await state.undo(model: model) } }
+                .disabled(state.history.isEmpty).opacity(state.history.isEmpty ? 0.5 : 1)
         }
         .padding(.bottom, 8)
     }
+}
 
-    private func key(_ label: String, _ symbol: String, _ tint: Color, _ action: @escaping () -> Void) -> some View {
-        Button(action: action) {
-            VStack(spacing: 2) { Image(systemName: symbol).font(.title3); Text(label).font(.caption2.bold()) }
-                .frame(maxWidth: .infinity, minHeight: 52)
+/// One of his keycap pictures (gallery /remote/cap-<name>-up|down-t3.png): up at rest, down while pressed.
+struct KeyCap: View {
+    let model: AppModel
+    let name: String
+    let label: String
+    let action: () -> Void
+    var body: some View {
+        Button(action: action) { EmptyView() }
+            .buttonStyle(CapStyle(base: LibraryData.shared.base(model), name: name))
+            .accessibilityLabel(label)
+    }
+    struct CapStyle: ButtonStyle {
+        let base: String
+        let name: String
+        func makeBody(configuration: Configuration) -> some View {
+            AsyncImage(url: URL(string: "\(base)/remote/cap-\(name)-\(configuration.isPressed ? "down" : "up")-t3.png")) { $0.resizable().scaledToFit() }
+                placeholder: { RoundedRectangle(cornerRadius: 10, style: .continuous).fill(Color.secondary.opacity(0.2)) }
+                .frame(maxWidth: .infinity).frame(height: 64)
+                .contentShape(Rectangle())
         }
-        .buttonStyle(.bordered).tint(tint)
-        .accessibilityLabel(label.capitalized)
     }
 }
 
