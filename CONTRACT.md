@@ -1,5 +1,7 @@
 # Build contract (read before writing any file)
 
+*How it looks and behaves: `DESIGN.md`, the one UI/UX contract every app follows (his ruling 11-13).*
+
 PL DEV: one native iPhone app that holds many native sections, with a widget extension, a share extension and a Safari web extension. This build is the FOUNDATION only: the shell, the config, the key store, the network client, Settings, notifications, the debug log, the probes, one placeholder section ("Status") and one stub of each extension. No section features yet.
 
 Three writers work in this repo at once. Each owns folders; nobody edits another's folder. Shared names below are law.
