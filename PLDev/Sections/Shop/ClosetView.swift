@@ -114,7 +114,7 @@ struct ClosetView: View {
                                 ForEach(chosen) { c in
                                     Color.clear.frame(width: 130, height: 150)
                                         .overlay { FlatImage(url: c.piece.hero, padding: 4) }
-                                        .background(PLTone.well, in: RoundedRectangle(cornerRadius: PLRadius.row, style: .continuous))
+                                        .background(Bone.line(.light).opacity(0.4), in: RoundedRectangle(cornerRadius: PLRadius.row, style: .continuous))
                                         .accessibilityLabel(c.piece.name)
                                 }
                             }
@@ -151,8 +151,8 @@ struct ClosetView: View {
                                         Button { if on { closet.remove(slot) } else { closet.put(p, in: slot) }; state.tick += 1 } label: {
                                             VStack(spacing: PLSpace.hair) {
                                                 Color.clear.frame(width: 92, height: 104).overlay { FlatImage(url: p.hero, padding: 2) }
-                                                    .background(on ? PLTone.accent.opacity(0.22) : PLTone.well, in: RoundedRectangle(cornerRadius: PLRadius.row, style: .continuous))
-                                                    .overlay(alignment: .topTrailing) { if on { Image(systemName: "checkmark.circle.fill").foregroundStyle(PLTone.accent).padding(4) } }
+                                                    .background(on ? Bone.gold.opacity(0.28) : Bone.line(.light).opacity(0.4), in: RoundedRectangle(cornerRadius: PLRadius.row, style: .continuous))
+                                                    .overlay(alignment: .topTrailing) { if on { Image(systemName: "checkmark.circle.fill").foregroundStyle(Bone.gold).padding(4) } }
                                                 Text(p.name).plFont(.caption2).lineLimit(2).frame(width: 92)
                                             }
                                         }
@@ -183,6 +183,7 @@ struct ClosetView: View {
                 }
             }
         }
+        .siteList()
         .refreshable { await store.load(force: true) }
         .task { await store.load() }
         .confirmationDialog("Clear your look?", isPresented: $confirmClear, titleVisibility: .visible) {

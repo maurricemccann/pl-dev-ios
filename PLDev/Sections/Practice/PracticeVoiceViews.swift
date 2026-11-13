@@ -106,6 +106,7 @@ struct AffirmationsView: View {
             if loaded && failure == nil && items.isEmpty { ContentUnavailableView("No lines yet", systemImage: "quote.bubble", description: Text("Add your first line above.")) }
             Section { ForEach(library) { row($0) } } header: { Text("Library · \(library.count)") } footer: { Text("A play button shows only where a clip in your voice exists. The rest are text.") }
         }
+        .practiceList()
         .searchable(text: $search, prompt: "Search the lines")
         .navigationTitle("Affirmations").navigationBarTitleDisplayMode(.inline)
         .task { await load() }
@@ -272,6 +273,7 @@ struct RehearsalView: View {
                 ResultLine(text: result)
             }
         }
+        .practiceList()
     }
 
     private var live: some View {
@@ -312,6 +314,7 @@ struct RehearsalView: View {
                 ResultLine(text: result)
             } header: { Text("How strongly did it land?") } footer: { Text("1 is faint, 5 is felt in the chest. The trend of this number is the record, not a streak.") }
         }
+        .practiceList()
     }
 
     private func loadDesires() async {

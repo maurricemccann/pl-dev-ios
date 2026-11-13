@@ -25,6 +25,7 @@ struct TypewriterText: View {
 }
 
 struct AskTab: View {
+    @Environment(\.colorScheme) private var scheme
     let model: AppModel
     @Bindable var state: GlyphBotModel
     private let store = GlyphBotStore.shared
@@ -47,14 +48,12 @@ struct AskTab: View {
                     TipView(AnswerHoldTip())
                     if thread.isEmpty { ContentUnavailableView("Nothing asked yet", systemImage: "bubbles.and.sparkles", description: Text("Ask. GlyphBot answers from the practice, and from memory when you are offline.")) }
                     ForEach(thread) { t in
-                        PracticeBubble(text: t.question, mine: true).id("\(t.id)-q")
+                        GlyphUserBubble(text: t.question).id("\(t.id)-q")
                         if !t.answer.isEmpty {
                             HStack {
                                 VStack(alignment: .leading, spacing: 2) {
-                                    TypewriterText(text: t.answer, animate: typingID == t.id)
-                                        .padding(.horizontal, 12).padding(.vertical, 8)
-                                        .background(Color(uiColor: .secondarySystemFill), in: RoundedRectangle(cornerRadius: PLRadius.row + 4, style: .continuous))
-                                    Text(GlyphBot.viaWords(t.via)).font(.caption2).foregroundStyle(.secondary)
+                                    GlyphBubble(mine: false) { TypewriterText(text: t.answer, animate: typingID == t.id) }
+                                    Text(GlyphBot.viaWords(t.via)).osEyebrow(8).foregroundStyle(PLOS.dim(scheme))
                                 }
                                 Spacer(minLength: 40)
                             }
@@ -76,15 +75,16 @@ struct AskTab: View {
         }
         .safeAreaInset(edge: .bottom) {
             HStack(alignment: .bottom, spacing: 8) {
+                Text("\u{203A}").font(.system(size: 17, design: .monospaced)).foregroundStyle(PLOS.gold.opacity(0.5)).padding(.bottom, 8)
                 TextField(net.online ? "Ask the practice" : "Offline: answering from memory", text: $text, axis: .vertical).lineLimit(1...4)
-                    .padding(.horizontal, 12).padding(.vertical, 8)
-                    .background(Color(uiColor: .secondarySystemFill), in: RoundedRectangle(cornerRadius: 18, style: .continuous))
-                Button { Task { await ask() } } label: { Image(systemName: "arrow.up.circle.fill").font(.title) }
+                    .font(.system(size: 15)).padding(.vertical, 8)
+                Button { Task { await ask() } } label: { Image(systemName: "arrow.up.circle.fill").font(.title).foregroundStyle(PLOS.gold) }
                     .disabled(loading || text.trimmingCharacters(in: .whitespaces).isEmpty)
                     .accessibilityLabel("Ask")
             }
             .padding(.horizontal, PLSpace.margin).padding(.vertical, PLSpace.gap).background(.bar)
         }
+        .background { PLOS.bg(scheme).ignoresSafeArea() }
         .sensoryFeedback(PLHaptic.select, trigger: sent)
         .sheet(item: $sourcesFor) { t in SourcesSheet(turn: t) }
         .onDisappear { voice.stop() }
@@ -92,7 +92,7 @@ struct AskTab: View {
 
     private var status: some View {
         HStack(spacing: 6) {
-            Image(systemName: net.online ? "circle.fill" : "circle.dotted").font(.caption2).foregroundStyle(net.online ? Color.green : PLTone.house)
+            Image(systemName: net.online ? "circle.fill" : "circle.dotted").font(.caption2).foregroundStyle(net.online ? Color.green : Color(hex: 0xb08948))
             Text(net.online ? "Online" : "Offline: answering from memory").font(.caption).foregroundStyle(.secondary)
             Spacer()
             if store.unsynced.count > 0 {
@@ -133,6 +133,7 @@ struct SourcesSheet: View {
                     Text(p.text).font(.callout).foregroundStyle(.secondary).lineLimit(8)
                 }
             }
+            .glyphList()
             .overlay { if turn.passages.isEmpty { ContentUnavailableView("No sources", systemImage: "doc.text", description: Text("This answer came from memory or the bundled doctrine.")) } }
             .navigationTitle("Sources").navigationBarTitleDisplayMode(.inline)
             .toolbar { Button("Done") { dismiss() } }
@@ -220,6 +221,7 @@ struct SourcesSheet: View {
 }
 
 struct SitTab: View {
+    @Environment(\.colorScheme) private var scheme
     let model: AppModel
     @Bindable var state: GlyphBotModel
     @Bindable var sitting: SittingModel
@@ -260,6 +262,7 @@ struct SitTab: View {
                 if sitting.savedSitting { Button("Continue the last sitting") { sitting.resume() } }
             }
         }
+        .glyphList()
     }
 
     private var thread: some View {
@@ -270,14 +273,12 @@ struct SitTab: View {
                         ContentUnavailableView("You start", systemImage: "text.bubble", description: Text("Say what is on your mind. Nothing is sent until you press send."))
                     }
                     ForEach(sitting.lines) { l in
-                        if l.mine { PracticeBubble(text: l.text, mine: true).id(l.id) }
+                        if l.mine { GlyphUserBubble(text: l.text).id(l.id) }
                         else {
                             HStack {
                                 VStack(alignment: .leading, spacing: 2) {
-                                    Text(l.text).plReading().textSelection(.enabled)
-                                        .padding(.horizontal, 12).padding(.vertical, 8)
-                                        .background(Color(uiColor: .secondarySystemFill), in: RoundedRectangle(cornerRadius: PLRadius.row + 4, style: .continuous))
-                                    Label(GlyphBot.seatTitle(l.seat), systemImage: GlyphBot.seatSymbol(l.seat)).font(.caption2).foregroundStyle(.secondary)
+                                    GlyphBubble(mine: false) { Text(l.text).font(.system(size: 14)).foregroundStyle(PLOS.text(scheme)).lineSpacing(3).textSelection(.enabled) }
+                                    Label(GlyphBot.seatTitle(l.seat), systemImage: GlyphBot.seatSymbol(l.seat)).osEyebrow(8).foregroundStyle(PLOS.dim(scheme))
                                 }
                                 Spacer(minLength: 40)
                             }
@@ -300,10 +301,10 @@ struct SitTab: View {
         .safeAreaInset(edge: .bottom) {
             VStack(spacing: 6) {
                 HStack(alignment: .bottom, spacing: 8) {
+                    Text("\u{203A}").font(.system(size: 17, design: .monospaced)).foregroundStyle(PLOS.gold.opacity(0.5)).padding(.bottom, 8)
                     TextField("Your answer", text: $sitting.draft, axis: .vertical).lineLimit(1...8)
-                        .padding(.horizontal, 12).padding(.vertical, 8)
-                        .background(Color(uiColor: .secondarySystemFill), in: RoundedRectangle(cornerRadius: 18, style: .continuous))
-                    Button { Task { await sitting.send(model: model) } } label: { Image(systemName: "arrow.up.circle.fill").font(.title) }
+                        .font(.system(size: 15)).padding(.vertical, 8)
+                    Button { Task { await sitting.send(model: model) } } label: { Image(systemName: "arrow.up.circle.fill").font(.title).foregroundStyle(PLOS.gold) }
                         .disabled(sitting.busy || sitting.draft.trimmingCharacters(in: .whitespaces).isEmpty)
                         .accessibilityLabel("Send")
                 }
@@ -364,6 +365,7 @@ struct GlyphRecordTab: View {
                 if store.unsynced.count > 0 { Button("Sync now") { Task { await store.flush(model: model); state.publish() } } }
             } header: { Text("The Oracle") } footer: { Text("Every question is kept the moment you ask it, offline too, and syncs when the connection returns.") }
         }
+        .glyphList()
         .refreshable { await state.loadState(model: model) }
         .task { await state.loadState(model: model) }
     }

@@ -14,12 +14,12 @@ struct FlatImage: View {
                 AsyncImage(url: url, transaction: Transaction(animation: .easeIn(duration: 0.2))) { phase in
                     switch phase {
                     case .success(let image): image.resizable().scaledToFit().padding(padding)
-                    case .failure: Image(systemName: "photo").font(.title).foregroundStyle(.tertiary)
+                    case .failure: Image(systemName: "photo").font(.title).foregroundStyle(Bone.inkFaint(.light).opacity(0.5))
                     default: ProgressView()
                     }
                 }
             } else {
-                Image(systemName: "hanger").font(.largeTitle).foregroundStyle(.tertiary)
+                Image(systemName: "hanger").font(.largeTitle).foregroundStyle(Bone.inkFaint(.light).opacity(0.5))
             }
         }
         .frame(maxWidth: .infinity, maxHeight: .infinity)
@@ -28,21 +28,19 @@ struct FlatImage: View {
 
 struct PieceCard: View {
     let piece: ShopPiece
+    @Environment(\.colorScheme) private var scheme
 
     var body: some View {
-        VStack(alignment: .leading, spacing: PLSpace.tight) {
+        VStack(alignment: .leading, spacing: 8) {
+            // the site's tile: the transparent flat sits straight on the ground (no plate), as `.pl-img-wrap` does
             Color.clear
                 .aspectRatio(1, contentMode: .fit)
-                .overlay { FlatImage(url: piece.hero) }
-                .background(PLTone.surface, in: RoundedRectangle(cornerRadius: PLRadius.row, style: .continuous))
+                .overlay { FlatImage(url: piece.hero, padding: 4) }
                 .overlay(alignment: .topLeading) {
-                    if !piece.inStock {
-                        Text("Sold out").plFont(.caption2, emphasized: true).padding(.horizontal, 8).padding(.vertical, 3)
-                            .background(.thinMaterial, in: Capsule()).padding(PLSpace.gap)
-                    }
+                    if !piece.inStock { Text("Sold out").siteLabel(9).padding(.top, 2) }
                 }
-            Text(piece.name).plFont(.subhead, emphasized: true).lineLimit(2).multilineTextAlignment(.leading)
-            Text(piece.priceLine).plFont(.footnote).foregroundStyle(.secondary).monospacedDigit()
+            Text(piece.name).font(SiteFont.display(21)).foregroundStyle(Bone.ink(scheme)).lineLimit(2).multilineTextAlignment(.leading)
+            Text(piece.priceLine).siteLabel(10).monospacedDigit()
         }
         .accessibilityElement(children: .ignore)
         .accessibilityLabel("\(piece.name), \(piece.priceLine)\(piece.inStock ? "" : ", sold out")")
@@ -103,31 +101,34 @@ struct ShopGridView: View {
         return list
     }
 
-    private let columns = [GridItem(.adaptive(minimum: 150), spacing: PLSpace.margin, alignment: .top)]
+    private let columns = [GridItem(.adaptive(minimum: 150), spacing: 18, alignment: .top)]
 
     var body: some View {
         ScrollView {
-            VStack(alignment: .leading, spacing: PLSpace.margin) {
+            VStack(alignment: .leading, spacing: 20) {
+                SitePageHead(eyebrow: "The shop" + (store.pieces.isEmpty ? "" : " \u{2014} \(store.pieces.count) pieces"), lead: "Wearable", accent: "doctrine.",
+                             lede: "A Psyched Luxuries piece is a wearable argument. The price is the first argument. The art is the second. What you do after you put it on is the third.")
                 if !store.pieces.isEmpty {
                     ScrollView(.horizontal, showsIndicators: false) {
-                        HStack(spacing: PLSpace.gap) {
-                            chip("All", nil)
+                        HStack(spacing: 8) {
+                            SiteChip(title: "All", on: group == nil) { withAnimation(.smooth) { group = nil } }
                             ForEach(ShopGroup.allCases) { g in
                                 let n = store.pieces.filter { $0.group == g }.count
-                                if n > 0 { chip("\(g.title) · \(n)", g) }
+                                if n > 0 { SiteChip(title: "\(g.title) \u{00B7} \(n)", on: group == g) { withAnimation(.smooth) { group = g } } }
                             }
                         }
-                        .padding(.horizontal, PLSpace.margin)
+                        .padding(.horizontal, 24)
                     }
-                    TipView(PieceHoldTip()).padding(.horizontal, PLSpace.margin)
-                    Text("\(shown.count) of \(store.pieces.count) pieces").plFont(.footnote).foregroundStyle(.secondary)
-                        .contentTransition(.numericText()).padding(.horizontal, PLSpace.margin)
+                    TipView(PieceHoldTip()).padding(.horizontal, 24)
+                    Text("\(shown.count) of \(store.pieces.count) pieces").siteLabel(10)
+                        .contentTransition(.numericText()).padding(.horizontal, 24)
+                    SiteRule().padding(.horizontal, 24)
                 }
                 content
             }
-            .padding(.vertical, PLSpace.gap)
+            .padding(.bottom, 32)
         }
-        .background(PLTone.canvas)
+        .siteScreen()
         .searchable(text: $query, prompt: "Search the shop")
         .refreshable { await store.load(force: true) }
         .task { await store.load() }
@@ -150,37 +151,27 @@ struct ShopGridView: View {
                 LazyVGrid(columns: columns, spacing: PLSpace.margin) {
                     ForEach(0..<6, id: \.self) { _ in
                         VStack(alignment: .leading, spacing: PLSpace.tight) {
-                            RoundedRectangle(cornerRadius: PLRadius.row, style: .continuous).fill(PLTone.surface).aspectRatio(1, contentMode: .fit)
+                            Rectangle().fill(Bone.line(.light).opacity(0.5)).aspectRatio(1, contentMode: .fit)
                             Text("Placeholder piece name").plFont(.subhead); Text("$00.00").plFont(.footnote)
                         }.redacted(reason: .placeholder)
                     }
                 }
-                .padding(.horizontal, PLSpace.margin).accessibilityLabel("Loading the shop")
+                .padding(.horizontal, 24).accessibilityLabel("Loading the shop")
             }
         } else if shown.isEmpty {
             EmptyNote(symbol: "magnifyingglass", title: "Nothing matches", detail: "No piece fits that search and filter. Clear one to see more.", actionTitle: "Clear") {
                 query = ""; group = nil; inStockOnly = false
             }
         } else {
-            LazyVGrid(columns: columns, spacing: PLSpace.roomy) {
+            LazyVGrid(columns: columns, spacing: 28) {
                 ForEach(shown) { p in
                     NavigationLink { PieceView(slug: p.slug, state: state) } label: { PieceCard(piece: p) }
                         .buttonStyle(.plain)
                         .pieceMenu(p, state: state)
                 }
             }
-            .padding(.horizontal, PLSpace.margin)
+            .padding(.horizontal, 24)
         }
-    }
-
-    private func chip(_ title: String, _ g: ShopGroup?) -> some View {
-        let on = group == g
-        return Button { withAnimation(.smooth) { group = g } } label: {
-            Text(title).plFont(.callout, emphasized: on).padding(.horizontal, PLSpace.pad).frame(minHeight: PLMetric.touch - 8)
-                .background(on ? PLTone.accent.opacity(0.22) : PLTone.well, in: Capsule())
-        }
-        .buttonStyle(.plain)
-        .accessibilityAddTraits(on ? .isSelected : [])
     }
 }
 
@@ -190,6 +181,7 @@ struct PieceView: View {
     let slug: String
     @Bindable var state: ShopModel
     private let store = ShopStore.shared
+    @Environment(\.colorScheme) private var scheme
 
     @State private var color: String?
     @State private var size: String?
@@ -204,7 +196,7 @@ struct PieceView: View {
             else if store.pieces.isEmpty && store.failure == nil { ProgressView().frame(maxWidth: .infinity, maxHeight: .infinity) }
             else { EmptyNote(symbol: "bag", title: "That piece is not in the shop", detail: "It may have been retired. The shop's list has what is there now.") }
         }
-        .background(PLTone.canvas)
+        .siteScreen()
         .navigationBarTitleDisplayMode(.inline)
         .task { await store.load() }
         .sheet(item: $web) { SafariSheet(url: $0.url).ignoresSafeArea() }
@@ -214,7 +206,7 @@ struct PieceView: View {
         let variant = piece.variant(color: color, size: size)
         let images = piece.images
         return ScrollView {
-            VStack(alignment: .leading, spacing: PLSpace.margin) {
+            VStack(alignment: .leading, spacing: 20) {
                 Group {
                     if images.isEmpty { FlatImage(url: nil) }
                     else {
@@ -227,17 +219,18 @@ struct PieceView: View {
                     }
                 }
                 .frame(height: 380)
-                .background(PLTone.surface, in: RoundedRectangle(cornerRadius: PLRadius.row, style: .continuous))
-                .padding(.horizontal, PLSpace.margin)
+                .padding(.horizontal, 12)
 
-                VStack(alignment: .leading, spacing: PLSpace.gap) {
-                    Text(piece.name).plTitle(.title2).accessibilityAddTraits(.isHeader)
-                    HStack(alignment: .firstTextBaseline) {
-                        Text(variant.map { Money.text($0.cents) } ?? piece.priceLine).plFont(.title3).monospacedDigit().contentTransition(.numericText())
-                        if let v = variant, !v.inStock { Text("Sold out").plFont(.callout).foregroundStyle(.secondary) }
+                VStack(alignment: .leading, spacing: 12) {
+                    Text(piece.group.title).siteLabel()
+                    Text(piece.name).font(SiteFont.display(34)).foregroundStyle(Bone.ink(scheme)).fixedSize(horizontal: false, vertical: true).accessibilityAddTraits(.isHeader)
+                    HStack(alignment: .firstTextBaseline, spacing: 12) {
+                        Text(variant.map { Money.text($0.cents) } ?? piece.priceLine).font(SiteFont.display(24, italic: true)).foregroundStyle(Bone.gold).monospacedDigit().contentTransition(.numericText())
+                        if let v = variant, !v.inStock { Text("Sold out").siteLabel(10) }
                     }
                 }
-                .padding(.horizontal, PLSpace.margin)
+                .padding(.horizontal, 24)
+                SiteRule().padding(.horizontal, 24)
 
                 if piece.colors.count > 1 {
                     pickerBlock("Colour", options: piece.colors, selection: $color, enabled: { c in piece.variants.contains { $0.color == c && $0.inStock } })
@@ -248,40 +241,40 @@ struct PieceView: View {
                 }
 
                 if !piece.description.isEmpty {
-                    Text(piece.description).plFont(.body).plReading().padding(.horizontal, PLSpace.margin)
+                    Text(piece.description).siteBody(16).padding(.horizontal, 24)
                 }
 
-                VStack(spacing: PLSpace.pad) {
+                VStack(spacing: 12) {
                     Button {
                         guard let url = Site.page(buyPath(piece, variant)) else { line = "Not opened. The config has no address for the site."; return }
                         web = WebPage(url)
                     } label: {
-                        Label("Buy on psychedluxuries.com", systemImage: "bag").frame(maxWidth: .infinity, minHeight: PLMetric.touch)
+                        Text("Buy on psychedluxuries.com \u{2192}")
                     }
-                    .buttonStyle(.borderedProminent)
+                    .buttonStyle(SitePill())
                     .disabled(!(variant?.inStock ?? false))
-                    HStack(spacing: PLSpace.pad) {
+                    HStack(spacing: 12) {
                         if let slot = ClosetSlot.of(piece.group) {
                             Button {
                                 ClosetState.shared.put(piece, in: slot, size: size)
                                 line = "In the Closet."; state.tick += 1
-                            } label: { Label("Closet", systemImage: "hanger").frame(maxWidth: .infinity, minHeight: PLMetric.touch) }
-                                .buttonStyle(.bordered)
+                            } label: { Text("Closet") }
+                                .buttonStyle(SiteGhost())
                         }
                         if let url = Site.page("shop/\(piece.slug)") {
-                            ShareLink(item: url) { Label("Share", systemImage: "square.and.arrow.up").frame(maxWidth: .infinity, minHeight: PLMetric.touch) }
-                                .buttonStyle(.bordered)
+                            ShareLink(item: url) { Text("Share") }
+                                .buttonStyle(SiteGhost())
                         }
                     }
                     Button {
                         if let url = Site.page("shop/\(piece.slug)") { web = WebPage(url) }
-                    } label: { Label("Size guide and care on the site", systemImage: "ruler").frame(maxWidth: .infinity, minHeight: PLMetric.touch) }
-                        .buttonStyle(.plain).foregroundStyle(.secondary)
+                    } label: { Text("Size guide and care on the site").siteLabel(10).frame(maxWidth: .infinity, minHeight: 44) }
+                        .buttonStyle(.plain)
                     ResultLine(text: line)
                 }
-                .padding(.horizontal, PLSpace.margin)
+                .padding(.horizontal, 24)
             }
-            .padding(.vertical, PLSpace.gap)
+            .padding(.vertical, 8).padding(.bottom, 24)
         }
         .navigationTitle(piece.name)
         .sensoryFeedback(PLHaptic.select, trigger: color)
@@ -309,24 +302,18 @@ struct PieceView: View {
     }
 
     private func pickerBlock(_ title: String, options: [String], selection: Binding<String?>, enabled: @escaping (String) -> Bool) -> some View {
-        VStack(alignment: .leading, spacing: PLSpace.gap) {
-            Text(title).plFont(.footnote, emphasized: true).foregroundStyle(.secondary).padding(.horizontal, PLSpace.margin)
+        VStack(alignment: .leading, spacing: 10) {
+            Text(title).siteLabel(10).padding(.horizontal, 24)
             ScrollView(.horizontal, showsIndicators: false) {
-                HStack(spacing: PLSpace.gap) {
+                HStack(spacing: 8) {
                     ForEach(options, id: \.self) { o in
-                        let on = selection.wrappedValue == o
                         let ok = enabled(o)
-                        Button { selection.wrappedValue = o } label: {
-                            Text(o).plFont(.callout, emphasized: on).strikethrough(!ok).padding(.horizontal, PLSpace.pad).frame(minWidth: PLMetric.touch, minHeight: PLMetric.touch)
-                                .background(on ? PLTone.accent.opacity(0.22) : PLTone.well, in: RoundedRectangle(cornerRadius: PLRadius.row, style: .continuous))
-                                .opacity(ok ? 1 : 0.5)
-                        }
-                        .buttonStyle(.plain)
-                        .accessibilityLabel("\(o)\(ok ? "" : ", sold out")")
-                        .accessibilityAddTraits(on ? .isSelected : [])
+                        SiteChip(title: o, on: selection.wrappedValue == o, dim: !ok) { selection.wrappedValue = o }
+                            .strikethrough(!ok)
+                            .accessibilityLabel("\(o)\(ok ? "" : ", sold out")")
                     }
                 }
-                .padding(.horizontal, PLSpace.margin)
+                .padding(.horizontal, 24)
             }
         }
     }

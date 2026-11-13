@@ -32,6 +32,7 @@ struct DesiresView: View {
             }
             if !done.isEmpty { Section("Done · \(done.count)") { ForEach(done) { row($0) } } }
         }
+        .practiceList()
         .navigationTitle("Desires").navigationBarTitleDisplayMode(.inline)
         .sensoryFeedback(PLHaptic.commit, trigger: desires.count)
         .task { await load() }
@@ -106,6 +107,7 @@ struct DesireDetail: View {
             } header: { Text("The flow") }
             Section { ResultLine(text: result) }
         }
+        .practiceList()
         .navigationTitle("Desire").navigationBarTitleDisplayMode(.inline)
         .sensoryFeedback(PLHaptic.success, trigger: saved)
         .task { await load() }
@@ -162,11 +164,12 @@ struct HabitsView: View {
                             .swipeActions(edge: .trailing) {
                                 Button(h.tickedToday ? "Undo" : "Done") { Task { await tick(h) } }.tint(h.tickedToday ? .gray : .green)
                             }
-                            .swipeActions(edge: .leading) { Button("Archive") { archive = h }.tint(PLTone.accent) }
+                            .swipeActions(edge: .leading) { Button("Archive") { archive = h }.tint(Candle.gold) }
                     }
                 } header: { Text("This week") } footer: { Text("Swipe left to tick, right to archive.") }
             }
         }
+        .practiceList()
         .navigationTitle("Habits").navigationBarTitleDisplayMode(.inline)
         .confirmationDialog("Archive this habit?", isPresented: Binding(get: { archive != nil }, set: { if !$0 { archive = nil } }), titleVisibility: .visible, presenting: archive) { h in
             Button("Archive \"\(h.response)\"", role: .destructive) { Task { await doArchive(h) } }
@@ -223,6 +226,7 @@ struct NotesView: View {
                 }
             }
         }
+        .practiceList()
         .navigationTitle("Notes").navigationBarTitleDisplayMode(.inline)
         .sensoryFeedback(PLHaptic.success, trigger: notes.count)
         .task { await load() }
@@ -272,6 +276,7 @@ struct WinsView: View {
                 }
             }
         }
+        .practiceList()
         .navigationTitle("Wins and noticed").navigationBarTitleDisplayMode(.inline)
         .sensoryFeedback(PLHaptic.success, trigger: logs.count)
         .task { await load() }
@@ -337,6 +342,7 @@ struct ReviewView: View {
                 }
             }
         }
+        .practiceList()
         .navigationTitle("Weekly review").navigationBarTitleDisplayMode(.inline)
         .sensoryFeedback(PLHaptic.success, trigger: sealed)
         .task { await load() }
@@ -407,6 +413,7 @@ struct TrendsView: View {
                 }
             }
         }
+        .practiceList()
         .navigationTitle("The record").navigationBarTitleDisplayMode(.inline)
         .task { await load() }
         .refreshable { await load() }
@@ -454,6 +461,7 @@ struct VisionView: View {
                 grid(more.filter { m in !pins.contains { $0.url == m.url } }.map { ($0.url, $0.alt, false) })
             } header: { Text("More from the house") } footer: { Text("Twelve at random from his catalogue. Pull down for another twelve.") }
         }
+        .practiceList()
         .navigationTitle("Vision board").navigationBarTitleDisplayMode(.inline)
         .sensoryFeedback(PLHaptic.select, trigger: pins.count)
         .sheet(isPresented: $picking) { PicturePicker { url in picking = false; Task { await toggle(url, "Catalogue") } } }

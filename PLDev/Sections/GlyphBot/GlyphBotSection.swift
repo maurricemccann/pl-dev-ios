@@ -85,6 +85,7 @@ enum GlyphBotRoom: String, CaseIterable, Identifiable, Hashable {
 struct GlyphBotView: View {
     let model: AppModel
     @Bindable var state: GlyphBotModel
+    @Environment(\.colorScheme) private var scheme
 
     var body: some View {
         Group {
@@ -95,11 +96,11 @@ struct GlyphBotView: View {
             }
         }
         .safeAreaInset(edge: .top, spacing: 0) {
-            Picker("Page", selection: $state.tab) { ForEach(GlyphBotModel.Tab.allCases) { Text($0.title).tag($0) } }
-                .pickerStyle(.segmented)
-                .padding(.horizontal, PLSpace.margin).padding(.vertical, PLSpace.gap)
-                .background(.bar)
+            GlyphTabs(titles: GlyphBotModel.Tab.allCases.map(\.title), index: Binding(
+                get: { GlyphBotModel.Tab.allCases.firstIndex(of: state.tab) ?? 0 },
+                set: { state.tab = GlyphBotModel.Tab.allCases[$0] }), online: GlyphBotNet.shared.online)
         }
+        .background { PLOS.bg(scheme).ignoresSafeArea() }
         .navigationTitle("GlyphBot")
         .navigationBarTitleDisplayMode(.inline)
         .toolbar {

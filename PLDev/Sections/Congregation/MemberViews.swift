@@ -43,7 +43,7 @@ struct GlyphBadge: View {
             .font(.system(size: 14, weight: .semibold))
             .foregroundStyle(.white)
             .frame(width: 28, height: 28)
-            .background((founder ? PLTone.accent : (StorefrontColor.hex(color) ?? PLTone.quiet)).gradient, in: Circle())
+            .background((founder ? Bone.gold : (StorefrontColor.hex(color) ?? Bone.inkFaint(.light))).gradient, in: Circle())
             .accessibilityHidden(true)
     }
 }
@@ -86,6 +86,7 @@ struct MembersTabView: View {
                     }
                 } header: { Text(found == nil ? "\(members.count) members" : "\(shown.count) found") }
             }
+            .siteList()
             .searchable(text: $query, prompt: "Find a member")
             .onSubmit(of: .search) { Task { await search() } }
             .onChange(of: query) { _, q in if q.isEmpty { found = nil } }
@@ -121,7 +122,7 @@ struct MemberView: View {
                 HStack(spacing: PLSpace.pad) {
                     GlyphBadge(glyph: member?.glyph, color: member?.brandColor)
                     VStack(alignment: .leading, spacing: 2) {
-                        Text("@\(handle)").plTitle(.title3)
+                        Text("@\(handle)").font(SiteFont.display(26))
                         if let t = member?.tier { Text(t.tierWord).plFont(.footnote).foregroundStyle(.secondary) }
                     }
                 }
@@ -154,6 +155,7 @@ struct MemberView: View {
                 }
             }
         }
+        .siteList()
         .navigationTitle("@\(handle)").navigationBarTitleDisplayMode(.inline)
         .refreshable { await load() }
         .task { await load() }

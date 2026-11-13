@@ -168,13 +168,12 @@ struct PracticeView: View {
             }
         }
         .safeAreaInset(edge: .top, spacing: 0) {
-            Picker("Page", selection: $state.tab) {
-                ForEach(PracticeModel.Tab.allCases) { Text($0.title).tag($0) }
-            }
-            .pickerStyle(.segmented)
-            .padding(.horizontal, PLSpace.margin).padding(.vertical, PLSpace.gap)
-            .background(.bar)
+            CandleTabs(titles: PracticeModel.Tab.allCases.map(\.title), index: Binding(
+                get: { PracticeModel.Tab.allCases.firstIndex(of: state.tab) ?? 0 },
+                set: { state.tab = PracticeModel.Tab.allCases[$0] }))
         }
+        .background { CandleGround() }
+        .preferredColorScheme(.dark)
         .navigationTitle("Practice")
         .navigationBarTitleDisplayMode(.inline)
         .sensoryFeedback(PLHaptic.commit, trigger: state.tick)
@@ -194,7 +193,14 @@ struct TodayTab: View {
             if let m = state.message { Text(m).font(.footnote).foregroundStyle(.secondary) }
             if let s = state.streak {
                 Section {
-                    PracticeKpis(items: [("days this month", "\(s.practisedThisMonth)"), ("days in all", "\(s.practisedTotal)"), ("of the last 7 complete", "\(s.completedOfLast7)")])
+                    VStack(spacing: 4) {
+                        Text("\(s.practisedThisMonth)").font(.system(size: 38, weight: .light)).foregroundStyle(Candle.goldHi).monospacedDigit().contentTransition(.numericText())
+                        Text("days practised this month").candleHint().font(.system(size: 13))
+                        Text("\(s.practisedTotal) in all \u{00B7} \(s.completedOfLast7) of the last 7 complete").candleHint()
+                    }
+                    .frame(maxWidth: .infinity).padding(.vertical, 8)
+                    .accessibilityElement(children: .combine)
+                    .listRowBackground(Color.clear)
                 } footer: { Text("A day counts when either check-in is done. Missing one costs nothing.") }
             }
             Section("Today") {
@@ -229,6 +235,7 @@ struct TodayTab: View {
                 footer: { Text("Seven days on the record. The weekly review is due.") }
             }
         }
+        .practiceList()
         .overlay { if !state.loaded && state.streak == nil && state.message == nil { ProgressView() } }
         .refreshable { await PracticeOutbox.flush(model: model); await state.loadToday(model: model) }
         .task { await PracticeOutbox.flush(model: model); await state.loadToday(model: model) }
@@ -264,7 +271,7 @@ struct HabitRow: View {
             Spacer(minLength: 0)
             HStack(spacing: 3) {
                 ForEach(Array(habit.week.enumerated()), id: \.offset) { _, on in
-                    Circle().fill(on ? PLTone.accent : Color.secondary.opacity(0.25)).frame(width: 7, height: 7)
+                    Circle().fill(on ? Candle.gold : Candle.ink.opacity(0.2)).frame(width: 7, height: 7)
                 }
             }
             .accessibilityHidden(true)
@@ -290,6 +297,7 @@ struct PracticeTab: View {
                 }
             }
         }
+        .practiceList()
     }
 }
 
@@ -309,6 +317,7 @@ struct RecordTab: View {
                 Text("Nothing here can be deleted from the phone. The record is the record.\(PracticeOutbox.count > 0 ? " \(PracticeOutbox.count) written offline, waiting to send." : "")")
             }
         }
+        .practiceList()
     }
 }
 

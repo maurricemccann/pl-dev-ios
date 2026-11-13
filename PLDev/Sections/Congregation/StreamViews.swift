@@ -171,51 +171,69 @@ struct StreamTabView: View {
     @Bindable var stream: StreamModel
 
     var body: some View {
-        List {
-            if let l = stream.line { Text(l).font(.footnote).foregroundStyle(.secondary) }
-            if stream.items.isEmpty {
-                if let f = stream.failure {
-                    EmptyNote(symbol: "wifi.exclamationmark", title: "Could not load the stream", detail: f, actionTitle: "Try again") { Task { await stream.reload() } }
-                        .listRowBackground(Color.clear)
-                } else { ForEach(0..<4, id: \.self) { _ in SkeletonRow() } }
+        ScrollView {
+            LazyVStack(alignment: .leading, spacing: 18) {
+                SitePageHead(eyebrow: "The congregation \u{2014} the room and the signal", lead: "The", accent: "congregation.",
+                             lede: "Two acts, one room. Receive the work as it happens, direct from inside the build. Speak your desire into the wall, where it is held and witnessed. Both are the practice.")
+                if let l = stream.line { Text(l).siteLabel(10).padding(.horizontal, 24) }
+                if stream.items.isEmpty {
+                    if let f = stream.failure {
+                        EmptyNote(symbol: "wifi.exclamationmark", title: "Could not load the stream", detail: f, actionTitle: "Try again") { Task { await stream.reload() } }
+                    } else { ForEach(0..<3, id: \.self) { _ in SkeletonRow().siteCard().padding(.horizontal, 20) } }
+                }
+                ForEach(stream.items) { item in
+                    NavigationLink { StreamDetailView(stream: stream, itemID: item.id) } label: { StreamCard(item: item, stream: stream) }
+                        .buttonStyle(.plain)
+                        .padding(.horizontal, 20)
+                        .onAppear { if item.id == stream.items.last?.id { Task { await stream.more() } } }
+                }
+                if stream.loading && !stream.items.isEmpty { ProgressView().frame(maxWidth: .infinity) }
+                if !stream.items.isEmpty, stream.total > 0 { Text("\(stream.items.count) of \(stream.total)").siteLabel(10).frame(maxWidth: .infinity) }
             }
-            ForEach(stream.items) { item in
-                NavigationLink { StreamDetailView(stream: stream, itemID: item.id) } label: { StreamCard(item: item, stream: stream) }
-                    .onAppear { if item.id == stream.items.last?.id { Task { await stream.more() } } }
-            }
-            if stream.loading && !stream.items.isEmpty { ProgressView().frame(maxWidth: .infinity).listRowBackground(Color.clear) }
-            if !stream.items.isEmpty, stream.total > 0 { Text("\(stream.items.count) of \(stream.total)").font(.footnote).foregroundStyle(.secondary).frame(maxWidth: .infinity).listRowBackground(Color.clear) }
+            .padding(.bottom, 32)
         }
+        .siteScreen()
         .refreshable { await stream.reload() }
         .task { if stream.items.isEmpty { await stream.reload() } }
         .sensoryFeedback(PLHaptic.commit, trigger: stream.tick)
     }
 }
 
-/// One row of the stream, drawn for its kind.
+/// One card of the stream, drawn the way the site draws it: the cream card, a round mark and `THE FOUNDER / SEPTEMBER 18` above the text.
 struct StreamCard: View {
     let item: StreamItem
     let stream: StreamModel
+    @Environment(\.colorScheme) private var scheme
+
+    private func byline(_ who: String, _ when: String?) -> some View {
+        HStack(spacing: 10) {
+            Circle().fill(Color(hex: 0x15120b)).frame(width: 36, height: 36)
+                .overlay { Image("PLIcons/house").resizable().scaledToFit().padding(8).foregroundStyle(Bone.gold) }
+            VStack(alignment: .leading, spacing: 1) {
+                Text(who).siteLabel(10)
+                if let when { Ago(text: when).siteLabel(10) }
+            }
+        }
+    }
 
     var body: some View {
-        VStack(alignment: .leading, spacing: PLSpace.gap) {
+        VStack(alignment: .leading, spacing: 12) {
             switch item.kind {
             case "doctrine":
-                Text(item.numeral ?? "").plFont(.footnote, emphasized: true).foregroundStyle(PLTone.accent)
-                Text(item.truth ?? "").plTitle(.title3)
-                Text(item.gloss ?? "").plFont(.callout).foregroundStyle(.secondary).plReading()
+                Text(item.numeral ?? "").siteLabel(10).foregroundStyle(Bone.gold)
+                Text(item.truth ?? "").font(SiteFont.display(26)).foregroundStyle(Bone.ink(scheme))
+                Text(item.gloss ?? "").siteBody(15)
             case "declaration":
-                Text(item.text ?? "").plFont(.body).plReading()
-                HStack(spacing: 4) { Text(item.author ?? "Anonymous"); Text("·"); Ago(text: item.createdAt) }.plFont(.footnote).foregroundStyle(.secondary)
+                byline((item.author ?? "Anonymous"), item.createdAt)
+                Text(item.text ?? "").font(SiteFont.display(21)).foregroundStyle(Bone.ink(scheme)).lineSpacing(4)
             case "drop":
-                HStack(spacing: PLSpace.pad) {
-                    Color.clear.frame(width: 84, height: 84).overlay { FlatImage(url: item.picture, padding: 4) }
-                        .background(PLTone.well, in: RoundedRectangle(cornerRadius: PLRadius.row, style: .continuous))
-                    VStack(alignment: .leading, spacing: 2) {
-                        Text("In the shop").plFont(.caption).foregroundStyle(.secondary)
-                        Text(item.name ?? "A piece").plFont(.headline)
-                        if let a = item.argument { Text(a).plFont(.footnote).foregroundStyle(.secondary).lineLimit(2) }
-                        if let p = item.price { Text(Money.text(p)).plFont(.footnote).monospacedDigit() }
+                HStack(spacing: 14) {
+                    Color.clear.frame(width: 84, height: 84).overlay { FlatImage(url: item.picture, padding: 2) }
+                    VStack(alignment: .leading, spacing: 4) {
+                        Text("In the shop").siteLabel(10)
+                        Text(item.name ?? "A piece").font(SiteFont.display(22)).foregroundStyle(Bone.ink(scheme))
+                        if let a = item.argument { Text(a).siteBody(13).lineLimit(2) }
+                        if let p = item.price { Text(Money.text(p)).siteLabel(10).monospacedDigit() }
                     }
                 }
             default:
@@ -223,30 +241,30 @@ struct StreamCard: View {
                     AsyncImage(url: url) { phase in
                         switch phase {
                         case .success(let i): i.resizable().scaledToFill()
-                        case .failure: Color.secondary.opacity(0.12).overlay { Image(systemName: "photo").foregroundStyle(.tertiary) }
-                        default: Color.secondary.opacity(0.12).overlay { ProgressView() }
+                        case .failure: Bone.line(scheme).opacity(0.4).overlay { Image(systemName: "photo").foregroundStyle(Bone.inkFaint(scheme)) }
+                        default: Bone.line(scheme).opacity(0.4).overlay { ProgressView() }
                         }
                     }
-                    .frame(maxWidth: .infinity).frame(height: 220).clipShape(RoundedRectangle(cornerRadius: PLRadius.row, style: .continuous))
+                    .frame(maxWidth: .infinity).frame(height: 220).clipShape(RoundedRectangle(cornerRadius: 12, style: .continuous))
                 }
                 if item.kind == "archive" {
-                    Text(item.title ?? item.cr ?? "Archive piece").plFont(.headline)
-                    Text([item.cr, item.pillar].compactMap { $0 }.joined(separator: " · ")).plFont(.footnote).foregroundStyle(.secondary)
+                    Text(item.title ?? item.cr ?? "Archive piece").font(SiteFont.display(22)).foregroundStyle(Bone.ink(scheme))
+                    Text([item.cr, item.pillar].compactMap { $0 }.joined(separator: " \u{00B7} ")).siteLabel(10)
                 }
             }
-            HStack(spacing: PLSpace.margin) {
+            HStack(spacing: 22) {
                 Button { Task { await stream.react(item.id) } } label: {
                     Label("\(item.reactions)", systemImage: item.reacted ? "heart.fill" : "heart").monospacedDigit().contentTransition(.numericText())
                         .symbolEffect(.bounce, value: item.reacted)
                 }
-                .buttonStyle(.plain).foregroundStyle(item.reacted ? PLTone.accent : .secondary)
+                .buttonStyle(.plain).foregroundStyle(item.reacted ? Bone.gold : Bone.inkFaint(scheme))
                 .accessibilityLabel(item.reacted ? "Reacted, \(item.reactions)" : "React, \(item.reactions)")
-                if !item.comments.isEmpty { Label("\(item.comments.count)", systemImage: "bubble.left").foregroundStyle(.secondary) }
+                if !item.comments.isEmpty { Label("\(item.comments.count)", systemImage: "bubble.left").foregroundStyle(Bone.inkFaint(scheme)) }
             }
-            .plFont(.footnote)
-            .frame(minHeight: PLMetric.touch - 8)
+            .font(SiteFont.body(13))
+            .frame(minHeight: 36)
         }
-        .padding(.vertical, PLSpace.tight)
+        .siteCard(padding: 18)
     }
 }
 
@@ -277,20 +295,20 @@ struct StreamDetailView: View {
                             .listRowInsets(EdgeInsets())
                         }
                         if item.kind == "archive" {
-                            Text(item.title ?? item.cr ?? "").plTitle(.title3)
+                            Text(item.title ?? item.cr ?? "").font(SiteFont.display(26))
                             LabeledContent("Reference", value: item.cr ?? "")
                             if let p = item.pillar { LabeledContent("Pillar", value: p) }
                         }
                     case "drop":
                         FlatImage(url: item.picture, padding: PLSpace.roomy).frame(height: 260).listRowInsets(EdgeInsets())
-                        Text(item.name ?? "").plTitle(.title3)
+                        Text(item.name ?? "").font(SiteFont.display(26))
                         if let a = item.argument { Text(a).plFont(.callout).foregroundStyle(.secondary) }
                         if let s = item.slug {
                             Button { AppModel.shared.open(.section(id: "shop", path: ["piece", s], query: [:])) } label: { Label("Open the piece", systemImage: "bag") }
                         }
                     case "doctrine":
-                        Text(item.numeral ?? "").plFont(.footnote, emphasized: true).foregroundStyle(PLTone.accent)
-                        Text(item.truth ?? "").plTitle(.title3)
+                        Text(item.numeral ?? "").plFont(.footnote, emphasized: true).foregroundStyle(Bone.gold)
+                        Text(item.truth ?? "").font(SiteFont.display(26))
                         Text(item.gloss ?? "").plReading()
                     default:
                         Text(item.text ?? "").plReading()
@@ -300,7 +318,7 @@ struct StreamDetailView: View {
                         Button { Task { await stream.react(item.id) } } label: {
                             Label("\(item.reactions)", systemImage: item.reacted ? "heart.fill" : "heart").monospacedDigit().contentTransition(.numericText()).symbolEffect(.bounce, value: item.reacted)
                         }
-                        .buttonStyle(.plain).foregroundStyle(item.reacted ? PLTone.accent : .secondary)
+                        .buttonStyle(.plain).foregroundStyle(item.reacted ? Bone.gold : .secondary)
                         Spacer()
                         if item.kind == "archive", let cr = item.cr, let url = Site.page("catalogue/\(cr)") {
                             ShareLink(item: url) { Label("Share", systemImage: "square.and.arrow.up") }
@@ -342,6 +360,7 @@ struct StreamDetailView: View {
                 }
                 ResultLine(text: stream.line)
             }
+            .siteList()
             .navigationTitle(item.kind == "archive" ? (item.cr ?? "Archive") : "Stream")
             .navigationBarTitleDisplayMode(.inline)
             .sheet(item: $web) { SafariSheet(url: $0.url).ignoresSafeArea() }

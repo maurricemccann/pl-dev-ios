@@ -11,6 +11,7 @@ struct SiteReaderView: View {
     @State private var blocks: [Block] = []
     @State private var failed: String?
     @State private var loaded = false
+    @Environment(\.colorScheme) private var scheme
 
     var body: some View {
         ScrollView {
@@ -21,18 +22,18 @@ struct SiteReaderView: View {
                     switch b {
                     case .heading(let t, let level):
                         // the house's pages are his words: headings in his hand
-                        Text(t).plHand(level == 1 ? 32 : level == 2 ? 26 : 22, relativeTo: level == 1 ? .largeTitle : .title2).padding(.top, level == 1 ? 0 : 8)
-                    case .paragraph(let t): Text(t).font(.body).plReading()
-                    case .item(let t): HStack(alignment: .firstTextBaseline, spacing: 8) { Text("·").foregroundStyle(PLTone.accent); Text(t).plReading() }
-                    case .quote(let t): Text(t).plHand(22, relativeTo: .title3).padding(.leading, 12).overlay(alignment: .leading) { Rectangle().fill(PLTone.accent).frame(width: 2) }
+                        Text(t).font(SiteFont.display(level == 1 ? 34 : level == 2 ? 27 : 22)).foregroundStyle(Bone.ink(scheme)).padding(.top, level == 1 ? 0 : 8)
+                    case .paragraph(let t): Text(t).siteBody(16)
+                    case .item(let t): HStack(alignment: .firstTextBaseline, spacing: 8) { Text("·").foregroundStyle(Bone.gold); Text(t).siteBody(16) }
+                    case .quote(let t): Text(t).font(SiteFont.display(22, italic: true)).foregroundStyle(Bone.ink(scheme)).padding(.leading, 12).overlay(alignment: .leading) { Rectangle().fill(Bone.gold).frame(width: 2) }
                     }
                 }
                 if loaded, let u = Site.page(path) { Link("Open this page on the site", destination: u).font(.footnote).padding(.top, 12) }
             }
-            .padding()
+            .padding(24)
             .textSelection(.enabled)
         }
-        .plGround()
+        .siteScreen()
         .plScreenTitle(title)
         .task { await load() }
         .refreshable { await load() }

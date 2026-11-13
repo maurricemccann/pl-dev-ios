@@ -82,6 +82,7 @@ struct AccountTabView: View {
                 Button { if let url = Site.page("signin") { web = WebPage(url) } } label: { Label("Forgot the password, or use Google", systemImage: "key") }
             } footer: { Text("These run on the site, which checks a person is behind them.") }
         }
+        .siteList()
         .sensoryFeedback(PLHaptic.success, trigger: account.signedIn)
     }
 
@@ -91,7 +92,7 @@ struct AccountTabView: View {
                 HStack(spacing: PLSpace.pad) {
                     GlyphBadge(glyph: me.glyph, color: me.brandColor, founder: me.isFounder == true)
                     VStack(alignment: .leading, spacing: 2) {
-                        Text(me.firstName ?? me.handle.map { "@\($0)" } ?? "You").plTitle(.title3)
+                        Text(me.firstName ?? me.handle.map { "@\($0)" } ?? "You").font(SiteFont.display(26))
                         Text(me.isFounder == true ? "The Founder" : (me.pointsTier ?? "none").tierWord).plFont(.footnote).foregroundStyle(.secondary)
                     }
                     Spacer(minLength: 0)
@@ -114,6 +115,7 @@ struct AccountTabView: View {
                 Button(role: .destructive) { confirmOut = true } label: { Label("Sign out", systemImage: "rectangle.portrait.and.arrow.right") }
             }
         }
+        .siteList()
         .refreshable { await account.refresh() }
         .confirmationDialog("Sign out of the site?", isPresented: $confirmOut, titleVisibility: .visible) {
             Button("Sign out", role: .destructive) { Task { await account.signOut(); state.tick += 1 } }
@@ -152,7 +154,7 @@ struct ActivityView: View {
                 if reply.visible.isEmpty { ContentUnavailableView("Nothing yet", systemImage: "bell", description: Text("Reactions, answers and follows appear here.")).listRowBackground(Color.clear) }
                 ForEach(reply.visible) { i in
                     HStack(alignment: .top, spacing: PLSpace.pad) {
-                        Circle().fill(i.read ? Color.clear : PLTone.accent).frame(width: 8, height: 8).padding(.top, 7).accessibilityHidden(true)
+                        Circle().fill(i.read ? Color.clear : Bone.gold).frame(width: 8, height: 8).padding(.top, 7).accessibilityHidden(true)
                         VStack(alignment: .leading, spacing: 2) {
                             Text(i.words).plFont(.body)
                             Ago(text: i.createdAt).plFont(.caption).foregroundStyle(.secondary)
@@ -161,6 +163,7 @@ struct ActivityView: View {
                     .accessibilityLabel("\(i.read ? "" : "New. ")\(i.words)")
                 }
             }
+            .siteList()
             .toolbar {
                 ToolbarItem(placement: .topBarTrailing) {
                     Button("Mark read") { Task { _ = try? await Site.post("api/notifications", [:]); await reload() } }.disabled(reply.visibleUnread == 0)
@@ -187,7 +190,7 @@ struct MessagesView: View {
                 ForEach(all) { m in
                     VStack(alignment: m.sender == "member" ? .trailing : .leading, spacing: 2) {
                         Text(m.body).plReading().padding(PLSpace.pad)
-                            .background(m.sender == "member" ? PLTone.accent.opacity(0.22) : PLTone.well, in: RoundedRectangle(cornerRadius: PLRadius.row, style: .continuous))
+                            .background(m.sender == "member" ? Bone.gold.opacity(0.28) : Bone.line(.light).opacity(0.4), in: RoundedRectangle(cornerRadius: PLRadius.row, style: .continuous))
                         Ago(text: m.createdAt).plFont(.caption2).foregroundStyle(.secondary)
                     }
                     .frame(maxWidth: .infinity, alignment: m.sender == "member" ? .trailing : .leading)
@@ -212,6 +215,7 @@ struct MessagesView: View {
                     ResultLine(text: line)
                 }
             }
+            .siteList()
             .refreshable { await reload() }
         }
         .plScreenTitle("Messages")
@@ -246,6 +250,7 @@ struct ProfileEditView: View {
                 ResultLine(text: line)
             }
         }
+        .siteList()
         .plScreenTitle("Profile")
         .onAppear { firstName = me.firstName ?? ""; handle = me.handle ?? ""; color = me.brandColor ?? "" }
         .sensoryFeedback(PLHaptic.success, trigger: line == "Saved.")
@@ -300,11 +305,12 @@ struct PinsView: View {
                             Button("Unpin") {
                                 removed.insert(cr)
                                 Task { do { _ = try await Site.post("api/account/pins", ["cr": cr, "action": "unpin"]); line = nil } catch { removed.remove(cr); line = "Not saved. \(error.localizedDescription)" } }
-                            }.tint(PLTone.accent)
+                            }.tint(Bone.gold)
                         }
                 }
                 ResultLine(text: line)
             }
+            .siteList()
         }
         .plScreenTitle("Pins")
         .sheet(item: $web) { SafariSheet(url: $0.url).ignoresSafeArea() }

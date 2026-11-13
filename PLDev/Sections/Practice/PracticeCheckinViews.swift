@@ -2,7 +2,8 @@ import SwiftUI
 
 // The day's loop: the two check-ins, the lesson, the reframe, the talk with the coach. Same calls as the web app.
 
-/// A chat bubble. His own words take his orange, the coach's sit on the system fill. Shared with GlyphBot.
+/// A chat bubble as the practice draws it (`.convo-user` / `.convo-assistant`): his words on gold with dark text; the coach's on the
+/// card with the field hairline, in a serif italic gold-hi. Shared with GlyphBot.
 struct PracticeBubble: View {
     let text: String
     let mine: Bool
@@ -12,11 +13,13 @@ struct PracticeBubble: View {
         HStack {
             if mine { Spacer(minLength: 40) }
             VStack(alignment: mine ? .trailing : .leading, spacing: 2) {
-                Text(text).plReading().textSelection(.enabled)
+                Text(text).textSelection(.enabled)
+                    .font(mine ? .system(size: 15) : .system(size: 15, design: .serif).italic())
+                    .foregroundStyle(mine ? Candle.bg : Candle.goldHi).lineSpacing(3)
                     .padding(.horizontal, 12).padding(.vertical, 8)
-                    .background(mine ? Wallpaper.line.opacity(0.22) : Color(uiColor: .secondarySystemFill),
-                                in: RoundedRectangle(cornerRadius: PLRadius.row + 4, style: .continuous))
-                if let caption { Text(caption).font(.caption2).foregroundStyle(.secondary) }
+                    .background(mine ? Candle.gold : Candle.card, in: RoundedRectangle(cornerRadius: 10, style: .continuous))
+                    .overlay { if !mine { RoundedRectangle(cornerRadius: 10, style: .continuous).strokeBorder(Candle.fieldLine, lineWidth: 1) } }
+                if let caption { Text(caption).font(.caption2).foregroundStyle(Candle.ink.opacity(0.5)) }
             }
             if !mine { Spacer(minLength: 40) }
         }
@@ -68,6 +71,7 @@ struct CheckinView: View {
                 Section("The coach") { Text(note).plReading().textSelection(.enabled) }
             }
         }
+        .practiceList()
         .navigationTitle(evening ? "Evening" : "Morning")
         .navigationBarTitleDisplayMode(.inline)
         .sensoryFeedback(PLHaptic.success, trigger: saved)
@@ -120,6 +124,7 @@ struct LessonView: View {
                     ResultLine(text: result)
                 } header: { Text("Apply it") } footer: { Text("A kept answer goes to Notes, where nothing disappears.") }
             }
+            .practiceList()
             .navigationTitle(l.lesson.title).navigationBarTitleDisplayMode(.inline)
         }
     }
@@ -171,6 +176,7 @@ struct ReframeView: View {
                 }
             }
         }
+        .practiceList()
         .navigationTitle("Reframe").navigationBarTitleDisplayMode(.inline)
         .task { await load() }
         .refreshable { await load() }

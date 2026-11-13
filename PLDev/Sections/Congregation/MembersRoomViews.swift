@@ -171,6 +171,7 @@ struct RoomTabView: View {
                     }
             }
         }
+        .siteList()
         .refreshable { await room.load() }
         .task { await room.load() }
         .sensoryFeedback(PLHaptic.commit, trigger: room.tick)
@@ -202,7 +203,7 @@ struct RoomPostRow: View {
                 Spacer(minLength: 0)
                 Ago(text: post.createdAt).plFont(.caption).foregroundStyle(.secondary)
             }
-            if post.waiting { Label("Waiting for your word", systemImage: "hourglass").plFont(.caption, emphasized: true).foregroundStyle(PLTone.warn) }
+            if post.waiting { Label("Waiting for your word", systemImage: "hourglass").plFont(.caption, emphasized: true).foregroundStyle(Bone.amber) }
             Text(post.body).plFont(.body).plReading().lineLimit(8)
             if let m = post.mediaUrl, let url = URL(string: m) {
                 AsyncImage(url: url) { phase in
@@ -218,7 +219,7 @@ struct RoomPostRow: View {
                 Button { Task { await room.react(post.id) } } label: {
                     Label("\(post.reactions)", systemImage: post.reacted ? "heart.fill" : "heart").monospacedDigit().contentTransition(.numericText()).symbolEffect(.bounce, value: post.reacted)
                 }
-                .buttonStyle(.plain).foregroundStyle(post.reacted ? PLTone.accent : .secondary)
+                .buttonStyle(.plain).foregroundStyle(post.reacted ? Bone.gold : .secondary)
                 .accessibilityLabel(post.reacted ? "Reacted, \(post.reactions)" : "React, \(post.reactions)")
                 Label("\(post.comments.count)", systemImage: "bubble.left").foregroundStyle(.secondary)
             }
@@ -249,7 +250,7 @@ struct RoomPostView: View {
                             Text(c.body).plReading()
                             HStack(spacing: 4) {
                                 Text(c.anon == true ? "Anonymous" : "A member"); Text("·"); Ago(text: c.createdAt)
-                                if c.status == "pending" { Text("· waiting").foregroundStyle(PLTone.warn) }
+                                if c.status == "pending" { Text("· waiting").foregroundStyle(Bone.amber) }
                             }.plFont(.caption).foregroundStyle(.secondary)
                         }
                         .swipeActions(edge: .trailing) {
@@ -273,6 +274,7 @@ struct RoomPostView: View {
                     } footer: { Text("Answers are held until the founder has seen them.") }
                 }
             }
+            .siteList()
             .navigationTitle("Post").navigationBarTitleDisplayMode(.inline)
             .sensoryFeedback(PLHaptic.commit, trigger: room.tick)
         } else {
