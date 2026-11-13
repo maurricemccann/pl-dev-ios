@@ -333,6 +333,7 @@ struct FeedView: View {
     struct P: Decodable { let posts: [Post]? }
     @State private var drafts: [Draft] = []
     @State private var publishing: String?
+    @State private var swapping: Post?
     @State private var posts: [Post] = []
     @State private var result: String?
 
@@ -357,7 +358,15 @@ struct FeedView: View {
             }
             Section("Published") {
                 ForEach(posts.prefix(30)) { p in
-                    VStack(alignment: .leading, spacing: 2) { Text(p.caption ?? "").lineLimit(3); Ago(text: p.created_at).font(.caption).foregroundStyle(.secondary) }
+                    HStack(spacing: 10) {
+                        if let u = p.media_url.flatMap(URL.init(string:)) {
+                            AsyncImage(url: u) { $0.resizable().scaledToFill() } placeholder: { Color.secondary.opacity(0.15) }
+                                .frame(width: 52, height: 52).clipShape(RoundedRectangle(cornerRadius: 8, style: .continuous))
+                        }
+                        VStack(alignment: .leading, spacing: 2) { Text(p.caption ?? "").lineLimit(3); Ago(text: p.created_at).font(.caption).foregroundStyle(.secondary) }
+                    }
+                    .contextMenu { if p.feed_post_id != nil { Button("Change the picture", systemImage: "photo.on.rectangle") { swapping = p } } }
+                    .swipeActions { if p.feed_post_id != nil { Button("Picture") { swapping = p }.tint(PLOS.gold) } }
                 }
             }
         }
@@ -365,6 +374,9 @@ struct FeedView: View {
         .confirmationDialog("Publish this post now, everywhere it is set to go?", isPresented: Binding(get: { publishing != nil }, set: { if !$0 { publishing = nil } }), titleVisibility: .visible) {
             Button("Publish") { if let id = publishing { Task { await act("api/feed/publish", ["id": id], "Published.") } }; publishing = nil }
             Button("Cancel", role: .cancel) { publishing = nil }
+        }
+        .sheet(item: $swapping) { p in
+            PicturePicker { url in swapping = nil; Task { await act("api/feed/update-image", ["feed_post_id": p.feed_post_id ?? "", "media_url": url], "Picture changed on the live post."); await load() } }
         }
         .task { await load() }
         .refreshable { await load() }

@@ -82,12 +82,16 @@ struct CodexToolView: View {
     let model: AppModel
     struct Module: Decodable, Identifiable { let name: String; let trigger: String; let lines: [String]; var id: String { name } }
     struct Codex: Decodable { let anchors: [String]; let laws: [String]; let diagnostic: [[String]]; let vocab: [[String]]; let modules: [Module] }
-    struct Entry: Codable, Identifiable { var id: String { date }; let date: String; let text: String; let stateWord: String }
+    struct Entry: Codable, Identifiable { var id: String { date }; let date: String; let text: String; let stateWord: String; var contentSource: Bool? = nil }
     @AppStorage("pldev.codexLog") private var logData = Data()
     @State private var anchor = 0
     @State private var entry = ""
     @State private var word = ""
     @State private var filter = ""
+    @State private var lawToday = ["", "", ""]
+    @State private var frame = ""
+    @State private var desire = ["", "", ""]
+    @State private var contentSource = false
 
     private var log: [Entry] { (try? JSONDecoder().decode([Entry].self, from: logData)) ?? [] }
 
@@ -107,15 +111,32 @@ struct CodexToolView: View {
                     Text(c.anchors.isEmpty ? "" : c.anchors[anchor % c.anchors.count]).plHand(24)
                     Button("Another", systemImage: "shuffle") { anchor = Int.random(in: 0..<max(c.anchors.count, 1)) }
                 }
-                Section("The laws") { ForEach(c.laws, id: \.self) { Text($0).plHand(20, relativeTo: .body) } }
                 Section {
-                    TextField("What happened today", text: $entry, axis: .vertical).lineLimit(3...8)
+                    ForEach(Array(c.laws.enumerated()), id: \.offset) { i, law in
+                        VStack(alignment: .leading, spacing: 6) {
+                            Text(law).plHand(20, relativeTo: .body)
+                            if i < 3 { TextField("Which means today…", text: $lawToday[i], axis: .vertical) }
+                        }
+                    }
+                    VStack(alignment: .leading, spacing: 6) {
+                        Text("The Day's Sovereign Frame").font(.headline)
+                        TextField("Today is the [action] that advances [structure].", text: $frame, axis: .vertical)
+                    }
+                } header: { Text("I · Identity installation") }
+                Section {
+                    TextField("The desire statement: can a stranger know, without doubt, when it has arrived?", text: $desire[0], axis: .vertical)
+                    TextField("The identity bridge: who is this already the baseline for, and what shows you are them in part?", text: $desire[1], axis: .vertical)
+                    TextField("The next architectural step: so obvious it barely needs deciding. Today or this week.", text: $desire[2], axis: .vertical)
+                } header: { Text("IV · Desires → architecture") }
+                Section {
+                    TextField("One Codex entry, even one sentence. A session without one exists only in working memory.", text: $entry, axis: .vertical).lineLimit(3...8)
+                    Toggle("#ContentSource", isOn: $contentSource)
                     TextField("One word for your state", text: $word)
                     Button("Keep it") { save() }.disabled(entry.isEmpty)
                     ForEach(log.prefix(20)) { e in
                         VStack(alignment: .leading, spacing: 2) {
                             Text(e.text)
-                            Text("\(String(e.date.prefix(10)))\(e.stateWord.isEmpty ? "" : " · \(e.stateWord)")").font(.caption).foregroundStyle(.secondary)
+                            Text("\(String(e.date.prefix(10)))\(e.stateWord.isEmpty ? "" : " · \(e.stateWord)")\(e.contentSource == true ? " · #ContentSource" : "")").font(.caption).foregroundStyle(.secondary)
                         }
                     }
                 } header: { Text("The log") } footer: { Text("Kept on this iPhone only, as the web keeps it in the browser.") }
@@ -138,9 +159,9 @@ struct CodexToolView: View {
     }
 
     private func save() {
-        let e = Entry(date: ISO8601DateFormatter().string(from: .now), text: entry, stateWord: word)
+        let e = Entry(date: ISO8601DateFormatter().string(from: .now), text: entry, stateWord: word, contentSource: contentSource ? true : nil)
         logData = (try? JSONEncoder().encode(Array(([e] + log).prefix(200)))) ?? logData
-        entry = ""; word = ""
+        entry = ""; word = ""; contentSource = false
     }
 }
 

@@ -1,6 +1,7 @@
 import SwiftUI
 import TipKit
 import Charts
+import PhotosUI
 
 // MARK: - Approvals (pl-os ModerationPanel, AdApprovalsPanel, ManualPostPanel)
 
@@ -436,18 +437,55 @@ struct MakeView: View {
     @State private var tick = 0
     private let platforms = ["instagram", "threads", "bluesky", "tumblr", "facebook", "linkedin", "pinterest"]
 
-    @State private var intakeKind = "text"
+    @State private var intakeKind = "artwork"
     @State private var intakeText = ""
+    @State private var artPick: PhotosPickerItem?
+    @State private var artData: Data?
+    @State private var artTitle = ""
+    @State private var artMedium = ""
+    @State private var artYear = ""
+
+    private func sendArtwork() async {
+        guard let raw = artData, let jpeg = CaptureModel.jpeg(raw), let http = model.http, let write = model.config?.key("widgetWrite"), !write.isEmpty else {
+            result = "Not sent: the picture could not be read, or the write key is missing."; return
+        }
+        let year = artYear.trimmingCharacters(in: .whitespaces)
+        let caption = [artTitle, artMedium.isEmpty ? nil : artMedium, year.isEmpty ? nil : "made \(year)"].compactMap { $0 }.joined(separator: " · ")
+            + (intakeText.isEmpty ? "" : ". " + intakeText)
+        busy = true; defer { busy = false }
+        do {
+            _ = try await http.send(RequestPlan(origin: "cron", method: "POST", path: "api/widget/photo",
+                                                query: ["caption": String(caption.prefix(300)), "source": "pl-dev-art"],
+                                                headers: ["content-type": "image/jpeg"], body: jpeg),
+                                    idempotent: false, extraHeaders: ["Authorization": "Bearer " + write], timeout: 60)
+            result = "Sent: \(artTitle)."; artData = nil; artPick = nil; artTitle = ""; artMedium = ""; artYear = ""; intakeText = ""
+        } catch { result = "Not sent. \(plainSentence(error))" }
+    }
 
     var body: some View {
         Form {
             Section {
-                Picker("Kind", selection: $intakeKind) { Text("Text").tag("text"); Text("Quote").tag("quote"); Text("Link").tag("link") }.pickerStyle(.segmented)
-                TextField(intakeKind == "link" ? "URL → pull it in" : intakeKind == "quote" ? "Phrase · hook · caption" : "Body or essay", text: $intakeText, axis: .vertical)
-                    .lineLimit(2...8).keyboardType(intakeKind == "link" ? .URL : .default)
-                Button("Add to the system →") { Task { await go { try await Console.post("api/pldev/x/intake", ["type": intakeKind, "note": intakeText], model: model); intakeText = ""; return "Captured. The system will sort it." } } }
-                    .disabled(intakeText.trimmingCharacters(in: .whitespaces).isEmpty || busy)
-            } header: { Text("Capture into the system") } footer: { Text("Artwork with a picture: use Capture on Home, which sends photos.") }
+                Picker("Kind", selection: $intakeKind) { Text("Artwork").tag("artwork"); Text("Text").tag("text"); Text("Quote").tag("quote"); Text("Link").tag("link") }.pickerStyle(.segmented)
+                if intakeKind == "artwork" {
+                    // pl-os Intake's Artwork mode: image + title, medium, year, notes
+                    PhotosPicker(selection: $artPick, matching: .images) {
+                        if let artData, let ui = UIImage(data: artData) { Image(uiImage: ui).resizable().scaledToFit().frame(maxHeight: 220).clipShape(RoundedRectangle(cornerRadius: 12, style: .continuous)) }
+                        else { Label("Choose image or shoot · JPG, PNG, HEIC", systemImage: "photo.badge.plus") }
+                    }
+                    .onChange(of: artPick) { _, item in Task { artData = try? await item?.loadTransferable(type: Data.self) } }
+                    TextField("Title", text: $artTitle)
+                    TextField("Medium", text: $artMedium)
+                    TextField("Year", text: $artYear).keyboardType(.numberPad)
+                    TextField("Notes (optional)", text: $intakeText, axis: .vertical).lineLimit(2...6)
+                    Button("Add to the system →") { Task { await sendArtwork() } }
+                        .disabled(artData == nil || artTitle.trimmingCharacters(in: .whitespaces).isEmpty || busy)
+                } else {
+                    TextField(intakeKind == "link" ? "URL → pull it in" : intakeKind == "quote" ? "Phrase · hook · caption" : "Body or essay", text: $intakeText, axis: .vertical)
+                        .lineLimit(2...8).keyboardType(intakeKind == "link" ? .URL : .default)
+                    Button("Add to the system →") { Task { await go { try await Console.post("api/pldev/x/intake", ["type": intakeKind, "note": intakeText], model: model); intakeText = ""; return "Captured. The system will sort it." } } }
+                        .disabled(intakeText.trimmingCharacters(in: .whitespaces).isEmpty || busy)
+                }
+            } header: { Text("Make") } footer: { Text(intakeKind == "artwork" ? "Goes in with its picture through the same door as Capture." : "The system sorts it: Notion for text and quotes, the research pool for links.") }
             Section {
                 TextField("Caption", text: $caption, axis: .vertical).lineLimit(4...12)
                 Picker("Platform", selection: $platform) { ForEach(platforms, id: \.self) { Text($0.capitalized).tag($0) } }

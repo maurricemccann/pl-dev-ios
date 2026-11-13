@@ -1,7 +1,6 @@
 import SwiftUI
 import RealityKit
 import Charts
-import PLDevCore
 
 /// Under the Home grid (his ask 11-13: "the 3D heart model also on our home app to make it less empty, we can add a dashboard with
 /// my PC's stats and stats of anything you think is useful"): his heart turning in gold, the PC's own numbers from the PL Call
