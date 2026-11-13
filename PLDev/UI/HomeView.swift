@@ -126,7 +126,6 @@ struct HomeView: View {
             SectionTile(entry: entry)
         }
         .buttonStyle(PressableStyle(reduce: reduce))
-        .matchedTransitionSource(id: entry.id, in: zoom)
         .accessibilityHint(entry.readiness.isReady ? "Opens the section" : "Says what the config is missing")
         .contextMenu {
             Button("Open", systemImage: "arrow.up.forward.app") { open(entry) }
@@ -183,12 +182,8 @@ struct HomeView: View {
     @ViewBuilder
     private func destination(_ id: String) -> some View {
         if let entry = model.sections.first(where: { $0.id == id }) {
-            if reduce {
-                entry.makeRoot().plGround()
-            } else {
-                entry.makeRoot().plGround()
-                    .navigationTransition(.zoom(sourceID: id, in: zoom))
-            }
+            // the standard push: the zoom transition let a quick swipe down anywhere on the screen close the section (his report 11-13)
+            entry.makeRoot().plGround()
         } else {
             EmptyNote(symbol: "questionmark.square.dashed", title: "Not here", detail: "This build does not have that section.")
         }
