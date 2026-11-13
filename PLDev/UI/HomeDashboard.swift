@@ -141,8 +141,8 @@ struct HomeHeart: View {
             guard let e = await ThreeDModels.load("heart1") else { return }
             ThreeDModels.paint(e, ThreeDModels.goldMaterial(rough: 0.28))
             e.orientation = simd_quatf(angle: .pi / 2, axis: [1, 0, 0])   // his GLB's up is -Z
-            let f = ThreeDModels.fitted(e, longest: 0.9)
-            f.position = [0, -0.45, -1.6]
+            let f = ThreeDModels.fitted(e, longest: 1.1)
+            f.position = [0, -0.55, -1.5]
             holder = f
             content.add(f)
             let light = DirectionalLight(); light.light.intensity = 2600; light.look(at: .zero, from: [0.8, 1.2, 1.5], relativeTo: nil)
@@ -153,7 +153,7 @@ struct HomeHeart: View {
             var t: Float = 0
             while !Task.isCancelled {
                 t += 0.016
-                holder.orientation = simd_quatf(angle: t * 0.6, axis: [0, 1, 0])
+                holder.orientation = simd_quatf(angle: sin(t * 0.5) * 0.6, axis: [0, 1, 0])   // a sway of about 35° each way: his heart never turns edge-on (his screenshot 11-13)
                 holder.scale = SIMD3<Float>(repeating: 1 + sin(t * 1.2) * 0.03)
                 try? await Task.sleep(for: .milliseconds(16))
             }
