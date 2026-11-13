@@ -1,4 +1,5 @@
 import SwiftUI
+import Charts
 
 /// More: the console's rooms (/catalog, /merch, /precedent, Council, /ops, corpus search, crew, academy) and its
 /// system drawer (stack health, automation run-now, costs, agent and notification logs, the capture trail).
@@ -336,7 +337,10 @@ struct StackHealthView: View {
     struct Result: Decodable { let pass: Bool; let latency: Int?; let error: String? }
     struct Run: Decodable, Identifiable { let id: String; let ran_at: String?; let results: [String: Result]?; let all_pass: Bool?; let summary: String? }
     struct Latest: Decodable { let data: Run? }
+    struct HRun: Decodable { let ran_at: String; let all_pass: Bool?; let results: [String: Result]? }
+    struct History: Decodable { let runs: [HRun]? }
     @State private var latest: Run?
+    @State private var history: [HRun] = []
     @State private var result: String?
     @State private var busy = false
 
@@ -362,6 +366,18 @@ struct StackHealthView: View {
                     }
                 }
             }
+            if !history.isEmpty {
+                Section {
+                    // pl-os's 14-run strip: one column per nightly run, one row per check, green pass / red fail
+                    let cells = history.suffix(14).flatMap { run in (run.results ?? [:]).map { (run.ran_at, $0.key, $0.value.pass) } }
+                    Chart(cells.indices, id: \.self) { i in
+                        RectangleMark(x: .value("Run", String(cells[i].0.prefix(10))), y: .value("Check", cells[i].1))
+                            .foregroundStyle(cells[i].2 ? PLOS.ok : PLOS.danger).cornerRadius(2)
+                    }
+                    .chartXAxis(.hidden)
+                    .frame(height: 150)
+                } header: { Text("The last \(min(history.count, 14)) nights") } footer: { Text("\(history.suffix(14).filter { $0.all_pass == true }.count) of \(min(history.count, 14)) all passed.") }
+            }
             Button(busy ? "Running… about a minute" : "Run the checks now") { Task { await run() } }.disabled(busy)
         }
         .navigationTitle("Stack health")
@@ -369,7 +385,10 @@ struct StackHealthView: View {
         .refreshable { await load() }
     }
 
-    private func load() async { latest = (try? await Console.get("run/stack-health/latest", Latest.self, model: model))?.data }
+    private func load() async {
+        latest = (try? await Console.get("run/stack-health/latest", Latest.self, model: model))?.data
+        history = (try? await Console.get("run/stack-health/history", History.self, model: model))?.runs ?? history
+    }
     private func run() async { busy = true; result = await Console.run("run/stack-health", model: model); busy = false; await load() }
 }
 

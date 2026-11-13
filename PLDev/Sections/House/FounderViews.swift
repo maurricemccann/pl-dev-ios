@@ -1,5 +1,6 @@
 import SwiftUI
 import TipKit
+import Charts
 
 // MARK: - Approvals (pl-os ModerationPanel, AdApprovalsPanel, ManualPostPanel)
 
@@ -12,6 +13,10 @@ import TipKit
     struct Runway: Decodable {
         let backlog: Int?; let ceiling: Int?; let generation_paused: Bool?; let next_open_slot: String?
         let lane_runway_days: [String: Double]?
+        let lane_runway_ceiling_days: Double?
+        struct Plat: Decodable, Identifiable { let platform: String; let backlog: Int?; let held: Int?; let automated: Bool?; let blocked_reason: String?; let next_due: String?; let gapped: Bool?; let paused: Bool?; var id: String { platform } }
+        struct Slot: Decodable { let platform: String; let publish_at: String }
+        let by_platform: [Plat]?; let recent: [Slot]?; let upcoming: [Slot]?
     }
     struct Capture: Decodable, Identifiable, Equatable { let id: String; let type: String?; let payload: String?; let created_at: String? }
     struct Desire: Decodable, Identifiable, Equatable { let id: String; let text: String?; let created_at: String? }
@@ -136,6 +141,7 @@ private func captureImage(_ payload: String?) -> URL? {
 
 struct ApprovalsView: View {
     let model: AppModel
+    @State private var approvingAd: ApprovalsModel.Ad?
     @State private var state = ApprovalsModel()
     @State private var editing: EditMode = .inactive
     @State private var nowTarget: ApprovalsModel.Draft?
@@ -146,12 +152,43 @@ struct ApprovalsView: View {
             if let r = state.result { ResultLine(text: r) }
             if let rw = state.runway {
                 Section {
-                    LabeledContent("In the drip", value: "\(rw.backlog ?? 0) of \(rw.ceiling ?? 0)")
+                    // pl-os DripBar: the fill against the ceiling, "+N over" when past it
+                    let backlog = rw.backlog ?? 0, ceiling = max(rw.ceiling ?? 1, 1)
+                    Gauge(value: Double(min(backlog, ceiling)), in: 0...Double(ceiling)) {
+                        Text("In the drip")
+                    } currentValueLabel: { Text("\(backlog) of \(ceiling)\(backlog > ceiling ? "  +\(backlog - ceiling) over" : "")").monospacedDigit() }
+                    .gaugeStyle(.linearCapacity).tint(backlog > ceiling ? PLOS.warn : PLOS.gold)
                     if rw.generation_paused == true { Label("New drafts paused: the drip is full", systemImage: "pause.circle") }
-                    ForEach(state.lanes) { l in
-                        LabeledContent(l.platform.capitalized) {
-                            Text(l.days, format: .number.precision(.fractionLength(1))).monospacedDigit() + Text(" days")
+                    // lane days, coloured as pl-os does: red under a day, amber under the target
+                    let target = rw.lane_runway_ceiling_days ?? 14
+                    Chart(state.lanes) { l in
+                        BarMark(x: .value("Days", l.days), y: .value("Lane", l.platform.capitalized))
+                            .foregroundStyle(l.days < 1 ? PLOS.danger : l.days < target ? PLOS.warn : PLOS.gold)
+                            .annotation(position: .trailing) { Text(l.days, format: .number.precision(.fractionLength(1))).font(.caption2.monospacedDigit()) }
+                        RuleMark(x: .value("Target", target)).foregroundStyle(PLOS.muted.opacity(0.6)).lineStyle(StrokeStyle(lineWidth: 1, dash: [3, 3]))
+                    }
+                    .chartXAxisLabel("days of runway · target \(Int(target))")
+                    .frame(height: CGFloat(max(state.lanes.count, 1)) * 30 + 30)
+                    // PlatformBars: backlog per platform, a gapped lane in red, when the next one is due
+                    ForEach(rw.by_platform ?? []) { p in
+                        LabeledContent {
+                            VStack(alignment: .trailing, spacing: 2) {
+                                Text("\(p.backlog ?? 0) waiting · \(p.held ?? 0) held").monospacedDigit()
+                                if p.paused != true, let n = p.next_due, let d = Date.pl(n) { Text("next \(d.formatted(.relative(presentation: .named)))").font(.caption2).foregroundStyle(.secondary) }
+                            }
+                        } label: {
+                            Label(p.platform.capitalized, systemImage: p.paused == true ? "pause.circle" : p.gapped == true ? "exclamationmark.triangle.fill" : p.automated == false ? "hand.raised" : "dot.radiowaves.right")
+                                .foregroundStyle(p.paused == true ? PLOS.muted : p.gapped == true ? PLOS.danger : .primary)
+                            if let why = p.blocked_reason, !why.isEmpty { Text(why).font(.caption).foregroundStyle(PLOS.danger) }
                         }
+                    }
+                    // DripTimeline: what went out and what goes next
+                    let now = Date()
+                    let paused = Set((rw.by_platform ?? []).filter { $0.paused == true }.map(\.platform))
+                    let late = (rw.upcoming ?? []).filter { !paused.contains($0.platform) && (Date.pl($0.publish_at) ?? now) < now }
+                    if !late.isEmpty {
+                        Label("\(late.count) scheduled post\(late.count == 1 ? "" : "s") past due (\(Set(late.map { $0.platform.capitalized }).sorted().joined(separator: ", ")))", systemImage: "clock.badge.exclamationmark")
+                            .foregroundStyle(PLOS.danger).font(.callout)
                     }
                 } header: { Text("Runway") } footer: {
                     if let s = rw.next_open_slot, let d = Date.pl(s) { Text("Next open slot \(d.formatted(.relative(presentation: .named))).") }
@@ -229,7 +266,8 @@ struct ApprovalsView: View {
                             if let l = a.link, let u = URL(string: l) { Link(l, destination: u).font(.caption) }
                         }
                         .selectionDisabled()
-                        .swipeActions(edge: .trailing) { Button("Approve") { Task { await state.ad(a, "approve", model: model) } }.tint(.green) }
+                        // pl-os: approve takes a second tap and is closed while the ad still needs something
+                        .swipeActions(edge: .trailing) { if (a.needs ?? "").isEmpty { Button("Approve") { approvingAd = a } .tint(.green) } }
                         .swipeActions(edge: .leading) { Button("Reject", role: .destructive) { Task { await state.ad(a, "reject", model: model) } } }
                     }
                 }
@@ -242,6 +280,10 @@ struct ApprovalsView: View {
         }
         .environment(\.editMode, $editing)
         .navigationTitle("Approvals")
+        .confirmationDialog("Approve this ad to run?", isPresented: Binding(get: { approvingAd != nil }, set: { if !$0 { approvingAd = nil } }), titleVisibility: .visible) {
+            Button("Approve the ad") { if let a = approvingAd { Task { await state.ad(a, "approve", model: model) } }; approvingAd = nil }
+            Button("Cancel", role: .cancel) { approvingAd = nil }
+        } message: { if let a = approvingAd { Text("\(a.brand ?? "") #\(a.ad_no ?? 0) · \(a.name ?? "")") } }
         .toolbar {
             ToolbarItem(placement: .topBarTrailing) {
                 Button(editing.isEditing ? "Done" : "Select") { withAnimation { editing = editing.isEditing ? .inactive : .active; state.selection.removeAll() } }
@@ -335,16 +377,34 @@ private struct ManualRow: View {
     @State private var url = ""
     @Environment(\.openURL) private var openURL
 
+    /// pl-os ManualPostPanel's compose table: Threads prefills; the rest open their composer with a paste note.
+    private var compose: (url: URL?, note: String?) {
+        let cap = (m.caption ?? "").addingPercentEncoding(withAllowedCharacters: .alphanumerics) ?? ""   // & = + # encoded too, like encodeURIComponent
+        switch m.platform {
+        case "threads": return (URL(string: "https://www.threads.net/intent/post?text=\(cap)"), nil)
+        case "substack": return (URL(string: "https://substack.com/publish/post/new"), nil)
+        case "linkedin": return (URL(string: "https://www.linkedin.com/feed/?shareActive=true"), "Paste into the composer: LinkedIn does not prefill.")
+        case "facebook": return (URL(string: "https://www.facebook.com/"), "Paste into your Page composer.")
+        case "tumblr": return (URL(string: "https://www.tumblr.com/new/text"), nil)
+        default: return (nil, nil)
+        }
+    }
+
     var body: some View {
         VStack(alignment: .leading, spacing: 6) {
             Text((m.platform ?? "").capitalized).font(.caption.bold()).foregroundStyle(.secondary)
+            if let u = m.media_url.flatMap(URL.init(string:)) {
+                AsyncImage(url: u) { $0.resizable().scaledToFit() } placeholder: { Color.secondary.opacity(0.15).frame(height: 160) }
+                    .frame(maxHeight: 260).clipShape(RoundedRectangle(cornerRadius: 12, style: .continuous))
+            }
             if let t = m.title { Text(t).font(.headline) }
             Text(m.caption ?? "").lineLimit(6)
+            if let note = compose.note { Text(note).font(.caption).foregroundStyle(.secondary) }
             HStack {
-                Button("Copy", systemImage: "doc.on.doc") { UIPasteboard.general.string = [m.title, m.caption].compactMap { $0 }.joined(separator: "\n\n") }
-                if let compose = URL(string: m.platform == "tumblr" ? "https://www.tumblr.com/new" : "https://www.\(m.platform ?? "tumblr").com") {
-                    Button("Open \((m.platform ?? "").capitalized)", systemImage: "arrow.up.forward.app") { openURL(compose) }
-                }
+                if let t = m.title, !t.isEmpty { Button("Title", systemImage: "doc.on.doc") { UIPasteboard.general.string = t } }
+                Button("Caption", systemImage: "doc.on.doc") { UIPasteboard.general.string = m.caption ?? "" }
+                if let u = compose.url { Button(m.platform == "threads" ? "Open prefilled" : "Compose", systemImage: "arrow.up.forward.app") { openURL(u) } }
+                if let u = m.media_url.flatMap(URL.init(string:)) { ShareLink(item: u) { Label("Picture", systemImage: "photo") } }
             }
             .buttonStyle(.bordered).font(.caption)
             TextField("Link to the post (optional)", text: $url).textContentType(.URL).keyboardType(.URL).font(.caption)
@@ -427,6 +487,7 @@ struct SiteControlsView: View {
     @State private var beta = ""
     @State private var tick = 0
     @State private var pendingShop: Bool?
+    @State private var pendingSwitch: (String, Bool)?
 
     var body: some View {
         Form {
@@ -434,11 +495,11 @@ struct SiteControlsView: View {
             if c != nil {
                 Section {
                     Toggle("Shop open", isOn: Binding(get: { c?.shop_enabled ?? false }, set: { v in pendingShop = v }))
-                    Toggle("Pause outbound posting", isOn: bool(\.outbound_paused, "outbound_paused"))
+                    Toggle("Pause outbound posting", isOn: Binding(get: { c?.outbound_paused ?? false }, set: { v in pendingSwitch = ("outbound_paused", v) }))
                     Toggle("Maintenance mode", isOn: Binding(get: { c?.maintenance_mode ?? false }, set: { v in
                         if v { confirmMaintenance = true } else { Task { await set("maintenance_mode", false) } }
                     }))
-                    Toggle("Founder ledger banner", isOn: bool(\.founder_ledger_banner, "founder_ledger_banner"))
+                    Toggle("Founder ledger banner", isOn: Binding(get: { c?.founder_ledger_banner ?? false }, set: { v in pendingSwitch = ("founder_ledger_banner", v) }))
                     if let l = ledger { LabeledContent("Founder ledger", value: "\(l.sealed ?? 0) of \(l.total ?? 0) sealed") }
                 } header: { Text("Switches") } footer: { Text("Maintenance mode closes the site and turns the creator signal to do not disturb.") }
                 Section("Words on the site") {
@@ -455,6 +516,13 @@ struct SiteControlsView: View {
             } header: { Text("Beta tester") } footer: { Text("Gives them Kin access and puts them on the signal. A founder or member keeps their role.") }
         }
         .navigationTitle("Site controls")
+        .confirmationDialog(pendingSwitch.map { switchQuestion($0.0, $0.1) } ?? "", isPresented: Binding(get: { pendingSwitch != nil }, set: { if !$0 { pendingSwitch = nil } }), titleVisibility: .visible) {
+            Button(pendingSwitch?.1 == true ? "Turn it on" : "Turn it off") {
+                if let (k, v) = pendingSwitch { if k == "outbound_paused" { c?.outbound_paused = v } else { c?.founder_ledger_banner = v }; Task { await set(k, v) } }
+                pendingSwitch = nil
+            }
+            Button("Cancel", role: .cancel) { pendingSwitch = nil }
+        }
         .confirmationDialog(pendingShop == true ? "Open the shop to the public?" : "Close the shop? Products stop being buyable.", isPresented: Binding(get: { pendingShop != nil }, set: { if !$0 { pendingShop = nil } }), titleVisibility: .visible) {
             Button(pendingShop == true ? "Open the shop" : "Close the shop") { if let v = pendingShop { c?.shop_enabled = v; Task { await set("shop_enabled", v) } }; pendingShop = nil }
             Button("Cancel", role: .cancel) { pendingShop = nil }
@@ -477,6 +545,11 @@ struct SiteControlsView: View {
         do { try await Console.post("api/site-config", ["key": key, "value": value], model: model); result = "Saved."; tick += 1 }
         catch { result = "Not saved. \(error.localizedDescription)" }
         await load()
+    }
+
+    private func switchQuestion(_ k: String, _ v: Bool) -> String {
+        k == "outbound_paused" ? (v ? "Pause every outbound post? Nothing goes out until you resume." : "Resume outbound posting?")
+            : (v ? "Show the founder-ledger banner on the site?" : "Hide the founder-ledger banner?")
     }
 
     private func bool(_ kp: WritableKeyPath<Config, Bool?>, _ key: String) -> Binding<Bool> {

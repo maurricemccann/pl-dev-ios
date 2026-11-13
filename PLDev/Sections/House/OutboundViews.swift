@@ -493,16 +493,81 @@ struct OutboundLeadsView: View {
 
 struct PinterestView: View {
     let model: AppModel
-    struct Status: Decodable { let connected: Bool?; let error: String?; let status: String? }
+    struct Sandbox: Decodable {
+        struct Account: Decodable { let username: String?; let account_type: String? }
+        struct Board: Decodable { let id: String?; let name: String? }
+        struct Pin: Decodable, Identifiable { let id: String; let description: String?; let image: String?; let link: String? }
+        struct Row: Decodable, Identifiable { let id: String; let caption: String?; let media_url: String?; let status: String? }
+        let connected: Bool?; let error: String?; let status: String?; let step: String?
+        let account: Account?; let board: Board?; let pins: [Pin]?; let queue: [Row]?
+    }
+    @State private var s: Sandbox?
+    @State private var failed: String?
+    @State private var busy: String?
+    @State private var note: String?
+
     var body: some View {
-        Loaded(load: { try await Console.get("run/pinterest-sandbox", Status.self, model: model) }) { s, _ in
-            List {
-                LabeledContent("Connected", value: s.connected == true ? "Yes" : "No")
-                if let e = s.error { Text(e).foregroundStyle(.secondary) }
-                Text("Every Pin still waits for your tap in Approvals. Connecting Pinterest happens in pl-os on the laptop, because Pinterest's sign-in returns to that page.")
-                    .font(.footnote).foregroundStyle(.secondary)
+        List {
+            if let failed, s == nil { Text(failed).foregroundStyle(.secondary) }
+            if s == nil && failed == nil { ProgressView() }
+            if let s {
+                Section {
+                    LabeledContent("Account", value: s.connected == true ? "@\(s.account?.username ?? "")" : "Not connected")
+                    if s.connected == true {
+                        LabeledContent("Board", value: s.board?.name ?? "made with the first pin")
+                        LabeledContent("Account type", value: s.account?.account_type ?? "·")
+                    } else {
+                        Text("Connecting Pinterest happens in pl-os on the laptop: Pinterest's sign-in returns to that page.").font(.footnote).foregroundStyle(.secondary)
+                    }
+                    if let e = s.error { Text(e).font(.footnote).foregroundStyle(.secondary) }
+                }
+                if s.connected == true {
+                    Section {
+                        if (s.queue ?? []).isEmpty { Text("No Pinterest drafts waiting.").foregroundStyle(.secondary) }
+                        ForEach(s.queue ?? []) { r in
+                            HStack(spacing: 12) {
+                                AsyncImage(url: r.media_url.flatMap(URL.init(string:))) { $0.resizable().scaledToFill() } placeholder: { Color.secondary.opacity(0.15) }
+                                    .frame(width: 52, height: 52).clipShape(RoundedRectangle(cornerRadius: 8, style: .continuous))
+                                Text(r.caption ?? "").font(.callout).lineLimit(3)
+                                Spacer(minLength: 0)
+                                ConfirmButton(title: busy == r.id ? "Creating…" : "Create pin", question: "Publish this Pin to the board now?", confirm: "Create the pin") { await create(r.id) }
+                                    .buttonStyle(.bordered).disabled(busy != nil)
+                            }
+                        }
+                    } header: { Text("Drafts") } footer: { Text("Each Pin waits for your tap, as Pinterest's rules require.") }
+                    if !(s.pins ?? []).isEmpty {
+                        Section("Pins on the board") {
+                            LazyVGrid(columns: [GridItem(.adaptive(minimum: 84), spacing: 8)], spacing: 8) {
+                                ForEach(s.pins ?? []) { p in
+                                    Link(destination: URL(string: p.link ?? "") ?? URL(string: "https://www.pinterest.com")!) {
+                                        AsyncImage(url: p.image.flatMap(URL.init(string:))) { $0.resizable().scaledToFill() } placeholder: { Color.secondary.opacity(0.15) }
+                                            .frame(width: 84, height: 84).clipShape(RoundedRectangle(cornerRadius: 8, style: .continuous))
+                                    }
+                                    .accessibilityLabel(p.description ?? "Pin")
+                                }
+                            }
+                        }
+                    }
+                }
             }
+            if let note { Section { ResultLine(text: note) } }
         }
         .navigationTitle("Pinterest")
+        .task { await load() }
+        .refreshable { await load() }
+    }
+
+    private func load() async {
+        do { s = try await Console.get("run/pinterest-sandbox", Sandbox.self, model: model); failed = nil }
+        catch { failed = plainSentence(error) }
+    }
+
+    private func create(_ id: String) async {
+        busy = id; defer { busy = nil }
+        do {
+            let d = try await Console.post("run/pinterest-sandbox/pin", ["row_id": id], model: model, timeout: 30)
+            let r = try? JSONDecoder().decode(Sandbox.self, from: d)
+            if r?.status == "error" { note = "Pinterest said no (\(r?.step ?? "error"))." } else { if let r { s = r }; note = "Pin created on the board." }
+        } catch { note = "Not created. \(plainSentence(error))" }
     }
 }
