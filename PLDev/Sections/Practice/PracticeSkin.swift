@@ -109,3 +109,148 @@ struct CandleTabs: View {
         .overlay(alignment: .bottom) { Rectangle().fill(Candle.rule).frame(height: 1) }
     }
 }
+
+// MARK: - The practice's controls (app.css: textarea / select / input, button.ghost, .hint, .coach-note, .card h2)
+
+/// `textarea, input`: `#0f0d09` field, `#2a2518` line, radius 6, 0.6 rem of padding, ink text. A textarea has a 4.5 rem floor.
+struct PField: View {
+    let prompt: String
+    @Binding var text: String
+    var lines: Int = 1
+    var serif = false
+    var small = false
+
+    var body: some View {
+        TextField("", text: $text, prompt: Text(prompt).foregroundStyle(Candle.ink.opacity(0.38)), axis: .vertical)
+            .lineLimit(lines > 1 ? lines...max(lines, 10) : 1...6)
+            .font(serif ? .system(size: 15, design: .serif).italic() : .system(size: small ? 13 : 16))
+            .foregroundStyle(serif ? Candle.goldHi : Candle.ink)
+            .padding(small ? EdgeInsets(top: 7, leading: 10, bottom: 7, trailing: 10) : EdgeInsets(top: 10, leading: 10, bottom: 10, trailing: 10))
+            .frame(maxWidth: .infinity, minHeight: lines > 1 ? 72 : nil, alignment: .topLeading)
+            .background(Candle.field, in: RoundedRectangle(cornerRadius: 6, style: .continuous))
+            .overlay { RoundedRectangle(cornerRadius: 6, style: .continuous).strokeBorder(Candle.fieldLine, lineWidth: 1) }
+            .autocorrectionDisabled(false)
+    }
+}
+
+/// `<select>`: a field that opens a menu.
+struct PSelect<T: Hashable>: View {
+    let options: [(T, String)]
+    @Binding var value: T
+    var fill = true
+    var body: some View {
+        Menu {
+            Picker("", selection: $value) { ForEach(options, id: \.0) { Text($0.1).tag($0.0) } }
+        } label: {
+            HStack(spacing: 8) {
+                Text(options.first { $0.0 == value }?.1 ?? "").font(.system(size: 16)).foregroundStyle(Candle.ink).lineLimit(1)
+                if fill { Spacer(minLength: 0) }
+                Image(systemName: "chevron.up.chevron.down").font(.system(size: 11)).foregroundStyle(Candle.ink.opacity(0.5))
+            }
+            .padding(10).frame(maxWidth: fill ? .infinity : nil, minHeight: 44, alignment: .leading)
+            .background(Candle.field, in: RoundedRectangle(cornerRadius: 6, style: .continuous))
+            .overlay { RoundedRectangle(cornerRadius: 6, style: .continuous).strokeBorder(Candle.fieldLine, lineWidth: 1) }
+        }
+        .menuStyle(.button).buttonStyle(.plain)
+    }
+}
+
+/// `button.ghost`: outline, ink, regular weight, 0.8 rem.
+struct CandleGhost: ButtonStyle {
+    @Environment(\.isEnabled) private var enabled
+    func makeBody(configuration: Configuration) -> some View {
+        configuration.label
+            .font(.system(size: 13)).foregroundStyle(Candle.ink)
+            .padding(.horizontal, 14).frame(minHeight: 44)
+            .overlay { RoundedRectangle(cornerRadius: 6, style: .continuous).strokeBorder(configuration.isPressed ? Candle.gold : Candle.pillLine, lineWidth: 1) }
+            .contentShape(Rectangle())
+            .opacity(enabled ? 1 : 0.45)
+    }
+}
+
+/// `.coach-note`: serif italic gold-hi, loose leading. Empty text draws nothing (`:empty { display: none }`).
+struct CoachNote: View {
+    let text: String
+    var body: some View {
+        if !text.isEmpty {
+            Text(text).font(.system(size: 14.7, design: .serif).italic()).foregroundStyle(Candle.goldHi).lineSpacing(4)
+                .frame(maxWidth: .infinity, alignment: .leading).textSelection(.enabled).padding(.top, 4)
+        }
+    }
+}
+
+/// One line after an action (DESIGN.md section 2): never a modal, in the practice's own quiet voice.
+struct CandleResult: View {
+    let text: String?
+    var body: some View {
+        if let text, !text.isEmpty { Text(text).candleHint().frame(maxWidth: .infinity, alignment: .leading).transition(.opacity) }
+    }
+}
+
+/// `.card` with its `h2`, an optional `.hint`, and the anchor the deep links scroll to.
+struct PCard<Content: View>: View {
+    let title: String
+    var hint: String?
+    var id: String?
+    @ViewBuilder let content: () -> Content
+    var body: some View {
+        VStack(alignment: .leading, spacing: 10) {
+            Text(title).candleH2().accessibilityAddTraits(.isHeader)
+            if let hint { Text(hint).font(.system(size: 12)).foregroundStyle(Candle.ink.opacity(0.5)) }
+            content()
+        }
+        .candleCard(padding: 17.6)
+        .id(id ?? title)
+    }
+}
+
+/// `.log-kind`: the small uppercase pill on a log line.
+struct KindPill: View {
+    let kind: String
+    var body: some View {
+        let win = kind == "win"
+        Text(win ? "win" : "noticed").font(.system(size: 10.9)).textCase(.uppercase).tracking(0.9)
+            .foregroundStyle(win ? Candle.goldHi : Candle.ink.opacity(0.8))
+            .padding(.horizontal, 8).padding(.vertical, 2)
+            .background(win ? Candle.gold.opacity(0.18) : .clear, in: Capsule())
+            .overlay { Capsule().strokeBorder(win ? Candle.gold.opacity(0.4) : Candle.pillLine, lineWidth: 1) }
+    }
+}
+
+/// `.dot`: a day of the week, gold when ticked.
+struct WeekDots: View {
+    let week: [Bool]
+    var body: some View {
+        HStack(spacing: 4) { ForEach(week.indices, id: \.self) { Circle().fill(week[$0] ? Candle.gold : Candle.fieldLine).frame(width: 7, height: 7) } }
+            .accessibilityHidden(true)
+    }
+}
+
+/// A hairline between list items inside a card (`border-top: 1px solid #221e15`).
+struct CandleRule: View { var body: some View { Rectangle().fill(Candle.rule).frame(height: 1) } }
+
+/// `.vision-empty`.
+struct QuietLine: View {
+    let text: String
+    var body: some View { Text(text).font(.system(size: 13.6)).foregroundStyle(Candle.ink.opacity(0.5)) }
+}
+
+/// `<details><summary>`: a disclosure with the hint-style summary.
+struct PDetails<Content: View>: View {
+    let summary: String
+    @Binding var open: Bool
+    @ViewBuilder let content: () -> Content
+    var body: some View {
+        VStack(alignment: .leading, spacing: 8) {
+            Button { withAnimation(.snappy) { open.toggle() } } label: {
+                HStack(spacing: 6) {
+                    Image(systemName: "triangle.fill").font(.system(size: 7)).rotationEffect(.degrees(open ? 180 : 90))
+                    Text(summary)
+                }
+                .font(.system(size: 12)).foregroundStyle(Candle.ink.opacity(0.5)).frame(minHeight: 36, alignment: .leading)
+            }
+            .buttonStyle(.plain).accessibilityAddTraits(.isButton).accessibilityValue(open ? "expanded" : "collapsed")
+            if open { content() }
+        }
+    }
+}
