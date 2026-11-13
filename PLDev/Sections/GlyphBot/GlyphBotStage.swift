@@ -115,7 +115,7 @@ struct GlyphStageBubble: View {
                 TypewriterText(text: text, animate: typing, onDone: onDone)
                     .font(.system(size: 15)).foregroundStyle(PLOS.text(scheme))
                 if !typing, !sources.isEmpty {
-                    FlowChips(items: sources.prefix(4).map { "\($0.source) \u{00B7} \(String(format: "%.2f", $0.score))" })
+                    GlyphFlowChips(items: sources.prefix(4).map { "\($0.source) \u{00B7} \(String(format: "%.2f", $0.score))" })
                 }
             }
         }
@@ -128,7 +128,7 @@ struct GlyphStageBubble: View {
     }
 }
 
-private struct FlowChips: View {
+private struct GlyphFlowChips: View {
     let items: [String]
     @Environment(\.colorScheme) private var scheme
     var body: some View {
