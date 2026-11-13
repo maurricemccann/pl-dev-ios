@@ -11,7 +11,6 @@ struct DesireSheet: View {
     @State private var text = ""
     @State private var name = ""
     @State private var anon = true
-    @State private var token = ""
     @State private var phase: Phase = .idle
     @State private var message = ""
     @State private var web: WebPage?
@@ -86,7 +85,7 @@ struct DesireSheet: View {
         VStack(alignment: .leading, spacing: 14) {
             Text(message).font(SiteFont.display(24, italic: true)).foregroundStyle(Bone.gold).lineSpacing(4)
             HStack(spacing: 24) {
-                SiteAction(title: "State another \u{2192}", tone: .faint) { phase = .idle; token = ""; text = "" }
+                SiteAction(title: "State another \u{2192}", tone: .faint) { phase = .idle; text = "" }
                 SiteAction(title: "Close") { dismiss() }
             }
         }
@@ -104,27 +103,22 @@ struct DesireSheet: View {
                 Text("\(text.count) of 280").siteLabel(10).monospacedDigit()
             }
             if !anon { TextField("Name or handle", text: $name).siteField().textInputAutocapitalization(.never).autocorrectionDisabled() }
-            TurnstileView { token = $0 }.frame(height: 70)
-            Button { Task { await submit() } } label: { Text(phase == .sending ? "Holding\u{2026}" : "Speak it") }.buttonStyle(SitePill())
-                .disabled(phase == .sending || text.trimmingCharacters(in: .whitespacesAndNewlines).count < 3 || token.isEmpty)
+            HumanGate(siteKey: "wall")
+            Button { Task { await submit() } } label: { Text(phase == .sending ? "Holding\u{2026}" : "Speak it on the site") }.buttonStyle(SitePill())
+                .disabled(phase == .sending || text.trimmingCharacters(in: .whitespacesAndNewlines).count < 3)
             if phase == .failed { SiteNote(text: "Not sent. \(message)") }
             Text("Be kind. Be respectful. This is a room for becoming, not for tearing down. Desires are seen before they appear on the wall.").siteLabel(10).tracking(0.8)
         }
         .siteCard(padding: 20, radius: 20)
     }
 
+    /// The wall asks for the site's human check, which runs only in a browser: the desire is kept on the pasteboard and the
+    /// site's own form opens in Apple's sheet.
     private func submit() async {
-        phase = .sending
-        let clean = text.trimmingCharacters(in: .whitespacesAndNewlines)
-        do {
-            let r = try await Site.call("POST", "api/congregation/desire", body: ["text": clean, "name": anon ? "" : name, "anon": anon, "token": token])
-            if r.status == 404 {   // the wall's route is not on the site yet: its own form takes it
-                message = "The wall\u{2019}s form opens on the site for now."
-                phase = .failed
-                if let url = Site.page("congregation#state-your-reality") { web = WebPage(url) }
-            } else if r.ok { message = r.message ?? "Your desire is held. Once seen, it joins the wall. Watch this."; phase = .done; text = "" }
-            else { message = r.message ?? "Something interrupted it. Try again."; phase = .failed; token = "" }
-        } catch { message = error.localizedDescription; phase = .failed }
+        UIPasteboard.keep(text.trimmingCharacters(in: .whitespacesAndNewlines))
+        message = "Your desire is copied. Paste it into the form on the site\u{2019}s page."
+        phase = .failed
+        if let url = Site.page("congregation#state-your-reality") { web = WebPage(url) }
     }
 }
 

@@ -57,7 +57,7 @@ enum GalleryRoom: String, CaseIterable, Identifiable, Hashable {
         case .tools: ToolsRoom(model: model)
         case .labs: WebListRoom(model: model, title: "Labs", items: GalleryRoom.labPages)
         case .worlds: WebListRoom(model: model, title: "The Defiance worlds", items: GalleryRoom.worldPages)
-        case .town: GalleryCanvas(model: model, path: "town?r1=1", title: "The town")
+        case .town: TownView(model: model, state: TownSection.state)   // the native pixel town, no web view
         }
     }
 
@@ -449,7 +449,7 @@ struct VaultRoom: View {
                     ForEach(groups.keys.sorted(), id: \.self) { g in
                         NavigationLink {
                             List(groups[g] ?? []) { f in
-                                NavigationLink { GalleryCanvas(model: model, path: "api/vault/" + (f.key.addingPercentEncoding(withAllowedCharacters: .urlPathAllowed) ?? f.key), title: f.name) } label: {
+                                NavigationLink { VaultFileView(model: model, key: f.key, name: f.name) } label: {
                                     VStack(alignment: .leading) {
                                         Text(f.name).lineLimit(1)
                                         Text([f.size.map { ByteCountFormatter.string(fromByteCount: Int64($0), countStyle: .file) }, f.uploaded.map { String($0.prefix(10)) }].compactMap { $0 }.joined(separator: " · "))

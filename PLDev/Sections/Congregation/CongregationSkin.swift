@@ -417,50 +417,6 @@ struct Lightbox: View {
     }
 }
 
-// MARK: - The human check
-
-/// Cloudflare Turnstile, the check the site's forms carry, run in a small web view on the site's own address so its token is the
-/// site's to verify. The key is the site's public one (every visitor's browser is sent it). `onToken("")` when the token lapses.
-struct TurnstileView: UIViewRepresentable {
-    let onToken: (String) -> Void
-    static let siteKey = "0x4AAAAAADZazMozV63aPnSp"
-
-    func makeCoordinator() -> Coordinator { Coordinator(onToken) }
-
-    func makeUIView(context: Context) -> WKWebView {
-        let config = WKWebViewConfiguration()
-        config.userContentController.add(context.coordinator, name: "token")
-        let web = WKWebView(frame: .zero, configuration: config)
-        web.isOpaque = false; web.backgroundColor = .clear; web.scrollView.isScrollEnabled = false
-        let html = """
-        <!doctype html><html><head><meta name="viewport" content="width=device-width,initial-scale=1">
-        <script src="https://challenges.cloudflare.com/turnstile/v0/api.js?render=explicit" async defer></script></head>
-        <body style="margin:0;background:transparent"><div id="w"></div><script>
-        var iv=setInterval(function(){if(window.turnstile){clearInterval(iv);
-        turnstile.render('#w',{sitekey:'\(Self.siteKey)',theme:'auto',
-        callback:function(t){window.webkit.messageHandlers.token.postMessage(t)},
-        'expired-callback':function(){window.webkit.messageHandlers.token.postMessage('')}})}},100);
-        </script></body></html>
-        """
-        web.loadHTMLString(html, baseURL: Site.base)
-        return web
-    }
-
-    func updateUIView(_ uiView: WKWebView, context: Context) {}
-
-    static func dismantleUIView(_ uiView: WKWebView, coordinator: Coordinator) {
-        uiView.configuration.userContentController.removeScriptMessageHandler(forName: "token")
-    }
-
-    final class Coordinator: NSObject, WKScriptMessageHandler {
-        let onToken: (String) -> Void
-        init(_ onToken: @escaping (String) -> Void) { self.onToken = onToken }
-        func userContentController(_ controller: WKUserContentController, didReceive message: WKScriptMessage) {
-            onToken((message.body as? String) ?? "")
-        }
-    }
-}
-
 // MARK: - The archive's own list, for choosing visuals and works
 
 /// One piece of the archive as the member pickers show it.

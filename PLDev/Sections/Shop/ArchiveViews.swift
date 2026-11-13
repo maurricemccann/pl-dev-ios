@@ -495,8 +495,7 @@ struct RequestBallot: View {
     @State private var weeks = 1
     @State private var avail = 1
     @State private var spokenFor = false
-    @State private var token = ""
-    @State private var generation = 0
+    @State private var web: WebPage?
     @State private var sending = false
     @State private var message: String?
     @State private var done = false
@@ -505,7 +504,7 @@ struct RequestBallot: View {
     private var products: [String] { cfg?.products ?? SiteBallot.defaultProducts }
     private var emailOK: Bool { email.range(of: #"^\S+@\S+\.\S+$"#, options: .regularExpression) != nil }
     private var needsCheck: Bool { !account.signedIn && !(cfg?.siteKey ?? "").isEmpty }
-    private var canCast: Bool { !sending && !spokenFor && product != nil && (account.signedIn || emailOK) && (!needsCheck || !token.isEmpty) }
+    private var canCast: Bool { !sending && !spokenFor && product != nil && (account.signedIn || emailOK) }
 
     var body: some View {
         VStack(alignment: .leading, spacing: 14) {
@@ -527,15 +526,16 @@ struct RequestBallot: View {
                         ForEach(1...avail, id: \.self) { i in SiteChip(title: "\u{00D7}\(i)", on: weeks == i) { weeks = i } }
                     }
                 }
-                HumanGate(siteKey: account.signedIn ? "" : (cfg?.siteKey ?? ""), token: $token, generation: $generation)
+                HumanGate(siteKey: account.signedIn ? "" : (cfg?.siteKey ?? ""))
                 Button { Task { await cast() } } label: {
-                    HStack(spacing: 10) { Text(sending ? "Casting" : "Cast the request"); if sending { ProgressView().tint(.white) } }
+                    HStack(spacing: 10) { Text(sending ? "Casting" : needsCheck ? "Continue on the site" : "Cast the request"); if sending { ProgressView().tint(.white) } }
                 }
                 .buttonStyle(SitePill())
                 .disabled(!canCast)
                 if let message { Text(message).font(SiteFont.body(14)).foregroundStyle(spokenFor ? Bone.inkSoft(scheme) : Bone.oxblood).lineSpacing(4) }
             }
         }
+        .sheet(item: $web) { SafariSheet(url: $0.url).ignoresSafeArea() }
         .sensoryFeedback(PLHaptic.commit, trigger: done)
         .onChange(of: email) { _, e in
             guard emailOK, !account.signedIn else { return }
@@ -562,16 +562,22 @@ struct RequestBallot: View {
     }
 
     private func cast() async {
+        if needsCheck {   // the human check runs on the site's own page, in Apple's sheet
+            UIPasteboard.keep(email.trimmingCharacters(in: .whitespaces).lowercased())
+            message = "Your email is copied. The request is cast on the site\u{2019}s page."
+            if let url = Site.page("catalogue/\(work.cr.lowercased())") { web = WebPage(url) }
+            return
+        }
         sending = true; message = nil
         defer { sending = false }
         let body: [String: Any] = ["email": account.signedIn ? (account.me?.email ?? "") : email.trimmingCharacters(in: .whitespaces).lowercased(),
-                                   "cr": work.cr, "product": product ?? "", "weeks": weeks, "token": token]
+                                   "cr": work.cr, "product": product ?? "", "weeks": weeks]
         do {
             let r = try await Site.call("POST", "api/request", body: body)
             let said = r.message ?? "Something interrupted it. Try again."
             if r.ok { done = true; message = said; marks.markVoted(work.cr) }
-            else { message = said; token = ""; generation += 1 }
-        } catch { message = error.localizedDescription; token = ""; generation += 1 }
+            else { message = said }
+        } catch { message = error.localizedDescription }
     }
 }
 

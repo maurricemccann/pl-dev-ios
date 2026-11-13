@@ -7,8 +7,6 @@ import SwiftUI
 struct SignalView: View {
     @State private var email = ""
     @State private var ballot: SiteBallot?
-    @State private var token = ""
-    @State private var generation = 0
     @State private var sending = false
     @State private var done: String?
     @State private var line: String?
@@ -20,7 +18,7 @@ struct SignalView: View {
 
     private var emailOK: Bool { email.range(of: #"^[^\s@]+@[^\s@]+\.[^\s@]+$"#, options: .regularExpression) != nil }
     private var needsCheck: Bool { !(ballot?.siteKey ?? "").isEmpty }
-    private var canSend: Bool { !sending && emailOK && (!needsCheck || !token.isEmpty) }
+    private var canSend: Bool { !sending && emailOK }
 
     var body: some View {
         ScrollView {
@@ -40,9 +38,9 @@ struct SignalView: View {
                 } else {
                     VStack(alignment: .leading, spacing: 16) {
                         SiteField(label: "Email", text: $email, prompt: "your@email.com", keyboard: .emailAddress, contentType: .emailAddress, capitalize: .never)
-                        HumanGate(siteKey: ballot?.siteKey ?? "", token: $token, generation: $generation)
+                        HumanGate(siteKey: ballot?.siteKey ?? "")
                         Button { Task { await send() } } label: {
-                            HStack(spacing: 10) { Text(sending ? "Tuning in" : "Receive the Signal"); if sending { ProgressView().tint(.white) } }
+                            HStack(spacing: 10) { Text(sending ? "Tuning in" : needsCheck ? "Continue on the site" : "Receive the Signal"); if sending { ProgressView().tint(.white) } }
                         }
                         .buttonStyle(SitePill())
                         .disabled(!canSend)
@@ -77,20 +75,25 @@ struct SignalView: View {
     }
 
     private func send() async {
+        if needsCheck {   // the human check runs on the site's own page, in Apple's sheet
+            UIPasteboard.keep(email.trimmingCharacters(in: .whitespaces).lowercased())
+            line = "Your email is copied. Paste it on the site\u{2019}s page."
+            if let url = Site.page("signal?src=app") { web = WebPage(url) }
+            return
+        }
         sending = true; line = nil; needsSite = false
         defer { sending = false }
         do {
-            let r = try await Site.call("POST", "api/signal", body: ["email": email.trimmingCharacters(in: .whitespaces).lowercased(), "source": "app", "token": token])
+            let r = try await Site.call("POST", "api/signal", body: ["email": email.trimmingCharacters(in: .whitespaces).lowercased(), "source": "app"])
             if r.status == 404 {   // the route is not on the site yet
                 line = "Not sent. The app's door to the signal is not open on the site yet. The site's own page works."
                 needsSite = true
                 return
             }
             if r.ok { done = r.message ?? "You are on the signal. Watch this."; tick += 1 }
-            else { line = "Not sent. \(r.message ?? "The site said no.")"; token = ""; generation += 1 }
+            else { line = "Not sent. \(r.message ?? "The site said no.")" }
         } catch {
             line = "Not sent. \(error.localizedDescription)"
-            token = ""; generation += 1
         }
     }
 }

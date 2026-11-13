@@ -41,8 +41,7 @@ struct ContactView: View {
     @State private var photo: (name: String, base64: String)?
     @State private var photoNote: String?
     @State private var ballot: SiteBallot?
-    @State private var token = ""
-    @State private var generation = 0
+    @State private var web: WebPage?
     @State private var sending = false
     @State private var received: String?
     @State private var line: String?
@@ -52,7 +51,7 @@ struct ContactView: View {
 
     private var needsCheck: Bool { !(ballot?.siteKey ?? "").isEmpty }
     private var emailOK: Bool { email.range(of: #"^[^\s@]+@[^\s@]+\.[^\s@]+$"#, options: .regularExpression) != nil }
-    private var canSend: Bool { !sending && emailOK && message.trimmingCharacters(in: .whitespacesAndNewlines).count >= 2 && (!needsCheck || !token.isEmpty) }
+    private var canSend: Bool { !sending && emailOK && message.trimmingCharacters(in: .whitespacesAndNewlines).count >= 2 }
 
     var body: some View {
         ScrollView {
@@ -88,9 +87,9 @@ struct ContactView: View {
                             if let photoNote { Text(photoNote).font(SiteFont.body(12)).foregroundStyle(Bone.oxblood) }
                         }
                         SiteField(label: "Message", text: $message, prompt: "Orders, the work, press, or anything else.", lines: 5)
-                        HumanGate(siteKey: ballot?.siteKey ?? "", token: $token, generation: $generation)
+                        HumanGate(siteKey: ballot?.siteKey ?? "")
                         Button { Task { await send() } } label: {
-                            HStack(spacing: 10) { Text(sending ? "Sending" : "Send"); if sending { ProgressView().tint(.white) } }
+                            HStack(spacing: 10) { Text(sending ? "Sending" : needsCheck ? "Continue on the site" : "Send"); if sending { ProgressView().tint(.white) } }
                         }
                         .buttonStyle(SitePill())
                         .disabled(!canSend)
@@ -124,6 +123,7 @@ struct ContactView: View {
             guard let item else { return }
             Task { await take(item) }
         }
+        .sheet(item: $web) { SafariSheet(url: $0.url).ignoresSafeArea() }
         .sensoryFeedback(PLHaptic.commit, trigger: tick)
     }
 
@@ -139,9 +139,15 @@ struct ContactView: View {
     }
 
     private func send() async {
+        if needsCheck {   // the human check runs on the site's own page, in Apple's sheet
+            UIPasteboard.keep(message)
+            line = "Your message is copied. Paste it on the site\u{2019}s page" + (photo == nil ? "." : " and attach the photo there.")
+            if let url = Site.page("contact") { web = WebPage(url) }
+            return
+        }
         sending = true; line = nil
         defer { sending = false }
-        var body: [String: Any] = ["name": name.trimmingCharacters(in: .whitespaces), "email": email.trimmingCharacters(in: .whitespaces), "message": message, "token": token]
+        var body: [String: Any] = ["name": name.trimmingCharacters(in: .whitespaces), "email": email.trimmingCharacters(in: .whitespaces), "message": message]
         let o = order.trimmingCharacters(in: .whitespaces)
         if !o.isEmpty { body["orderId"] = o }
         if let photo { body["photo"] = ["filename": photo.name, "content": photo.base64] }
@@ -151,7 +157,6 @@ struct ContactView: View {
             tick += 1
         } catch {
             line = "Not sent. \(error.localizedDescription)"
-            token = ""; generation += 1   // a spent check is spent: ask for a new one
         }
     }
 }
