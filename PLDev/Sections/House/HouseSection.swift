@@ -11,7 +11,17 @@ import UserNotifications
 
     static func makeRoot(model: AppModel) -> AnyView { AnyView(HouseView(model: model, state: state)) }
     static func probes(model: AppModel) -> [ProbeModel.Item] { [] }
-    static func settingsRows(model: AppModel) -> AnyView? { nil }
+    /// House's own Settings rows: the tips again, and the rooms back into Spotlight.
+    static func settingsRows(model: AppModel) -> AnyView? {
+        AnyView(Group {
+            Button { UserDefaults.standard.set(true, forKey: "pldev.resetTips") } label: {   // TipKit resets only before configure: at next launch
+                SettingsLabel("Show the tips again next time PL DEV opens", "lightbulb", IOS27.SystemColors.yellow)
+            }
+            Button { Task { await HouseSpotlight.index() } } label: {
+                SettingsLabel("Add House rooms to Spotlight again", "magnifyingglass", Color(uiColor: .systemGray))
+            }
+        })
+    }
     /// The drafts notice carries one button: approve all (Face ID first, never on a locked phone; Pins still wait).
     static func notificationCategories() -> Set<UNNotificationCategory> {
         NotificationHub.actions["house.approveAll"] = {

@@ -9,6 +9,9 @@ struct PLDevApp: App {
         NotificationHub.shared.start()     // the delegate and the sections' categories must exist before launch ends
         IntentBridge.open = { link in AppModel.shared.open(link) }   // intents and controls route through the same door as links
         _ = AppModel.shared                // starts reading the saved config back, also on a background launch
+        if UserDefaults.standard.bool(forKey: "pldev.resetTips") {   // Settings asked for the tips again
+            try? Tips.resetDatastore(); UserDefaults.standard.set(false, forKey: "pldev.resetTips")
+        }
         try? Tips.configure([.displayFrequency(.daily)])   // tips only for gestures that cannot be seen, one a day at most
         Task { await HouseSpotlight.index() }   // House rooms in Spotlight
     }

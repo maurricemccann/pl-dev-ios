@@ -74,9 +74,13 @@ enum PLText {
 
     /// Emphasis adds 200 to the weight, the Bold Text setting adds 100; the heaviest Jost file bundled is 700.
     /// `scale` is the Text size setting as a factor (0.9 to 1.3).
-    func font(jost: Bool, scale: Double, bold: Bool, emphasized: Bool) -> Font {
+    func font(face: String, scale: Double, bold: Bool, emphasized: Bool) -> Font {
         let w = min(700, weight + (emphasized ? 200 : 0) + (bold ? 100 : 0))
-        if jost {
+        if face == "courier" {   // Courier Prime, his R1 panel face (OFL); one weight file, so emphasis is synthesized bold
+            let f = Font.custom("CourierPrime-Regular", size: jostSize * scale, relativeTo: style)
+            return w >= 600 ? f.bold() : f
+        }
+        if face == "jost" {
             let name = w >= 700 ? "Jost-Bold" : w >= 600 ? "Jost-Semi" : w >= 500 ? "Jost-Medium" : "Jost-Book"
             return .custom(name, size: jostSize * scale, relativeTo: style)
         }
@@ -113,7 +117,7 @@ private struct PLFontModifier: ViewModifier {
         if isTitle, let pack = ThemePack.shared.titleFont {
             content.font(text.packFont(pack, scale: scale))
         } else {
-            content.font(text.font(jost: face == "jost", scale: scale, bold: legibilityWeight == .bold, emphasized: emphasized))
+            content.font(text.font(face: face, scale: scale, bold: legibilityWeight == .bold, emphasized: emphasized))
         }
     }
 }

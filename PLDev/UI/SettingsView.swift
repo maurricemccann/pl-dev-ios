@@ -33,6 +33,23 @@ struct SettingsView: View {
     var body: some View {
         NavigationStack {
             List {
+                Section {
+                    HStack(spacing: PLSpace.pad) {
+                        Image(systemName: "circle.circle")
+                            .font(.system(size: 30, weight: .semibold)).foregroundStyle(.white)
+                            .frame(width: 60, height: 60)
+                            .background(Color(white: 0.09), in: RoundedRectangle(cornerRadius: 14, style: .continuous))
+                            .accessibilityHidden(true)
+                        VStack(alignment: .leading, spacing: 2) {
+                            Text("PL DEV").font(.title3.weight(.semibold))
+                            Text(model.config == nil ? "No config loaded" : "\(model.sections.filter { $0.readiness.isReady }.count) of \(model.sections.count) apps ready")
+                                .font(.subheadline).foregroundStyle(.secondary)
+                            Text("Version \(version)").font(.caption).foregroundStyle(.tertiary)
+                        }
+                    }
+                    .padding(.vertical, 4)
+                    .accessibilityElement(children: .combine)
+                }
                 appearance
                 notifications
                 keys
@@ -78,17 +95,17 @@ struct SettingsView: View {
                 Text("Light").tag("light")
                 Text("Dark").tag("dark")
             } label: {
-                Text("Theme").plFont(.body)
+                SettingsLabel("Theme", "circle.lefthalf.filled", IOS27.SystemColors.indigo)
             }
             Picker(selection: $font) {
                 Text("System").tag("system")
                 Text("Jost").tag("jost")
+                Text("Courier Prime").tag("courier")
             } label: {
-                Text("Text face").plFont(.body)
+                SettingsLabel("Text face", "textformat", IOS27.SystemColors.blue)
             }
             VStack(alignment: .leading, spacing: PLSpace.tight) {
-                Text("Text size: \(Int(textSize)) %")
-                    .plFont(.body)
+                SettingsLabel("Text size: \(Int(textSize)) %", "textformat.size", IOS27.SystemColors.blue)
                 Slider(value: $textSize, in: 90...130, step: 5) {
                     Text("Text size")
                 } minimumValueLabel: {
@@ -98,12 +115,11 @@ struct SettingsView: View {
                 }
                 .accessibilityValue("\(Int(textSize)) percent")
             }
-            toggleRow("Glass controls", "The floating buttons use Apple\u{2019}s glass. Off draws them solid.", isOn: $glassBlur)
-            toggleRow("See-through glass", "A clearer glass that shows more of what is behind it.", isOn: $glassClear)
+            toggleRow("Glass controls", "The floating buttons use Apple\u{2019}s glass. Off draws them solid.", isOn: $glassBlur, icon: ("drop.halffull", IOS27.SystemColors.cyan))
+            toggleRow("See-through glass", "A clearer glass that shows more of what is behind it.", isOn: $glassClear, icon: ("circle.dotted", IOS27.SystemColors.teal))
                 .disabled(!glassBlur)
             VStack(alignment: .leading, spacing: PLSpace.tight) {
-                Text("Tile strength")
-                    .plFont(.body)
+                SettingsLabel("Wallpaper curves", "scribble.variable", IOS27.SystemColors.orange)
                 Slider(value: $tileStrength, in: 0...1) {
                     Text("Tile strength")
                 }
@@ -113,13 +129,13 @@ struct SettingsView: View {
                 Text("Full").tag("full")
                 Text("Reduced").tag("reduce")
             } label: {
-                Text("Motion").plFont(.body)
+                SettingsLabel("Motion", "figure.walk.motion", IOS27.SystemColors.green)
             }
             Button {
                 ThemePack.shared.load()
                 typeTick += 1
             } label: {
-                ValueRow(label: "Theme pack", value: ThemePack.shared.isLoaded ? "Loaded" : "None")
+                LabeledContent { Text(ThemePack.shared.isLoaded ? "Loaded" : "None") } label: { SettingsLabel("Theme pack", "paintpalette", IOS27.SystemColors.pink) }
             }
             .accessibilityHint("Reads the theme pack from the app\u{2019}s folder again")
         } header: {
@@ -130,7 +146,7 @@ struct SettingsView: View {
     }
 
     private var themeFooter: String {
-        var text = "Text size multiplies on top of the iPhone\u{2019}s own text size. Tile strength is how much colour the home tiles carry. Reduced motion swaps springs and the zoom for short fades; the iPhone\u{2019}s Reduce Motion setting does the same. A theme pack is optional: put theme.json (and the font or tile it names) in this app\u{2019}s folder in Files, then tap Theme pack."
+        var text = "Text size multiplies on top of the iPhone\u{2019}s own text size. Wallpaper curves is how strongly his curve tile shows behind Home. Reduced motion swaps springs and the zoom for short fades; the iPhone\u{2019}s Reduce Motion setting does the same. A theme pack is optional: put theme.json (and the font or tile it names) in this app\u{2019}s folder in Files, then tap Theme pack."
         if let problem = ThemePack.shared.problem { text += " " + problem }
         return text
     }
@@ -139,7 +155,7 @@ struct SettingsView: View {
 
     private var notifications: some View {
         Section {
-            toggleRow("Notifications", "Sections may show a notice when something needs you. Off by default.", isOn: $notify)
+            toggleRow("Notifications", "Sections may show a notice when something needs you. Off by default.", isOn: $notify, icon: ("bell.badge.fill", IOS27.SystemColors.red))
                 .onChange(of: notify) { _, on in
                     guard on else { return }
                     Task {
@@ -158,7 +174,7 @@ struct SettingsView: View {
                         Text(type).plFont(.body)
                     }
                 }
-                toggleRow("Quiet hours", "No notices between the two times. They are not kept for later.", isOn: quietOn)
+                toggleRow("Quiet hours", "No notices between the two times. They are not kept for later.", isOn: quietOn, icon: ("moon.fill", IOS27.SystemColors.indigo))
                 if quietOn.wrappedValue {
                     DatePicker(selection: time($quietFrom, fallback: "22:00"), displayedComponents: .hourAndMinute) {
                         Text("From").plFont(.body)
@@ -263,16 +279,16 @@ struct SettingsView: View {
 
     private var diagnostics: some View {
         Section {
-            toggleRow("Debug", "Sends what the app does (never a key or an address) to your own log. Off by default.", isOn: $debug)
+            toggleRow("Debug", "Sends what the app does (never a key or an address) to your own log. Off by default.", isOn: $debug, icon: ("ladybug.fill", Color(uiColor: .systemGray)))
             NavigationLink {
                 DebugLogView(log: model.debug)
             } label: {
-                ValueRow(label: "Log", value: model.debug.lines.isEmpty ? "Empty" : "\(model.debug.lines.count) lines")
+                LabeledContent { Text(model.debug.lines.isEmpty ? "Empty" : "\(model.debug.lines.count) lines") } label: { SettingsLabel("Log", "text.alignleft", IOS27.SystemColors.brown) }
             }
             NavigationLink {
                 ProbeView(probe: model.probes, showsDone: false)
             } label: {
-                Text("Probes").plFont(.body)
+                SettingsLabel("Probes", "stethoscope", IOS27.SystemColors.mint)
             }
         } header: {
             Text("Debug").plFont(.footnote)
@@ -301,7 +317,7 @@ struct SettingsView: View {
     private var about: some View {
         Section {
             ValueRow(label: "Version", value: version)
-            Text("Optional text face: Jost, under the SIL Open Font License 1.1.")
+            Text("Optional text faces: Jost and Courier Prime, under the SIL Open Font License 1.1.")
                 .plFont(.footnote)
                 .foregroundStyle(.secondary)
         } header: {
@@ -309,14 +325,17 @@ struct SettingsView: View {
         }
     }
 
-    private func toggleRow(_ title: String, _ detail: String, isOn: Binding<Bool>) -> some View {
+    private func toggleRow(_ title: String, _ detail: String, isOn: Binding<Bool>, icon: (String, Color)? = nil) -> some View {
         Toggle(isOn: isOn) {
-            VStack(alignment: .leading, spacing: PLSpace.hair) {
-                Text(title)
-                    .plFont(.body)
-                Text(detail)
-                    .plFont(.footnote)
-                    .foregroundStyle(.secondary)
+            HStack(alignment: .top, spacing: PLSpace.pad) {
+                if let icon { SettingsIcon(symbol: icon.0, color: icon.1).padding(.top, 2) }
+                VStack(alignment: .leading, spacing: PLSpace.hair) {
+                    Text(title)
+                        .plFont(.body)
+                    Text(detail)
+                        .plFont(.footnote)
+                        .foregroundStyle(.secondary)
+                }
             }
         }
     }
@@ -352,5 +371,33 @@ struct DebugLogView: View {
         }
         .plScreenTitle("Log")
         .sensoryFeedback(PLHaptic.commit, trigger: clearTick)
+    }
+}
+
+/// The iOS Settings app's row icon: a 29 pt continuous squircle in a system colour with a white symbol.
+struct SettingsIcon: View {
+    let symbol: String
+    let color: Color
+    var body: some View {
+        Image(systemName: symbol)
+            .font(.system(size: 15, weight: .semibold))
+            .foregroundStyle(.white)
+            .frame(width: 29, height: 29)
+            .background(color.gradient, in: RoundedRectangle(cornerRadius: 7, style: .continuous))
+            .accessibilityHidden(true)
+    }
+}
+
+/// A Settings row label: the icon, then the words.
+struct SettingsLabel: View {
+    let title: String
+    let symbol: String
+    let color: Color
+    init(_ title: String, _ symbol: String, _ color: Color) { self.title = title; self.symbol = symbol; self.color = color }
+    var body: some View {
+        HStack(spacing: PLSpace.pad) {
+            SettingsIcon(symbol: symbol, color: color)
+            Text(title).plFont(.body)
+        }
     }
 }

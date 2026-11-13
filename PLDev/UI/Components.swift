@@ -191,6 +191,7 @@ struct Wallpaper: View {
     static let line = Color(red: 0.72, green: 0.33, blue: 0.21)
     let model: AppModel
     @State private var tile: UIImage?
+    @AppStorage("pldev.tileStrength") private var strength = 0.5   // Settings: how strongly the curves show; 0.5 = his reference
 
     init(model: AppModel) { self.model = model }
 
@@ -198,7 +199,7 @@ struct Wallpaper: View {
         ZStack {
             Self.ground
             if let tile {
-                Image(uiImage: tile).resizable(resizingMode: .tile)
+                Image(uiImage: tile).resizable(resizingMode: .tile).opacity(min(1, 0.15 + strength * 1.7))
             }
         }
         .ignoresSafeArea()
