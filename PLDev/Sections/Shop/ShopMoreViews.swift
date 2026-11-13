@@ -13,6 +13,7 @@ struct ShopMoreView: View {
                 }
             } footer: { Text("Checkout, sign-up and the signal form run on the site, behind its human check. They open in a sheet here.") }
         }
+        .siteList()
     }
 }
 
@@ -30,6 +31,7 @@ struct SignalView: View {
                 } label: { Label("Receive the signal", systemImage: "antenna.radiowaves.left.and.right").frame(minHeight: PLMetric.touch) }
             } footer: { Text("The form opens on the site, which checks a person is signing up.") }
         }
+        .siteList()
         .plScreenTitle("The signal")
         .sheet(item: $web) { SafariSheet(url: $0.url).ignoresSafeArea() }
     }
@@ -83,6 +85,7 @@ struct TrackOrderView: View {
                 }
             }
         }
+        .siteList()
         .plScreenTitle("Track an order")
         .sheet(item: $web) { SafariSheet(url: $0.url).ignoresSafeArea() }
         .sensoryFeedback(PLHaptic.success, trigger: result?.status)
@@ -131,7 +134,7 @@ struct MyOrdersView: View {
                         ForEach(orders) { o in
                             HStack(spacing: PLSpace.pad) {
                                 Color.clear.frame(width: 56, height: 56).overlay { FlatImage(url: o.itemImage.flatMap { ShopCatalogue.isFlat($0) ? URL(string: $0) : nil }, padding: 2) }
-                                    .background(PLTone.well, in: RoundedRectangle(cornerRadius: 10, style: .continuous))
+                                    .background(Bone.line(.light).opacity(0.4), in: RoundedRectangle(cornerRadius: 10, style: .continuous))
                                 VStack(alignment: .leading, spacing: 2) {
                                     Text(o.itemName ?? "Order \(o.friendlyId ?? "")").plFont(.headline)
                                     Text(status(o)).plFont(.footnote).foregroundStyle(.secondary)
@@ -149,6 +152,7 @@ struct MyOrdersView: View {
                             }
                         }
                     }
+                    .siteList()
                 }
             } else {
                 EmptyNote(symbol: "person.crop.circle", title: "Sign in to see your orders", detail: "Orders placed with your site account show here. Sign in from the Congregation.")
@@ -188,6 +192,7 @@ struct SiteStatusView: View {
                     Button { if let url = Site.page("") { web = WebPage(url) } } label: { Label("Open psychedluxuries.com", systemImage: "safari") }
                 }
             }
+            .siteList()
         }
         .plScreenTitle("The site")
         .sheet(item: $web) { SafariSheet(url: $0.url).ignoresSafeArea() }
@@ -223,6 +228,7 @@ struct SitePagesView: View {
                 }
             }
         }
+        .siteList()
         .plScreenTitle("Pages")
         .sheet(item: $web) { SafariSheet(url: $0.url).ignoresSafeArea() }
     }

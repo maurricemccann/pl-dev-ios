@@ -9,13 +9,15 @@ struct ArchiveView: View {
 
     var body: some View {
         ScrollView {
-            VStack(spacing: PLSpace.pad) {
+            VStack(alignment: .leading, spacing: 16) {
+                SitePageHead(eyebrow: "The archive \u{2014} " + (stream.total > 0 ? "\(stream.total)" : "seven years of") + " pieces", lead: "The evidence,", accent: "unbroken.",
+                             lede: "The archive is not the backstory. It is the evidence. Every piece, in the order it was made.")
                 if stream.items.isEmpty {
                     if let f = stream.failure {
                         EmptyNote(symbol: "wifi.exclamationmark", title: "Could not load the archive", detail: f, actionTitle: "Try again") { Task { await stream.reload() } }
                     } else {
                         LazyVGrid(columns: columns, spacing: 6) {
-                            ForEach(0..<12, id: \.self) { _ in RoundedRectangle(cornerRadius: 10, style: .continuous).fill(PLTone.surface).aspectRatio(1, contentMode: .fit) }
+                            ForEach(0..<12, id: \.self) { _ in RoundedRectangle(cornerRadius: 10, style: .continuous).fill(Bone.line(.light).opacity(0.4)).aspectRatio(1, contentMode: .fit) }
                         }
                         .redacted(reason: .placeholder).accessibilityLabel("Loading the archive")
                     }
@@ -33,7 +35,7 @@ struct ArchiveView: View {
                                             }
                                         }
                                     }
-                                    .background(PLTone.surface)
+                                    .background(Bone.line(.light).opacity(0.4))
                                     .clipShape(RoundedRectangle(cornerRadius: 10, style: .continuous))
                                     .accessibilityLabel("\(item.title ?? item.cr ?? "Archive piece"), \(item.cr ?? "")")
                             }
@@ -42,12 +44,12 @@ struct ArchiveView: View {
                         }
                     }
                     if stream.loading { ProgressView().padding() }
-                    Text("\(stream.items.count) of \(stream.total) pieces").plFont(.footnote).foregroundStyle(.secondary).contentTransition(.numericText())
+                    Text("\(stream.items.count) of \(stream.total) pieces").siteLabel(10).contentTransition(.numericText()).frame(maxWidth: .infinity)
                 }
             }
-            .padding(.horizontal, PLSpace.margin).padding(.vertical, PLSpace.gap)
+            .padding(.horizontal, 12).padding(.bottom, 24)
         }
-        .background(PLTone.canvas)
+        .siteScreen()
         .refreshable { await stream.reload() }
         .task { if stream.items.isEmpty { await stream.reload() } }
         .sensoryFeedback(PLHaptic.commit, trigger: stream.tick)

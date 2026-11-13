@@ -98,13 +98,11 @@ struct CongregationView: View {
             }
         }
         .safeAreaInset(edge: .top, spacing: 0) {
-            Picker("Page", selection: $state.tab) {
-                ForEach(CongregationModel.Tab.allCases) { Text($0.title).tag($0) }
-            }
-            .pickerStyle(.segmented)
-            .padding(.horizontal, PLSpace.margin).padding(.vertical, PLSpace.gap)
-            .background(.bar)
+            SiteTabs(titles: CongregationModel.Tab.allCases.map(\.title), index: Binding(
+                get: { CongregationModel.Tab.allCases.firstIndex(of: state.tab) ?? 0 },
+                set: { state.tab = CongregationModel.Tab.allCases[$0] }))
         }
+        .background { SiteGround() }
         .navigationTitle("Congregation")
         .navigationBarTitleDisplayMode(.inline)
         .sensoryFeedback(PLHaptic.select, trigger: state.tab)
