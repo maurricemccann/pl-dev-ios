@@ -47,7 +47,6 @@ struct HomeDashboard: View {
                     stat("Heat", "\(last.temp_c)°", Double(last.temp_c).map { $0 >= 85 ? PLTone.bad : $0 >= 70 ? PLTone.warn : PLTone.good })
                     stat("CPU", "\(last.cpu_pct)%", nil)
                     stat("Free RAM", "\(last.free_ram_gb) GB", Double(last.free_ram_gb).map { $0 < 2 ? PLTone.bad : $0 < 4 ? PLTone.warn : PLTone.good })
-                    stat("Battery", "\(last.battery_pct)%\(last.on_ac == "True" ? " ⚡︎" : "")", nil)
                     stat("Disk free", pc?.disk_free_gb.map { "\(Int($0)) GB" } ?? "·", (pc?.disk_free_gb).map { $0 < 30 ? PLTone.bad : $0 < 80 ? PLTone.warn : PLTone.good })
                     stat("Up", pc?.uptime_h.map { $0 >= 48 ? "\(Int($0 / 24)) d" : "\(Int($0)) h" } ?? "·", nil)
                     // kernel pool: grows with file activity and only a reboot clears it; amber at 3 GB, red (reboot) at 5 GB (his ask 11-13)
