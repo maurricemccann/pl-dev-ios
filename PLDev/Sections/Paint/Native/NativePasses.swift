@@ -118,7 +118,7 @@ extension NativeCanvasModel {
         let recorded = tl.recordedFiles()
         let build = NativeTimelapse.pick(recorded, seconds: 4, fps: 24)
         let W = 960, H = max(2, Int((Double(d.h) * Double(W) / Double(d.w)).rounded()) & ~1)
-        guard let flat = d.compositeBuffer(includeBackground: true)?.snapshot() else { say("The picture could not be flattened."); return nil }
+        guard let flat = d.compositeBuffer(includeBackground: true)?.heldImage() else { say("The picture could not be flattened."); return nil }
         let bgc = d.bgVis ? (Hex.rgb(d.bg) ?? (1, 1, 1)) : (1, 1, 1)
         let dir = FileManager.default.temporaryDirectory.appendingPathComponent("alive-\(UUID().uuidString.prefix(8))", isDirectory: true)
         try? FileManager.default.createDirectory(at: dir, withIntermediateDirectories: true)

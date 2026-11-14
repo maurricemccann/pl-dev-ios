@@ -58,5 +58,5 @@ extension NativeDoc {
     }
 
     /// The flat picture: every layer in order with its blend, mask, group and clip, over the background (transparent when it is hidden).
-    func flatImage() -> CGImage? { compositeBuffer()?.snapshot() }
+    func flatImage() -> CGImage? { compositeBuffer()?.heldImage() }
 }

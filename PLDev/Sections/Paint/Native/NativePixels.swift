@@ -41,7 +41,7 @@ final class PixelMemory: @unchecked Sendable {   // immutable after init; freed 
     /// A copied image of the pixels, made while this buffer is certainly alive. `compositeBuffer()?.ctx.makeImage()` let a
     /// temporary buffer free its memory while the context still drew from it: every export, the hand trace and the tile guides
     /// crashed in CGBitmapContextCreateImage (simulator crash report 11-14 07:10, EXC_BAD_ACCESS in memmove).
-    func snapshot() -> CGImage? { withExtendedLifetime(self) { ctx.makeImage() } }
+    func heldImage() -> CGImage? { withExtendedLifetime(self) { ctx.makeImage() } }
 
     /// An image over the same memory (no copy). Make a new one after every change so Core Animation uploads it again.
     func image() -> CGImage? {
