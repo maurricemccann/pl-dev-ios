@@ -105,8 +105,7 @@ struct HomeView: View {
                     .onTapGesture { withAnimation(.snappy) { page = i } }
             }
         }
-        .padding(.horizontal, 10).padding(.vertical, 6)
-        .glassEffect(.regular, in: Capsule())
+        .padding(.horizontal, 6).padding(.vertical, 6)
         .accessibilityElement().accessibilityLabel(page == 0 ? "Today, page 1 of 2" : "Apps, page 2 of 2")
         .accessibilityAdjustableAction { d in withAnimation { page = d == .increment ? 1 : 0 } }
     }
@@ -125,7 +124,9 @@ struct HomeView: View {
             .environment(\.colorScheme, .dark)   // light text on the wallpaper, as on the Home Screen; pushed screens keep his setting
             .background(Wallpaper(model: model))
             .refreshable { await Poller.shared.refreshAll() }
-            .safeAreaInset(edge: .bottom) { VStack(spacing: 6) { pageDots; controls } }
+            // one bar like the Home Screen dock (his note 11-14 with Aqara's tab bar on Cosmos: the dots and Settings floated apart and
+            // cut through the screen, and sat high): dots left, Settings right, one glass bar, close to the home indicator
+            .safeAreaInset(edge: .bottom, spacing: 0) { controls }
             .toolbar(.hidden, for: .navigationBar)
             .navigationDestination(for: String.self) { id in
                 destination(id)
@@ -193,6 +194,7 @@ struct HomeView: View {
     private var controls: some View {
         GlassEffectContainer(spacing: PLSpace.pad) {
             HStack(spacing: PLSpace.pad) {
+                pageDots
                 if model.inboxCount > 0 {
                     Button {
                         sheetTick += 1
@@ -207,10 +209,10 @@ struct HomeView: View {
                         }
                         .foregroundStyle(IOS27.LabelsLiquidGlass.primary)
                         .padding(.horizontal, PLSpace.margin)
-                        .frame(minHeight: 50)
+                        .frame(minHeight: 44)
                         .contentShape(Capsule())
                     }
-                    .glassControl(tint: IOS27.Glass.dock.tint)
+                    .buttonStyle(.plain)
                     .accessibilityLabel("\(model.inboxCount) items waiting to send")
                     .transition(.scale(scale: 0.8).combined(with: .opacity))
                 }
@@ -221,15 +223,18 @@ struct HomeView: View {
                     Label("Settings", systemImage: "gearshape")
                         .plFont(.callout, emphasized: true)
                         .foregroundStyle(IOS27.LabelsLiquidGlass.primary)
-                        .padding(.horizontal, PLSpace.margin)
-                        .frame(minHeight: 50)
+                        .padding(.horizontal, PLSpace.pad)
+                        .frame(minHeight: 44)
                         .contentShape(Capsule())
                 }
-                .glassControl(tint: IOS27.Glass.dock.tint)
+                .buttonStyle(.plain)
             }
+            .padding(.horizontal, 14)
+            .frame(height: 60)
+            .glassEffect(.regular.tint(IOS27.Glass.dock.tint), in: RoundedRectangle(cornerRadius: 30, style: .continuous))
         }
-        .padding(.horizontal, PLSpace.margin)
-        .padding(.bottom, PLSpace.gap)
+        .padding(.horizontal, 10)
+        .padding(.bottom, -14)   // nearer the home indicator, as the dock sits
         .animation(PLMotion.spring(reduce: reduce), value: model.inboxCount)
     }
 

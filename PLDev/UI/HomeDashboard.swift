@@ -27,6 +27,7 @@ struct HomeDashboard: View {
             HomeStatusStrip(model: model)
             pcCard
             houseCard
+            townCard
             practiceCard
             askBar
         }
@@ -65,6 +66,34 @@ struct HomeDashboard: View {
     }
 
     // MARK: practice (the streak tiles of How We Feel and pillowtalk on Mobbin): read from the glance Practice writes
+
+    /// Task Town on the Today page (his note 11-14: "we're missing the town widget"): the Roadmap's counts and where the session is.
+    private var townCard: some View {
+        let g = SharedState.readTown()
+        return door("town") {
+            VStack(alignment: .leading, spacing: 10) {
+                HStack {
+                    Text("Task Town").plHand(20)
+                    Spacer()
+                    Image(systemName: "arrow.right").font(.system(size: 11, weight: .bold)).foregroundStyle(.white.opacity(0.9))
+                }
+                if let g {
+                    HStack(alignment: .top) {
+                        stat("Open", icon: "building.2", "\(g.open)", nil)
+                        stat("Done", icon: "checkmark", "\(g.done)", g.done > 0 ? PLStatus.good : nil)
+                        stat("On you", icon: "person", "\(g.his)", g.his > 0 ? PLStatus.warn : nil)
+                        stat("Blocked", icon: "exclamationmark.octagon", "\(g.blocked)", g.blocked > 0 ? PLStatus.bad : nil)
+                    }
+                    Text(g.working ? "The session is at \((g.at ?? "work").capitalized)." : "The session is quiet.").plFont(.footnote).foregroundStyle(.secondary)
+                } else {
+                    Text("Open the town once and its numbers live here.").plFont(.footnote).foregroundStyle(.secondary)
+                }
+            }
+            .frame(maxWidth: .infinity, alignment: .leading)
+            .padding(14)
+            .glassEffect(.regular, in: RoundedRectangle(cornerRadius: PLRadius.card, style: .continuous))
+        }
+    }
 
     @ViewBuilder private var practiceCard: some View {
         if let g = PracticeGlance.read() {
