@@ -505,7 +505,6 @@ struct ThemePacksView: View {
 struct AccountsRows: View {
     let model: AppModel
     @State private var account = SiteAccount.shared
-    @State private var signingIn = false
     var body: some View {
         Section {
             HStack {
@@ -514,7 +513,8 @@ struct AccountsRows: View {
                 if account.signedIn {
                     Text(account.me?.handle.map { "@" + $0 } ?? account.me?.email ?? "Signed in").foregroundStyle(.secondary).lineLimit(1)
                 } else {
-                    Button("Sign in") { signingIn = true }.buttonStyle(.bordered)
+                    // a push, not a sheet: a .sheet hung on a Form section is torn down when the row redraws (his note 11-14: it showed, then vanished)
+                    NavigationLink("Sign in") { AccountSignInSheet(account: account) }.fixedSize()
                 }
             }
             if account.signedIn {
@@ -527,7 +527,6 @@ struct AccountsRows: View {
             Text("Sign in once: the Shop, the Congregation and your orders use it, and it stays in this iPhone's Keychain. Your saved password fills in from iCloud Keychain. The console, gallery, board and call open with your config, no sign-in.")
         }
         .task { if !account.checked { await account.refresh() } }
-        .sheet(isPresented: $signingIn) { AccountSignInSheet(account: account) }
     }
 }
 
@@ -539,8 +538,7 @@ private struct AccountSignInSheet: View {
     @State private var line = ""
     @State private var busy = false
     var body: some View {
-        NavigationStack {
-            Form {
+        Form {
                 Section {
                     TextField("Email", text: $email).textContentType(.username).keyboardType(.emailAddress).textInputAutocapitalization(.never).autocorrectionDisabled()
                     SecureField("Password", text: $password).textContentType(.password)
@@ -556,7 +554,5 @@ private struct AccountSignInSheet: View {
                 }
             }
             .navigationTitle("Psyched Luxuries")
-            .toolbar { ToolbarItem(placement: .cancellationAction) { Button("Cancel") { dismiss() } } }
-        }
     }
 }
