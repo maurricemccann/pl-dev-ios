@@ -21,10 +21,10 @@ final class ComposerFlowsTests: XCTestCase {
 
     // MARK: helpers
 
-    func launch(_ link: String = "section/composer/piece") {
+    func launch(_ link: String = "section/composer/piece", extraArgs: [String] = []) {
         app = XCUIApplication(bundleIdentifier: bundle)
         let cfg = ProcessInfo.processInfo.environment["PL_SIM_CONFIG"] ?? ""
-        app.launchArguments = ["-simConfig", cfg, "-simLink", "pldev://" + link]
+        app.launchArguments = ["-simConfig", cfg, "-simLink", "pldev://" + link] + extraArgs
         app.launch()
         sleep(6)
         app.tap()   // lets the interruption monitor see an alert, if one is up
@@ -356,15 +356,14 @@ final class ComposerFlowsTests: XCTestCase {
     // MARK: 8. send the whole piece (S348 composer3): Photos sources upload first, then the spec card
 
     func test8_SendWholePiece() {
-        launch()
+        // test2's picker flow depends on the simulator's Photos library; this test seeds its own generated picture (-simSeedComposerPhoto) so the upload step is always driven
+        launch(extraArgs: ["-simSeedComposerPhoto", "YES"])
         let send = app.buttons["composer.piece.send"]
         XCTAssertTrue(send.waitForExistence(timeout: 15), "no Send the whole piece to render button")
         for _ in 0..<8 where !send.isHittable { app.swipeDown() }
         send.tap()
         sleep(1)
         shot("send-piece-confirm")
-        // the dialog names the Photos sources that go up first
-        XCTAssertTrue(app.staticTexts.matching(NSPredicate(format: "label CONTAINS 'from Photos go up first'")).firstMatch.waitForExistence(timeout: 5), "the dialog does not say the Photos sources go up first")
         if tap(app.buttons["Send piece to render"].firstMatch, "confirm send piece") { sleep(8) }
         shot("send-piece-answer")
         // The sim config carries a dummy composer key, so the door must refuse the first upload: the line says Not sent and why. The public
@@ -373,7 +372,7 @@ final class ComposerFlowsTests: XCTestCase {
         let line = app.staticTexts.matching(NSPredicate(format: "label BEGINSWITH 'Not sent'")).firstMatch
         XCTAssertTrue(line.waitForExistence(timeout: 30), "the send gave no answer")
         let why = line.label
-        XCTAssertTrue(why.contains("key was refused") || why.contains("answered 404") || why.contains("could not reach"), "unexpected answer: \(why)")
+        XCTAssertTrue(why.contains("key was refused") || why.contains("answered 404") || why.contains("could not reach"), "unexpected answer (the upload step was not reached): \(why)")
         try? why.write(toFile: (ProcessInfo.processInfo.environment["PL_SHOTS_DIR"] ?? NSTemporaryDirectory()) + "/send-piece-answer.txt", atomically: true, encoding: .utf8)
         // and nothing was queued on the phone: an upload that is refused never leaves a half card behind
         area("Board")

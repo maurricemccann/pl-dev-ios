@@ -168,6 +168,27 @@ struct ComposerExtra: Codable, Identifiable, Hashable {
         return e
     }
 
+    #if targetEnvironment(simulator)
+    /// Simulator only (composer-e2e): a generated picture added as a Photos source and attached to the piece's last shot, so the upload step can be driven
+    /// without the system picker. Never compiled into a device build, and never touches the real Photos library.
+    func seedForSimulator() {
+        let id = "ph_5eed0001"
+        guard extra(id) == nil else { return }
+        let f = UIGraphicsImageRendererFormat(); f.scale = 1
+        let img = UIGraphicsImageRenderer(size: CGSize(width: 640, height: 480), format: f).image { c in
+            UIColor.systemTeal.setFill(); c.fill(CGRect(x: 0, y: 0, width: 640, height: 480))
+            UIColor.white.setFill(); c.fill(CGRect(x: 160, y: 120, width: 320, height: 240))
+        }
+        guard let jpg = img.jpegData(compressionQuality: 0.85), (try? jpg.write(to: ComposerMedia.dir.appendingPathComponent(id + ".jpg"), options: .atomic)) != nil else { return }
+        let e = ComposerExtra(id: id, kind: "media", name: "photo-seed", catalog: "Photos", path: id + ".jpg", ext: ".jpg", bytes: jpg.count, width: 640, height: 480,
+                              duration: nil, video: false, trimIn: nil, trimOut: nil, remote: nil, made: .now)
+        add(e, thumb: img)
+        let pieces = ComposerPieces.shared
+        if pieces.piece.shots.isEmpty { pieces.addShot() }
+        _ = pieces.attach(e.asset, to: pieces.piece.shots.last?.id)
+    }
+    #endif
+
     // MARK: Curve Library
 
     @discardableResult func addLibrary(_ it: LibraryItem, model: AppModel) async -> ComposerExtra {

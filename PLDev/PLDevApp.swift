@@ -33,6 +33,7 @@ struct PLDevApp: App {
                 .task {
                     let d = UserDefaults.standard
                     if let path = d.string(forKey: "simConfig"), AppModel.shared.config == nil { AppModel.shared.loadConfigForSimulator(from: URL(fileURLWithPath: path)) }
+                    if d.bool(forKey: "simSeedComposerPhoto") { ComposerExtras.shared.seedForSimulator() }   // composer-e2e test8: a generated picture on the piece, no picker
                     if let s = d.string(forKey: "simLink"), let u = URL(string: s), let link = DeepLink(url: u) {
                         try? await Task.sleep(for: .seconds(2)); AppModel.shared.open(link)
                     }
