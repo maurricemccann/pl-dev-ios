@@ -105,8 +105,8 @@ final class ComposerFlowsTests: XCTestCase {
         XCTAssertEqual(app.textFields["Title of shot 2"].value as? String, "the curve")
 
         // duration: raise shot 1 by two steps of 0.5 s
-        let inc = app.steppers.firstMatch
-        if reveal(inc) { for _ in 0..<3 { inc.coordinate(withNormalizedOffset: CGVector(dx: 0.8, dy: 0.5)).tap(); usleep(400_000) } } else { tree("stepper"); XCTFail("no duration stepper") }
+        let inc = app.buttons["composer.dur.up"].firstMatch
+        if reveal(inc) { for _ in 0..<3 { inc.tap(); usleep(400_000) } } else { tree("stepper"); XCTFail("no duration stepper") }
         shot("duration-raised")
         for _ in 0..<8 { app.swipeDown() }
 

@@ -339,7 +339,12 @@ struct ShotCard: View {
                 TextField("", value: Binding(get: { shot.duration }, set: { v in store.patch(shot.id) { $0.duration = max(0.1, v) } }), format: .number.precision(.fractionLength(0...1)))
                     .keyboardType(.decimalPad).multilineTextAlignment(.trailing).cmpNum(14).frame(width: 56).padding(.vertical, 6).padding(.horizontal, 8)
                     .background(CMP.bg.opacity(0.6), in: RoundedRectangle(cornerRadius: 8, style: .continuous)).overlay { RoundedRectangle(cornerRadius: 8, style: .continuous).strokeBorder(CMP.line, lineWidth: 0.6) }
-                Stepper("Duration", value: Binding(get: { shot.duration }, set: { v in store.patch(shot.id) { $0.duration = max(0.1, v) } }), in: 0.1...600, step: 0.5).labelsHidden()
+                HStack(spacing: 0) {
+                    ForEach([("minus", -0.5, "composer.dur.down", "Shorter"), ("plus", 0.5, "composer.dur.up", "Longer")], id: \.2) { icon, step, ident, label in
+                        Button { store.patch(shot.id) { $0.duration = min(600, max(0.1, $0.duration + step)) } } label: { Image(systemName: icon).font(.system(size: 15, weight: .semibold)).frame(width: 44, height: 34) }
+                            .accessibilityIdentifier(ident).accessibilityLabel(label)
+                    }
+                }.background(CMP.bg.opacity(0.6), in: Capsule()).overlay { Capsule().strokeBorder(CMP.line, lineWidth: 0.6) }
                 Spacer()
                 Text("\(shot.sourceIds.count) src").cmpNum(11).foregroundStyle(CMP.muted)
             }
