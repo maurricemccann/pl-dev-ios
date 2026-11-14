@@ -19,8 +19,14 @@ import UIKit
     var q: [CGPoint] = []            // distort corners (top-left, top-right, bottom-right, bottom-left)
     var q0: [CGPoint] = []
     var D: [CGPoint] = []            // warp: displacement of each of the 16 nodes
-    var smooth = true                // bicubic or nearest
-    var magnetic = false
+    enum Resample: String, CaseIterable { case bicubic, bilinear, nearest
+        var label: String { rawValue.capitalized }
+        var quality: CGInterpolationQuality { switch self { case .bicubic: .high; case .bilinear: .low; case .nearest: .none } }
+    }
+    var interp: Resample = .bicubic   // how the picture is resampled: bicubic, bilinear or nearest
+    var smooth: Bool { get { interp != .nearest } set { interp = newValue ? .bicubic : .nearest } }
+    var magnetic = false              // Magnetics: a turn locks to 15 degree steps, a move to the middle of the picture
+    var docCentre: CGPoint?
     let before: Data                 // the layer before it was lifted
     let selBefore: NativeSelection.Snap?
     var drag: Drag?
@@ -158,7 +164,7 @@ import UIKit
         default:
             c.saveGState()
             c.translateBy(x: cx, y: cy); c.rotate(by: rot); c.scaleBy(x: fx * sx, y: fy * sy)
-            c.interpolationQuality = smooth ? .high : .none
+            c.interpolationQuality = interp.quality
             c.translateBy(x: -w0 / 2, y: h0 / 2); c.scaleBy(x: 1, y: -1)   // upright picture on a y-down canvas
             c.draw(src, in: CGRect(x: 0, y: 0, width: w0, height: h0))
             c.restoreGState()
@@ -280,6 +286,11 @@ import UIKit
         case .outside: if hypot(x - d.x, y - d.y) > 4 / scale { d.moved = true }
         case .move:
             cx = d.cx + x - d.x; cy = d.cy + y - d.y
+            if magnetic, let m = docCentre {   // within 12 screen points of the middle of the picture it locks to it
+                let g = 12 / max(0.05, scale)
+                if abs(cx - Double(m.x)) < g { cx = Double(m.x) }
+                if abs(cy - Double(m.y)) < g { cy = Double(m.y) }
+            }
         case .rot:
             var a = atan2(y - cy, x - cx) + .pi / 2
             let qq = Double.pi / 12, n = (a / qq).rounded() * qq

@@ -1,4 +1,5 @@
 import SwiftUI
+import TipKit
 import UIKit
 
 /// PL Paint on the iPhone: the only canvas. Everything the laptop app does, native: his brushes and packs, layers, groups, masks, blends,
@@ -6,6 +7,7 @@ import UIKit
 struct NativeCanvasView: View {
     let model: AppModel
     var openID: String? = nil
+    var openPanel: NativePanel? = nil
     @State private var canvas = NativeCanvasModel()
     @State private var showSizes = false
     @State private var confirmClear = false
@@ -24,7 +26,7 @@ struct NativeCanvasView: View {
                 if canvas.uiHidden { hiddenControls }
                 else {
                     if let l = canvas.line { ResultLine(text: l).padding(8).glassControl(in: Capsule()).transition(.opacity) }
-                    if canvas.hasDoc { modeBar; bottomBar }
+                    if canvas.hasDoc { TipView(PaintGesturesTip()).tipBackground(.clear); modeBar; bottomBar }
                 }
             }
             .padding(.horizontal, 12).padding(.vertical, 6)
@@ -47,6 +49,7 @@ struct NativeCanvasView: View {
     private func start() {
         canvas.onChange = { Task { await sync.changed(model: model, canvas: canvas) } }
         if let id = openID { canvas.open(id: id) } else if !canvas.hasDoc, let id = NativeStore.loadIndex().current { canvas.open(id: id) }
+        if let p = openPanel { canvas.panel = p }
         Task { await sync.run(model: model, canvas: canvas) }
     }
 
@@ -128,6 +131,7 @@ struct NativeCanvasView: View {
             }
             Section {
                 Button { canvas.panel = .assists } label: { Label("Assists: symmetry, guides, tile", systemImage: "square.split.diagonal") }
+                Button { canvas.panel = .tools2 } label: { Label("More tools: facet, echo, nodes, lights, seams", systemImage: "wand.and.stars") }
                 Button { canvas.panel = .sync } label: { Label("Sync with the laptop", systemImage: "arrow.triangle.2.circlepath") }
                 Button { canvas.panel = .settings } label: { Label("Settings", systemImage: "gearshape") }
                 Button { canvas.panel = .handbook } label: { Label("Handbook", systemImage: "book") }
@@ -165,8 +169,18 @@ struct NativeCanvasView: View {
                 Button("Done") { canvas.setMode(.draw) }.buttonStyle(.bordered)
             }.padding(10).glassControl(in: RoundedRectangle(cornerRadius: 18, style: .continuous))
         case .draw:
-            if canvas.maskEditing { maskBar }
-            else if canvas.sym != .off || canvas.guide != .off || canvas.tile != .off { assistChips }
+            if canvas.echoOn { NativeEchoBar(canvas: canvas) }
+            else if canvas.nodeOn { NativeNodeBar(canvas: canvas) }
+            else if canvas.lightOneOn {
+                HStack {
+                    Image(systemName: "lightbulb.max.fill")
+                    Text("Light one: tap inside a closed shape.").font(.footnote)
+                    Spacer()
+                    Button("Done") { canvas.toggleLightOne(false) }.buttonStyle(.borderedProminent).controlSize(.small)
+                }.padding(10).glassControl(in: RoundedRectangle(cornerRadius: 18, style: .continuous))
+            }
+            else if canvas.maskEditing { maskBar }
+            else if canvas.sym != .off || canvas.guide != .off || canvas.tile != .off || canvas.facet || canvas.facetNext || canvas.seam != nil || canvas.lightsOff { assistChips }
         }
     }
 
@@ -213,8 +227,10 @@ struct NativeCanvasView: View {
                 Button("Done") { canvas.commitTransform() }.buttonStyle(.borderedProminent).controlSize(.small)
             }
             HStack {
-                Toggle("Smooth", isOn: Binding(get: { canvas.transform?.smooth ?? true }, set: { canvas.transform?.smooth = $0; canvas.stage?.refreshFloat() })).toggleStyle(.button).controlSize(.small)
-                Toggle("Magnetic", isOn: Binding(get: { canvas.transform?.magnetic ?? false }, set: { canvas.transform?.magnetic = $0 })).toggleStyle(.button).controlSize(.small)
+                Picker("Resample", selection: Binding(get: { canvas.transform?.interp ?? .bicubic }, set: { canvas.transform?.interp = $0; canvas.stage?.refreshFloat() })) {
+                    ForEach(NativeTransform.Resample.allCases, id: \.self) { Text($0.label).tag($0) }
+                }.pickerStyle(.menu).controlSize(.small)
+                Toggle("Magnetics", isOn: Binding(get: { canvas.transform?.magnetic ?? false }, set: { canvas.transform?.magnetic = $0 })).toggleStyle(.button).controlSize(.small)
                 Spacer()
             }.font(.caption)
         }.padding(10).glassControl(in: RoundedRectangle(cornerRadius: 18, style: .continuous))
@@ -236,6 +252,9 @@ struct NativeCanvasView: View {
             if canvas.sym != .off { Label(canvas.sym.label, systemImage: "square.split.2x1").font(.caption2) }
             if canvas.guide != .off { Label(canvas.guide.label, systemImage: "grid").font(.caption2) }
             if canvas.tile != .off { Label("Tile", systemImage: "square.grid.3x3").font(.caption2) }
+            if canvas.facet || canvas.facetNext { Label(canvas.facet ? "Facet" : "Facet once", systemImage: "hexagon").font(.caption2) }
+            if canvas.seam != nil { Label(canvas.seamOn ? "Seams" : "Seams off", systemImage: "scissors").font(.caption2) }
+            if canvas.lightsOff { Label("Lights off", systemImage: "lightbulb.slash").font(.caption2) }
             Spacer(minLength: 0)
             Button("Assists") { canvas.panel = .assists }.font(.caption2).buttonStyle(.bordered).controlSize(.mini)
         }.padding(8).glassControl(in: Capsule())
@@ -328,6 +347,8 @@ struct NativeCanvasView: View {
         case .tweak: NativeTweakSheet(canvas: canvas)
         case .rename: NativeRenameSheet(canvas: canvas)
         case .repeatCheck: NativeRepeatSheet(canvas: canvas)
+        case .tools2: NativeMoreToolsSheet(canvas: canvas).presentationDetents([.medium, .large])
+        case .shareFiles: ShareSheet(items: canvas.shareURLs)
         }
     }
 }
@@ -459,6 +480,11 @@ struct NativeNewCanvasSheet: View {
                     if w * h > 16_777_216 { Text("The largest this phone holds is 16.7 million pixels.").foregroundStyle(.red).font(.caption) }
                     else { Text("\(String(format: "%.1f", Double(w * h) / 1_000_000)) million pixels.").font(.caption).foregroundStyle(.secondary) }
                 }
+                Section {
+                    Button { canvas.startNew(w: 3150, h: 2400, transparent: false, paperID: paper); canvas.loadSeam("717"); canvas.say("Hoodie 717: marks that cross a coloured edge carry on at the same number."); dismiss() } label: {
+                        HStack { Text("Hoodie 717 zip (seams)"); Spacer(minLength: 0); Text("3150 × 2400").foregroundStyle(.secondary).font(.caption) }
+                    }
+                } header: { Text("Garment") } footer: { Text("Printful's pieces on one sheet. A mark that runs off a sewn edge carries on at the same place on the edge it is sewn to. Save the print files from More tools.") }
                 Section("Paper") {
                     Picker("Stock", selection: $paper) { ForEach(NativeToolkit.papers) { Text($0.name).tag($0.id) } }
                     Toggle("Transparent background", isOn: $transparent)

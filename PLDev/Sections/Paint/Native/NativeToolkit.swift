@@ -108,8 +108,26 @@ enum NativeToolkit {
     static var quickProfiles: [Profile] {
         (raw["quickmenu"] as? [[String: Any]] ?? []).map { Profile(name: $0["name"] as? String ?? "Profile", slots: $0["slots"] as? [String] ?? []) }
     }
+    /// The Design Kit's palettes, then two random ones after the House one (the laptop's `kit.js`: new each time the app opens; a Shuffle button draws two more).
     static var palettes: [Palette] {
-        (raw["kitPalettes"] as? [[String: Any]] ?? []).map { Palette(name: $0["name"] as? String ?? "", colors: $0["colors"] as? [String] ?? [], house: $0["house"] as? Bool ?? false) }
+        let base = (raw["kitPalettes"] as? [[String: Any]] ?? []).map { Palette(name: $0["name"] as? String ?? "", colors: $0["colors"] as? [String] ?? [], house: $0["house"] as? Bool ?? false) }
+        guard base.count > 3 else { return base }
+        if randomPicks.count != 2 || randomPicks.contains(where: { $0 >= base.count }) { shuffleRandoms() }
+        let a = base[randomPicks[0]], b = base[randomPicks[1]]
+        var out = base
+        out.insert(Palette(name: "Random: " + a.name, colors: a.colors, house: false), at: 1)
+        out.insert(Palette(name: "Random: " + b.name, colors: b.colors, house: false), at: 2)
+        return out
+    }
+    nonisolated(unsafe) static var randomPicks: [Int] = []
+    static func shuffleRandoms() {
+        let n = (raw["kitPalettes"] as? [[String: Any]] ?? []).count
+        guard n > 3 else { return }
+        let a = Int.random(in: 1..<n)
+        var b = Int.random(in: 1..<n)
+        for _ in 0..<9 where b == a { b = Int.random(in: 1..<n) }
+        if b == a { b = a == 1 ? 2 : 1 }
+        randomPicks = [a, b]
     }
     static var accent: String { raw["kitAccent"] as? String ?? "#c9a84c" }
 

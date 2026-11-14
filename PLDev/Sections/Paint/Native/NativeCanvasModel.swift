@@ -72,6 +72,22 @@ struct GroupRow: Identifiable { let id: Int; let name: String; let visible: Bool
     var syncText = "Not connected"
     var docVersion = 0
     var passPalette = -1              // Passes: each stroke takes the next colour of this palette (-1 = off)
+    var facet = false                 // Facet and Curve: every stroke is straight segments with rounded corners
+    var facetNext = false             // only the next stroke (the laptop's Shift)
+    var tileGuides = true             // smart tile guides: the middle cross, gates, the live ghost
+    var tilePrev = false              // show the tiles around the picture
+    var echoOn = false                // Echo Fill: tap inside a closed shape
+    var echo = EchoSettings()
+    var lightOneOn = false            // Light one: tap inside a closed shape
+    var lightsOff = false { didSet { if lightsOff != oldValue { stage?.rebuild() } } }
+    var nodeOn = false                // Node mode: nodes on the stroke just drawn
+    var nodeMax = 12
+    var seamID: String?               // a garment template is under the art
+    var seamOn = true
+    var swapPencil = false            // the Pencil's tap and squeeze run each other's action
+    var nodeBar = false               // "Finish this line?"
+    var shareURLs: [URL] = []         // files waiting for the share sheet (print files, the hand trace)
+    @ObservationIgnored var bgAlt: String?
 
     var size: Double {
         get { sizes[tool.rawValue]?[0] ?? 28 }
@@ -113,6 +129,13 @@ struct GroupRow: Identifiable { let id: Int; let name: String; let visible: Bool
     @ObservationIgnored var lastStroke: LastStroke?
     @ObservationIgnored var replaying = false
     @ObservationIgnored var passIndex = 0
+    @ObservationIgnored var scratch = false          // a model that only redraws strokes off screen (the colour passes): it never saves, records or counts
+    var seam: SeamSheet?
+    @ObservationIgnored var seamStroke = SeamStroke()
+    var nodes: NodeState?
+    @ObservationIgnored var nodeDrag: NodeDrag?
+    @ObservationIgnored var tileScan: TileScan = TileScan()
+    @ObservationIgnored var tileSheet: (version: Int, image: CGImage)?
     var panel: NativePanel?
 
     struct SelDrag { var shape: SelShape; var p0: CGPoint; var p1: CGPoint; var pts: [CGPoint] }
@@ -193,6 +216,7 @@ struct GroupRow: Identifiable { let id: Int; let name: String; let visible: Bool
         if let t = d.guide["tile"] as? String, let k = TileMode(rawValue: t) { tile = k } else { tile = .off }
         if let s = d.guide["size"] as? Double { guideSize = s } else if let s = d.guide["size"] as? Int { guideSize = Double(s) }
         paper = d.guide["paper"] as? String ?? "plain"
+        loadSeam(d.guide["seam"] as? String)
         vps = [:]
         if let o = d.guide["vps"] as? [String: Any] {
             for (k, v) in o { if let a = v as? [[Double]] { vps[k] = a.compactMap { $0.count == 2 ? CGPoint(x: $0[0], y: $0[1]) : nil } } }
@@ -238,6 +262,7 @@ struct GroupRow: Identifiable { let id: Int; let name: String; let visible: Bool
     // MARK: autosave (3 s after the last change, never more than 12 s of continuous drawing without a save: the laptop's rule)
 
     func markChanged() {
+        if scratch { return }
         dirty = true; docVersion += 1
         NativeTimelapse.shared.changed(self)
         let now = Date()
@@ -257,7 +282,7 @@ struct GroupRow: Identifiable { let id: Int; let name: String; let visible: Bool
     /// Fingers draw only if "Finger paints"; in every other mode a single finger is the tool (select, transform, pick, fill).
     func accepts(pencil: Bool) -> Bool {
         guard doc != nil else { return false }
-        if mode == .draw { return pencil ? true : fingerPaints }
+        if mode == .draw { return pencil || fingerPaints || echoOn || lightOneOn || (nodeOn && nodes != nil) }
         return true
     }
 
@@ -265,6 +290,9 @@ struct GroupRow: Identifiable { let id: Int; let name: String; let visible: Bool
         if pencil { pencilDownAt = time }
         switch mode {
         case .draw:
+            if echoOn { echoFill(at: p); return }
+            if lightOneOn { lightOne(at: p); return }
+            if nodeOn, nodeDown(p) { return }
             if vpBegin(at: p) { return }
             begin(at: p, pressure: pressure, time: time, tilt: tilt)
         case .select: selectDown(p)
@@ -276,6 +304,7 @@ struct GroupRow: Identifiable { let id: Int; let name: String; let visible: Bool
     func touchMoved(_ p: CGPoint, pressure: Double, time: TimeInterval, tilt: (Double, Double)?) {
         switch mode {
         case .draw:
+            if nodeDrag != nil { nodeMove(p); return }
             if vpDrag != nil { vpMove(to: p); return }
             extend(to: p, pressure: pressure, time: time, tilt: tilt)
         case .select: selectMove(p)
@@ -287,8 +316,11 @@ struct GroupRow: Identifiable { let id: Int; let name: String; let visible: Bool
     func touchEnded(_ p: CGPoint) {
         switch mode {
         case .draw:
+            if nodeDrag != nil { nodeUp(); return }
             if vpDrag != nil { vpEnd(); return }
+            let had = live
             end()
+            if nodeOn, let h = had, h.tool == .paint, !h.onMask { nodeAttach(tapAt: p, stroke: h) }
         case .select: selectUp()
         case .transform:
             if let t = transform, let d = t.drag, case .outside = d.kind, !d.moved { t.nudge(toward: p) }
@@ -298,7 +330,7 @@ struct GroupRow: Identifiable { let id: Int; let name: String; let visible: Bool
     }
     func touchCancelled() {
         switch mode {
-        case .draw: cancel()
+        case .draw: nodeDrag = nil; cancel()
         case .select: selDrag = nil; stage?.updateOverlay()
         case .transform: transform?.drag = nil
         default: break
@@ -326,7 +358,7 @@ struct GroupRow: Identifiable { let id: Int; let name: String; let visible: Bool
         st.global = stabAll
         live = Live(stroker: st, brush: B, tool: tool, layer: d.active, target: onMask ? L.maskPx! : L.pixels, onMask: onMask, maskHide: hide,
                     color: col, color2: UIColor(color2).hex, op: opacity, size: size, t0: time)
-        wetState = WetState()
+        wetState = WetState(); seamStroke = SeamStroke()
         if tool == .paint, !onMask { pushRecent(UIColor(color).hex) }
         extend(to: p, pressure: pressure, time: time, tilt: tilt)
     }
@@ -359,6 +391,7 @@ struct GroupRow: Identifiable { let id: Int; let name: String; let visible: Bool
     func refreshLive(_ s: Live) {
         let direct = s.tool != .paint || s.onMask
         stage?.refresh(active: s.layer, wetOpacity: direct ? 0 : s.op)
+        if tile != .off && tileGuides { stage?.updateOverlay() }
     }
 
     /// Hold still at the end and QuickShape takes the stroke (0.6 s, the laptop's).
@@ -439,6 +472,10 @@ struct GroupRow: Identifiable { let id: Int; let name: String; let visible: Bool
             finishDirect(s, d, L)
             return
         }
+        if !s.snapped, s.tool == .paint, !s.onMask, facet || facetNext {
+            facetNext = false
+            facetApply(&s, d)
+        }
         if !s.snapped {
             // the line catches up with the pen, and an end taper needs the whole length, so the stroke is laid down once more (the laptop's `finishStroke`)
             var st = s.stroker
@@ -449,6 +486,7 @@ struct GroupRow: Identifiable { let id: Int; let name: String; let visible: Bool
             s.stroker = st
             if s.brush.needsLength, s.stroker.dist > 8, let box = s.dirty?.integral {
                 if s.tool == .paint, !s.onMask { wet?.clear(box) } else { for (k, data) in s.before { s.target.setTile(tx: k.tx, ty: k.ty, data) } }
+                seamStroke = SeamStroke()
                 var again = NativeStroker(s.brush, size: s.size, total: s.stroker.dist)
                 again.global = stabAll
                 for q in s.raw { let dabs = again.add(x: q.x, y: q.y, p: q.p, t: q.t, tilt: q.tilt); lay(dabs, &s, on: d) }
@@ -503,7 +541,7 @@ struct GroupRow: Identifiable { let id: Int; let name: String; let visible: Bool
         if s.tool == .paint, !s.onMask, !s.snapped, let li = logIdx {
             lastStroke = LastStroke(brush: s.brush, size: s.size, op: s.op, color: s.color, color2: s.color2, layer: s.layer, pts: s.pts, depth: undo.done.count, logIdx: li)
         } else { lastStroke = nil }
-        NativeStudy.shared.stroke(s, doc: d, canvas: self)
+        if !scratch { NativeStudy.shared.stroke(s, doc: d, canvas: self) }
         syncFlags()
         stage?.refresh(active: s.layer, wetOpacity: 0)
         if s.onMask { stage?.refreshAll() }
@@ -600,10 +638,10 @@ struct GroupRow: Identifiable { let id: Int; let name: String; let visible: Bool
     func swapColours() { let t = color; color = color2; color2 = t }
 
     func selectBrush(_ b: Brush) {
-        brush = b
+        brush = NativeBrushColours.apply(b)
         if brushColors {
-            if !b.t("color").isEmpty { setColour(hex: b.t("color")) }
-            if !b.t("color2").isEmpty, let c = Hex.rgb(b.t("color2")) { color2 = Color(red: c.0, green: c.1, blue: c.2) }
+            if !brush.t("color").isEmpty { setColour(hex: brush.t("color")) }
+            if !brush.t("color2").isEmpty, let c = Hex.rgb(brush.t("color2")) { color2 = Color(red: c.0, green: c.1, blue: c.2) }
         }
         savePrefs()
     }
@@ -617,7 +655,7 @@ struct GroupRow: Identifiable { let id: Int; let name: String; let visible: Bool
     func savePrefs() {
         let o: [String: Any] = ["tool": tool.rawValue, "sizes": sizes, "color": UIColor(color).hex, "color2": UIColor(color2).hex, "brush": brush.id, "finger": fingerPaints, "palm": palmGuard,
                                 "stab": stabAll, "quickShape": quickShape, "assist": assist, "rapid": rapidMs, "gest": gestures, "recent": recent, "brushColors": brushColors, "tangent": tangentLock,
-                                "quickAt": quickAt, "debug": debug, "fillThreshold": fillThreshold, "quick": quick.map { ["name": $0.name, "slots": $0.slots] }]
+                                "quickAt": quickAt, "debug": debug, "facet": facet, "tileGuides": tileGuides, "tilePrev": tilePrev, "swapPencil": swapPencil, "nodeMax": nodeMax, "echo": [echo.step, echo.weight, echo.count, echo.first], "fillThreshold": fillThreshold, "quick": quick.map { ["name": $0.name, "slots": $0.slots] }]
         if let d = try? JSONSerialization.data(withJSONObject: o) { UserDefaults.standard.set(d, forKey: "plpn-prefs") }
     }
     func loadPrefs() {
@@ -627,12 +665,15 @@ struct GroupRow: Identifiable { let id: Int; let name: String; let visible: Bool
         if let s = o["sizes"] as? [String: [Double]] { sizes.merge(s) { _, n in n } }
         if let c = o["color"] as? String { setColour(hex: c) }
         if let c = o["color2"] as? String, let r = Hex.rgb(c) { color2 = Color(red: r.0, green: r.1, blue: r.2) }
-        if let id = o["brush"] as? String, let b = (NativeToolkit.all + NativeMine.brushes).first(where: { $0.id == id }) { brush = b }
+        if let id = o["brush"] as? String, let b = (NativeToolkit.all + NativeMine.brushes).first(where: { $0.id == id }) { brush = NativeBrushColours.apply(b) }
         fingerPaints = o["finger"] as? Bool ?? false; palmGuard = o["palm"] as? Bool ?? true
         stabAll = o["stab"] as? Double ?? 0; quickShape = o["quickShape"] as? Bool ?? true; assist = o["assist"] as? Bool ?? false
         rapidMs = o["rapid"] as? Double ?? 650; recent = o["recent"] as? [String] ?? []; brushColors = o["brushColors"] as? Bool ?? true
         tangentLock = o["tangent"] as? Bool ?? false; quickAt = o["quickAt"] as? Int ?? 0; debug = o["debug"] as? Bool ?? false
         fillThreshold = o["fillThreshold"] as? Double ?? 12
+        facet = o["facet"] as? Bool ?? false; tileGuides = o["tileGuides"] as? Bool ?? true; tilePrev = o["tilePrev"] as? Bool ?? false
+        swapPencil = o["swapPencil"] as? Bool ?? false; nodeMax = o["nodeMax"] as? Int ?? 12
+        if let e = o["echo"] as? [Double], e.count == 4 { echo = EchoSettings(step: e[0], weight: e[1], count: e[2], first: e[3]) }
         if let g = o["gest"] as? [String: String] { gestures.merge(g) { _, n in n } }
         if let q = o["quick"] as? [[String: Any]], !q.isEmpty { quick = q.map { NativeToolkit.Profile(name: $0["name"] as? String ?? "Profile", slots: $0["slots"] as? [String] ?? []) } }
     }

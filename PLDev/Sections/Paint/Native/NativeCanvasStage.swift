@@ -75,7 +75,7 @@ import UIKit
         stageView.bounds = CGRect(x: 0, y: 0, width: d.w, height: d.h)
         stageView.center = CGPoint(x: bounds.midX, y: bounds.midY)
         stageView.transform = xf
-        stageView.backgroundColor = d.bgVis ? (Hex.color(d.bg).map { UIColor(cgColor: $0) } ?? .white) : .clear
+        stageView.backgroundColor = model.lightsOff ? UIColor(red: 0.027, green: 0.024, blue: 0.039, alpha: 1) : d.bgVis ? (Hex.color(d.bg).map { UIColor(cgColor: $0) } ?? .white) : .clear
         let frame = CGRect(x: 0, y: 0, width: d.w, height: d.h)
         if d.usesCustomBlend {
             // a PSD-only blend is on: the whole picture is composed per pixel, once, and shown as one layer
@@ -144,7 +144,8 @@ import UIKit
         c.frame = frame; c.contentsScale = 1; c.contentsGravity = .resize
         c.contents = l.pixels.image()
         c.isHidden = !l.visible
-        c.opacity = Float(l.opacity)
+        let glowing = ((l.meta["glow"] as? Double) ?? Double(l.meta["glow"] as? Int ?? 0)) > 0
+        c.opacity = Float(l.opacity * (model.lightsOff && !glowing ? 0.1 : 1))   // Lights off: only glowing layers carry the piece
         if let f = NativeBlend.mode(l.meta["blend"] as? String).filter { c.compositingFilter = f }
         if let m = l.maskPx?.image() {
             let mk = CALayer(); mk.frame = frame; mk.contentsGravity = .resize; mk.contents = m; c.mask = mk
@@ -160,7 +161,7 @@ import UIKit
         let gl = CALayer(); gl.frame = frame; gl.contentsGravity = .resize
         gl.contents = NativeEffects.blur(img, radius: r)
         gl.compositingFilter = "plusL"
-        gl.opacity = Float(min(1, g * 0.8))
+        gl.opacity = Float(min(1, g * (model.lightsOff ? 1.2 : 0.8)))
         return gl
     }
 
@@ -325,10 +326,14 @@ import UIKit
     private func paintOverlay(_ c: CGContext, _ rect: CGRect) {
         guard let d = model.doc else { return }
         let gold = UIColor(red: 0.9, green: 0.78, blue: 0.4, alpha: 1)
+        drawTilePreview(c, d)
+        drawSeam(c, d)
         // guides
         if model.guide != .off { drawGuide(c, d) }
         if model.sym != .off { drawSymmetry(c, d) }
         if model.tile != .off { drawTileEdges(c, d) }
+        drawTileGuides(c, d)
+        drawNodes(c)
         // a selection being dragged
         if let dr = model.selDrag {
             c.saveGState()
@@ -499,8 +504,14 @@ extension CanvasStage: UIGestureRecognizerDelegate, UIPencilInteractionDelegate 
         if model.palmGuard, ProcessInfo.processInfo.systemUptime - model.pencilDownAt < 0.35 { return false }
         return true
     }
-    func pencilInteractionDidTap(_ interaction: UIPencilInteraction) {
-        model.run(action: model.gestures["penbtn2"] ?? "Eraser (toggle)")
+    /// The Pencil's double tap runs the side button's action ("Pen side button"); the squeeze of a Pencil Pro runs the second button's ("Pen second
+    /// button"). Settings > Swap the Pencil's two buttons trades them. Either way it runs on the press and never draws.
+    func pencilInteraction(_ interaction: UIPencilInteraction, didReceiveTap tap: UIPencilInteraction.Tap) {
+        model.run(action: model.gestures[model.swapPencil ? "penbtn2" : "penbtn"] ?? "Eyedropper")
+    }
+    func pencilInteraction(_ interaction: UIPencilInteraction, didReceiveSqueeze squeeze: UIPencilInteraction.Squeeze) {
+        guard squeeze.phase == .ended else { return }
+        model.run(action: model.gestures[model.swapPencil ? "penbtn" : "penbtn2"] ?? "Eraser (toggle)")
     }
 }
 

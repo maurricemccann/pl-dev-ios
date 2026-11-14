@@ -32,7 +32,7 @@ extension NativeCanvasModel {
 
     /// The dab and its copies: across the symmetry guide, and again on the far side of the picture when tile mode is on.
     func copies(of dab: Dab, brush B: Brush, size: Double, in d: NativeDoc) -> [Dab] {
-        if sym == .off && tile == .off { return [dab] }
+        if sym == .off && tile == .off && !(seam != nil && seamOn) { return [dab] }
         let W = Double(d.w), H = Double(d.h)
         let a0 = symPoints(dab.x, dab.y, d)
         let b0 = dab.tw.map { symPoints(dab.x + $0.dx, dab.y + $0.dy, d) }
@@ -42,7 +42,17 @@ extension NativeCanvasModel {
             var d1 = dab
             d1.x = q.0; d1.y = q.1
             if let tw = dab.tw, let b0 { d1.tw = Twin(dx: b0[i].0 - q.0, dy: b0[i].1 - q.1, f: tw.f) }
-            out.append(d1)
+            if seam != nil && seamOn {   // seam mode: the same dab on the edge it is sewn to, turned to that edge
+                let reach = pad0 + 4 + (dab.edge ? size : 0)
+                let sc = dab.edge ? seamReplay(q: CGPoint(x: q.0, y: q.1), c: b0.map { CGPoint(x: $0[i].0, y: $0[i].1) }, reach: reach)
+                                  : seamCopies(q: CGPoint(x: q.0, y: q.1), c: b0.map { CGPoint(x: $0[i].0, y: $0[i].1) }, reach: pad0 + 4)
+                if !sc.skip { out.append(d1) }
+                for c in sc.items {
+                    var ds = d1; ds.x = c.x; ds.y = c.y; ds.ang += c.turn; ds.dir += c.turn
+                    if let tw = dab.tw { ds.tw = Twin(dx: c.cx - c.x, dy: c.cy - c.y, f: tw.f) }
+                    out.append(ds)
+                }
+            } else { out.append(d1) }
             if tile == .off { continue }
             for dx in [-W, 0, W] {
                 for dy in (tile == .both ? [-H, 0, H] : [0.0]) {
@@ -145,7 +155,7 @@ extension NativeCanvasModel {
     // MARK: QuickShape
 
     private func dist(_ a: CGPoint, _ b: CGPoint) -> Double { hypot(Double(a.x - b.x), Double(a.y - b.y)) }
-    private func douglasPeucker(_ pts: [CGPoint], _ tol: Double) -> [CGPoint] {
+    func douglasPeucker(_ pts: [CGPoint], _ tol: Double) -> [CGPoint] {
         if pts.count < 3 { return pts }
         let a = pts[0], b = pts[pts.count - 1]
         let L = max(1e-9, dist(a, b))
@@ -210,10 +220,10 @@ extension NativeCanvasModel {
     }
 
     /// Lays the stroke down again along a clean path.
-    private func relay(_ s: inout Live, path: [CGPoint], _ d: NativeDoc) {
+    func relay(_ s: inout Live, path: [CGPoint], _ d: NativeDoc) {
         if s.tool == .paint, !s.onMask { if let w = wet, let box = s.dirty?.integral { w.clear(box) } }
         else { for (k, data) in s.before { s.target.setTile(tx: k.tx, ty: k.ty, data) } }
-        s.dirty = nil
+        s.dirty = nil; seamStroke = SeamStroke()
         var st = NativeStroker(s.brush, size: s.size)
         st.global = stabAll
         s.stroker = st; s.raw = []
@@ -424,6 +434,7 @@ extension NativeCanvasModel {
         d.guide["size"] = Int(guideSize)
         d.guide["tile"] = tile.rawValue
         d.guide["paper"] = paper
+        d.guide["seam"] = seamID ?? NSNull()
         if vps.isEmpty { d.guide["vps"] = NSNull() }
         else { d.guide["vps"] = Dictionary(uniqueKeysWithValues: vps.map { ($0.key, $0.value.map { [Double($0.x), Double($0.y)] }) }) }
     }
