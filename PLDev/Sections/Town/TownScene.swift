@@ -43,13 +43,13 @@ enum TownMode: String, CaseIterable, Identifiable, Sendable { case tasks = "Task
     private var glows: [String: SKSpriteNode] = [:]
     private let bubble = SKNode()
     private let bubbleBox = SKSpriteNode()
-    private let bubbleText = SKLabelNode(fontNamed: "Menlo-Bold")
+    private let bubbleText = SKLabelNode(fontNamed: TownFace.name)
     private var bubbleUntil: CGFloat = 0
     private var lastLiveAt: String?
     private var lastKinds: [String: String] = [:]
     private var greeted = false
     private let board = SKNode()
-    private let boardLine = SKLabelNode(fontNamed: "Menlo-Bold")
+    private let boardLine = SKLabelNode(fontNamed: TownFace.name)
     private let cart = SKSpriteNode(color: townHex("#ff8a2a"), size: CGSize(width: 30, height: 9))
     private var schedule: [TownFeed.Sched] = []
     private var feed: TownFeed?
@@ -120,8 +120,8 @@ enum TownMode: String, CaseIterable, Identifiable, Sendable { case tasks = "Task
             let post = SKSpriteNode(color: townHex("#2a1a10"), size: CGSize(width: 2, height: 22)); post.anchorPoint = .zero; post.position = CGPoint(x: 28, y: -22)
             let frame = SKSpriteNode(color: townHex("#2a1a10"), size: CGSize(width: 60, height: 24)); frame.anchorPoint = .zero; frame.position = CGPoint(x: -1, y: -1)
             let face = SKSpriteNode(color: townHex("#ff8a2a"), size: CGSize(width: 58, height: 22)); face.anchorPoint = .zero
-            let next = SKLabelNode(fontNamed: "Menlo-Bold"); next.fontSize = 7; next.text = "NEXT"; next.fontColor = townHex("#2a1a10"); next.horizontalAlignmentMode = .left; next.verticalAlignmentMode = .baseline; next.position = CGPoint(x: 13, y: 13)
-            boardLine.fontSize = 7; boardLine.text = "NONE"; boardLine.fontColor = townHex("#2a1a10"); boardLine.horizontalAlignmentMode = .left; boardLine.verticalAlignmentMode = .baseline; boardLine.position = CGPoint(x: 2, y: 3)
+            let next = SKLabelNode(fontNamed: TownFace.name); next.fontSize = 7 * TownFace.scale; next.text = "NEXT"; next.fontColor = townHex("#2a1a10"); next.horizontalAlignmentMode = .left; next.verticalAlignmentMode = .baseline; next.position = CGPoint(x: 13, y: 13)
+            boardLine.fontSize = 7 * TownFace.scale; boardLine.text = "NONE"; boardLine.fontColor = townHex("#2a1a10"); boardLine.horizontalAlignmentMode = .left; boardLine.verticalAlignmentMode = .baseline; boardLine.position = CGPoint(x: 2, y: 3)
             [post, frame, face, next, boardLine].forEach { board.addChild($0) }
             world.addChild(board)
             // the orange cart the cloud sessions arrive on
@@ -131,7 +131,7 @@ enum TownMode: String, CaseIterable, Identifiable, Sendable { case tasks = "Task
         }
         bubble.zPosition = 40; bubble.alpha = 0
         bubbleBox.color = townHex("#f8f0d8"); bubbleBox.anchorPoint = CGPoint(x: 0.5, y: 0)
-        bubbleText.fontSize = 7; bubbleText.fontColor = townHex("#2a1a10"); bubbleText.verticalAlignmentMode = .center; bubbleText.horizontalAlignmentMode = .center
+        bubbleText.fontSize = 7 * TownFace.scale; bubbleText.fontColor = townHex("#2a1a10"); bubbleText.verticalAlignmentMode = .center; bubbleText.horizontalAlignmentMode = .center
         bubble.addChild(bubbleBox); bubble.addChild(bubbleText)
         world.addChild(bubble)
     }
@@ -147,8 +147,8 @@ enum TownMode: String, CaseIterable, Identifiable, Sendable { case tasks = "Task
 
     // MARK: sprites
 
-    private func sprite(_ tint: UIColor?, scale: CGFloat = 1) -> SKSpriteNode {
-        let n = SKSpriteNode(texture: TownSprites.frames["down"], size: CGSize(width: 40 * scale, height: 56 * scale))
+    private func sprite(_ tint: UIColor?, scale: CGFloat = 1, her: Bool = false) -> SKSpriteNode {
+        let n = SKSpriteNode(texture: TownSprites.frames[(her ? "her-" : "") + "down"], size: CGSize(width: 40 * scale, height: 56 * scale))
         n.anchorPoint = CGPoint(x: 0.5, y: 0)
         if let tint { n.color = tint; n.colorBlendFactor = 0.82 }
         return n
@@ -257,13 +257,13 @@ enum TownMode: String, CaseIterable, Identifiable, Sendable { case tasks = "Task
             if n.role == role { n.task = task; if let tx { n.tx = tx }; return n }
             n.node.removeFromParent(); npcs[key] = nil   // his state changed: a new body with the right mark
         }
-        let node = sprite(tint, scale: scale)
+        let node = sprite(tint, scale: scale, her: role == "visitor")
         node.zPosition = 10 + scale; node.position = CGPoint(x: x, y: feet)
         node.name = "npc:" + key
         world.addChild(node)
         let n = Npc(key: key, node: node, role: role, task: task, tx: tx ?? x, scale: scale)
         if role == "his" || role == "blocked" {
-            let m = SKLabelNode(fontNamed: "Menlo-Bold"); m.fontSize = 9; m.text = role == "his" ? "!" : "X"
+            let m = SKLabelNode(fontNamed: TownFace.name); m.fontSize = 9 * TownFace.scale; m.text = role == "his" ? "!" : "X"
             m.fontColor = role == "blocked" ? townHex("#ff4a3a") : townHex("#fff8e0")
             m.position = CGPoint(x: 0, y: 60 * scale); m.zPosition = 5
             m.run(.repeatForever(.sequence([.fadeAlpha(to: 0, duration: 0.25), .wait(forDuration: 0.25), .fadeAlpha(to: 1, duration: 0.01), .wait(forDuration: 0.5)])))
@@ -402,7 +402,7 @@ enum TownMode: String, CaseIterable, Identifiable, Sendable { case tasks = "Task
             return
         }
         let face = moving ? (dx > 0 ? "right" : "left") : "down"
-        if let tex = TownSprites.frames[face], node.texture !== tex { node.texture = tex }
+        if let tex = TownSprites.frames[(n.role == "visitor" ? "her-" : "") + face], node.texture !== tex { node.texture = tex }
         let baseY = n.role == "me" ? feet + 2 : feet
         node.position.y = baseY + (moving ? abs(sin(clock * 9 + CGFloat(townHash(n.key) % 7))) * 2.2 : 0)
         if n.role == "ghost" { node.alpha = 0.5 + 0.12 * sin(clock * 2 + CGFloat(townHash(n.key) % 5)) }

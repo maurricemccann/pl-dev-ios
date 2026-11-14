@@ -1,8 +1,23 @@
 import SwiftUI
+import CoreText
+import UIKit
 
 /// Task Town's own skin, from the web page (`app/town/page.tsx` in the gallery): the dark brown night behind the street, the gold chips with
 /// their hard offset shadow, the cream dialog box with its dark rim, the cyan live line. The page sets these in "Press Start 2P"; the native
-/// twin is the system's heavy monospaced face (Menlo), which keeps the pixel feel and scales with the reader's text size.
+/// twin is VT323 from his Design Kit (`vt323.ttf`, bundled here, registered once at first use), a pixel terminal face drawn narrower than
+/// Press Start 2P, so sizes are scaled by `TownFace.k`. If the file cannot load, Menlo bold stands in.
+enum TownFace {
+    static let k: CGFloat = 1.5
+    static let ready: Bool = {
+        guard let url = Bundle.main.url(forResource: "vt323", withExtension: "ttf") else { return false }
+        CTFontManagerRegisterFontsForURL(url as CFURL, .process, nil)
+        return UIFont(name: "VT323-Regular", size: 12) != nil
+    }()
+    static var name: String { ready ? "VT323-Regular" : "Menlo-Bold" }
+    static var scale: CGFloat { ready ? k : 1 }
+    static func ui(_ size: CGFloat) -> UIFont { UIFont(name: name, size: size * scale) ?? .monospacedSystemFont(ofSize: size, weight: .heavy) }
+}
+
 enum TownInk {
     static let ground = Color(hex: 0x120c06)
     static let panel = Color(hex: 0x2a1a10)
@@ -16,7 +31,7 @@ enum TownInk {
     static let dim = Color(hex: 0x8a7a60)
     static let hud = Color(red: 20 / 255, green: 12 / 255, blue: 4 / 255).opacity(0.82)
 
-    static func px(_ size: CGFloat, relativeTo style: Font.TextStyle = .caption) -> Font { .custom("Menlo-Bold", size: size, relativeTo: style) }
+    static func px(_ size: CGFloat, relativeTo style: Font.TextStyle = .caption) -> Font { .custom(TownFace.name, size: size * TownFace.scale, relativeTo: style) }
 }
 
 /// The web's `chip(on)`: a square button with a 2 pt dark rim and a hard 2 pt shadow, gold when on, dark when off.
