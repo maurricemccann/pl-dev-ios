@@ -45,7 +45,8 @@ struct NativeStroker: Sendable {
 
     private mutating func rnd() -> Double { seed = (seed * 16807).truncatingRemainder(dividingBy: 2147483647); return seed / 2147483647 }
     private func vn(_ x: Double, _ off: Int) -> Double {
-        let i = Int(floor(x)), t = x - floor(x), a = tab[(i + off) & 63], c = tab[(i + off + 1) & 63], u = t * t * (3 - 2 * t)
+        guard x.isFinite else { return 0 }   // Int(NaN or inf) traps: a bad slider value must not kill the app
+        let i = Int(floor(x).truncatingRemainder(dividingBy: 1_000_000)), t = x - floor(x), a = tab[(i + off) & 63], c = tab[(i + off + 1) & 63], u = t * t * (3 - 2 * t)
         return a + (c - a) * u
     }
     private func clamp(_ v: Double, _ a: Double, _ b: Double) -> Double { min(b, max(a, v)) }

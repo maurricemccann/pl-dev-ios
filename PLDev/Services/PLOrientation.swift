@@ -19,6 +19,10 @@ import UIKit
 
 /// Only here so the system can ask which ways the app may turn.
 final class PLAppDelegate: NSObject, UIApplicationDelegate {
+    func application(_ application: UIApplication, didFinishLaunchingWithOptions launchOptions: [UIApplication.LaunchOptionsKey: Any]? = nil) -> Bool {
+        CrashReport.shared.start()   // last run's crash, if any, arrives in the debug log
+        return true
+    }
     func application(_ application: UIApplication, supportedInterfaceOrientationsFor window: UIWindow?) -> UIInterfaceOrientationMask {
         MainActor.assumeIsolated { PLOrientation.mask }
     }
