@@ -16,7 +16,14 @@ struct ComposerCatalog: Identifiable, Hashable { let name: String; let count: In
     var failed: String?
     var loading = false
     var assets: [ComposerAsset] { manifest?.assets ?? [] }
+    /// The index plus what he attached from Photos and the Curve Library: what the spec and the graph resolve ids against.
+    var allAssets: [ComposerAsset] { assets + ComposerExtras.shared.assets }
     @ObservationIgnored private let cache = NSCache<NSString, UIImage>()
+
+    init() { for a in ComposerExtras.shared.assets { byId[a.id] = a } }
+
+    /// A source from Photos or the Curve Library joins the lookup the moment it is attached.
+    func register(_ a: ComposerAsset) { byId[a.id] = a }
 
     /// The manifest (about 700 KB) and the thumbnail map (about 4 MB); the HTTP client keeps the last copy of each for offline.
     func load(model: AppModel, force: Bool = false) async {
@@ -26,6 +33,7 @@ struct ComposerCatalog: Identifiable, Hashable { let name: String; let count: In
             let d = try await http.send(RequestPlan(origin: "composer", path: "api/manifest"), timeout: 60)
             let m = try await Task.detached { try JSONDecoder().decode(ComposerManifest.self, from: d) }.value
             manifest = m; byId = Dictionary(m.assets.map { ($0.id, $0) }, uniquingKeysWith: { a, _ in a }); failed = nil
+            for a in ComposerExtras.shared.assets { byId[a.id] = a }
         } catch {
             if manifest == nil { failed = (error as? HTTPClient.Failure)?.message ?? "The library did not load. Pull to try again." }
         }
@@ -39,6 +47,7 @@ struct ComposerCatalog: Identifiable, Hashable { let name: String; let count: In
     /// Thumbnails come as data URLs; decode once.
     func image(_ id: String) -> UIImage? {
         if let c = cache.object(forKey: id as NSString) { return c }
+        if let x = ComposerExtras.shared.thumb(id) { cache.setObject(x, forKey: id as NSString); return x }
         guard let s = thumbs[id], let comma = s.firstIndex(of: ","), let d = Data(base64Encoded: String(s[s.index(after: comma)...])), let img = UIImage(data: d) else { return nil }
         cache.setObject(img, forKey: id as NSString)
         return img

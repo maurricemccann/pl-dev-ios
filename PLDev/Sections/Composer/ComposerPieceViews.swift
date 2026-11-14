@@ -1,3 +1,4 @@
+import PhotosUI
 import SwiftUI
 import TipKit
 import UniformTypeIdentifiers
@@ -98,6 +99,7 @@ struct PieceRoom: View {
     @State private var importing = false
     @State private var tick = 0
     @State private var warnTick = 0
+    @State private var previewing = false
 
     private var piece: ComposerPiece { store.piece }
     private var untitled: Int { piece.shots.filter { $0.title.trimmingCharacters(in: .whitespaces).isEmpty || $0.title == "untitled shot" }.count }
@@ -141,13 +143,14 @@ struct PieceRoom: View {
         .environment(\.editMode, .constant(reordering ? .active : .inactive))
         .toolbar { ToolbarItem(placement: .topBarTrailing) { if piece.shots.count > 1 { Button(reordering ? "Done" : "Reorder") { withAnimation { reordering.toggle() } } } } }
         .sheet(item: Binding(get: { spec.map { SpecDoc(text: $0) } }, set: { if $0 == nil { spec = nil } })) { doc in ComposerSpecSheet(text: doc.text, name: piece.piece) }
+        .sheet(isPresented: $previewing) { ComposerPreviewSheet(piece: piece) }
         .sheet(item: $attachTo) { shot in
             NavigationStack { ComposerLibraryRoom(model: model, attachTo: shot.id).navigationTitle("Attach to \(shot.title)").navigationBarTitleDisplayMode(.inline)
                 .toolbar { ToolbarItem(placement: .confirmationAction) { Button("Done") { attachTo = nil } } } }
                 .presentationDetents([.large])
         }
         .confirmationDialog("\(untitled) \(untitled == 1 ? "shot is" : "shots are") still called \"untitled shot\". The title is the only readable label in the spec.", isPresented: $askUntitled, titleVisibility: .visible) {
-            Button("Build it anyway") { spec = ComposerSpec.emit(piece, assets: lib.assets) }
+            Button("Build it anyway") { spec = ComposerSpec.emit(piece, assets: lib.allAssets) }
             Button("Cancel", role: .cancel) {}
         }
         .confirmationDialog("Send \"\(sending?.title ?? "this shot")\" to the house?", isPresented: Binding(get: { sending != nil }, set: { if !$0 { sending = nil } }), titleVisibility: .visible) {
@@ -192,9 +195,10 @@ struct PieceRoom: View {
             }
             HStack(spacing: 10) {
                 Button("Build spec") {
-                    if untitled > 0 { warnTick += 1; askUntitled = true } else { spec = ComposerSpec.emit(piece, assets: lib.assets) }
+                    if untitled > 0 { warnTick += 1; askUntitled = true } else { spec = ComposerSpec.emit(piece, assets: lib.allAssets) }
                 }
                 .buttonStyle(CMPPill(primary: true)).disabled(piece.shots.isEmpty)
+                Button("Preview") { previewing = true }.buttonStyle(CMPPill()).disabled(piece.shots.isEmpty).accessibilityIdentifier("composer.preview")
                 Button("Board") { room = .board }.buttonStyle(CMPPill())
             }
         }
@@ -274,6 +278,10 @@ struct ShotCard: View {
     let onAttach: () -> Void
     let onSend: () -> Void
     let onDelete: () -> Void
+    @State private var picks: [PhotosPickerItem] = []
+    @State private var importing = false
+    @State private var trimming: ComposerExtra?
+    @State private var photoNote: String?
 
     private var selected: Bool { store.selected == shot.id }
     private var effective: [ComposerOp] { (shot.nodes?.isEmpty == false) ? shot.nodes! : ComposerGraph.deriveGraph(shot, byId: lib.byId) }
@@ -319,6 +327,17 @@ struct ShotCard: View {
         .contentShape(RoundedRectangle(cornerRadius: CMP.radius))
         .onTapGesture { withAnimation(.snappy) { store.selected = shot.id } }
         .contextMenu { actions }
+        .sheet(item: $trimming) { e in ComposerTrimSheet(extraId: e.id, shotId: shot.id) }
+        .onChange(of: picks) { _, new in
+            guard !new.isEmpty else { return }
+            Task {
+                importing = true
+                let made = await ComposerExtras.shared.importPhotos(new)
+                picks = []; importing = false
+                for e in made { _ = store.attach(e.asset, to: shot.id) }
+                photoNote = made.isEmpty ? "Nothing came in. Photos did not hand the file over." : "Added \(made.count) from Photos."
+            }
+        }
         .accessibilityElement(children: .contain)
         .accessibilityLabel("Shot \(index + 1), \(shot.title), \(String(format: "%.1f", shot.duration)) seconds, \(shot.sourceIds.count) sources")
     }
@@ -362,14 +381,29 @@ struct ShotCard: View {
                             if n == 0, a != nil, a?.kind != "audio" { Text("base").cmpLabel(8) }
                         }
                         Spacer()
+                        if let x = ComposerExtras.shared.extra(aid), x.video, x.catalog == "Photos" {
+                            Button { trimming = x } label: { Image(systemName: "scissors").font(.system(size: 12)).foregroundStyle(x.trimmed ? CMP.gold : CMP.muted).frame(width: 36, height: 36).contentShape(Rectangle()) }
+                                .buttonStyle(.plain).accessibilityLabel("Trim \(x.name)")
+                        }
                         Button { store.patch(shot.id) { $0.sourceIds.removeAll { $0 == aid } } } label: { Image(systemName: "xmark").font(.system(size: 11, weight: .semibold)).foregroundStyle(CMP.muted).frame(width: 36, height: 36).contentShape(Rectangle()) }
                             .buttonStyle(.plain).accessibilityLabel("Remove source")
+                    }
+                    .contextMenu {
+                        if n > 0 { Button { store.patch(shot.id) { if let i = $0.sourceIds.firstIndex(of: aid) { $0.sourceIds.remove(at: i); $0.sourceIds.insert(aid, at: 0) } } } label: { Label("Make this the base", systemImage: "arrow.up.to.line") } }
+                        if let x = ComposerExtras.shared.extra(aid), x.video, x.catalog == "Photos" { Button { trimming = x } label: { Label("Trim the clip", systemImage: "scissors") } }
                     }
                 }
             }
             .padding(.top, 2)
         }
-        Button(action: onAttach) { Label("Attach from the library", systemImage: "plus").font(.system(size: 13)).foregroundStyle(CMP.gold).frame(minHeight: 36) }.buttonStyle(.plain)
+        HStack(spacing: 18) {
+            Button(action: onAttach) { Label("Attach from the library", systemImage: "plus").font(.system(size: 13)).foregroundStyle(CMP.gold).frame(minHeight: 36) }.buttonStyle(.plain)
+            PhotosPicker(selection: $picks, maxSelectionCount: 8, matching: .any(of: [.images, .videos])) {
+                Label(importing ? "Copying…" : "Add from Photos", systemImage: "photo.on.rectangle").font(.system(size: 13)).foregroundStyle(CMP.gold).frame(minHeight: 36)
+            }
+            .buttonStyle(.plain).disabled(importing).accessibilityIdentifier("composer.shot.photos")
+        }
+        if let n = photoNote { Text(n).font(.system(size: 11)).foregroundStyle(CMP.dim) }
     }
 
     /// The graph as a numbered list, in the order the operations are written, with each out name.

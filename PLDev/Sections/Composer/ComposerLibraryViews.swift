@@ -16,6 +16,10 @@ struct ComposerLibraryRoom: View {
     @State private var detail: ComposerAsset?
     @State private var note: String?
     @State private var tick = 0
+    @State private var source: Source = .index
+
+    /// Where the pieces come from: the laptop's index, the gallery's Curve Library, or his Photos.
+    enum Source: String, CaseIterable, Identifiable { case index = "Index", curve = "Curve Library", photos = "Photos"; var id: String { rawValue } }
 
     private var needle: String { q.trimmingCharacters(in: .whitespaces).lowercased() }
     private var filtered: [ComposerAsset] {
@@ -34,6 +38,19 @@ struct ComposerLibraryRoom: View {
     }
 
     var body: some View {
+        VStack(spacing: 0) {
+            Picker("Source", selection: $source) { ForEach(Source.allCases) { Text($0.rawValue).tag($0) } }
+                .pickerStyle(.segmented).padding(.horizontal, PLSpace.margin).padding(.vertical, 8).accessibilityIdentifier("composer.library.source")
+            switch source {
+            case .index: indexList
+            case .curve: ComposerCurvePane(model: model, targetId: target?.id, note: $note)
+            case .photos: ComposerPhotosPane(targetId: target?.id, note: $note)
+            }
+        }
+        .sensoryFeedback(PLHaptic.select, trigger: source)
+    }
+
+    @ViewBuilder private var indexList: some View {
         let rows = filtered
         List {
             Section { header(rows.count).listRowBackground(Color.clear).listRowInsets(EdgeInsets(top: 8, leading: 16, bottom: 4, trailing: 16)) }
