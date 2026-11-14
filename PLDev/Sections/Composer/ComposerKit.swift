@@ -50,6 +50,8 @@ struct ComposerAsset: Decodable, Identifiable, Hashable, Sendable {
     let height: Int?
     let duration: Double?
     let tags: [String]
+    /// A phone clip's in and out, shown in the spec beside the source ("trim 1.0-3.5s"). Never decoded: only phone sources set it.
+    var trim: String? = nil
 
     enum CodingKeys: String, CodingKey { case id, kind, name, catalog, path, ext, bytes, width, height, duration, tags }
     init(from d: Decoder) throws {
@@ -59,6 +61,10 @@ struct ComposerAsset: Decodable, Identifiable, Hashable, Sendable {
         ext = (try? c.decode(String.self, forKey: .ext)) ?? ""; bytes = (try? c.decode(Int.self, forKey: .bytes)) ?? 0
         width = try? c.decode(Int.self, forKey: .width); height = try? c.decode(Int.self, forKey: .height)
         duration = try? c.decode(Double.self, forKey: .duration); tags = (try? c.decode([String].self, forKey: .tags)) ?? []
+    }
+    init(id: String, kind: String, name: String, catalog: String, path: String, ext: String, bytes: Int, width: Int?, height: Int?, duration: Double?, tags: [String], trim: String? = nil) {
+        self.id = id; self.kind = kind; self.name = name; self.catalog = catalog; self.path = path; self.ext = ext; self.bytes = bytes
+        self.width = width; self.height = height; self.duration = duration; self.tags = tags; self.trim = trim
     }
     /// Which socket an asset plugs into (assetSocket).
     var socket: ComposerSocket {
@@ -575,7 +581,7 @@ enum ComposerSpec {
             if let t = shot.transition, !t.isEmpty, i > 0 { out.append("transition: \(t)") }   // shot 01 has nothing to come from
             let resolved = shot.sourceIds.compactMap { byId[$0] }
             if resolved.isEmpty { out.append("sources: []   # no sources attached — this shot renders black") }
-            else { out.append("sources:"); for a in resolved { out.append("  - \(a.kind): \(a.id)   # \(a.name)\(a.ext)") } }
+            else { out.append("sources:"); for a in resolved { out.append("  - \(a.kind): \(a.id)   # \(a.name)\(a.ext)\(a.trim.map { " [\($0)]" } ?? "")") } }
             let graph = (shot.nodes?.isEmpty == false) ? shot.nodes! : ComposerGraph.deriveGraph(shot, byId: byId)
             if !graph.isEmpty { out.append("graph:"); for n in graph { out += lines(n, byId) } }
             out.append("-> \(shot.id)")
