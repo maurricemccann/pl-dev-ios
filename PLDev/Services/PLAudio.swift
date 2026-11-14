@@ -12,9 +12,9 @@ enum PLAudio {
     /// A voice speaking (GlyphBot, Practice): the music dips while it talks. Call release() when it finishes.
     static func speaking() throws { try s.setCategory(.playback, mode: .spokenAudio, options: [.duckOthers]); try s.setActive(true) }
 
-    /// Listening (Capture, Practice voice, VJ): the AirPods high-quality mic (iOS 26), music keeps playing, speaker otherwise.
+    /// Listening (Capture, Practice voice, VJ): sound stays in the AirPods at full quality and music keeps playing; the mic is the phone's.
     static func listening() throws {
-        try s.setCategory(.playAndRecord, mode: .default, options: [.mixWithOthers, .allowBluetoothA2DP, .bluetoothHighQualityRecording, .defaultToSpeaker])   // the setting his call app proved with music playing
+        try s.setCategory(.playAndRecord, mode: .default, options: [.mixWithOthers, .allowBluetoothA2DP, .defaultToSpeaker])   // the call app's music mode before 11-12 8:10 PM, the one he used with music
         try s.setActive(true)
     }
 
