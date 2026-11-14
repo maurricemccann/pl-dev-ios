@@ -6,7 +6,7 @@ import SwiftUI
 /// everything drawn beneath it (destination-out), so crossings read over and under with a gap, never a blend. Draw order is depth: thin
 /// echoes first, the heavy bands last. Reduce Motion draws one still frame and nothing moves.
 @MainActor final class CurveRig {
-    static let channel = 9.0, n = 24, radius = 110.0, spring = 0.06, damp = 0.86, spread = 0.35, count = 15
+    nonisolated static let channel = 9.0, n = 24, radius = 110.0, spring = 0.06, damp = 0.86, spread = 0.35, count = 15
 
     struct Curve {
         var sweep: Bool, phase: Double, speed: Double, width: Double, opacity: Double
