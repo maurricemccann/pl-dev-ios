@@ -1,0 +1,67 @@
+name: screens
+
+# Started by hand only. Builds PL DEV for the iPhone simulator, opens every section and room by its pldev:// link and
+# screenshots each one, so the lead can look at the real app beside the live web pages before the founder tests.
+# Runs with NO config: no key, no private data, nothing private reaches the artifact (this repo is public).
+on:
+  workflow_dispatch:
+    inputs:
+      links:
+        description: "Space-separated pldev:// paths after pldev:// (blank = every section and room)"
+        type: string
+        default: ""
+
+permissions:
+  contents: read
+
+jobs:
+  screens:
+    runs-on: xcode-27
+    timeout-minutes: 40
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Select Xcode 27.2
+        run: sudo xcode-select -s /Applications/Xcode_27.2.app
+
+      - name: Build for the simulator
+        run: |
+          if ! xcodebuild -project PLDev.xcodeproj -scheme PLDev -configuration Debug -sdk iphonesimulator \
+               -destination 'generic/platform=iOS Simulator' -derivedDataPath dd \
+               CODE_SIGNING_ALLOWED=NO build > sim.log 2>&1; then
+            grep -E "error:" sim.log | awk '!seen[$0]++' | head -60; exit 1
+          fi
+          tail -n 3 sim.log
+
+      - name: Boot a phone
+        run: |
+          DEV=$(xcrun simctl list devices available -j | python3 -c "import json,sys;d=json.load(sys.stdin)['devices'];c=[x for r in d for x in d[r] if 'iPhone' in x['name'] and 'Pro' in x['name'] and 'Max' not in x['name']];print(c[-1]['udid'])")
+          echo "DEV=$DEV" >> $GITHUB_ENV
+          xcrun simctl boot "$DEV"; xcrun simctl bootstatus "$DEV" -b
+          xcrun simctl ui "$DEV" appearance dark
+          xcrun simctl status_bar "$DEV" override --time "9:41" --batteryLevel 100 --cellularBars 4 --wifiBars 3
+          APP=build/Debug-iphonesimulator/PLDev.app
+          xcrun simctl install "$DEV" "$APP"
+          BID=$(/usr/libexec/PlistBuddy -c "Print :CFBundleIdentifier" "$APP/Info.plist"); echo "BID=$BID" >> $GITHUB_ENV
+
+      - name: Screenshot every section and room
+        run: |
+          mkdir -p shots
+          LINKS="${{ inputs.links }}"
+          [ -z "$LINKS" ] && LINKS="home section/house section/status section/shop section/congregation section/practice section/glyphbot section/library section/curate section/pick section/town section/capture section/composer section/paint section/library/labs section/library/worlds section/library/space section/library/curves section/glyphbot/record section/house/calendar section/house/atlas section/practice/affirmations section/town/lore settings"
+          xcrun simctl launch "$DEV" "$BID"; sleep 12
+          xcrun simctl io "$DEV" screenshot shots/00-launch.png
+          i=1
+          for l in $LINKS; do
+            n=$(printf "%02d" $i)-$(echo "$l" | tr '/' '-')
+            xcrun simctl openurl "$DEV" "pldev://$l"; sleep 9
+            xcrun simctl io "$DEV" screenshot "shots/$n.png"
+            i=$((i+1))
+          done
+          ls shots | wc -l
+
+      - uses: actions/upload-artifact@v4
+        with:
+          name: screens
+          path: shots
+          retention-days: 3
