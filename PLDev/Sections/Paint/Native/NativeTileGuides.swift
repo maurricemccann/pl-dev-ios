@@ -120,17 +120,18 @@ extension CanvasStage {
         let W = Double(d.w), H = Double(d.h), both = model.tile == .both, px = 1 / max(0.001, zoom)
         let gold = UIColor(red: 0.906, green: 0.812, blue: 0.525, alpha: 1)
         c.saveGState(); c.concatenate(docTransform); c.setLineCap(.round)
+        var lw: CGFloat = 1   // the width sk() halos (CGContext keeps no readable line width)
         func sk() {   // a dark halo so the gold reads on any ground
             guard let path = c.path else { return }
-            let w = c.lineWidth
+            let w = lw
             c.setStrokeColor(UIColor(red: 0.08, green: 0.063, blue: 0.04, alpha: 0.65).cgColor); c.setLineWidth(w + 3 * px); c.strokePath()
             c.addPath(path); c.setStrokeColor(gold.cgColor); c.setLineWidth(w); c.strokePath()
         }
-        c.setAlpha(0.28); c.setLineDash(phase: 0, lengths: [3 * px, 9 * px]); c.setLineWidth(1.6 * px); c.setStrokeColor(gold.cgColor)
+        c.setAlpha(0.28); c.setLineDash(phase: 0, lengths: [3 * px, 9 * px]); lw = 1.6 * px; c.setLineWidth(lw); c.setStrokeColor(gold.cgColor)
         c.move(to: CGPoint(x: W / 2, y: 0)); c.addLine(to: CGPoint(x: W / 2, y: H))
         if both { c.move(to: CGPoint(x: 0, y: H / 2)); c.addLine(to: CGPoint(x: W, y: H / 2)) }
         c.strokePath()
-        c.setAlpha(1); c.setLineDash(phase: 0, lengths: [9 * px, 6 * px]); c.setLineWidth(2.2 * px); c.setStrokeColor(gold.cgColor); c.setFillColor(gold.cgColor)
+        c.setAlpha(1); c.setLineDash(phase: 0, lengths: [9 * px, 6 * px]); lw = 2.2 * px; c.setLineWidth(lw); c.setStrokeColor(gold.cgColor); c.setFillColor(gold.cgColor)
         for q in model.tileScan.ports {   // a gate on the opposite edge where the art is missing, and a dot where it is
             let horiz = q.side == "T" || q.side == "B", mid = Double(q.a + q.b) / 2, len = max(10, Double(q.b - q.a))
             let here: CGPoint, there: CGPoint
@@ -143,9 +144,9 @@ extension CanvasStage {
             c.beginPath()
             if horiz { c.move(to: CGPoint(x: Double(there.x) - len / 2, y: Double(there.y))); c.addLine(to: CGPoint(x: Double(there.x) + len / 2, y: Double(there.y))) }
             else { c.move(to: CGPoint(x: Double(there.x), y: Double(there.y) - len / 2)); c.addLine(to: CGPoint(x: Double(there.x), y: Double(there.y) + len / 2)) }
-            c.setLineWidth(5 * px); sk()
+            lw = 5 * px; c.setLineWidth(lw); sk()
             c.beginPath(); c.addArc(center: here, radius: 5.5 * px, startAngle: 0, endAngle: .pi * 2, clockwise: false)
-            c.setLineDash(phase: 0, lengths: []); c.setStrokeColor(UIColor(red: 0.08, green: 0.063, blue: 0.04, alpha: 0.65).cgColor); c.setLineWidth(2.5 * px)
+            c.setLineDash(phase: 0, lengths: []); c.setStrokeColor(UIColor(red: 0.08, green: 0.063, blue: 0.04, alpha: 0.65).cgColor); lw = 2.5 * px; c.setLineWidth(lw)
             c.drawPath(using: .fillStroke)
             c.setStrokeColor(gold.cgColor); c.setLineDash(phase: 0, lengths: [9 * px, 6 * px])
         }
@@ -154,7 +155,7 @@ extension CanvasStage {
             let pts = s.pts.map { CGPoint(x: NativeCanvasModel.num($0[0]), y: NativeCanvasModel.num($0[1])) }
             let last = pts[pts.count - 1]
             func ring(_ p: CGPoint, _ r: Double) {
-                c.saveGState(); c.setLineDash(phase: 0, lengths: []); c.setLineWidth(2.4 * px)
+                c.saveGState(); c.setLineDash(phase: 0, lengths: []); lw = 2.4 * px; c.setLineWidth(lw)
                 c.beginPath(); c.addArc(center: p, radius: r, startAngle: 0, endAngle: .pi * 2, clockwise: false); sk()
                 c.restoreGState()
             }

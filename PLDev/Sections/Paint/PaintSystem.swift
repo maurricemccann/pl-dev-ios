@@ -1,7 +1,6 @@
 import AppIntents
 import CoreSpotlight
 import SwiftUI
-import TipKit
 
 // PL Paint's system add-ons for the canvas (DESIGN.md §6). Widget: the Daily Mark (Shared + PLDevWidgets, already there).
 // Siri and Shortcuts: open the canvas, and hear the Daily Mark. Spotlight: the rooms of the canvas, by name. Deep links:
@@ -54,7 +53,7 @@ struct PaintRoomQuery: EntityStringQuery {
 
 struct OpenPaintRoomIntent: OpenIntent {
     static let title: LocalizedStringResource = "Open a PL Paint Room"
-    @AppIntents.Parameter(title: "Room") var target: PaintRoomEntity
+    @Parameter(title: "Room") var target: PaintRoomEntity
     init() {}
     init(target: PaintRoomEntity) { self.target = target }
     @MainActor func perform() async throws -> some IntentResult {
@@ -95,16 +94,3 @@ struct PaintDailyMarkIntent: AppIntent {
 
 // MARK: - Tips (only for what cannot be seen)
 
-struct PaintGesturesTip: Tip {
-    var title: Text { Text("Fingers move the picture") }
-    var message: Text? { Text("Tap with two fingers to undo, three to redo, four to fit the picture. Hold to keep stepping. Change them in Settings, Gesture controls.") }
-    var image: Image? { Image(systemName: "hand.tap") }
-    var options: [any TipOption] { [Tips.MaxDisplayCount(1)] }
-}
-
-struct PaintPencilTip: Tip {
-    var title: Text { Text("The Pencil has buttons too") }
-    var message: Text? { Text("Double tap runs the Pen side button's action, a squeeze (Pencil Pro) the second button's. Swap them in Settings.") }
-    var image: Image? { Image(systemName: "applepencil") }
-    var options: [any TipOption] { [Tips.MaxDisplayCount(1)] }
-}
