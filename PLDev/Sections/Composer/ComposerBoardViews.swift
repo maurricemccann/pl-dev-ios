@@ -278,13 +278,15 @@ struct ComposerHandbookView: View {
             .steps(["Index and Curve Library: tap an asset to attach it to the selected shot.",
                     "Photos: tap Photos, pick pictures or clips, confirm. Each is copied into the app (pictures at 1920 px) and named photo-01, clip-01 and so on.",
                     "Touch and hold a clip, then Trim the clip: drag the in and out points. The trim is written into the spec next to the source, and Make the shot this long sets the shot's duration to it."]),
-            .note("Photos are for planning and preview: they play on the phone and are named in the spec, but the house renderer does not read them yet. A render reads a curve path (a tracer job) and its art, so Send to render needs a path source.")]),
+            .text("Photos render. Send the whole piece to render (the button on the Piece tab) uploads each picture and clip first, one at a time with a progress line, then sends the spec as one card. One that already went up is skipped, so a send that fails halfway carries on where it stopped. The house takes jpg, png, mov and mp4, 100 MB at most each."),
+            .note("On the PC the piece is rendered from its spec by compose_render.py and the clip is filed to /curate unmarked, the same as every other card. A trim is kept in the spec for you; the renderer does not apply it yet, so a clip plays from its start for the length of its shot. Sources from the Curve Library cannot be sent: the renderer finds assets by the library index's ids.")]),
         Page(title: "The spec", blocks: [
             .text("Build spec writes the exact markdown the renderer reads and shows it before it leaves the phone. Copy it, or Share it as a .spec.md file. The phone writes the same text the web board and the desktop app write."),
             .text("A shot with no sources is written as sources: [] and renders black; the spec says so out loud. Shots still called untitled shot get one warning, never a block.")]),
         Page(title: "The board", blocks: [
             .text("The render board: one render job is one card. The house moves the cards: Sent, Rendering, Mixing, Filed, Ruled, Failed. The phone reads them every 10 seconds while the board is open."),
             .text("Send to render (in a shot's menu or by swipe) needs a Tracer Render node wired to a tracer job and a File to /curate node in the shot's graph. It becomes one card; the render queue runs it one job at a time, the bed goes on, the word check runs, and the clip is filed to /curate unmarked. You rule it there."),
+            .text("Send the whole piece to render (the button under Build spec) is the other card: every shot, with its Photos sources, rendered by the PC's compose renderer. It shows on the board like the rest; a piece that cannot render says why on its card."),
             .text("If the board cannot take the card yet, it waits on the phone under Waiting for the house and goes in on its own. Touch and hold a card in flight to follow it on the Lock Screen.")]),
     ]
 

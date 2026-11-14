@@ -221,7 +221,7 @@ struct ComposerPhotosPane: View {
                     }
                     .buttonStyle(CMPPill(primary: true)).disabled(importing).accessibilityIdentifier("composer.photos.choose")
                     Text(target.map { "Pictures and clips you choose attach to \"\($0.title)\"." } ?? "Add a shot first. Then pictures and clips you choose attach to it.").font(.system(size: 11)).foregroundStyle(CMP.dim)
-                    Text("Copied into Composer, so they stay when the library changes. The house cannot see them until the upload door exists; the spec names them.").font(.system(size: 11)).foregroundStyle(CMP.muted)
+                    Text("Copied into Composer, so they stay when the library changes. Send the whole piece to render uploads them to the house first.").font(.system(size: 11)).foregroundStyle(CMP.muted)
                     if let n = note { Text(n).font(.system(size: 11)).foregroundStyle(CMP.goldDim).accessibilityIdentifier("composer.library.note") }
                 }
                 .cmpCard(padding: 12).listRowBackground(Color.clear).listRowInsets(EdgeInsets(top: 8, leading: 16, bottom: 4, trailing: 16))

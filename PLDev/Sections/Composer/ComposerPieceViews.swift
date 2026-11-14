@@ -162,6 +162,13 @@ struct PieceRoom: View {
             Button("Send to render") { if let s = sending { Task { await send(s) } } }
             Button("Cancel", role: .cancel) {}
         } message: { Text("It becomes one card on the board, renders on the PC and files to /curate unmarked.") }
+        .confirmationDialog("Send \"\(piece.piece)\" to the house?", isPresented: $askSendPiece, titleVisibility: .visible) {
+            Button("Send piece to render") { Task { await sendPiece() } }
+            Button("Cancel", role: .cancel) {}
+        } message: {
+            let n = ComposerRender.phoneSources(of: piece, extras: ComposerExtras.shared).count
+            Text((n > 0 ? "\(n) picture\(n == 1 ? "" : "s") and clip\(n == 1 ? "" : "s") from Photos go up first, then the spec. " : "") + "The whole piece becomes one card, renders on the PC and files to /curate unmarked.")
+        }
         .confirmationDialog("Delete this shot?", isPresented: Binding(get: { askDelete != nil }, set: { if !$0 { askDelete = nil } }), titleVisibility: .visible) {
             Button("Delete shot", role: .destructive) { if let id = askDelete { withAnimation { store.remove(id) } }; askDelete = nil }
             Button("Cancel", role: .cancel) {}
@@ -206,6 +213,14 @@ struct PieceRoom: View {
                 Button("Preview") { previewing = true }.buttonStyle(CMPPill()).disabled(piece.shots.isEmpty).accessibilityIdentifier("composer.preview")
                 Button("Board") { room = .board }.buttonStyle(CMPPill())
             }
+            Button { askSendPiece = true } label: { Label(render.busy ? "Sending…" : "Send the whole piece to render", systemImage: "play.rectangle.fill").frame(maxWidth: .infinity) }
+                .buttonStyle(CMPPill()).disabled(piece.shots.isEmpty || render.busy).accessibilityIdentifier("composer.piece.send")
+            if let st = render.step {
+                VStack(alignment: .leading, spacing: 4) {
+                    ProgressView(value: st.fraction).tint(CMP.gold)
+                    Text(st.text).cmpNum(11).foregroundStyle(CMP.dim).accessibilityIdentifier("composer.piece.progress")
+                }
+            }
         }
         .cmpCard(padding: 14)
     }
@@ -244,8 +259,18 @@ struct PieceRoom: View {
         } message: { Text(piece.shots.isEmpty ? "" : "\(piece.shots.count) shots go with it. This cannot be undone.") }
     }
     @State private var askDeletePiece = false
+    @State private var askSendPiece = false
+    @State private var render = ComposerRender.shared
 
     // send to render
+
+    private func sendPiece() async {
+        switch await render.send(piece: piece, model: model) {
+        case .sent(_, let n): result = n > 0 ? "Sent. \(n) file\(n == 1 ? "" : "s") uploaded and the piece is on the board." : "Sent. The piece is on the board."; await state.load(model: model); room = .board
+        case .queued(let why): result = why; warnTick += 1
+        case .refused(let why): result = why; warnTick += 1
+        }
+    }
 
     private func send(_ s: ComposerShot) async {
         sending = nil

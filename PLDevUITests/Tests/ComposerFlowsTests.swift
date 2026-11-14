@@ -352,4 +352,32 @@ final class ComposerFlowsTests: XCTestCase {
         tree("board")
         XCTAssertTrue(app.staticTexts.matching(NSPredicate(format: "label CONTAINS 'Waiting for the house' OR label CONTAINS 'Filed' OR label CONTAINS 'filed'")).firstMatch.waitForExistence(timeout: 15), "the board shows neither the waiting card nor the house's cards")
     }
+
+    // MARK: 8. send the whole piece (S348 composer3): Photos sources upload first, then the spec card
+
+    func test8_SendWholePiece() {
+        launch()
+        let send = app.buttons["composer.piece.send"]
+        XCTAssertTrue(send.waitForExistence(timeout: 15), "no Send the whole piece to render button")
+        for _ in 0..<8 where !send.isHittable { app.swipeDown() }
+        send.tap()
+        sleep(1)
+        shot("send-piece-confirm")
+        // the dialog names the Photos sources that go up first
+        XCTAssertTrue(app.staticTexts.matching(NSPredicate(format: "label CONTAINS 'from Photos go up first'")).firstMatch.waitForExistence(timeout: 5), "the dialog does not say the Photos sources go up first")
+        if tap(app.buttons["Send piece to render"].firstMatch, "confirm send piece") { sleep(8) }
+        shot("send-piece-answer")
+        // The sim config carries a dummy composer key, so the door must refuse the first upload: the line says Not sent and why. The public
+        // Worker answers 401 once this lane's route is deployed and 404 before it; either proves the phone got as far as the upload step
+        // (a piece with Photos sources never reaches the spec card without its files up).
+        let line = app.staticTexts.matching(NSPredicate(format: "label BEGINSWITH 'Not sent'")).firstMatch
+        XCTAssertTrue(line.waitForExistence(timeout: 30), "the send gave no answer")
+        let why = line.label
+        XCTAssertTrue(why.contains("key was refused") || why.contains("answered 404") || why.contains("could not reach"), "unexpected answer: \(why)")
+        try? why.write(toFile: (ProcessInfo.processInfo.environment["PL_SHOTS_DIR"] ?? NSTemporaryDirectory()) + "/send-piece-answer.txt", atomically: true, encoding: .utf8)
+        // and nothing was queued on the phone: an upload that is refused never leaves a half card behind
+        area("Board")
+        sleep(3)
+        shot("send-piece-board")
+    }
 }

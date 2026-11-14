@@ -3,7 +3,7 @@ name: composer-e2e
 # Started by hand, or by a push to wave-composer2 that touches Composer or its tests (a new workflow cannot be dispatched until it is on main). Builds PL DEV for the iPhone simulator, seeds the simulator's Photos with generated pictures and a clip (never his
 # media), then DRIVES Composer with XCUITest (PLDevUITests): taps, a drag to reorder, the Photos picker, the library panes, the spec, the
 # preview, the graph. Every step is screenshotted into the artifact `composer-e2e`, with the accessibility tree where a step missed.
-# Runs with NO config: public addresses and dummy key names only (what a stranger can reach), the same as screens.yml.
+# Runs with NO real config: public addresses and dummy key names only (what a stranger can reach), the same as screens.yml.
 on:
   push:
     branches: [main]   # Composer regressions run on main (the lane branch is merged and gone)
@@ -50,14 +50,14 @@ jobs:
           # generated test media: three pictures and a two-second clip
           mkdir -p media && swift PLDevUITests/make_media.swift media
           xcrun simctl addmedia "$DEV" media/pl-test-photo-1.jpg media/pl-test-photo-2.jpg media/pl-test-photo-3.jpg media/pl-test-clip.mov
-          # the config: public addresses, key names with dummy values, no origin carries auth, so no key is ever sent
+          # the config: public addresses, key names with dummy values. Only the composer origin carries auth, and its key is the dummy: the Worker must refuse it (test8)
           DATA=$(xcrun simctl get_app_container "$DEV" "$BID" data)
           mkdir -p "$DATA/Documents"
           cat > "$DATA/Documents/sim-config.json" <<'JSON'
           {"v":1,"sections":["house","capture","curate","library","pick","composer","town","paint","shop","congregation","practice","glyphbot","status"],
            "origins":{"cron":{"base":"https://pl-cron.psychedluxuries.com/"},"console":{"base":"https://pl-cron.psychedluxuries.com/"},
              "gallery":{"base":"https://pl-curve-library.psychedluxuries.workers.dev/"},"site":{"base":"https://psychedluxuries.com/"},
-             "composer":{"base":"https://pl-composer.psychedluxuries.workers.dev/"},"os":{"base":"https://plos.beta.psychedluxuries.com/"},
+             "composer":{"base":"https://pl-composer.psychedluxuries.workers.dev/","auth":{"key":"composer","header":"Authorization","scheme":"Bearer"}},"os":{"base":"https://plos.beta.psychedluxuries.com/"},
              "practice":{"base":"https://pl-manifestation-practice.psychedluxuries.workers.dev/"},"interview":{"base":"https://pl-cron.psychedluxuries.com/"},
              "paint":{"base":"https://pl-cron.psychedluxuries.com/api/paint/"}},
            "keys":{"widgetRead":"sim-no-key","widgetWrite":"sim-no-key","paintSync":"sim-no-key","debug":"sim-no-key","vault":"sim-no-key","call":"sim-no-key","board":"sim-no-key","pldev":"sim-no-key","interview":"sim-no-key","composer":"sim-no-key"}}

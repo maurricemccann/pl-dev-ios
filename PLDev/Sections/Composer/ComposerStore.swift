@@ -215,6 +215,7 @@ struct ComposerCatalog: Identifiable, Hashable { let name: String; let count: In
         } catch let f as HTTPClient.Failure {
             if case .http(let code) = f, code == 503 { return .queued("Waiting for the house. The board cannot take cards from the phone yet; it goes in when it can.") }
             if case .http(let code) = f, code == 400 { return .refused("Not sent. The board refused the card.") }
+            if case .http(let code) = f, code == 409 { return .refused("Not sent. The house is missing some of the pictures or clips. Send the piece again and they go up once more.") }
             return .queued("Waiting for the house. " + f.message)
         } catch { return .queued("Waiting for the house. The phone could not reach the board.") }
     }
@@ -224,7 +225,8 @@ struct ComposerCatalog: Identifiable, Hashable { let name: String; let count: In
         let out = await post(data, model: model)
         if case .queued(let why) = out {
             let r = body["render"] as? [String: Any]
-            waiting.append(Waiting(id: UUID().uuidString, piece: body["piece"] as? String ?? "", shot: body["shot"] as? String ?? "", look: r?["look"] as? String ?? "", body: String(decoding: data, as: UTF8.self), made: .now, note: why))
+            let whole = body["kind"] as? String == "spec"   // a whole piece (S348 composer3): its pictures and clips are already up; only the spec waits
+            waiting.append(Waiting(id: UUID().uuidString, piece: body["piece"] as? String ?? "", shot: whole ? "the piece" : (body["shot"] as? String ?? ""), look: whole ? "whole piece" : (r?["look"] as? String ?? ""), body: String(decoding: data, as: UTF8.self), made: .now, note: why))
             save()
         }
         return out
