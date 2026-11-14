@@ -27,7 +27,7 @@ struct NativeCanvasView: View {
                 if canvas.uiHidden { hiddenControls }
                 else {
                     if let l = canvas.line { ResultLine(text: l).padding(8).glassControl(in: Capsule()).transition(.opacity) }
-                    if canvas.hasDoc { TipView(PaintGesturesTip()).tipBackground(.regularMaterial); modeBar; bottomBar }   // a glass card: on .clear the text floated over the canvas edge (sim shot 006, 11-14)
+                    if canvas.hasDoc { TipView(PaintGesturesTip()).tipBackground(.regularMaterial).padding(.leading, 64); modeBar; bottomBar }   // a glass card: on .clear the text floated over the canvas edge (sim shot 006, 11-14)
                 }
             }
             .padding(.horizontal, 12).padding(.vertical, 6)
