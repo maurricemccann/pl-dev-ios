@@ -36,7 +36,7 @@ import UserNotifications
     private(set) var checking = false
 
     var downCount: Int {
-        reach.values.filter { if case .down = $0 { return true } else { return false } }.count
+        reach.values.filter { if case .down = $0 { return true }; if case .up(let st) = $0, st >= 500 { return true }; return false }.count   // a 5xx is broken too
     }
 
     /// Asks every configured address at once. One slow address does not hold the others back.
@@ -127,7 +127,7 @@ struct StatusView: View {
 
     private var footer: String {
         guard let at = state.checkedAt else { return "Asking each address for an answer. Only its name is shown, never where it is." }
-        return "Checked at \(at.formatted(date: .omitted, time: .shortened)). Any answer counts as reachable. Pull down to ask again."
+        return "Checked at \(at.formatted(date: .omitted, time: .shortened)). Green = answering, amber = answering but the key or page is wrong, red = down or broken. Pull down to ask again."
     }
 
     private func refresh() async {
@@ -139,6 +139,10 @@ struct StatusView: View {
     private func originRow(_ name: String, _ answer: OriginReach) -> some View {
         let (symbol, tint, words): (String, Color, String) = {
             switch answer {
+            // 11-14 sweep: a 401 showed a green tick; it means the key was refused, and a 5xx means the address answers but is broken
+            case .up(let status) where status == 401 || status == 403: return ("key.slash", PLTone.warn, "Reachable, but the key was refused (\(status)). Load your config again.")
+            case .up(let status) where status >= 500: return ("exclamationmark.triangle.fill", PLTone.bad, "Answers with an error (\(status))")
+            case .up(let status) where status == 404: return ("questionmark.circle.fill", PLTone.warn, "Reachable, but that page is not there (404)")
             case .up(let status): return ("checkmark.circle.fill", PLTone.good, "Reachable (\(status))")
             case .down(let reason): return ("xmark.circle.fill", PLTone.bad, reason)
             case .unknown, .checking: return ("circle.dashed", PLTone.quiet, "Not asked yet")

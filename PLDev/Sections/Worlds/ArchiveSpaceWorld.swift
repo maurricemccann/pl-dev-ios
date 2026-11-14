@@ -44,7 +44,12 @@ import RealityKit
         // lanes: the categories the manifest carries, biggest first, eight metres apart and centred
         var counts: [String: Int] = [:]
         for w in works { counts[w.cat ?? "", default: 0] += 1 }
-        lanes = counts.sorted { $0.value > $1.value }.map(\.key).filter { !$0.isEmpty }
+        // biggest lane in the middle, the rest alternating right then left (11-14 sweep: biggest-first put digital and physical,
+        // 1,033 of 1,347 works, both on the left, so the hall read as a pile on one side)
+        let bySize = counts.sorted { $0.value > $1.value }.map(\.key).filter { !$0.isEmpty }
+        var centred: [String] = []
+        for (i, c) in bySize.enumerated() { if i % 2 == 1 { centred.append(c) } else { centred.insert(c, at: 0) } }
+        lanes = centred
         var made: [Item] = []
         made.reserveCapacity(works.count)
         for w in works {

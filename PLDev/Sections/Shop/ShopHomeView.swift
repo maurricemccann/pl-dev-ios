@@ -44,7 +44,7 @@ struct ShopHomeView: View {
 
     private var hero: some View {
         ZStack(alignment: .bottomLeading) {
-            GoldCurvesLayer().frame(height: 620).clipped()
+            GoldCurvesLayer().frame(height: 560).clipped()   // 620 put the proof stats under the floating search bar at rest (11-14 sweep shot 04)
             VStack(alignment: .leading, spacing: 26) {
                 Text("Psyched Luxuries \u{2014} Since April 2019").siteLabel()
                 SiteDisplay(parts: [("You ", false), ("prepared", true), ("\nbefore you\nknew why.", false)], size: 50)

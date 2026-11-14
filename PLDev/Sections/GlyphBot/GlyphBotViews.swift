@@ -459,6 +459,9 @@ struct GlyphRecordTab: View {
                 ContentUnavailableView("The record needs the interviewer key", systemImage: "key", description: Text("Your config has no key named interview. Add it to the config file and load it again."))
             } else if !OfflineState.shared.online {
                 ContentUnavailableView("The record needs a connection the first time", systemImage: "wifi.slash", description: Text("Once it has loaded, it stays on this iPhone for offline use."))
+            } else if state.message != nil {
+                // the load failed and said why above: a loader here would spin forever (11-14 sweep shot 11)
+                Button("Try again") { Task { await state.loadState(model: model) } }
             } else {
                 PLLoader().frame(maxWidth: .infinity, minHeight: 120)
             }

@@ -8,7 +8,12 @@ import SwiftUI
 struct HouseCalendarView: View {
     let model: AppModel
     @Environment(\.colorScheme) private var scheme
-    @State private var month = Calendar.current.date(from: Calendar.current.dateComponents([.year, .month], from: .now)) ?? .now
+    // the month starts at midnight in LA, the same calendar the grid reads (11-14 sweep: built from the device's own zone, a phone
+    // outside LA time drew the 1st one column early and labelled today with tomorrow's number)
+    @State private var month: Date = {
+        var c = Calendar(identifier: .gregorian); c.timeZone = TimeZone(identifier: "America/Los_Angeles")!
+        return c.date(from: c.dateComponents([.year, .month], from: .now)) ?? .now
+    }()
     @State private var content: [String: [CalendarView.Item]] = [:]   // yyyy-mm-dd → items, every platform
     @State private var platforms: [String: Set<String>] = [:]
     @State private var merch: [MerchView.Row] = []
