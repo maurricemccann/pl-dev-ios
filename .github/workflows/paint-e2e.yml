@@ -13,6 +13,11 @@ on:
         description: "Run only this test method, e.g. PaintFlowTests/test03_DrawOnACanvas (blank = all)"
         type: string
         default: ""
+      sanitizer:
+        description: "Run under a sanitizer (WWDC: Find security bugs with Sanitizers; 2-3x slower): none, address, thread"
+        type: choice
+        options: [none, address, thread]
+        default: none
 
 permissions:
   contents: read
@@ -85,11 +90,12 @@ jobs:
           mkdir -p shots
           ONLY="${{ inputs.only }}"
           SEL="-only-testing:PLDevUITests/PaintFlowTests"; [ -n "$ONLY" ] && SEL="-only-testing:PLDevUITests/$ONLY"   # the bundle also holds ComposerFlowsTests
+          SAN=""; case "${{ inputs.sanitizer }}" in address) SAN="-enableAddressSanitizer YES";; thread) SAN="-enableThreadSanitizer YES";; esac
           set +e
           TEST_RUNNER_SIMCFG="$SIMCFG" TEST_RUNNER_SHOTS="$PWD/shots" \
           xcodebuild test -project PLDevUITests/PLDevUITests.xcodeproj -scheme PLDevUITests -configuration Debug \
             -destination "platform=iOS Simulator,id=$DEV" -derivedDataPath dd-ui -resultBundlePath result.xcresult \
-            $SEL CODE_SIGNING_ALLOWED=NO > test.log 2>&1
+            $SEL $SAN CODE_SIGNING_ALLOWED=NO > test.log 2>&1
           echo "xcodebuild exit $?"
           grep -E "error:|Test Case .*(passed|failed)|Executed|TEST (SUCCEEDED|FAILED)|\*\* " test.log | awk '!seen[$0]++' | head -120
           ls shots | wc -l

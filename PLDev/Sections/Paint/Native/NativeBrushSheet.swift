@@ -163,7 +163,9 @@ struct ShareSheet: UIViewControllerRepresentable {
 struct NativeStudioSheet: View {
     @Bindable var canvas: NativeCanvasModel
     @Environment(\.dismiss) private var dismiss
-    @State private var edited: Brush?
+    @State private var edited: Brush? { didSet { tick &+= 1 } }   // every change re-draws the preview (after a short rest)
+    @State private var tick = 0
+    @State private var preview: UIImage?
     @State private var name = ""
     @State private var saved: String?
 
@@ -185,9 +187,14 @@ struct NativeStudioSheet: View {
         NavigationStack {
             Form {
                 Section {
-                    if let ui = NativeBrushPreview.image(B, color: UIColor(canvas.color).hex, color2: UIColor(canvas.color2).hex, size: canvas.size, w: 600, h: 140, cached: false) {
-                        Image(uiImage: ui).resizable().scaledToFit().frame(maxWidth: .infinity).listRowBackground(Color(.secondarySystemGroupedBackground))
-                    }
+                    // drawn once the sliders rest for 0.12 s, not on every tick: a 600x140 stroke render per tick made dragging heavy (WWDC data-flow talks, 11-14)
+                    Group { if let ui = preview { Image(uiImage: ui).resizable().scaledToFit() } else { Color.clear.frame(height: 80) } }
+                        .frame(maxWidth: .infinity).listRowBackground(Color(.secondarySystemGroupedBackground))
+                        .task(id: tick) {
+                            if preview != nil { try? await Task.sleep(for: .milliseconds(120)) }
+                            guard !Task.isCancelled else { return }
+                            preview = NativeBrushPreview.image(B, color: UIColor(canvas.color).hex, color2: UIColor(canvas.color2).hex, size: canvas.size, w: 600, h: 140, cached: false)
+                        }
                     TextField("Name", text: $name)
                     if let n = B.note { Text(n).font(.footnote).foregroundStyle(.secondary) }
                 }
