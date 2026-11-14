@@ -5,7 +5,7 @@ import UIKit
 
 /// The panels the canvas can open (each is a sheet over it).
 enum NativePanel: String, Identifiable {
-    case colour, layers, brushes, studio, adjust, works, settings, gestures, quickEditor, handbook, sync, exportPicture, send, newCanvas, rename, assists, lift, timelapse, study, bringIn, tweak, repeatCheck, tools2, shareFiles
+    case colour, layers, brushes, studio, adjust, works, settings, gestures, quickEditor, handbook, sync, exportPicture, send, newCanvas, rename, assists, lift, timelapse, study, bringIn, tweak, repeatCheck, tools2, shareFiles, actions
     var id: String { rawValue }
 }
 

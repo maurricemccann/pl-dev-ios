@@ -56,6 +56,7 @@ struct PaintHome: View {
     @State private var handbook = false
     @State private var syncing = false
     @State private var newSheet = false
+    @State private var settings = false   // 11-14: Paint's Settings from the Gallery too, not only from inside a canvas
     @State private var openStack: String?
     @State private var renaming: PaintModel.Work?
     @State private var renameText = ""
@@ -102,6 +103,7 @@ struct PaintHome: View {
         .toolbarColorScheme(.dark, for: .navigationBar)
         .toolbar {
             ToolbarItemGroup(placement: .topBarTrailing) {
+                Button { settings = true } label: { Image(systemName: "gearshape") }.accessibilityLabel("Paint settings").accessibilityIdentifier("gallery.settings")
                 Menu {
                     Button { photoSheet = true } label: { Label("A photo, as a new work", systemImage: "photo.on.rectangle") }
                     Button { files = true } label: { Label("A file: PSD, a picture, a work, brushes", systemImage: "folder") }
@@ -110,6 +112,7 @@ struct PaintHome: View {
             }
         }
         .refreshable { await state.load(model: model) }
+        .sheet(isPresented: $settings) { PaintGallerySettings(model: model) }
         .task { await state.load(model: model) }
         .fullScreenCover(item: $state.request, onDismiss: { Task { await state.load(model: model) } }) { r in NativeCanvasView(model: model, openID: r.work, openPanel: r.panel, setup: r.setup) }
         .sheet(isPresented: $handbook) { NativeHandbookView() }

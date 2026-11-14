@@ -39,6 +39,11 @@ final class PaintFlowTests: XCTestCase {
         XCTAssertTrue(e.waitForExistence(timeout: wait), "\(label) is on screen", file: file, line: line)
         if e.exists { e.tap() }
     }
+    /// The ••• opens Actions (a sheet in tabs, 11-14); pick the tab, then the row.
+    private func actions(_ tab: String) {
+        tapButton("Actions"); sleepFor(1)
+        tapButton(tab, wait: 8); sleepFor(0.6)
+    }
     private func works() -> XCUIElementQuery { app.buttons.matching(identifier: "gallery.work") }
 
     /// A new canvas from the Gallery's plus, as it comes (the default size), landing on the canvas.
@@ -184,7 +189,7 @@ final class PaintFlowTests: XCTestCase {
 
     func test07_MenuAndTools() {
         makeCanvas()
-        tapButton("More"); sleepFor(1); shot("more-menu")
+        actions("Edit"); shot("actions-edit")
         tapButton("Adjustments and effects", wait: 8); sleepFor(1.5); shot("adjustments")
         closeSheet(); sleepFor(0.5)
         tap("Select", wait: 8); sleepFor(0.8); shot("selection-bar")
@@ -194,10 +199,21 @@ final class PaintFlowTests: XCTestCase {
         sleepFor(0.5)
         tap("Pick a colour", wait: 8); sleepFor(0.5); shot("eyedropper-bar")
         tapButton("Done", wait: 8)
-        tapButton("More")
+        actions("Canvas")
         let mt = app.buttons.matching(NSPredicate(format: "label BEGINSWITH 'More tools'")).firstMatch
-        if !mt.waitForExistence(timeout: 3) { app.swipeUp(); app.swipeUp() }
-        XCTAssertTrue(mt.waitForExistence(timeout: 8), "More tools is in the menu"); mt.tap(); sleepFor(1.5); shot("more-tools")
+        if !mt.waitForExistence(timeout: 3) { app.swipeUp() }
+        XCTAssertTrue(mt.waitForExistence(timeout: 8), "More tools is in Actions, Canvas"); mt.tap(); sleepFor(1.5); shot("more-tools")
+        closeSheet()
+    }
+
+    // MARK: 07b his note 11-14: Settings must be reachable inside Paint (the old menu jumped back to its top)
+
+    func test07b_SettingsReachable() {
+        makeCanvas()
+        actions("Settings"); shot("actions-settings")
+        let s = app.buttons.matching(NSPredicate(format: "label BEGINSWITH 'Settings'")).firstMatch
+        XCTAssertTrue(s.waitForExistence(timeout: 8), "Settings row in Actions"); s.tap(); sleepFor(1.5); shot("paint-settings")
+        XCTAssertTrue(app.switches["Finger paints"].firstMatch.waitForExistence(timeout: 8), "Paint's Settings opened")
         closeSheet()
     }
 
@@ -206,7 +222,7 @@ final class PaintFlowTests: XCTestCase {
     func test08_Export() {
         makeCanvas()
         stroke((0.35, 0.4), (0.85, 0.5))
-        tapButton("More"); tapButton("Save or share the picture", wait: 8); sleepFor(1.5); shot("export-sheet")
+        actions("Picture"); tapButton("Save or share the picture", wait: 8); sleepFor(1.5); shot("export-sheet")
         for fmt in ["PDF", "JPEG", "PNG"] {
             let row = app.buttons.matching(NSPredicate(format: "label BEGINSWITH %@", fmt)).firstMatch
             XCTAssertTrue(row.waitForExistence(timeout: 8), "\(fmt) export row")
@@ -216,7 +232,7 @@ final class PaintFlowTests: XCTestCase {
             sleepFor(0.8)
         }
         closeSheet(); sleepFor(0.5)
-        tapButton("More"); tapButton("Timelapse", wait: 8); sleepFor(1.5); shot("timelapse")
+        actions("Picture"); tapButton("Timelapse", wait: 8); sleepFor(1.5); shot("timelapse")
         closeSheet()
     }
 

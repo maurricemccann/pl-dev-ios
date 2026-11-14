@@ -109,51 +109,12 @@ struct NativeCanvasView: View {
         .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .leading).padding(.leading, 6).padding(.top, 90).padding(.bottom, 230)
     }
 
+    /// The ••• opens Actions (NativeActions.swift): tabs in a sheet that keeps its place. It was a 30-row Menu that redrew on every
+    /// canvas change and jumped back to its top, so Settings, its last row, could not be reached (his note 11-14).
     private var moreMenu: some View {
-        Menu {
-            Section("This picture") {
-                Button { canvas.panel = .newCanvas } label: { Label("New canvas", systemImage: "plus") }
-                Button { renameText = canvas.name; canvas.panel = .rename } label: { Label("Rename", systemImage: "pencil") }
-                Button { canvas.panel = .exportPicture } label: { Label("Save or share the picture", systemImage: "square.and.arrow.up") }
-                Button { canvas.panel = .send } label: { Label("Send to Curate or the Archive", systemImage: "paperplane") }
-                Button { canvas.panel = .bringIn } label: { Label("Bring in: photo, PSD, brushes", systemImage: "square.and.arrow.down") }
-                Button { canvas.panel = .timelapse } label: { Label("Timelapse", systemImage: "play.rectangle") }
-                Button { canvas.panel = .study } label: { Label("Study: record how I draw", systemImage: "record.circle") }
-            }
-            Section("Edit") {
-                Button { canvas.panel = .adjust } label: { Label("Adjustments and effects", systemImage: "slider.horizontal.3") }
-                Button { canvas.panel = .tweak } label: { Label("Adjust strokes", systemImage: "dial.medium") }
-                Button { canvas.panel = .lift } label: { Label("Lift ink from a photo", systemImage: "photo") }
-                Button { canvas.clipCopy(cut: false) } label: { Label("Copy", systemImage: "doc.on.doc") }
-                Button { canvas.clipCopy(cut: true) } label: { Label("Cut", systemImage: "scissors") }
-                Button { canvas.clipPaste() } label: { Label("Paste", systemImage: "doc.on.clipboard") }
-                Button { canvas.fillSelection() } label: { Label("Fill with the colour", systemImage: "drop.fill") }
-                Button(role: .destructive) { confirmClear = true } label: { Label("Clear layer", systemImage: "trash") }
-                Menu("Canvas") {
-                    Button { canvas.flipCanvas(horizontal: true) } label: { Label("Flip left and right", systemImage: "arrow.left.and.right.righttriangle.left.righttriangle.right") }
-                    Button { canvas.flipCanvas(horizontal: false) } label: { Label("Flip top and bottom", systemImage: "arrow.up.and.down.righttriangle.up.righttriangle.down") }
-                    Button { canvas.run(action: "Transparent background") } label: { Label(canvas.doc?.bgVis == false ? "Show the background" : "Transparent background", systemImage: "checkerboard.rectangle") }
-                    Button { canvas.makeTile() } label: { Label("Make tile (slide half way round)", systemImage: "square.grid.3x3") }
-                    Button { canvas.cornerCopies() } label: { Label("Add the corner copies", systemImage: "square.on.square.dashed") }
-                    Button { canvas.panel = .repeatCheck } label: { Label("Check the repeat (3 by 3)", systemImage: "square.grid.3x3.fill") }
-                    Button { canvas.ghostBelow() } label: { Label("Ghost copy behind this layer", systemImage: "square.2.layers.3d.bottom.filled") }
-                }
-            }
-            Section("View") {
-                Button { canvas.stage?.fit() } label: { Label("Fit to screen", systemImage: "arrow.up.left.and.down.right.magnifyingglass") }
-                Button { canvas.stage?.actualSize() } label: { Label("Actual pixels", systemImage: "1.magnifyingglass") }
-                Button { canvas.stage?.turnUpright() } label: { Label("Turn upright", systemImage: "arrow.up") }
-                Button { canvas.uiHidden = true } label: { Label("Hide the controls", systemImage: "eye.slash") }
-            }
-            Section {
-                Button { canvas.panel = .assists } label: { Label("Assists: symmetry, guides, tile", systemImage: "square.split.diagonal") }
-                Button { canvas.panel = .tools2 } label: { Label("More tools: facet, echo, nodes, lights, seams", systemImage: "wand.and.stars") }
-                Button { canvas.panel = .sync } label: { Label("Sync with the laptop", systemImage: "arrow.triangle.2.circlepath") }
-                Button { canvas.panel = .settings } label: { Label("Settings", systemImage: "gearshape") }
-                Button { canvas.panel = .handbook } label: { Label("Handbook", systemImage: "book") }
-            }
-        } label: { Image(systemName: "ellipsis").font(.body.weight(.semibold)).frame(width: 38, height: 38) }
-            .glassControl(in: Circle()).accessibilityLabel("More")
+        Button { canvas.panel = .actions } label: { Image(systemName: "ellipsis").font(.body.weight(.semibold)).frame(width: 38, height: 38) }
+            .buttonStyle(.plain)
+            .glassControl(in: Circle()).accessibilityLabel("Actions").accessibilityIdentifier("canvas.actions")
     }
 
     private var hiddenControls: some View {
@@ -354,6 +315,7 @@ struct NativeCanvasView: View {
         case .repeatCheck: NativeRepeatSheet(canvas: canvas)
         case .tools2: NativeMoreToolsSheet(canvas: canvas).presentationDetents([.medium, .large])
         case .shareFiles: ShareSheet(items: canvas.shareURLs)
+        case .actions: NativeActionsSheet(canvas: canvas) { confirmClear = true }
         }
     }
 }
