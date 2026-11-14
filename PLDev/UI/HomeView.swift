@@ -283,6 +283,16 @@ struct HomeView: View {
             showSettings = false
             guard let entry = model.sections.first(where: { $0.id == id }), entry.readiness.isReady else {
                 path = []
+                // a cold launch from a link can arrive before the config has made the section ready: wait up to 3 s, then
+                // say why instead of landing on Home in silence (11-14: section/practice landed Home in the screens run)
+                guard model.sections.contains(where: { $0.id == id }) else { return }
+                Task { @MainActor in
+                    for _ in 0..<6 {
+                        try? await Task.sleep(for: .milliseconds(500))
+                        if model.sections.first(where: { $0.id == id })?.readiness.isReady == true { model.route = link; return }
+                    }
+                    warnTick += 1; blockedID = id; showBlocked = true
+                }
                 return
             }
             _ = SectionRegistry.section(id)?.handle(link: link, model: model)
