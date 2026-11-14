@@ -101,6 +101,13 @@ jobs:
           ls shots | wc -l
           exit 0
 
+      - name: Crash reports from the simulator (the exact line when the app dies)
+        if: always()
+        run: |
+          mkdir -p shots/crashes
+          find ~/Library/Logs/DiagnosticReports -name 'PLDev*' -mmin -90 -exec cp {} shots/crashes/ \; 2>/dev/null || true
+          for f in shots/crashes/*; do [ -f "$f" ] || continue; echo "== $f"; grep -m1 -o '"exception" : {[^}]*}' "$f"; grep -o '"symbol":"[^"]*"' "$f" | head -25; done
+
       - name: The result of each test, plainly
         if: always()
         run: |

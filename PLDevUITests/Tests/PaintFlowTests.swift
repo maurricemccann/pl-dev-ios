@@ -231,7 +231,7 @@ final class PaintFlowTests: XCTestCase {
         actions("Video"); tapButton("Timelapse", wait: 8); sleepFor(1.5); shot("timelapse")   // first: a share sheet left open would cover it
         closeSheet(); sleepFor(0.8)
         actions("Canvas"); tapButton("Save or share the picture", wait: 8); sleepFor(1.5); shot("export-sheet")
-        for fmt in ["PDF", "JPEG", "PNG"] {
+        for fmt in ["PNG", "JPEG", "PDF"] {   // PNG first (11-14): PDF first hid whether every share dies or only PDF
             let row = app.buttons.matching(NSPredicate(format: "label BEGINSWITH %@", fmt)).firstMatch
             XCTAssertTrue(row.waitForExistence(timeout: 8), "\(fmt) export row")
             row.tap(); sleepFor(2.5); shot("export-\(fmt.lowercased())-share")
