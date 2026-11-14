@@ -108,13 +108,18 @@ struct CurveHeadline: View {
     @Environment(\.accessibilityReduceMotion) private var reduce
     private let words = ["You", "were", "gifted", "a", "seed."]
     var body: some View {
-        HStack(spacing: 10) {
-            ForEach(Array(words.enumerated()), id: \.offset) { i, w in
-                Text(w).plHand(48).foregroundStyle(Bone.gold)
-                    .opacity(reduce || i < shown ? 1 : 0).blur(radius: reduce || i < shown ? 0 : 6).offset(y: reduce || i < shown ? 0 : 20)
+        // two lines on a phone ("You were gifted" / "a seed."): one line of five words cut each word short (11-13 audit)
+        VStack(spacing: 4) {
+            ForEach([0..<3, 3..<5], id: \.lowerBound) { row in
+                HStack(spacing: 10) {
+                    ForEach(Array(row), id: \.self) { i in
+                        Text(words[i]).plHand(44).foregroundStyle(Bone.gold).fixedSize()
+                            .opacity(reduce || i < shown ? 1 : 0).blur(radius: reduce || i < shown ? 0 : 6).offset(y: reduce || i < shown ? 0 : 20)
+                    }
+                }
             }
         }
-        .lineLimit(1).minimumScaleFactor(0.5)
+        .minimumScaleFactor(0.6)
         .accessibilityElement(children: .ignore).accessibilityLabel("You were gifted a seed.").accessibilityAddTraits(.isHeader)
         .task {
             guard !reduce else { return }

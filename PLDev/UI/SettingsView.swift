@@ -105,7 +105,7 @@ struct SettingsView: View {
                 SettingsLabel("Text face", "textformat", IOS27.SystemColors.blue)
             }
             VStack(alignment: .leading, spacing: PLSpace.tight) {
-                SettingsLabel("Text size: \(Int(textSize)) %", "textformat.size", IOS27.SystemColors.blue)
+                SettingsLabel("Text size: \(Int(textSize))%", "textformat.size", IOS27.SystemColors.blue)
                 Slider(value: $textSize, in: 90...130, step: 5) {
                     Text("Text size")
                 } minimumValueLabel: {
