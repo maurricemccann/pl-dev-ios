@@ -52,7 +52,7 @@ enum OfflineCache {
     private let monitor = NWPathMonitor()
 
     private init() {
-        monitor.pathUpdateHandler = { path in
+        monitor.pathUpdateHandler = { @Sendable path in   // runs on pldev.offline, never main: marked so it can never inherit main-actor isolation (the 11-14 crash class)
             let up = path.status == .satisfied
             OfflineCache.offlineNow = !up
             Task { @MainActor in
