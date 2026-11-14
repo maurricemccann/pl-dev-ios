@@ -99,14 +99,20 @@ enum NativeToolkit {
     static var round: Brush { all.first { $0.id == "round" } ?? all.first ?? Brush.plain(defaults: loaded.defaults) }
     static var canvases: [Canvas] { loaded.canvases }
 
+    /// A toolkit section is `{ "_about": ..., "<inner>": [...] }` (the toolkit's shape); a bare array is accepted too. Read as a bare array only,
+    /// papers, gestures and the Quick menu came out empty (his report 11-14: the Stock dropdown had nothing to select).
+    private static func rows(_ key: String, _ inner: String) -> [[String: Any]] {
+        if let wrapped = (raw[key] as? [String: Any])?[inner] as? [[String: Any]] { return wrapped }
+        return raw[key] as? [[String: Any]] ?? []
+    }
     static var papers: [Paper] {
-        (raw["papers"] as? [[String: Any]] ?? []).map { Paper(id: $0["id"] as? String ?? "plain", name: $0["name"] as? String ?? "Plain", ground: $0["ground"] as? String, texture: $0["texture"] as? String ?? "none", edge: $0["edge"] as? String ?? "straight") }
+        rows("papers", "papers").map { Paper(id: $0["id"] as? String ?? "plain", name: $0["name"] as? String ?? "Plain", ground: $0["ground"] as? String, texture: $0["texture"] as? String ?? "none", edge: $0["edge"] as? String ?? "straight") }
     }
     static var gestures: [Gesture] {
-        (raw["gestures"] as? [[String: Any]] ?? []).map { Gesture(id: $0["id"] as? String ?? "", name: $0["name"] as? String ?? "", def: $0["default"] as? String ?? "None") }
+        rows("gestures", "gestures").map { Gesture(id: $0["id"] as? String ?? "", name: $0["name"] as? String ?? "", def: $0["default"] as? String ?? "None") }
     }
     static var quickProfiles: [Profile] {
-        (raw["quickmenu"] as? [[String: Any]] ?? []).map { Profile(name: $0["name"] as? String ?? "Profile", slots: $0["slots"] as? [String] ?? []) }
+        rows("quickmenu", "profiles").map { Profile(name: $0["name"] as? String ?? "Profile", slots: $0["slots"] as? [String] ?? []) }
     }
     /// The Design Kit's palettes, then two random ones after the House one (the laptop's `kit.js`: new each time the app opens; a Shuffle button draws two more).
     static var palettes: [Palette] {
