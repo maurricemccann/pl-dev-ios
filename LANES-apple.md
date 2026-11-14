@@ -1,0 +1,40 @@
+DONE (apple lane, branch wave-apple, compile-checked: build.yml run 43534362852 on wave-apple with publish=false, success, app + all three extensions)
+
+# Apple lane: notifications and every Apple door
+
+Nothing here ran on a device. The build compiles; each behaviour below is unproven until he tries it. Server routes needed: none. Shared-file lines the lead must wire: none (I edited the shared files myself, as ordered; the list of edits is at the bottom).
+
+## What was built
+
+1. **Notifications for every event** (`PLDev/Services/AppleWatch.swift`, called once per refresh by `Poller.refreshAll`): support mail, member messages, new orders (D1 order count, with 30-day revenue), drops chosen from the tally, reports to moderate, comments to post, stack health failed, the PC hot / low disk / low memory (PL Call `/pcstats`), a new Curate batch. Existing owners keep theirs: drafts waiting (House, Approve all), new pieces (Shop), posts held and activity (Congregation), practice evening (Practice, Tick next habit), renders moving (Composer: its category `composer` is now declared, so it has a switch). The first pass after install only learns the counts and raises nothing.
+   - **Real buttons:** Reply (typed text, Face ID) on member messages; Mark resolved (Face ID) on support mail; Run the check again on stack health. Orders, drops, comments, reports, PC and Curate have no action that exists, so no button (rule: never "Open"). `NotificationHub` now carries `textActions` for typed replies.
+   - **Switches:** every type has its own switch in Settings > Notifications, now in plain words (`AppleWatch.labels`); the master switch and quiet hours were already there and still apply. The PC alert repeats at most every 3 hours.
+   - **Background:** `BGAppRefreshTask` (existing) plus a new `BGProcessingTask` (`com.psychedluxuries.dev.process`, network required, about hourly at best; iOS decides). Info.plist: `processing` background mode and the identifier added. No push, no Time Sensitive.
+2. **Interactive widget "Act from here"** (`PLDevWidgets/AppleWidgets.swift`, `Shared/AppleGlance.swift`): small, medium, Lock Screen rectangular / circular / inline; the small one is what StandBy shows. Buttons (`Button(intent:)`): approve and hold the draft on top (Face ID required by the intent), keep and cut the top Curate card, tick the next habit. A widget holds no key, so a tap writes to a queue in the App Group, the card leaves the widget at once, and the app sends it at its next refresh (or at once if iOS runs the intent in the app's process). The widget says "N sending when PL DEV next refreshes" while taps wait. Failed sends retry for 6 hours.
+3. **Foundation Models** (`PLIntelligence`): (a) GlyphBot offline: when the Oracle is unreachable and no cached answer matches, Apple Intelligence answers only from the cached real Oracle answers on the phone, labelled "Written on this iPhone from the record", never synced to his record and never used as grounding (via prefix `on-device`); (b) a caption first draft in House (touch and hold a draft: "Draft another on this iPhone"), checked against the house voice list and thrown away if it breaks it, shown in a sheet with Copy, never posted. Fallback: with no Apple Intelligence the row does not appear and GlyphBot keeps its old cached / doctrine path; Settings says in one sentence why this phone cannot (`statusLine`). Switch: "Draft on this iPhone with Apple Intelligence".
+4. **Vision text recognition** in Capture photos: the words read are offered under Notes as "Add the words in the photo to the notes".
+5. **HealthKit mindful minutes**: a Practice rehearsal writes a mindful session when the switch in Settings is on (Health permission asked when he turns it on). Entitlement `com.apple.developer.healthkit` added to `scripts/PLDev.entitlements`, usage strings added.
+6. **EventKit**: Settings > "Add my shift days to Calendar" (3 PM to 6 AM, next 30 days from `api/schedule`) and "Add drop dates to Calendar" (the last month of `chosen`). Write-only access, no duplicates on a second tap.
+7. **Focus filter** (`PLDevFocusFilter`, SetFocusFilterIntent): add it in Settings > Focus > Focus Filters; holds every notice, or all but the PC and stack alerts. Clears when the Focus ends.
+8. **Siri cards**: "What's waiting in PL DEV" and "What is waiting on me" now show a card (`AppleCard`) under the spoken answer (`ShowsSnippetView`). App Shortcuts stay at 10.
+9. **NSUserActivity**: the screen he is on is a Handoff / Siri-suggestion activity (`com.psychedluxuries.dev.open`, carries the `pldev://` link, Info.plist `NSUserActivityTypes`).
+10. **Core Haptics** `PLHaptics`: keep, cut and crown (favourite) each have their own pattern in Curate; falls back to the system tap; switch in Settings.
+11. **Accessibility**: a Drafts rotor on the House approvals list; Curate already offers Keep / Cut / Maybe / Favourite as named VoiceOver actions (the Actions rotor), so no extra rotor was added there. Dynamic Type: nothing in the app caps the size (checked by grep); I did not run it at accessibility5.
+12. **Translation**: "Translate" in the long-press menu of a Congregation room post (the system translation sheet).
+
+## Free-account check (Apple's "Supported capabilities (iOS)", scraped 11-13)
+The page's tick marks did not survive the scrape, so per-capability free versus paid is **not verified from the page**. From the lead's word and Apple's long-standing table: App Groups, Siri and Background modes are available; **Push notifications, Time Sensitive Notifications and iCloud are not**, and none is used. **HealthKit is the one unproven entitlement**: if SideStore refuses the install or signing, delete the two `com.apple.developer.healthkit*` keys from `scripts/PLDev.entitlements`; the Health toggle then fails with a plain sentence and nothing else changes. EventKit, Vision, Core Haptics, Foundation Models, Translation, Focus filters and Handoff need no entitlement. Skipped for the account: only Time Sensitive (named unavailable by the order itself).
+
+## Gap check (honest)
+- Unproven on a device: every notification (needs the app to run a refresh with real config), the widget buttons and the queue hand-off, Face ID on widget intents, the Focus filter, the HealthKit write, the Calendar write, Foundation Models answers (needs an Apple Intelligence phone), Handoff.
+- The widget's buttons are queue-then-send, not instant, by design (no key in the extension).
+- Orders are detected by the order count rising (D1 `cost`), so a refund does not subtract; drops by the `chosen` count.
+- The support Mark-resolved button resolves the newest open message seen at the last pass, not a chosen one.
+- The Curate batch notice relies on the Library's own glance (written when Library refreshes in the same pass; if Library has not refreshed it uses the previous value).
+- Core Haptics are added to the Curate deck only; Composer's crown, if it has one, was not touched (another lane's folder).
+- Translation is on room posts only, not on DMs or comments.
+
+## Files
+New: `PLDev/Services/AppleWatch.swift`, `PLDev/Services/AppleSystem.swift`, `PLDev/UI/AppleViews.swift`, `PLDevWidgets/AppleWidgets.swift`, `Shared/AppleGlance.swift`.
+Edited (small, additive): `NotificationHub.swift` (merged categories, text actions), `Poller.swift` (apple pass, Focus hold, processing task), `PLDevApp.swift`, `RootView.swift` (Handoff), `SettingsView.swift` (type labels), `PLDevWidgetsBundle.swift`, `Info.plist`, `scripts/PLDev.entitlements`, and one-to-few-line hooks in `HouseSection` (Settings rows), `FounderViews` (offline draft, rotor), `HouseSystem` and `CaptureSystem` (Siri cards), `CaptureModel` + `CaptureViews` (Vision), `CurateModel` (haptics), `PracticeMeditation` (Health), `GlyphBotAPI` / `GlyphBotViews` / `GlyphBotSystem` (on-device answer; the extras lane works in GlyphBot, so expect a small merge there), `MembersRoomViews` (Translate).
+Not touched: the vault record, any server repo or web app, the SideStore feed, session numbers.
