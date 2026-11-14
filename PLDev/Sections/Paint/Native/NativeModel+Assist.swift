@@ -6,7 +6,7 @@ import UIKit
 /// The drawing assists and the three odd tools: symmetry, tile mode, guides and assisted drawing, tangent lock, QuickShape, smudge,
 /// wet mix, the eyedropper and ColorDrop. Each is a port of the same-named function in the laptop's `app.js`.
 extension NativeCanvasModel {
-    static func num(_ v: Any) -> Double { (v as? Double) ?? Double(v as? Int ?? 0) }
+    nonisolated static func num(_ v: Any) -> Double { (v as? Double) ?? Double(v as? Int ?? 0) }
 
     // MARK: symmetry and tile
 

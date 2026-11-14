@@ -147,5 +147,5 @@ struct NativeBrushColourCard: View {
 }
 
 private extension Color {
-    init(plHex: String) { let c = Hex.rgb(hex) ?? (0, 0, 0); self.init(red: c.0, green: c.1, blue: c.2) }
+    init(plHex: String) { let c = Hex.rgb(plHex) ?? (0, 0, 0); self.init(red: c.0, green: c.1, blue: c.2) }
 }
