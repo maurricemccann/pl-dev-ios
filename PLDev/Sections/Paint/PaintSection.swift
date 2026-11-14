@@ -22,10 +22,10 @@ import WidgetKit
 }
 
 /// What the canvas is asked to open: the current work, or one by id.
-struct PaintCanvasRequest: Identifiable { let id = UUID(); let work: String?; var panel: NativePanel? = nil }
+struct PaintCanvasRequest: Identifiable { let id = UUID(); let work: String?; var panel: NativePanel? = nil; var setup: (@MainActor (NativeCanvasModel) -> Void)? = nil }
 
 @MainActor @Observable final class PaintModel {
-    struct Work: Identifiable { let id: String; let name: String; let w: Int; let h: Int; let updated: Date; let thumb: UIImage?; let here: Bool }
+    struct Work: Identifiable { let id: String; let name: String; let w: Int; let h: Int; let updated: Date; let thumb: UIImage?; let here: Bool; var stack: String? = nil; var entry: NativeRemote.Entry? = nil }
     struct Outbox: Decodable { struct Item: Decodable, Identifiable { let id: String; let title: String?; let dest: String?; let at: Double? }; let items: [Item] }
     var works: [Work] = []
     var days: [String: Int] = NativeDaily.days
@@ -33,6 +33,8 @@ struct PaintCanvasRequest: Identifiable { let id = UUID(); let work: String?; va
     var failed: String?
     var request: PaintCanvasRequest?
     var synced = false
+    /// The gallery edits the index through a canvas model with no document open (rename, copy, delete, stack all live there).
+    let ops = NativeCanvasModel()
 
     func openCanvas(work: String?, panel: NativePanel? = nil) { request = PaintCanvasRequest(work: work, panel: panel) }
 
@@ -41,7 +43,7 @@ struct PaintCanvasRequest: Identifiable { let id = UUID(); let work: String?; va
         func thumb(_ s: String?) -> UIImage? { s.flatMap { NativeDoc.image(fromDataURL: $0) }.map { UIImage(cgImage: $0) } }
         let local = NativeStore.loadIndex().list.map { e in
             Work(id: e["id"] as? String ?? "", name: e["name"] as? String ?? "Untitled", w: e["w"] as? Int ?? 0, h: e["h"] as? Int ?? 0,
-                 updated: Date(timeIntervalSince1970: ((e["updated"] as? Double) ?? Double(e["updated"] as? Int ?? 0)) / 1000), thumb: thumb(e["thumb"] as? String), here: true)
+                 updated: Date(timeIntervalSince1970: ((e["updated"] as? Double) ?? Double(e["updated"] as? Int ?? 0)) / 1000), thumb: thumb(e["thumb"] as? String), here: true, stack: (e["stack"] as? String).flatMap { $0.isEmpty ? nil : $0 })
         }
         works = local.sorted { $0.updated > $1.updated }
         days = NativeDaily.days
@@ -50,7 +52,7 @@ struct PaintCanvasRequest: Identifiable { let id = UUID(); let work: String?; va
         do {
             let remote = try await NativeRemote.list(http)
             let have = Set(local.map(\.id))
-            works += remote.filter { !have.contains($0.id) }.map { Work(id: $0.id, name: $0.name, w: $0.w, h: $0.h, updated: Date(timeIntervalSince1970: $0.updated / 1000), thumb: $0.thumb, here: false) }
+            works += remote.filter { !have.contains($0.id) }.map { Work(id: $0.id, name: $0.name, w: $0.w, h: $0.h, updated: Date(timeIntervalSince1970: $0.updated / 1000), thumb: $0.thumb, here: false, entry: $0) }
             struct Daily: Decodable { let days: [String: Int]? }
             if let dd = try? await http.send(RequestPlan(origin: "paint", path: "file/daily.json")) {
                 let theirs = (try? JSONDecoder().decode(Daily.self, from: dd))?.days ?? [:]
@@ -83,124 +85,6 @@ enum PaintSkin {
     static let text = Color(red: 0.937, green: 0.914, blue: 0.863)       // #efe9dc
     static let gold = Color(red: 0.788, green: 0.659, blue: 0.298)       // #c9a84c
     static let gold2 = Color(red: 0.906, green: 0.812, blue: 0.525)      // #e7cf86
-}
-
-private struct PaintPanel: ViewModifier {
-    func body(content: Content) -> some View {
-        content.padding(14).frame(maxWidth: .infinity, alignment: .leading)
-            .background(.ultraThinMaterial.opacity(0.55), in: RoundedRectangle(cornerRadius: 18, style: .continuous))
-            .overlay(RoundedRectangle(cornerRadius: 18, style: .continuous).strokeBorder(.white.opacity(0.07), lineWidth: 1))
-    }
-}
-private extension View {
-    func paintPanel() -> some View { modifier(PaintPanel()) }
-    /// A panel label: small, spaced, upper case, as the app's own.
-    func paintLabel() -> some View { font(.caption.weight(.semibold)).tracking(1.4).textCase(.uppercase).foregroundStyle(PaintSkin.text.opacity(0.55)) }
-}
-
-struct PaintHome: View {
-    let model: AppModel
-    @Bindable var state: PaintModel
-    @State private var handbook = false
-    @State private var syncing = false
-    private let sync = NativeSync.shared
-
-    var body: some View {
-        ScrollView {
-            VStack(spacing: 14) {
-                hero
-                dailyMark
-                works
-                if !state.outbox.isEmpty { waiting }
-                syncPanel
-                Button { handbook = true } label: {
-                    HStack { Label("The handbook", systemImage: "book"); Spacer(); Image(systemName: "chevron.right").foregroundStyle(PaintSkin.text.opacity(0.4)) }.paintPanel()
-                }.buttonStyle(.plain)
-                if let f = state.failed { Text(f).font(.footnote).foregroundStyle(PaintSkin.text.opacity(0.6)).frame(maxWidth: .infinity, alignment: .leading) }
-            }
-            .padding(.horizontal, 16).padding(.vertical, 12)
-        }
-        .foregroundStyle(PaintSkin.text)
-        .tint(PaintSkin.gold)
-        .background(PaintSkin.ground.ignoresSafeArea())
-        .navigationTitle("Paint")
-        .navigationBarTitleDisplayMode(.inline)
-        .toolbarColorScheme(.dark, for: .navigationBar)
-        .refreshable { await state.load(model: model) }
-        .task { await state.load(model: model) }
-        .fullScreenCover(item: $state.request, onDismiss: { Task { await state.load(model: model) } }) { r in NativeCanvasView(model: model, openID: r.work, openPanel: r.panel) }
-        .sheet(isPresented: $handbook) { NativeHandbookView() }
-        .preferredColorScheme(.dark)
-    }
-
-    private var hero: some View {
-        VStack(alignment: .leading, spacing: 12) {
-            Button { state.openCanvas(work: nil) } label: {
-                HStack(spacing: 14) {
-                    Image(systemName: "paintbrush.pointed.fill").font(.title).foregroundStyle(PaintSkin.ground)
-                        .frame(width: 56, height: 56).background(PaintSkin.gold.gradient, in: RoundedRectangle(cornerRadius: 14, style: .continuous))
-                    VStack(alignment: .leading, spacing: 2) {
-                        Text(state.works.contains { $0.here } ? "Back to the canvas" : "Open the canvas").plHand(26, relativeTo: .title2)
-                        Text("Apple Pencil pressure and tilt. Your brushes, layers and blends.").font(.caption).foregroundStyle(PaintSkin.text.opacity(0.6))
-                    }
-                    Spacer(minLength: 0)
-                }
-            }.buttonStyle(.plain)
-        }
-        .paintPanel()
-    }
-
-    private var dailyMark: some View {
-        VStack(alignment: .leading, spacing: 10) {
-            HStack { Text("The Daily Mark").paintLabel(); Spacer(); Text("\(state.streak) day\(state.streak == 1 ? "" : "s")").font(.footnote.monospacedDigit()).foregroundStyle(PaintSkin.gold2).contentTransition(.numericText()) }
-            DailyMarkStrip(days: state.days)
-        }
-        .paintPanel()
-    }
-
-    private var works: some View {
-        VStack(alignment: .leading, spacing: 10) {
-            HStack { Text("Your works · \(state.works.count)").paintLabel(); Spacer() }
-            if state.works.isEmpty && state.failed == nil { Text("Nothing here yet. Open the canvas and make the first mark.").font(.footnote).foregroundStyle(PaintSkin.text.opacity(0.6)) }
-            LazyVGrid(columns: [GridItem(.adaptive(minimum: 104), spacing: 10)], spacing: 10) {
-                ForEach(state.works) { w in
-                    Button { state.openCanvas(work: w.id) } label: {
-                        VStack(alignment: .leading, spacing: 4) {
-                            ZStack {
-                                NativeChecker().opacity(0.35)
-                                if let t = w.thumb { Image(uiImage: t).resizable().scaledToFit() }
-                                if !w.here { Image(systemName: "icloud.and.arrow.down").padding(6).background(.ultraThinMaterial, in: Circle()).frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .bottomTrailing).padding(4) }
-                            }
-                            .frame(height: 104).frame(maxWidth: .infinity).clipShape(RoundedRectangle(cornerRadius: 10, style: .continuous))
-                            Text(w.name).font(.caption).lineLimit(1)
-                            Text(w.updated, format: .relative(presentation: .named)).font(.caption2).foregroundStyle(PaintSkin.text.opacity(0.5))
-                        }
-                    }.buttonStyle(.plain)
-                }
-            }
-        }
-        .paintPanel()
-    }
-
-    private var waiting: some View {
-        VStack(alignment: .leading, spacing: 8) {
-            Text("Waiting to be filed").paintLabel()
-            ForEach(state.outbox) { i in HStack { Text(i.title ?? i.id); Spacer(); Text((i.dest ?? "").capitalized).foregroundStyle(PaintSkin.text.opacity(0.6)) }.font(.footnote) }
-            Text("Sent to Curate or the Archive; the PC files them.").font(.caption2).foregroundStyle(PaintSkin.text.opacity(0.5))
-        }
-        .paintPanel()
-    }
-
-    private var syncPanel: some View {
-        VStack(alignment: .leading, spacing: 8) {
-            HStack { Text("Sync with the laptop").paintLabel(); Spacer(); Text(sync.state).font(.footnote).foregroundStyle(sync.failed ? .red : PaintSkin.gold2) }
-            if !sync.detail.isEmpty { Text(sync.detail).font(.caption).foregroundStyle(PaintSkin.text.opacity(0.6)) }
-            Button { Task { syncing = true; await sync.run(model: model, canvas: nil); await state.load(model: model); syncing = false } } label: {
-                Label(syncing || sync.running ? "Syncing…" : "Sync now", systemImage: "arrow.triangle.2.circlepath")
-            }.buttonStyle(.bordered).disabled(syncing || sync.running)
-        }
-        .paintPanel()
-    }
 }
 
 /// The last five weeks of marks, darker for more strokes (the laptop's Daily Mark, as a strip).

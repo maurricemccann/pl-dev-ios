@@ -12,6 +12,13 @@ import UniformTypeIdentifiers
 
     static func png(_ d: NativeDoc) -> Data? { d.flatPNG() }
 
+    /// A one-page PDF at the picture's pixel size (a page point per pixel), the picture on its paper, transparent where the paper is hidden.
+    static func pdf(_ d: NativeDoc) -> Data? {
+        guard let png = d.flatPNG(), let ui = UIImage(data: png) else { return nil }
+        let r = UIGraphicsPDFRenderer(bounds: CGRect(x: 0, y: 0, width: d.w, height: d.h), format: { let f = UIGraphicsPDFRendererFormat(); f.documentInfo = [kCGPDFContextCreator as String: "PL Paint"]; return f }())
+        return r.pdfData { c in c.beginPage(); ui.draw(in: CGRect(x: 0, y: 0, width: d.w, height: d.h)) }
+    }
+
     /// A JPEG has no transparency, so a hidden paper goes onto white.
     static func jpeg(_ d: NativeDoc) -> Data? {
         guard let flat = d.compositeBuffer(includeBackground: false), let out = PixelBuffer(w: d.w, h: d.h) else { return nil }
@@ -442,6 +449,7 @@ struct NativeExportSheet: View {
                 Section {
                     row("PNG", "photo", "The picture as you see it. Transparent where the background is hidden.", ext: "png") { d in NativeExport.png(d) }
                     row("JPEG", "photo.fill", "Smaller, no transparency: a hidden background goes onto white.", ext: "jpg") { d in NativeExport.jpeg(d) }
+                    row("PDF", "doc.richtext.fill", "One page the size of the picture.", ext: "pdf") { d in NativeExport.pdf(d) }
                     row("Photoshop (PSD)", "square.3.layers.3d", "Every layer with its name, order, opacity, blend mode and visibility. Groups become folders; masks and clipping are baked in.", ext: "psd") { d in NativeExport.psd(d) }
                 } header: { Text("Picture") }
                 Section {

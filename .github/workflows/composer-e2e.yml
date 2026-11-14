@@ -67,7 +67,7 @@ jobs:
       - name: Drive Composer
         run: |
           mkdir -p shots
-          ONLY=""
+          ONLY="-only-testing:PLDevUITests/ComposerFlowsTests"   # the bundle also holds PaintFlowTests (paint-e2e.yml)
           [ -n "${{ inputs.only }}" ] && ONLY="-only-testing:PLDevUITests/ComposerFlowsTests/${{ inputs.only }}"
           set +e
           TEST_RUNNER_PL_SIM_CONFIG="$PL_SIM_CONFIG" TEST_RUNNER_PL_SHOTS_DIR="$PWD/shots" \

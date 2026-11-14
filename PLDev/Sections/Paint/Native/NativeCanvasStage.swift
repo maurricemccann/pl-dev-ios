@@ -579,6 +579,11 @@ final class ToolOverlay: UIView {
 
 struct CanvasRepresentable: UIViewRepresentable {
     let model: NativeCanvasModel
-    func makeUIView(context: Context) -> CanvasStage { CanvasStage(model: model) }
+    func makeUIView(context: Context) -> CanvasStage {
+        let v = CanvasStage(model: model)
+        v.isAccessibilityElement = true; v.accessibilityLabel = "Canvas"; v.accessibilityIdentifier = "canvas.surface"
+        v.accessibilityHint = "Draw with the Apple Pencil. Two fingers tap to undo, three to redo."
+        return v
+    }
     func updateUIView(_ v: CanvasStage, context: Context) {}
 }
