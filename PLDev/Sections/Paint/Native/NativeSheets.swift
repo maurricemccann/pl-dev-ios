@@ -11,6 +11,10 @@ struct NativeColourSheet: View {
     @Environment(\.dismiss) private var dismiss
     @State private var palette = 0
     @State private var pickingSecond = false
+    // Classic (his handbook, ch. 4): three sliders. Kept as state so hue survives a grey or a black, where a colour alone forgets it.
+    @State private var ch = 0.0
+    @State private var cs = 0.0
+    @State private var cv = 0.0
 
     private var hsv: (h: Double, s: Double, v: Double) {
         let c = UIColor(canvas.color); var h: CGFloat = 0, s: CGFloat = 0, v: CGFloat = 0, a: CGFloat = 0
@@ -45,21 +49,27 @@ struct NativeColourSheet: View {
                         if canvas.recent.isEmpty { Text("The colours you paint with collect here.").font(.footnote).foregroundStyle(.secondary) }
                         else { swatches(canvas.recent) }
                     }
+                    section("Classic") {
+                        classicRow("Hue", $ch, 0...360, "\(Int(ch))°")
+                        classicRow("Saturation", $cs, 0...1, "\(Int(cs * 100))%")
+                        classicRow("Brightness", $cv, 0...1, "\(Int(cv * 100))%")
+                    }
                     section("Harmony") {
                         let v = hsv
-                        let sets: [(String, [Color])] = [
-                            ("Opposite", [hex(h: v.h + 180, s: v.s, v: v.v)]),
-                            ("Triad", [hex(h: v.h + 120, s: v.s, v: v.v), hex(h: v.h + 240, s: v.s, v: v.v)]),
-                            ("Neighbours", [hex(h: v.h - 30, s: v.s, v: v.v), hex(h: v.h + 30, s: v.s, v: v.v)]),
+                        let sets: [(String, [Color])] = [   // the handbook's five schemes, by its names
+                            ("Complementary", [hex(h: v.h + 180, s: v.s, v: v.v)]),
                             ("Split", [hex(h: v.h + 150, s: v.s, v: v.v), hex(h: v.h + 210, s: v.s, v: v.v)]),
+                            ("Triad", [hex(h: v.h + 120, s: v.s, v: v.v), hex(h: v.h + 240, s: v.s, v: v.v)]),
+                            ("Analogous", [hex(h: v.h - 30, s: v.s, v: v.v), hex(h: v.h + 30, s: v.s, v: v.v)]),
+                            ("Tetrad", [hex(h: v.h + 90, s: v.s, v: v.v), hex(h: v.h + 180, s: v.s, v: v.v), hex(h: v.h + 270, s: v.s, v: v.v)]),
                         ]
                         ForEach(sets, id: \.0) { name, cols in
-                            HStack { Text(name).font(.caption).frame(width: 84, alignment: .leading); ForEach(Array(cols.enumerated()), id: \.offset) { _, c in swatch(UIColor(c).hex) }; Spacer() }
+                            HStack { Text(name).font(.caption).frame(width: 104, alignment: .leading); ForEach(Array(cols.enumerated()), id: \.offset) { _, c in swatch(UIColor(c).hex) }; Spacer() }
                         }
                     }
-                    section("Darker to lighter") {
+                    section("Value") {   // the handbook: "from dark to light in ten steps"
                         let v = hsv
-                        HStack(spacing: 4) { ForEach(1..<10, id: \.self) { i in swatch(UIColor(hex(h: v.h, s: v.s, v: Double(i) / 9)).hex, size: 28) } }
+                        HStack(spacing: 3) { ForEach(1...10, id: \.self) { i in swatch(UIColor(hex(h: v.h, s: v.s, v: Double(i) / 10)).hex, size: 26) } }
                     }
                     section("Passes") {
                         Picker("Each stroke takes the next colour of", selection: $canvas.passPalette) {
@@ -80,10 +90,21 @@ struct NativeColourSheet: View {
             }
             .navigationTitle("Colour")
             .navigationBarTitleDisplayMode(.inline)
+            .onAppear { syncClassic() }
+            .onChange(of: UIColor(canvas.color).hex) { _, now in if now != UIColor(hex(h: ch, s: cs, v: cv)).hex { syncClassic() } }   // a swatch or the wheel moved it
             .toolbar { ToolbarItem(placement: .confirmationAction) { Button("Done") { dismiss() } } }
         }
     }
 
+    private func syncClassic() { let v = hsv; if v.s > 0.001 && v.v > 0.001 { ch = v.h }; cs = v.s; cv = v.v }
+    private func classicRow(_ name: String, _ value: Binding<Double>, _ range: ClosedRange<Double>, _ read: String) -> some View {
+        HStack(spacing: 10) {
+            Text(name).font(.caption).frame(width: 78, alignment: .leading)
+            Slider(value: Binding(get: { value.wrappedValue }, set: { value.wrappedValue = $0; canvas.setColour(hex: UIColor(hex(h: ch, s: cs, v: cv)).hex) }), in: range)
+                .accessibilityLabel(name)
+            Text(read).font(.caption.monospacedDigit()).frame(width: 44, alignment: .trailing)
+        }
+    }
     private func section(_ t: String, @ViewBuilder _ c: () -> some View) -> some View {
         VStack(alignment: .leading, spacing: 8) { Text(t).font(.subheadline.weight(.semibold)); c() }
     }
