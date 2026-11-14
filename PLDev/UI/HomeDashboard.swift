@@ -203,10 +203,27 @@ struct HomeDashboard: View {
     // MARK: reads
 
     private func load() async {
+        #if targetEnvironment(simulator)
+        if UserDefaults.standard.bool(forKey: "simDemo") { demoFixtures(); return }   // the screenshots workflow has no key: fixed numbers, one of each level
+        #endif
         async let p: Void = loadPC()
         async let h: Void = loadHouse()
         _ = await (p, h)
     }
+
+    #if targetEnvironment(simulator)
+    /// Simulator only, never in a device build: numbers that show every level (green, amber, red) so the tints can be looked at in a screenshot.
+    private func demoFixtures() {
+        let now = ISO8601DateFormatter().string(from: .now.addingTimeInterval(-4 * 60))
+        func r(_ t: Int, _ cpu: Int, _ ram: Double, _ at: String) -> PCStats.Reading { .init(time: at, temp_c: "\(t)", cpu_pct: "\(cpu)", clock_pct: "100", free_ram_gb: String(ram), battery_pct: "100", on_ac: "True") }
+        var rows: [PCStats.Reading] = []
+        for i in 0..<12 { rows.append(r(60 + i * 2, 40 + (i % 5) * 9, 5.2 - Double(i) * 0.15, ISO8601DateFormatter().string(from: .now.addingTimeInterval(Double(-(60 - i * 5)) * 60)))) }
+        rows.append(r(78, 93, 1.6, now))
+        pc = PCStats(thermal: rows, disk_free_gb: 412, disk_total_gb: 953, uptime_h: 61, sessions: 3, pool: [.init(time: now, nonpaged_mb: 2900, paged_mb: 2600)])
+        house = HouseGlanceNumbers(needs: 0, approve: 230, standing: 71, queued: 38, week: 142)
+        pcFailed = false
+    }
+    #endif
 
     private func loadPC() async {
         guard let http = model.http, let key = model.config?.key("call"), !key.isEmpty else { pcFailed = true; return }

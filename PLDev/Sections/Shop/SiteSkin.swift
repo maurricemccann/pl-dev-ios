@@ -7,14 +7,14 @@ import SwiftUI
 /// design; in Dark Appearance the ground becomes the site's obsidian (the footer and the Room) and ink flips to bone.
 /// Native twins: New York serif for Cormorant Garamond (its closest system face), bundled Jost for Jost.
 enum Bone {
-    static func ground(_ s: ColorScheme) -> Color { s == .dark ? Color(hex: 0x0e0c08) : Color(hex: 0xf1ece1) }
-    static func raised(_ s: ColorScheme) -> Color { s == .dark ? Color(hex: 0x1c1813) : Color(hex: 0xfaf6ec) }
-    static func ink(_ s: ColorScheme) -> Color { s == .dark ? Color(hex: 0xf1ece1) : Color(hex: 0x15120b) }
-    static func inkSoft(_ s: ColorScheme) -> Color { s == .dark ? Color(hex: 0xc9c1ad) : Color(hex: 0x4f4a3b) }
-    static func inkFaint(_ s: ColorScheme) -> Color { s == .dark ? Color(hex: 0x9b937f) : Color(hex: 0x6f6857) }
-    static func line(_ s: ColorScheme) -> Color { s == .dark ? Color(hex: 0xc9a84c).opacity(0.22) : Color(hex: 0xddd5c4) }
-    static let gold = Color(hex: 0xc9a84c)
-    static let goldDim = Color(hex: 0x8a7235)
+    static func ground(_ s: ColorScheme) -> Color { PLCarry.tone(.ground, s, s == .dark ? Color(hex: 0x0e0c08) : Color(hex: 0xf1ece1)) }
+    static func raised(_ s: ColorScheme) -> Color { PLCarry.tone(.surface, s, s == .dark ? Color(hex: 0x1c1813) : Color(hex: 0xfaf6ec)) }
+    static func ink(_ s: ColorScheme) -> Color { PLCarry.tone(.ink, s, s == .dark ? Color(hex: 0xf1ece1) : Color(hex: 0x15120b)) }
+    static func inkSoft(_ s: ColorScheme) -> Color { PLCarry.tone(.dim, s, s == .dark ? Color(hex: 0xc9c1ad) : Color(hex: 0x4f4a3b)) }
+    static func inkFaint(_ s: ColorScheme) -> Color { PLCarry.tone(.faint, s, s == .dark ? Color(hex: 0x9b937f) : Color(hex: 0x6f6857)) }
+    static func line(_ s: ColorScheme) -> Color { PLCarry.tone(.line, s, s == .dark ? Color(hex: 0xc9a84c).opacity(0.22) : Color(hex: 0xddd5c4)) }
+    static var gold: Color { PLCarry.tone(.accent, .dark, Color(hex: 0xc9a84c)) }
+    static var goldDim: Color { PLCarry.tone(.accentDim, .light, Color(hex: 0x8a7235)) }
     static let oxblood = Color(hex: 0x5e1622)
     static let teal = Color(hex: 0x2d8a6e)
     static let amber = Color(hex: 0xdb9314)

@@ -5,14 +5,14 @@ import SwiftUI
 /// accent, the glass card with its gold hairline and top sheen, the hand on panel names, the instrument face on numbers.
 /// Native twins: SF Mono for JetBrains Mono, the system face for DM Sans, New York italic for Cormorant (native first).
 enum PLOS {
-    static func bg(_ s: ColorScheme) -> Color { s == .dark ? Color(hex: 0x0e0c08) : Color(hex: 0xfaf7f0) }
-    static func surface(_ s: ColorScheme) -> Color { s == .dark ? Color(hex: 0x1a1610) : Color(hex: 0xfdf9f1) }
-    static func surface2(_ s: ColorScheme) -> Color { s == .dark ? Color(hex: 0x221d15) : Color(hex: 0xf5efe2) }
-    static func line(_ s: ColorScheme) -> Color { s == .dark ? Color(red: 201 / 255, green: 168 / 255, blue: 76 / 255).opacity(0.18) : Color(red: 160 / 255, green: 140 / 255, blue: 110 / 255).opacity(0.22) }
-    static func text(_ s: ColorScheme) -> Color { s == .dark ? Color(hex: 0xefe6d2) : Color(hex: 0x1a1510) }
-    static func dim(_ s: ColorScheme) -> Color { s == .dark ? Color(hex: 0xb3a585) : Color(hex: 0x6b5d48) }
-    static func goldDim(_ s: ColorScheme) -> Color { s == .dark ? Color(hex: 0xb8973f) : Color(hex: 0x8a7235) }
-    static let gold = Color(hex: 0xc9a84c)
+    static func bg(_ s: ColorScheme) -> Color { PLCarry.tone(.ground, s, s == .dark ? Color(hex: 0x0e0c08) : Color(hex: 0xfaf7f0)) }
+    static func surface(_ s: ColorScheme) -> Color { PLCarry.tone(.surface, s, s == .dark ? Color(hex: 0x1a1610) : Color(hex: 0xfdf9f1)) }
+    static func surface2(_ s: ColorScheme) -> Color { PLCarry.tone(.surface2, s, s == .dark ? Color(hex: 0x221d15) : Color(hex: 0xf5efe2)) }
+    static func line(_ s: ColorScheme) -> Color { PLCarry.tone(.line, s, s == .dark ? Color(red: 201 / 255, green: 168 / 255, blue: 76 / 255).opacity(0.18) : Color(red: 160 / 255, green: 140 / 255, blue: 110 / 255).opacity(0.22)) }
+    static func text(_ s: ColorScheme) -> Color { PLCarry.tone(.ink, s, s == .dark ? Color(hex: 0xefe6d2) : Color(hex: 0x1a1510)) }
+    static func dim(_ s: ColorScheme) -> Color { PLCarry.tone(.dim, s, s == .dark ? Color(hex: 0xb3a585) : Color(hex: 0x6b5d48)) }
+    static func goldDim(_ s: ColorScheme) -> Color { PLCarry.tone(.accentDim, s, s == .dark ? Color(hex: 0xb8973f) : Color(hex: 0x8a7235)) }
+    static var gold: Color { PLCarry.tone(.accent, .dark, Color(hex: 0xc9a84c)) }
     static let muted = Color(hex: 0x8a8270)
     static let ok = Color(hex: 0x2d8a6e)
     static let warn = Color(hex: 0xb07d2a)

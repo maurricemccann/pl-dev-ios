@@ -1,0 +1,91 @@
+name: notes4-e2e
+
+# The notes4 lane's proof: builds PL DEV for the iPhone simulator and DRIVES it with XCUITest (Notes4FlowsTests), in Light and Dark, photographing the tinted
+# tiles, the approve line, GlyphGuy in his frame, theme packs through the sections, Mindful minutes and the push/pop with no white behind. Public addresses and
+# dummy key names only (the same as screens.yml): nothing private is read.
+on:
+  push:
+    branches: [wave-notes4]
+    paths: [PLDevUITests/NOTES4-RUN]   # a branch-only workflow cannot be dispatched by hand: bump this file to run it
+  workflow_dispatch:
+    inputs:
+      only:
+        description: "Run only this test method, e.g. Notes4FlowsTests/test01_TodayTints (blank = all)"
+        type: string
+        default: ""
+
+permissions:
+  contents: read
+
+jobs:
+  e2e:
+    runs-on: xcode-27
+    timeout-minutes: 60
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Select Xcode 27.2
+        run: sudo xcode-select -s /Applications/Xcode_27.2.app
+
+      - name: Build the app for the simulator
+        run: |
+          if ! xcodebuild -project PLDev.xcodeproj -scheme PLDev -configuration Debug -sdk iphonesimulator \
+               -destination 'generic/platform=iOS Simulator' -derivedDataPath dd \
+               CODE_SIGNING_ALLOWED=NO build > sim.log 2>&1; then
+            grep -E "error:" sim.log | awk '!seen[$0]++' | head -60; exit 1
+          fi
+          tail -n 3 sim.log
+
+      - name: Boot a phone and install the app
+        run: |
+          DEV=$(xcrun simctl list devices available -j | python3 -c "import json,sys;d=json.load(sys.stdin)['devices'];c=[x for r in d for x in d[r] if 'iPhone' in x['name'] and 'Pro' in x['name'] and 'Max' not in x['name']];print(c[-1]['udid'])")
+          echo "DEV=$DEV" >> $GITHUB_ENV
+          xcrun simctl boot "$DEV"; xcrun simctl bootstatus "$DEV" -b
+          xcrun simctl ui "$DEV" appearance dark
+          xcrun simctl status_bar "$DEV" override --time "9:41" --batteryLevel 100 --cellularBars 4 --wifiBars 3
+          APP=$(find dd -type d -name "PLDev.app" -path "*iphonesimulator*" 2>/dev/null | head -1); echo "app: $APP"; [ -n "$APP" ] || exit 1
+          xcrun simctl install "$DEV" "$APP"
+          BID=$(/usr/libexec/PlistBuddy -c "Print :CFBundleIdentifier" "$APP/Info.plist"); echo "BID=$BID" >> $GITHUB_ENV
+          # the config: public addresses, key NAMES with dummy values (no origin carries auth, so no key is ever sent)
+          DATA=$(xcrun simctl get_app_container "$DEV" "$BID" data)
+          mkdir -p "$DATA/Documents"
+          cat > "$DATA/Documents/sim-config.json" <<'JSON'
+          {"v":1,"sections":["house","capture","curate","library","pick","composer","town","paint","shop","congregation","practice","glyphbot","status"],
+           "origins":{"cron":{"base":"https://pl-cron.psychedluxuries.com/"},"console":{"base":"https://pl-cron.psychedluxuries.com/"},
+             "gallery":{"base":"https://pl-curve-library.psychedluxuries.workers.dev/"},"site":{"base":"https://psychedluxuries.com/"},
+             "composer":{"base":"https://pl-composer.psychedluxuries.workers.dev/"},"os":{"base":"https://plos.beta.psychedluxuries.com/"},
+             "practice":{"base":"https://pl-manifestation-practice.psychedluxuries.workers.dev/"},"interview":{"base":"https://pl-cron.psychedluxuries.com/"},
+             "paint":{"base":"https://pl-cron.psychedluxuries.com/api/paint/"}},
+           "keys":{"widgetRead":"sim-no-key","widgetWrite":"sim-no-key","paintSync":"sim-no-key","debug":"sim-no-key","vault":"sim-no-key","call":"sim-no-key","board":"sim-no-key","pldev":"sim-no-key","interview":"sim-no-key","composer":"sim-no-key"}}
+          JSON
+          echo "SIMCFG=$DATA/Documents/sim-config.json" >> $GITHUB_ENV
+
+      - name: Run the flows
+        run: |
+          mkdir -p shots
+          ONLY="${{ inputs.only }}"
+          SEL="-only-testing:PLDevUITests/Notes4FlowsTests"; [ -n "$ONLY" ] && SEL="-only-testing:PLDevUITests/$ONLY"
+          set +e
+          TEST_RUNNER_SIMCFG="$SIMCFG" TEST_RUNNER_SHOTS="$PWD/shots" \
+          xcodebuild test -project PLDevUITests/PLDevUITests.xcodeproj -scheme PLDevUITests -configuration Debug \
+            -destination "platform=iOS Simulator,id=$DEV" -derivedDataPath dd-ui -resultBundlePath result.xcresult \
+            $SEL CODE_SIGNING_ALLOWED=NO > test.log 2>&1
+          echo "xcodebuild exit $?"
+          grep -E "error:|Test Case .*(passed|failed)|Executed|TEST (SUCCEEDED|FAILED)|\*\* " test.log | awk '!seen[$0]++' | head -120
+          ls shots | wc -l
+          exit 0
+
+      - name: The result of each test, plainly
+        if: always()
+        run: |
+          grep -E "Test Case .*(passed|failed)|XCTAssert|error:" test.log | awk '!seen[$0]++' > shots/RESULTS.txt || true
+          cat shots/RESULTS.txt | head -80
+
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: notes4-e2e
+          path: |
+            shots
+            test.log
+          retention-days: 5

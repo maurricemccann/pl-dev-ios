@@ -123,7 +123,12 @@ enum PLVision {
     /// iOS checks). SideStore signs with its own free-account profile, and AltSign hands a free account only the entitlements on
     /// its short list (app groups, keychain groups, inter-app audio, memory limit): HealthKit is not on it, so the profile has none and
     /// iOS refuses Health. nil = no embedded profile to read (the simulator, a store build): try it and let iOS answer.
-    static func hasEntitlement() -> Bool? { entitlementRead }
+    static func hasEntitlement() -> Bool? {
+        #if targetEnvironment(simulator)
+        if UserDefaults.standard.bool(forKey: "simNoHealthKit") { return false }   // the screenshots workflow acts out a free-account build
+        #endif
+        return entitlementRead
+    }
     private static let entitlementRead: Bool? = {
         guard let path = Bundle.main.path(forResource: "embedded", ofType: "mobileprovision"),
               let data = FileManager.default.contents(atPath: path),

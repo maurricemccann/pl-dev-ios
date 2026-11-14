@@ -40,7 +40,7 @@ import UserNotifications
     }
     static func handle(link: DeepLink, model: AppModel) -> Bool {
         if case .section(_, let path, _) = link, let first = path.first {
-            if let tab = HouseModel.Tab(rawValue: first) { state.tab = tab }
+            if let tab = HouseModel.Tab(rawValue: first) { state.tab = tab; state.room = nil }   // a tab link lands on the tab, not on the room House was last left in
             if let room = HouseRoom(rawValue: first) { state.room = room }
         }
         return true

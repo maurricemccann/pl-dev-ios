@@ -6,16 +6,16 @@ import SwiftUI
 /// gold button with dark text, the assistant's lines in a serif italic gold-hi, the system face for everything else.
 /// The practice is the house's one private surface and it is dark only, so the screens pin the dark appearance.
 enum Candle {
-    static let bg = Color(hex: 0x0b0a07)
-    static let ink = Color(hex: 0xefe7d2)
-    static let gold = Color(hex: 0xc9a84c)
-    static let goldHi = Color(hex: 0xf3e6b0)
-    static let card = Color(hex: 0x14120d)
-    static let field = Color(hex: 0x0f0d09)
-    static let fieldLine = Color(hex: 0x2a2518)
-    static let pillLine = Color(hex: 0x3a331f)
-    static let rule = Color(hex: 0x221e15)
-    static let hairline = Color(red: 201 / 255, green: 168 / 255, blue: 76 / 255).opacity(0.16)
+    static var bg: Color { PLCarry.tone(.ground, .dark, Color(hex: 0x0b0a07)) }
+    static var ink: Color { PLCarry.tone(.ink, .dark, Color(hex: 0xefe7d2)) }
+    static var gold: Color { PLCarry.tone(.accent, .dark, Color(hex: 0xc9a84c)) }
+    static var goldHi: Color { PLCarry.tone(.accentHi, .dark, Color(hex: 0xf3e6b0)) }
+    static var card: Color { PLCarry.tone(.surface, .dark, Color(hex: 0x14120d)) }
+    static var field: Color { PLCarry.tone(.well, .dark, Color(hex: 0x0f0d09)) }
+    static var fieldLine: Color { PLCarry.blend(0.12, .dark, Color(hex: 0x2a2518)) }
+    static var pillLine: Color { PLCarry.blend(0.17, .dark, Color(hex: 0x3a331f)) }
+    static var rule: Color { PLCarry.blend(0.09, .dark, Color(hex: 0x221e15)) }
+    static var hairline: Color { PLCarry.tone(.line, .dark, Color(red: 201 / 255, green: 168 / 255, blue: 76 / 255).opacity(0.16), alpha: 0.72) }
     static let radius: CGFloat = 12
 }
 
@@ -24,8 +24,8 @@ struct CandleGround: View {
     var body: some View {
         ZStack {
             Candle.bg
-            RadialGradient(colors: [Color(hex: 0x17130a), .clear], center: UnitPoint(x: 0.2, y: 0), startRadius: 0, endRadius: 520)
-            RadialGradient(colors: [Color(hex: 0x120e14), .clear], center: UnitPoint(x: 0.9, y: 1), startRadius: 0, endRadius: 480)
+            RadialGradient(colors: [PLCarry.tone(.surface, .dark, Color(hex: 0x17130a)), .clear], center: UnitPoint(x: 0.2, y: 0), startRadius: 0, endRadius: 520)
+            RadialGradient(colors: [PLCarry.tone(.surface2, .dark, Color(hex: 0x120e14)), .clear], center: UnitPoint(x: 0.9, y: 1), startRadius: 0, endRadius: 480)
         }
         .ignoresSafeArea()
     }

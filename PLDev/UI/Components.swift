@@ -10,7 +10,7 @@ struct Backdrop: View {
 
     var body: some View {
         ZStack {
-            PLTone.canvas
+            HouseGround()   // was PLTone.canvas, Apple's grouped grey: the white that showed behind every push in Light Appearance (his note 11-14)
             if let tile = ThemePack.shared.tile, !reduceTransparency {
                 Image(uiImage: tile)
                     .resizable(resizingMode: .tile)

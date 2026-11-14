@@ -5,13 +5,13 @@ import SwiftUI
 /// hairline, caps in Jost (the system face here) spaced 0.28 em, titles in Cormorant italic (New York italic here), and his
 /// curve tile faint under everything. Library, Curate, Pick, Town and every room read from here; none invents a colour.
 enum PLG {
-    static func bg(_ s: ColorScheme) -> Color { s == .dark ? Color(hex: 0x0e0c08) : Color(hex: 0xfaf7f0) }
-    static func surface(_ s: ColorScheme) -> Color { s == .dark ? Color(hex: 0x1a1610) : Color(hex: 0xfdf9f1) }
-    static func ink(_ s: ColorScheme) -> Color { s == .dark ? Color(hex: 0xefe6d2) : Color(hex: 0x1a1510) }
-    static func dim(_ s: ColorScheme) -> Color { s == .dark ? Color(hex: 0xb3a585) : Color(hex: 0x6b5d48) }
-    static func line(_ s: ColorScheme) -> Color { s == .dark ? gold.opacity(0.22) : Color(red: 160 / 255, green: 140 / 255, blue: 110 / 255).opacity(0.28) }
-    static let gold = Color(hex: 0xc9a84c)
-    static func goldDim(_ s: ColorScheme) -> Color { s == .dark ? gold : Color(hex: 0x8a7235) }
+    static func bg(_ s: ColorScheme) -> Color { PLCarry.tone(.ground, s, s == .dark ? Color(hex: 0x0e0c08) : Color(hex: 0xfaf7f0)) }
+    static func surface(_ s: ColorScheme) -> Color { PLCarry.tone(.surface, s, s == .dark ? Color(hex: 0x1a1610) : Color(hex: 0xfdf9f1)) }
+    static func ink(_ s: ColorScheme) -> Color { PLCarry.tone(.ink, s, s == .dark ? Color(hex: 0xefe6d2) : Color(hex: 0x1a1510)) }
+    static func dim(_ s: ColorScheme) -> Color { PLCarry.tone(.dim, s, s == .dark ? Color(hex: 0xb3a585) : Color(hex: 0x6b5d48)) }
+    static func line(_ s: ColorScheme) -> Color { PLCarry.tone(.line, s, s == .dark ? gold.opacity(0.22) : Color(red: 160 / 255, green: 140 / 255, blue: 110 / 255).opacity(0.28)) }
+    static var gold: Color { PLCarry.tone(.accent, .dark, Color(hex: 0xc9a84c)) }
+    static func goldDim(_ s: ColorScheme) -> Color { PLCarry.tone(.accentDim, s, s == .dark ? gold : Color(hex: 0x8a7235)) }
     static let red = Color(hex: 0xC8402A)      // studio red: the live marker, the active tab, a cut
     static let teal = Color(hex: 0x2d8a6e)     // a keep
     static let amber = Color(hex: 0xdb9314)    // a maybe

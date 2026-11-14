@@ -110,18 +110,39 @@ struct HousePalette: Codable, Hashable, Identifiable {
 
     /// Pushes the house into UIKit's shared chrome: his hand on every navigation title, the palette's key as the window tint,
     /// and the palette to the widgets (App Group) so the Lock Screen and Home Screen wear the same colour.
+    /// The title face he chose (v1, v2, Ransom, Ledger), or his V1 hand until another is picked. One answer for every title in the app.
+    var titleFaceName: String? {
+        switch titleFace { case "v2": return PLFace.handV2; case "ransom": return PLFace.ransom; case "ledger": return PLFace.ledger; default: return titleFont }
+    }
+    private var barsCarried = false
+
     func apply() {
-        let face: String? = { switch titleFace { case "v2": return PLFace.handV2; case "ransom": return PLFace.ransom; case "ledger": return PLFace.ledger; default: return titleFont } }()
-        if let name = face ?? titleFont {
+        // the carry first: every skin reads it, and the bars below are drawn from it (his note 11-14: a pack changes the whole app)
+        PLCarry.update(palette: palette, packAccent: ThemePack.shared.accent, defaultPalette: paletteName == HousePalette.homeScreen.name, packLoaded: ThemePack.shared.isLoaded)
+        let carry = PLCarry.snap.active
+        let bg = PLCarry.uiGround(fallback: .systemBackground), ink = PLCarry.uiInk(fallback: .label)
+        if let name = titleFaceName ?? titleFont {
             let nav = UINavigationBarAppearance()
             nav.configureWithDefaultBackground()
-            if let large = UIFont(name: name, size: 38) { nav.largeTitleTextAttributes = [.font: UIFontMetrics(forTextStyle: .largeTitle).scaledFont(for: large)] }
-            if let small = UIFont(name: name, size: 22) { nav.titleTextAttributes = [.font: UIFontMetrics(forTextStyle: .headline).scaledFont(for: small)] }
+            var large: [NSAttributedString.Key: Any] = [:], small: [NSAttributedString.Key: Any] = [:]
+            if let f = UIFont(name: name, size: 38) { large[.font] = UIFontMetrics(forTextStyle: .largeTitle).scaledFont(for: f) }
+            if let f = UIFont(name: name, size: 22) { small[.font] = UIFontMetrics(forTextStyle: .headline).scaledFont(for: f) }
+            if carry { large[.foregroundColor] = ink; small[.foregroundColor] = ink; nav.backgroundColor = bg.withAlphaComponent(0.9) }
+            nav.largeTitleTextAttributes = large; nav.titleTextAttributes = small
             UINavigationBar.appearance().standardAppearance = nav
             UINavigationBar.appearance().compactAppearance = nav
             let edge = UINavigationBarAppearance(); edge.configureWithTransparentBackground()
             edge.largeTitleTextAttributes = nav.largeTitleTextAttributes; edge.titleTextAttributes = nav.titleTextAttributes
             UINavigationBar.appearance().scrollEdgeAppearance = edge
+        }
+        // tab bars and toolbars wear the pack too; back to the system's own when it is dropped
+        if carry || barsCarried {
+            let tab = UITabBarAppearance(); tab.configureWithDefaultBackground()
+            let tool = UIToolbarAppearance(); tool.configureWithDefaultBackground()
+            if carry { tab.backgroundColor = bg.withAlphaComponent(0.92); tool.backgroundColor = bg.withAlphaComponent(0.92) }
+            UITabBar.appearance().standardAppearance = tab; UITabBar.appearance().scrollEdgeAppearance = tab
+            UIToolbar.appearance().standardAppearance = tool; UIToolbar.appearance().scrollEdgeAppearance = tool; UIToolbar.appearance().compactAppearance = tool
+            barsCarried = carry
         }
         SharedState.writeHouseTint(palette.key, ground: palette.ground)
     }
@@ -141,10 +162,12 @@ struct HouseGround: View {
     var body: some View {
         let p = kit.palette
         ZStack {
-            if scheme == .dark { p.groundColor } else { ZStack { Color(uiColor: .systemGroupedBackground); p.textColor.opacity(0.45) } }
+            if PLCarry.snap.active { PLCarry.tone(.ground, scheme, .clear) }   // a chosen pack: deep ground in dark, pale in light, whichever way the palette runs
+            else if scheme == .dark { p.groundColor } else { ZStack { Color(uiColor: .systemGroupedBackground); p.textColor.opacity(0.45) } }
             if !reduce, let tile = Wallpaper.stencil {
                 Image(uiImage: tile).renderingMode(.template).resizable(resizingMode: .tile)
-                    .foregroundStyle(scheme == .dark ? p.textColor.opacity(0.07) : p.groundColor.opacity(0.06))
+                    .foregroundStyle(PLCarry.snap.active ? PLCarry.tone(.ink, scheme, .clear, alpha: scheme == .dark ? 0.07 : 0.06)
+                                                         : (scheme == .dark ? p.textColor.opacity(0.07) : p.groundColor.opacity(0.06)))
             }
         }
         .ignoresSafeArea()
@@ -170,7 +193,9 @@ extension View {
 
     /// A screen on the house ground: the list's own grey goes, the cards stay Apple's (they read as glass over the tile).
     func plGround() -> some View {
-        scrollContentBackground(.hidden).background { HouseGround() }
+        scrollContentBackground(.hidden)
+            .background { HouseGround(); WindowGround().frame(width: 1, height: 1) }   // the window and the navigation controller behind it take the ground too
+            .containerBackground(for: .navigation) { HouseGround() }                    // and the push/pop container: no system white while a page slides in
     }
 }
 

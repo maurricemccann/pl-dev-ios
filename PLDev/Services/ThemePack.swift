@@ -21,7 +21,7 @@ import UIKit
     var titleAllowed = true                          // the config can turn the pack's title font off
 
     var accent: Color? { colors["accent"] }
-    var titleFont: String? { titleAllowed ? (titleFontName ?? HouseKit.shared.titleFont) : nil }   // no pack: his hand from the Design Kit (the PL remix)
+    var titleFont: String? { titleAllowed ? (titleFontName ?? HouseKit.shared.titleFaceName) : nil }   // no pack: the title face he chose, his hand by default (the PL remix)
 
     private struct File: Decodable {
         var colors: [String: String]?
@@ -62,6 +62,7 @@ import UIKit
             if titleFontName == nil { problem = "The title font named in theme.json could not be read." }
         }
         isLoaded = true
+        HouseKit.shared.apply()   // a pack on disk is a chosen pack: the carry and the bars follow it
     }
 
     /// Only a bare file name beside theme.json is honoured, never a path out of the folder.
