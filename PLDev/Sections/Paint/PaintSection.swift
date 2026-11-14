@@ -61,7 +61,7 @@ struct PaintCanvasRequest: Identifiable { let id = UUID(); let work: String?; va
             if let ob = try? await http.send(RequestPlan(origin: "paint", path: "outbox")) { outbox = (try? JSONDecoder().decode(Outbox.self, from: ob))?.items ?? [] }
             failed = nil
             publish()
-        } catch { failed = works.isEmpty ? "Your works did not load. Pull to try again." : "The laptop's works did not load. Pull to try again." }
+        } catch { failed = "The laptop's works did not load. Pull to try again." }   // the works on this iPhone always load; only the laptop's list can fail
     }
 
     /// The widget's numbers: the Daily Mark this month and today.

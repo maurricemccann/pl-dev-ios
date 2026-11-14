@@ -188,7 +188,7 @@ struct PaintHome: View {
             }
             ForEach(shown) { w in card(w) }
         }
-        .overlay { if busy != nil { ProgressView().padding(20).background(.regularMaterial, in: RoundedRectangle(cornerRadius: 14, style: .continuous)) } }
+        .overlay { if busy != nil { PLLoader().padding(20).background(.regularMaterial, in: RoundedRectangle(cornerRadius: 14, style: .continuous)) } }
     }
 
     private func card(_ w: PaintModel.Work) -> some View {

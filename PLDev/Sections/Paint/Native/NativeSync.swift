@@ -266,7 +266,7 @@ struct NativeSyncSheet: View {
                     if let l = sync.last { LabeledContent("Last sync", value: l.formatted(.relative(presentation: .named))) }
                     LabeledContent("Works on this phone", value: "\(NativeStore.loadIndex().list.count)")
                     LabeledContent("Streak", value: "\(NativeDaily.streak) days")
-                    Button { Task { await sync.run(model: model, canvas: canvas) } } label: { HStack { Text("Sync now"); Spacer(); if sync.running { ProgressView() } } }.disabled(sync.running)
+                    Button { Task { await sync.run(model: model, canvas: canvas) } } label: { HStack { Text("Sync now"); Spacer(); if sync.running { PLLoader() } } }.disabled(sync.running)
                 } footer: { Text("Works, the Daily Mark and your own brushes go both ways. A work changed on both sides is kept as two copies; nothing is overwritten.") }
                 Section("This device") {
                     LabeledContent("Key", value: model.config?.key("paintSync") != nil ? "Set, from your config" : "Missing")

@@ -461,7 +461,7 @@ struct ComposerCurvePane: View {
                     Text([it.class, it.origin, it.vault_id].compactMap { $0 }.joined(separator: " · ")).cmpNum(10).foregroundStyle(CMP.muted).lineLimit(1)
                 }
                 Spacer(minLength: 6)
-                if busy == it.vault_id { ProgressView().tint(CMP.gold) }
+                if busy == it.vault_id { PLLoader().tint(CMP.gold) }
                 else if on { Image(systemName: "checkmark.circle.fill").foregroundStyle(CMP.gold).accessibilityLabel("Attached") }
             }
             .frame(minHeight: 56).contentShape(Rectangle())

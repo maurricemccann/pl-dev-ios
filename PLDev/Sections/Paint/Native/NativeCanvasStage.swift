@@ -257,9 +257,13 @@ import UIKit
 
     func fit() {
         guard let d = model.doc, bounds.width > 0 else { return }
-        let k = min(bounds.width / CGFloat(d.w), bounds.height / CGFloat(d.h)) * 0.94
+        // fit between the floating chrome: the side sliders (left, about 72 pt), the top bar and the tool bars at the foot,
+        // so a new or fitted picture is never under them (sim shot 006, 11-14: the sidebar covered the left edge)
+        let room = bounds.inset(by: UIEdgeInsets(top: 112, left: 76, bottom: 200, right: 12))
+        let area = room.width > 100 && room.height > 100 ? room : bounds
+        let k = min(area.width / CGFloat(d.w), area.height / CGFloat(d.h)) * 0.96
         xf = CGAffineTransform(scaleX: k, y: k)
-        stageView.center = CGPoint(x: bounds.midX, y: bounds.midY)
+        stageView.center = CGPoint(x: area.midX, y: area.midY)
         stageView.transform = xf
         overlay.setNeedsDisplay()
     }

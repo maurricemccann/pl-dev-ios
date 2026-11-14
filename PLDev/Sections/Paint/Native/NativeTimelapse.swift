@@ -170,7 +170,7 @@ struct NativeTimelapseSheet: View {
                             Text("Every frame").tag(0); Text("10 seconds").tag(10); Text("20 seconds").tag(20); Text("30 seconds").tag(30); Text("60 seconds").tag(60)
                         }
                         Button { Task { await make() } } label: { Label(making == nil ? "Make the video" : "Making the video…", systemImage: "film") }.disabled(making != nil)
-                        if making != nil { ProgressView() }
+                        if making != nil { PLLoader() }
                     }
                     Section {
                         Toggle("By colour pass", isOn: Binding(get: { tl.byPass }, set: { on in Task { await setPass(on) } })).disabled(passBusy != nil)

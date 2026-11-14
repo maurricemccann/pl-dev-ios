@@ -27,7 +27,7 @@ struct NativeCanvasView: View {
                 if canvas.uiHidden { hiddenControls }
                 else {
                     if let l = canvas.line { ResultLine(text: l).padding(8).glassControl(in: Capsule()).transition(.opacity) }
-                    if canvas.hasDoc { TipView(PaintGesturesTip()).tipBackground(.clear); modeBar; bottomBar }
+                    if canvas.hasDoc { TipView(PaintGesturesTip()).tipBackground(.regularMaterial); modeBar; bottomBar }   // a glass card: on .clear the text floated over the canvas edge (sim shot 006, 11-14)
                 }
             }
             .padding(.horizontal, 12).padding(.vertical, 6)
@@ -404,11 +404,11 @@ struct NativeWorksSheet: View {
                     } header: { Text(g.name.isEmpty ? "On this phone" : "Stack · \(g.name)") }
                 }
                 Section {
-                    if loading { ProgressView() }
+                    if loading { PLLoader() }
                     if let f = failed { Text(f).foregroundStyle(.secondary) }
                     ForEach(remote.filter { r in !local.contains { ($0["id"] as? String) == r.id } }) { r in
                         Button { Task { await fetch(r) } } label: {
-                            HStack { row(name: r.name, w: r.w, h: r.h, thumb: r.thumb, current: false); if busy == r.id { ProgressView() } }
+                            HStack { row(name: r.name, w: r.w, h: r.h, thumb: r.thumb, current: false); if busy == r.id { PLLoader() } }
                         }.disabled(busy != nil)
                     }
                     if !loading && failed == nil && remote.allSatisfy({ r in local.contains { ($0["id"] as? String) == r.id } }) { Text("Everything from the laptop is on this phone.").foregroundStyle(.secondary) }

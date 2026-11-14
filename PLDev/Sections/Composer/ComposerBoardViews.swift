@@ -209,7 +209,7 @@ struct MoreRoom: View {
                     }
                 } else { Text(lib.failed ?? "Not loaded yet.").foregroundStyle(CMP.muted) }
                 Button { Task { reloading = true; await lib.load(model: model, force: true); reloading = false; result = lib.manifest == nil ? "Not loaded. Pull to try again." : "The library is current." } } label: {
-                    HStack { Label("Reload the library", systemImage: "arrow.clockwise"); if reloading { Spacer(); ProgressView() } }
+                    HStack { Label("Reload the library", systemImage: "arrow.clockwise"); if reloading { Spacer(); PLLoader() } }
                 }.disabled(reloading)
             } header: { Text("The library index").cmpLabel(10) } footer: { Text("The index is read only here: the laptop writes it, the phone reads it and keeps the last copy for offline.").foregroundStyle(CMP.muted) }
 

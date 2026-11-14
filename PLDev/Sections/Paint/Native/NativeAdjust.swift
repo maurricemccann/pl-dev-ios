@@ -255,7 +255,7 @@ struct NativeAdjustSheet: View {
                 Section {
                     ZStack {
                         NativeChecker()
-                        if let preview { Image(uiImage: preview).resizable().scaledToFit() } else { ProgressView() }
+                        if let preview { Image(uiImage: preview).resizable().scaledToFit() } else { PLLoader() }
                     }
                     .frame(height: 190).clipShape(RoundedRectangle(cornerRadius: 12, style: .continuous))
                     .listRowInsets(EdgeInsets(top: 8, leading: 16, bottom: 8, trailing: 16))

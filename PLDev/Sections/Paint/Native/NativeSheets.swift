@@ -355,7 +355,7 @@ struct NativeHandbookSection: View {
         .fullScreenCover(item: Binding(get: { zoomed.map { ZoomURL(url: $0) } }, set: { zoomed = $0?.url })) { z in
             ZStack(alignment: .topTrailing) {
                 Color.black.ignoresSafeArea()
-                ScrollView([.horizontal, .vertical]) { AsyncImage(url: z.url) { $0.resizable().scaledToFit() } placeholder: { ProgressView() }.frame(minWidth: UIScreen.main.bounds.width) }
+                ScrollView([.horizontal, .vertical]) { AsyncImage(url: z.url) { $0.resizable().scaledToFit() } placeholder: { PLLoader() }.frame(minWidth: UIScreen.main.bounds.width) }
                 Button { zoomed = nil } label: { Image(systemName: "xmark.circle.fill").font(.title) }.padding().foregroundStyle(.white)
             }
         }
@@ -383,7 +383,7 @@ struct NativeHandbookSection: View {
         case "fig":
             VStack(alignment: .leading, spacing: 8) {
                 if let u = NativeHandbook.imageURL(b.src) {
-                    Button { zoomed = u } label: { AsyncImage(url: u) { $0.resizable().scaledToFit() } placeholder: { ProgressView().frame(maxWidth: .infinity, minHeight: 120) } }.buttonStyle(.plain)
+                    Button { zoomed = u } label: { AsyncImage(url: u) { $0.resizable().scaledToFit() } placeholder: { PLLoader().frame(maxWidth: .infinity, minHeight: 120) } }.buttonStyle(.plain)
                         .clipShape(RoundedRectangle(cornerRadius: 14, style: .continuous))
                 }
                 ForEach(Array(b.legend.enumerated()), id: \.offset) { i, l in

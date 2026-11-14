@@ -141,7 +141,7 @@ struct NativeLiftSheet: View {
                 Section {
                     PhotosPicker(selection: $item, matching: .images) { Label(photo == nil ? "Choose a photo of the piece" : "Choose another photo", systemImage: "photo.on.rectangle") }
                     if photo != nil {
-                        ZStack { NativeChecker(); if let preview { Image(uiImage: preview).resizable().scaledToFit() } else { ProgressView() } }
+                        ZStack { NativeChecker(); if let preview { Image(uiImage: preview).resizable().scaledToFit() } else { PLLoader() } }
                             .frame(height: 220).clipShape(RoundedRectangle(cornerRadius: 12, style: .continuous))
                             .listRowInsets(EdgeInsets(top: 8, leading: 16, bottom: 8, trailing: 16))
                     }

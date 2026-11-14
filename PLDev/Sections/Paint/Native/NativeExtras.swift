@@ -74,7 +74,7 @@ struct NativeRepeatSheet: View {
                         for i in 0..<3 { for j in 0..<3 { c.draw(img, in: CGRect(x: ox + Double(i) * tw, y: oy + Double(j) * th, width: tw + 0.5, height: th + 0.5)) } }
                     }
                     .aspectRatio(1, contentMode: .fit)
-                } else { ProgressView() }
+                } else { PLLoader() }
                 Text("Nine copies side by side. Look along the lines where they meet: if you can see where one copy ends and the next begins, slide the picture half way round again and fill that seam.")
                     .font(.footnote).foregroundStyle(.secondary).padding(.horizontal)
             }
