@@ -41,7 +41,7 @@ jobs:
         run: |
           if ! xcodebuild -project PLDev.xcodeproj -scheme PLDev -configuration Debug -sdk iphonesimulator \
                -destination 'generic/platform=iOS Simulator' -derivedDataPath dd \
-               CODE_SIGNING_ALLOWED=NO build > sim.log 2>&1; then
+               $([ "${{ inputs.sanitizer }}" = address ] && echo -enableAddressSanitizer YES) $([ "${{ inputs.sanitizer }}" = thread ] && echo -enableThreadSanitizer YES) CODE_SIGNING_ALLOWED=NO build > sim.log 2>&1; then
             grep -E "error:" sim.log | awk '!seen[$0]++' | head -60; exit 1
           fi
           tail -n 3 sim.log
