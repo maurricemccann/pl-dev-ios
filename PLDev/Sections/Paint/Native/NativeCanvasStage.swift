@@ -542,19 +542,20 @@ extension CanvasStage: UIGestureRecognizerDelegate, UIPencilInteractionDelegate 
         guard tracked == nil, let t = touches.first(where: { m.accepts(pencil: $0.type == .pencil) }) else { return }
         if t.type != .pencil, count > 1 { return }   // two fingers landing together are a gesture
         tracked = t
-        m.touchBegan(t.location(in: self), pressure: Self.pressure(t), time: t.timestamp, tilt: Self.tilt(t), pencil: t.type == .pencil)
+        m.touchBegan(t.preciseLocation(in: self), pressure: Self.pressure(t), time: t.timestamp, tilt: Self.tilt(t), pencil: t.type == .pencil)
     }
 
     override func touchesMoved(_ touches: Set<UITouch>, with event: UIEvent?) {
         guard let m = model, let t = tracked, touches.contains(t) else { return }
         if t.type != .pencil, (event?.touches(for: self)?.count ?? 0) > 1 { m.touchCancelled(); tracked = nil; return }
         let all = event?.coalescedTouches(for: t) ?? [t]   // every sample the pen produced, not one per frame
-        for c in all { m.touchMoved(c.location(in: self), pressure: Self.pressure(c), time: c.timestamp, tilt: Self.tilt(c)) }
+        for c in all { m.touchMoved(c.preciseLocation(in: self),   // preciseLocation: sub-point positions (ProCraft's CanvasView does the same, 11-14)
+                                 pressure: Self.pressure(c), time: c.timestamp, tilt: Self.tilt(c)) }
     }
 
     override func touchesEnded(_ touches: Set<UITouch>, with event: UIEvent?) {
         guard let m = model, let t = tracked, touches.contains(t) else { return }
-        tracked = nil; m.touchEnded(t.location(in: self))
+        tracked = nil; m.touchEnded(t.preciseLocation(in: self))
     }
 
     override func touchesCancelled(_ touches: Set<UITouch>, with event: UIEvent?) {
