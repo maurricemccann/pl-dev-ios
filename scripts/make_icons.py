@@ -2,8 +2,8 @@
 """Draws the placeholder icons: a plain dark square with a light ring and dot. No brand asset.
 
 Usage: python3 scripts/make_icons.py   (needs Pillow; run from anywhere)
-Writes the 1024 px app icon (no transparency, as the App Store format requires) and the three toolbar
-icons of the Safari extension. Run it again only if the mark changes; the PNGs are committed.
+Writes the three toolbar icons of the Safari extension. The app icon (gold heart mark, glass heart in its centre,
+his ruling 11-13) is drawn from the pl-os heart mark and committed as PNGs; this script no longer touches it. Run it again only if the mark changes; the PNGs are committed.
 """
 import os
 
@@ -29,7 +29,6 @@ def mark(size, alpha):
 
 def main():
     out = {
-        "PLDev/Resources/Assets.xcassets/AppIcon.appiconset/icon-1024.png": (1024, False),
         "PLDevSafari/Resources/icon-48.png": (48, True),
         "PLDevSafari/Resources/icon-96.png": (96, True),
         "PLDevSafari/Resources/icon-128.png": (128, True),
