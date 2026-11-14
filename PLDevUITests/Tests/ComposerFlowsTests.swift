@@ -184,7 +184,7 @@ final class ComposerFlowsTests: XCTestCase {
         // the copy runs behind the picker; the note sits on the shot card, so scroll to find the names
         let named = app.staticTexts.matching(NSPredicate(format: "label BEGINSWITH 'photo-'")).firstMatch
         var found = false
-        for _ in 0..<15 { if reveal(named) { found = true; break }; sleep(2) }
+        for _ in 0..<3 { if reveal(named) { found = true; break }; sleep(2) }   // was 15 tries (~10 min when the picks never arrive); fail fast
         XCTAssertTrue(found, "the picks were not copied in")
         shot("photos-attached")
         let trimBtn = has("label BEGINSWITH 'Trim clip'").firstMatch
