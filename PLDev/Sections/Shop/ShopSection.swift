@@ -32,7 +32,7 @@ import UserNotifications
         guard case .section(_, let path, _) = link, let first = path.first else { return true }
         if first == "piece", path.count > 1 { state.tab = .shop; state.pieceSlug = path[1]; return true }
         if first == "collection", path.count > 1 { state.tab = .shop; state.collectionSlug = path[1]; return true }
-        if first == "tag", path.count > 1 { state.tab = .shop; state.tagName = path[1]; return true }
+        if first == "tag", path.count > 1 { model.open(.section(id: "congregation", path: ["tag", path[1]], query: [:])); return true }   // one tag view: the Congregation's, on the JSON route
         if let room = ShopRoom(rawValue: first) { state.open(room) }
         return true
     }
@@ -64,7 +64,6 @@ import UserNotifications
     var pieceSlug: String?
     var collectionSlug: String?
     /// A congregation hashtag opened here (`pldev://section/shop/tag/<tag>`).
-    var tagName: String?
     var tick = 0
     /// Bumped by the home page's "The full shop →": the grid scrolls to its own opening.
     var homeScroll = 0
@@ -101,7 +100,6 @@ struct ShopView: View {
         .navigationDestination(item: $state.room) { room in room.view(model) }
         .navigationDestination(item: $state.pieceSlug) { slug in PieceView(slug: slug, state: state) }
         .navigationDestination(item: $state.collectionSlug) { slug in CollectionView(slug: slug, state: state) }
-        .navigationDestination(item: $state.tagName) { tag in SiteTagView(tag: tag) }
     }
 }
 
