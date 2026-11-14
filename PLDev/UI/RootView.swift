@@ -111,6 +111,9 @@ struct RootView: View {
 
     /// Face ID, Touch ID or the passcode. A device with no passcode has nothing to check, so it opens.
     private func authenticate() async -> Bool {
+        #if targetEnvironment(simulator)
+        if UserDefaults.standard.string(forKey: "simConfig") != nil { return true }   // screens workflow only; never on a device
+        #endif
         let context = LAContext()
         var problem: NSError?
         guard context.canEvaluatePolicy(.deviceOwnerAuthentication, error: &problem) else { return true }
