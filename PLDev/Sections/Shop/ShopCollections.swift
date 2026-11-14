@@ -280,6 +280,9 @@ struct CollectionView: View {
         let pieces = c?.pieces(in: store.pieces) ?? []
         ScrollView {
             VStack(alignment: .leading, spacing: 20) {
+                if CollectionStory.has(slug) {
+                    CollectionStory.top(slug)   // the collection's own page on the site (/seeds, /glyphs, /the-heart)
+                } else {
                 VStack(alignment: .leading, spacing: 14) {
                     Text("Shop / \(c?.title ?? slug)").siteLabel()
                     Text("The collection \u{2014} \(store.pieces.isEmpty ? "\u{2014}" : "\(pieces.count)") pieces").siteLabel()
@@ -287,6 +290,7 @@ struct CollectionView: View {
                         .accessibilityAddTraits(.isHeader)
                 }
                 .padding(.horizontal, 24).padding(.top, 20)
+                }
                 if pieces.isEmpty {
                     if store.pieces.isEmpty && store.failure == nil { ProgressView().frame(maxWidth: .infinity, minHeight: 160) }
                     else if let f = store.failure, store.pieces.isEmpty {
@@ -297,6 +301,7 @@ struct CollectionView: View {
                 } else {
                     PieceGrid(pieces: pieces, state: state)
                 }
+                if CollectionStory.has(slug) { CollectionStory.bottom(slug) }
             }
             .padding(.bottom, 32)
         }

@@ -24,7 +24,20 @@ struct ArchiveWork: Codable, Identifiable, Hashable, Sendable {
     var family: String?
     var colourways: [Colourway]?
     var shareable: Bool?
+    /// The catalogue page's meta rows (`app/catalogue/[cr]/page.tsx`): Body of Work, Pillar, Medium, Year (Category is `cat`).
+    var body: String?
+    var pillar: String?
+    var medium: String?
+    var year: Int?
     var id: String { cr }
+
+    /// The rows the site prints, in its order, only those the record carries.
+    var metaRows: [(String, String)] {
+        let all: [(String, String?)] = [("Body of Work", body), ("Pillar", pillar), ("Category", cat), ("Medium", medium), ("Year", year.map { String($0) })]
+        var out: [(String, String)] = []
+        for (l, v) in all { if let v, !v.isEmpty { out.append((l, v)) } }
+        return out
+    }
 
     /// The motif family the viewer labels a work with.
     var fam: String {
@@ -199,6 +212,7 @@ struct ArchiveView: View {
                 SitePageHead(eyebrow: "The archive \u{2014} since April 2019", lead: "The complete", accent: "works.",
                              lede: "The archive is not the backstory \u{2014} it is the evidence. " + (store.works.isEmpty ? "Every piece" : "\(store.works.count.formatted()) works") + ", documented, from one hand. Search it. Walk it.")
                 if let f = featured { featuredCard(f) }
+                if query.isEmpty && lens == .all { ArchiveStrips() }   // the catalogue page's strips: Living Curves, the Mirror doors, the Chosen
                 if !store.works.isEmpty {
                     Text("\(store.works.count.formatted()) works \u{00B7} \(store.works.map(\.cr).min() ?? "")\u{2026}\(store.works.map(\.cr).max() ?? "")").siteLabel(10)
                         .padding(.horizontal, 24)
@@ -213,6 +227,7 @@ struct ArchiveView: View {
                     SiteRule().padding(.horizontal, 24)
                 }
                 content(works, lab)
+                if query.isEmpty && lens == .all && !store.works.isEmpty { ArchiveClose() }
             }
             .padding(.bottom, 32)
         }
@@ -376,8 +391,25 @@ struct ArchiveEntryView: View {
                     Text(work?.title ?? labWork?.kind.capFirst ?? "").font(SiteFont.display(32)).foregroundStyle(Bone.ink(scheme))
                         .fixedSize(horizontal: false, vertical: true).accessibilityAddTraits(.isHeader)
                     if let w = work {
+                        if let c = ChosenStore.shared.entry(w.cr) {
+                            Text("Chosen \u{2014} No. \(c.padded)").font(.system(size: 11, design: .monospaced)).tracking(2).foregroundStyle(Bone.gold)
+                                .padding(.horizontal, 8).padding(.vertical, 4).overlay { Capsule().strokeBorder(Bone.gold.opacity(0.3), lineWidth: 0.8) }
+                        }
                         Text("\(w.fam)  \u{00B7}  \((w.color ?? "").replacingOccurrences(of: "-", with: " "))  \u{00B7}  \((w.med ?? "").replacingOccurrences(of: "-", with: " "))").siteLabel(10)
                         Text("\((w.cat ?? "").replacingOccurrences(of: "_", with: " ")) \u{00B7} \u{2116}\(w.n ?? 0)").siteLabel(10)
+                        if !w.metaRows.isEmpty {
+                            SiteRule().padding(.top, 6)
+                            LazyVGrid(columns: [GridItem(.flexible(), alignment: .topLeading), GridItem(.flexible(), alignment: .topLeading)], alignment: .leading, spacing: 12) {
+                                ForEach(w.metaRows, id: \.0) { row in
+                                    let (l, v) = row
+                                    VStack(alignment: .leading, spacing: 2) {
+                                        Text(l).font(.system(size: 11, design: .monospaced)).textCase(.uppercase).tracking(2).foregroundStyle(Bone.inkFaint(scheme))
+                                        Text(v).font(SiteFont.body(14)).foregroundStyle(Bone.ink(scheme))
+                                    }
+                                    .accessibilityElement(children: .combine)
+                                }
+                            }
+                        }
                         if let k = store.kept[w.cr] { Text("Kept" + (ArchiveDate.text(k.isEmpty ? nil : k).map { " " + $0 } ?? "")).siteLabel(10).foregroundStyle(Bone.goldDim) }
                         Text((w.note ?? "").isEmpty ? "From the continuous practice. April 2019 \u{2014} present." : w.note!).siteBody(15).padding(.top, 4)
                     } else if let l = labWork {

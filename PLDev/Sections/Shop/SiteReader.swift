@@ -6,6 +6,10 @@ import SwiftUI
 struct SiteReaderView: View {
     let path: String
     let title: String
+    /// The page's own art behind or above its words (`SiteReaderArt`): the curves, the field, the corridor, the gold line.
+    var art: SiteReaderArt = .none
+    /// The art asked for, else the page's own (so every door into a doctrine page brings its art).
+    private var shownArt: SiteReaderArt { art == .none ? SitePagesView.art(path) : art }
 
     enum Block: Hashable { case heading(String, Int), paragraph(String), item(String), quote(String) }
     @State private var blocks: [Block] = []
@@ -15,6 +19,8 @@ struct SiteReaderView: View {
 
     var body: some View {
         ScrollView {
+            if shownArt == .curves { SiteReaderCurvesHero() }
+            if shownArt == .corridor { SiteCorridor() }
             VStack(alignment: .leading, spacing: 14) {
                 if let failed { ContentUnavailableView("Could not load", systemImage: "wifi.exclamationmark", description: Text(failed)) }
                 else if !loaded { ProgressView().frame(maxWidth: .infinity, minHeight: 160) }
@@ -23,6 +29,7 @@ struct SiteReaderView: View {
                     case .heading(let t, let level):
                         // the house's pages are his words: headings in his hand
                         Text(t).font(SiteFont.display(level == 1 ? 34 : level == 2 ? 27 : 22)).foregroundStyle(Bone.ink(scheme)).padding(.top, level == 1 ? 0 : 8)
+                        if shownArt == .goldLine && level == 2 { Rectangle().fill(Bone.gold).frame(width: 96, height: 1) }
                     case .paragraph(let t): Text(t).siteBody(16)
                     case .item(let t): HStack(alignment: .firstTextBaseline, spacing: 8) { Text("·").foregroundStyle(Bone.gold); Text(t).siteBody(16) }
                     case .quote(let t): Text(t).font(SiteFont.display(22, italic: true)).foregroundStyle(Bone.ink(scheme)).padding(.leading, 12).overlay(alignment: .leading) { Rectangle().fill(Bone.gold).frame(width: 2) }
@@ -33,6 +40,7 @@ struct SiteReaderView: View {
             .padding(24)
             .textSelection(.enabled)
         }
+        .background { if shownArt == .curves { SiteFieldBackdrop() } }
         .siteScreen()
         .plScreenTitle(title)
         .task { await load() }

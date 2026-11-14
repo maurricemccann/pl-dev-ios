@@ -86,10 +86,14 @@ struct ShopGridView: View {
     private var browsing: Bool { filter.active == 0 && query.trimmingCharacters(in: .whitespaces).isEmpty }
 
     var body: some View {
+        ScrollViewReader { proxy in
         ScrollView {
             VStack(alignment: .leading, spacing: 20) {
+                // the site's home page opens the tab; a search or a filter goes straight to the pieces
+                if browsing { ShopHomeView(state: state) }
                 SitePageHead(eyebrow: "The shop" + (store.pieces.isEmpty ? "" : " \u{2014} \(store.pieces.count) pieces"), lead: "Wearable", accent: "doctrine.",
                              lede: "A Psyched Luxuries piece is a wearable argument. The price is the first argument. The art is the second. What you do after you put it on is the third.")
+                    .id("shop-head")
                 if !store.pieces.isEmpty {
                     if browsing { CollectionsShelf(pieces: store.pieces, state: state).padding(.top, 8) }
                     TipView(PieceHoldTip()).padding(.horizontal, 24)
@@ -117,6 +121,8 @@ struct ShopGridView: View {
                 content
             }
             .padding(.bottom, 32)
+        }
+        .onChange(of: state.homeScroll) { _, _ in withAnimation(.smooth) { proxy.scrollTo("shop-head", anchor: .top) } }
         }
         .siteScreen()
         .searchable(text: $query, prompt: "Search the shop")
@@ -380,7 +386,7 @@ struct PieceView: View {
                         SiteRule()
                         Text("The digital twin").siteLabel().padding(.top, 8)
                         Text("Worn on the street and on the avatar \u{2014} one object, two bodies. Turn it in 3D, place it in your room.").siteBody(14)
-                        Button { if let url = Site.page("wardrobe") { web = WebPage(url) } } label: { Text("The Wardrobe \u{2192}").siteLabel(10).frame(minHeight: 44, alignment: .leading) }.buttonStyle(.plain)
+                        NavigationLink { WardrobeView() } label: { Text("The Wardrobe \u{2192}").siteLabel(10).frame(minHeight: 44, alignment: .leading) }.buttonStyle(.plain)
                     }
                     .padding(.horizontal, 24)
                 }
