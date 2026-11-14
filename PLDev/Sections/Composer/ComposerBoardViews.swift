@@ -273,6 +273,12 @@ struct ComposerHandbookView: View {
         Page(title: "The library", blocks: [
             .text("The Library is every asset the index knows, with a filter, a chip per catalog and a chip per type. Tap an asset to attach it to the selected shot (a gold border marks it); touch and hold for details, another shot, the id or the path."),
             .text("The laptop writes the index and the phone reads it, keeping the last copy so it works offline. A root that is not mounted on the laptop is named at the top: the list is incomplete until it is.")]),
+        Page(title: "Sources: index, Curve Library, Photos", blocks: [
+            .text("A shot takes its sources from three places, all in the Library pane: the house index (every asset the laptop knows), the Curve Library (his pieces from the gallery, with their stills and clips), and Photos (pictures and clips from this iPhone, up to 12 at a time)."),
+            .steps(["Index and Curve Library: tap an asset to attach it to the selected shot.",
+                    "Photos: tap Photos, pick pictures or clips, confirm. Each is copied into the app (pictures at 1920 px) and named photo-01, clip-01 and so on.",
+                    "Touch and hold a clip, then Trim the clip: drag the in and out points. The trim is written into the spec next to the source, and Make the shot this long sets the shot's duration to it."]),
+            .note("Photos are for planning and preview: they play on the phone and are named in the spec, but the house renderer does not read them yet. A render reads a curve path (a tracer job) and its art, so Send to render needs a path source.")]),
         Page(title: "The spec", blocks: [
             .text("Build spec writes the exact markdown the renderer reads and shows it before it leaves the phone. Copy it, or Share it as a .spec.md file. The phone writes the same text the web board and the desktop app write."),
             .text("A shot with no sources is written as sources: [] and renders black; the spec says so out loud. Shots still called untitled shot get one warning, never a block.")]),
