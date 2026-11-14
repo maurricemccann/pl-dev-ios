@@ -15,6 +15,7 @@ import UserNotifications
     static func settingsRows(model: AppModel) -> AnyView? {
         AnyView(Group {
             HouseLookPicker()
+            AppleSettingsRows()
             Button { UserDefaults.standard.set(true, forKey: "pldev.resetTips") } label: {   // TipKit resets only before configure: at next launch
                 SettingsLabel("Show the tips again next time PL DEV opens", "lightbulb", IOS27.SystemColors.yellow)
             }

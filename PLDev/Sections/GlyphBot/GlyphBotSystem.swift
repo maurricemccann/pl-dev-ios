@@ -56,8 +56,12 @@ struct AskGlyphBotIntent: AppIntent {
             turn.answer = r.answer; turn.via = r.via; turn.passages = r.passages
         } else {
             let hit = store.cached(for: q)
-            turn.answer = hit?.answer ?? GlyphDoctrine.pick(q)
-            turn.via = hit == nil ? "doctrine · offline" : "cached · offline"
+            if hit == nil, let local = await PLIntelligence.glyphAnswer(question: q, turns: store.turns) {   // apple lane
+                turn.answer = local; turn.via = "on-device · offline"
+            } else {
+                turn.answer = hit?.answer ?? GlyphDoctrine.pick(q)
+                turn.via = hit == nil ? "doctrine · offline" : "cached · offline"
+            }
         }
         store.save(turn)
         if let m { await store.flush(model: m) }

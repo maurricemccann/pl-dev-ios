@@ -51,5 +51,6 @@ struct PLDevLiveActivities: WidgetBundle {
 struct PLDevMoreWidgets: WidgetBundle {
     var body: some Widget {
         ComposerWidget()
+        AppleActionsWidget()
     }
 }

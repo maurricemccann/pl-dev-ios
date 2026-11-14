@@ -45,11 +45,23 @@
 	<key>UIBackgroundModes</key>
 	<array>
 		<string>fetch</string>
+		<string>processing</string>
 	</array>
 	<key>BGTaskSchedulerPermittedIdentifiers</key>
 	<array>
 		<string>com.psychedluxuries.dev.refresh</string>
+		<string>com.psychedluxuries.dev.process</string>
 	</array>
+	<key>NSUserActivityTypes</key>
+	<array>
+		<string>com.psychedluxuries.dev.open</string>
+	</array>
+	<key>NSHealthUpdateUsageDescription</key>
+	<string>PL DEV writes a mindful session to Health after each rehearsal, only if you turn it on in Settings.</string>
+	<key>NSHealthShareUsageDescription</key>
+	<string>PL DEV only writes mindful minutes. It reads nothing from Health.</string>
+	<key>NSCalendarsWriteOnlyAccessUsageDescription</key>
+	<string>PL DEV adds your shift days and drop dates to your calendar, only when you ask in Settings.</string>
 	<key>NSSupportsLiveActivities</key>
 	<true/>
 	<key>NSMicrophoneUsageDescription</key>

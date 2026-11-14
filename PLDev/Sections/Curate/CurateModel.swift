@@ -320,6 +320,7 @@ let curateCategories: [(String, String)] = [("digital", "Digital"), ("physical",
             _ = await post(b, model: model)
             marks[it.vault_id] = TasteMark(v: dir, note: n.isEmpty ? nil : n, comment: prev?.comment)
         }
+        if dir == "cut" { PLHaptics.cut() } else if dir == "keep" { PLHaptics.keep() }   // apple lane: each verdict has its own feel
         advance(it, dir: dir == "cut" || dir == "maybe" ? dir : "keep", prev: prev)
     }
 
@@ -332,6 +333,7 @@ let curateCategories: [(String, String)] = [("digital", "Digital"), ("physical",
         _ = await post(["id": it.vault_id, "v": "keep", "note": "fav"], model: model)
         marks[it.vault_id] = TasteMark(v: "keep", note: "fav", comment: prev?.comment)
         starred = true; tick += 1
+        PLHaptics.crown()   // apple lane
         try? await Task.sleep(for: .milliseconds(380))
         committing = false
         advance(it, dir: "keep", prev: prev)

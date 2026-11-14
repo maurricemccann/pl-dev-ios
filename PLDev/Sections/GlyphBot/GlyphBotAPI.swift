@@ -100,6 +100,7 @@ import SwiftUI
 
     /// What the Oracle's "via" means, in words.
     static func viaWords(_ via: String) -> String {
+        if via.contains("on-device") { return "Written on this iPhone from the record" }
         if via.contains("offline") && via.contains("cached") { return "From memory, offline" }
         if via.contains("doctrine") { return via.contains("offline") ? "From the doctrine, offline" : "From the doctrine" }
         if via.contains("cached") { return "From memory" }
@@ -142,7 +143,7 @@ struct GlyphTurn: Codable, Identifiable, Equatable, Sendable {
     }
 
     /// Real Oracle answers only: a stock doctrine line given offline is never written into his record as an answer.
-    var unsynced: [GlyphTurn] { turns.filter { !$0.synced && !$0.answer.isEmpty && !$0.via.hasPrefix("doctrine") } }
+    var unsynced: [GlyphTurn] { turns.filter { !$0.synced && !$0.answer.isEmpty && !$0.via.hasPrefix("doctrine") && !$0.via.hasPrefix("on-device") } }   // a draft by the phone is never filed as the Oracle's answer
 
     func markSynced(_ ids: [String]) {
         for i in turns.indices where ids.contains(turns[i].id) { turns[i].synced = true }

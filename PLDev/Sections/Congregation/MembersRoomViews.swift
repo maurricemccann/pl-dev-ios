@@ -1,4 +1,5 @@
 import SwiftUI
+import Translation
 import TipKit
 
 // The members' room, drawn the way the site draws it: a compose card, `The House | Following`, and the room's posts as cream cards
@@ -356,6 +357,7 @@ struct RoomPostCard: View {
     @State private var sending = false
     @State private var sentLine: String?
     @State private var reported = false
+    @State private var translating = false   // apple lane: the system translation sheet for this post
     @Environment(\.colorScheme) private var scheme
 
     private var dateLabel: String? { Date.pl(post.createdAt)?.formatted(.dateTime.month(.wide).day()) }
@@ -382,8 +384,10 @@ struct RoomPostCard: View {
         .siteCard(padding: 16, radius: 16)
         .contextMenu {
             Button { UIPasteboard.general.string = post.body } label: { Label("Copy the text", systemImage: "doc.on.doc") }
+            Button { translating = true } label: { Label("Translate", systemImage: "translate") }
             if let h = post.authorHandle { Button { onMember(h) } label: { Label("Open @\(h)", systemImage: "person") } }
         }
+        .translationPresentation(isPresented: $translating, text: post.body)
     }
 
     private var header: some View {

@@ -147,6 +147,7 @@ struct ApprovalsView: View {
     @State private var editing: EditMode = .inactive
     @State private var nowTarget: ApprovalsModel.Draft?
     @State private var pictureFor: ApprovalsModel.Draft?
+    @State private var offlineFor: ApprovalsModel.Draft?   // apple lane: a caption drafted on the phone
 
     var body: some View {
         List(selection: $state.selection) {
@@ -214,6 +215,7 @@ struct ApprovalsView: View {
                             Button("Hold", systemImage: "pause") { Task { await state.moderate(d, "hold", model: model) } }
                             Button("Rewrite the caption", systemImage: "arrow.triangle.2.circlepath") { Task { await state.regenerate(d, model: model) } }
                             Button("Change the picture", systemImage: "photo.on.rectangle") { pictureFor = d }
+                            if PLIntelligence.isReady { Button("Draft another on this iPhone", systemImage: "apple.intelligence") { offlineFor = d } }
                             Button("Copy caption", systemImage: "doc.on.doc") { UIPasteboard.general.string = d.caption }
                         }
                 }
@@ -308,9 +310,11 @@ struct ApprovalsView: View {
         .refreshable { await state.load(model: model) }
         .task { await state.load(model: model) }
         .sensoryFeedback(PLHaptic.commit, trigger: state.tick)
+        .accessibilityRotor("Drafts", entries: state.drafts, entryLabel: \.rotorLabel)   // VoiceOver: jump draft to draft
         .sheet(item: $pictureFor) { d in
             PicturePicker { url in pictureFor = nil; Task { await state.swapImage(d, to: url, model: model) } }
         }
+        .sheet(item: $offlineFor) { d in AppleCaptionSheet(seed: d.caption ?? d.title ?? "", platform: d.platform) }
     }
 }
 
@@ -620,4 +624,9 @@ struct SiteControlsView: View {
             result = (try? JSONDecoder().decode(R.self, from: d))?.message ?? "Added."; beta = ""; tick += 1
         } catch { result = "Not added. \(error.localizedDescription)" }
     }
+}
+
+extension ApprovalsModel.Draft {
+    /// What VoiceOver reads in the Drafts rotor.
+    var rotorLabel: String { ((platform ?? "Draft") + ": " + String((caption ?? title ?? "").prefix(80))) }
 }
