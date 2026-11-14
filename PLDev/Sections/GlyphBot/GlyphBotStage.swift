@@ -35,7 +35,7 @@ import RealityKit
     static let glass: PhysicallyBasedMaterial = {
         var m = PhysicallyBasedMaterial()
         m.baseColor = .init(tint: UIColor(red: 0.81, green: 0.89, blue: 1, alpha: 1))
-        m.metallic = 0
+        m.metallic = 0.0
         m.roughness = 0.32
         m.specular = 1.0
         m.clearcoat = 1.0
