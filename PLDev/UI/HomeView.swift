@@ -41,7 +41,13 @@ struct HomeView: View {
         return line
     }
 
-    @SceneStorage("home.page") private var page = 1   // opens on the apps, like the first Home Screen page
+    @SceneStorage("home.page") private var page = HomeView.startPage   // opens on the apps, like the first Home Screen page
+    private static var startPage: Int {
+        #if targetEnvironment(simulator)
+        if let p = UserDefaults.standard.object(forKey: "simHomePage") { return Int("\(p)") ?? 1 }   // screens workflow only
+        #endif
+        return 1
+    }
 
     private var appsPage: some View {
         VStack(alignment: .leading, spacing: PLSpace.roomy) {
@@ -102,9 +108,6 @@ struct HomeView: View {
                 ScrollView { appsPage }.tag(1)
             }
             .tabViewStyle(.page(indexDisplayMode: .never))
-            #if targetEnvironment(simulator)
-            .task { if let p = UserDefaults.standard.string(forKey: "simHomePage"), let n = Int(p) { page = n } }   // screens workflow only
-            #endif
             .environment(\.colorScheme, .dark)   // light text on the wallpaper, as on the Home Screen; pushed screens keep his setting
             .background(Wallpaper(model: model))
             .refreshable { await Poller.shared.refreshAll() }

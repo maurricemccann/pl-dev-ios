@@ -522,9 +522,9 @@ struct AccountsRows: View {
             }
             LabeledContent {
                 Text(model.config == nil ? "Load your config" : "By your config").foregroundStyle(.secondary)
-            } label: { SettingsLabel("Console, gallery, board, call", "key.fill", Color(hex: 0xc9a84c)) }
+            } label: { SettingsLabel("Everything else", "key.fill", Color(hex: 0xc9a84c)) }
         } header: { Text("Accounts") } footer: {
-            Text("Sign in once: the Shop, the Congregation and your orders use it, and it stays in this iPhone's Keychain. Your saved password fills in from iCloud Keychain.")
+            Text("Sign in once: the Shop, the Congregation and your orders use it, and it stays in this iPhone's Keychain. Your saved password fills in from iCloud Keychain. The console, gallery, board and call open with your config, no sign-in.")
         }
         .task { if !account.checked { await account.refresh() } }
         .sheet(isPresented: $signingIn) { AccountSignInSheet(account: account) }
