@@ -61,7 +61,7 @@ jobs:
           JSON
           CFG="$DATA/Documents/sim-config.json"
           LINKS="${{ inputs.links }}"
-          [ -z "$LINKS" ] \&\& LINKS="home section/house section/status section/shop section/shop/curve section/congregation section/practice section/practice/affirmations section/practice/preview section/glyphbot section/glyphbot/record section/library section/library/curves section/library/live section/library/archive section/library/space section/library/kit section/library/forge section/library/labs section/library/worlds section/curate section/pick section/town section/town/lore section/capture section/composer section/paint section/house/calendar section/house/atlas settings"
+          [ -z "$LINKS" ] && LINKS="home section/house section/status section/shop section/shop/curve section/congregation section/practice section/practice/affirmations section/practice/preview section/glyphbot section/glyphbot/record section/library section/library/curves section/library/live section/library/archive section/library/space section/library/kit section/library/forge section/library/labs section/library/worlds section/curate section/pick section/town section/town/lore section/capture section/composer section/paint section/house/calendar section/house/atlas settings"
           xcrun simctl launch "$DEV" "$BID" -simConfig "$CFG"; sleep 15
           xcrun simctl io "$DEV" screenshot shots/00-launch.png
           i=1
