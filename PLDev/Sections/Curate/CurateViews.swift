@@ -184,9 +184,7 @@ struct CurateView: View {
                 .onChange(of: state.comment) { _, v in
                     if v.count > 1000 { state.comment = String(v.prefix(1000)) }
                     // Return finishes the comment (a vertical field would take it as a new line): drop the keyboard, which saves it
-                    if v.contains("
-") { state.comment = v.replacingOccurrences(of: "
-", with: " ").trimmingCharacters(in: .whitespaces); commentFocus = false }
+                    if v.contains("\n") { state.comment = v.replacingOccurrences(of: "\n", with: " ").trimmingCharacters(in: .whitespaces); commentFocus = false }
                 }
                 .onChange(of: state.index) { _, _ in commentFocus = false; noteFocus = false }   // a verdict moves on: the keyboard goes with it (his note 11-13)
                 .gCard(padding: 14, radius: 22, active: commentFocus || !state.comment.isEmpty)
