@@ -114,7 +114,7 @@ struct AffirmationsCard: View {
                             CandleRule()
                             Button { line = a; withAnimation(.snappy) { browsing = false } } label: {
                                 Text(a.text + (a.audio != nil ? " \u{25B8}" : "") + (a.mine ? " \u{00B7} yours" : ""))
-                                    .font(.system(size: 13.6)).foregroundStyle(a.mine ? Candle.goldHi : Candle.ink.opacity(0.85))
+                                    .plHand(19, relativeTo: .body).foregroundStyle(a.mine ? Candle.goldHi : Candle.ink.opacity(0.85))   // his words in his hand (his rule 11-13)
                                     .frame(maxWidth: .infinity, alignment: .leading).padding(.vertical, 8).frame(minHeight: 44)
                             }
                             .buttonStyle(.plain)

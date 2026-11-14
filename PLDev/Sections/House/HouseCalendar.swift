@@ -2,7 +2,8 @@ import SwiftUI
 
 /// One calendar for the house (his word 11-13: "the product calendar or drop calendar or content calendar should be a calendar with
 /// different dots showing which calendar it is on that date; the merch should show the actual merch"). A month grid; each day carries
-/// a dot per calendar it is on: gold = content going out, oxblood = merch (a season switch: colourways going on or off the grid).
+/// a dot per calendar it is on: gold = content going out, oxblood = merch (a season switch: colourways going on or off the grid),
+/// green = a drop (a piece chosen from the tally that day).
 /// Tap a day for what is on it, with the real pictures. The day pager and the merch seasons stay one tap away for the detail work.
 struct HouseCalendarView: View {
     let model: AppModel
@@ -11,12 +12,16 @@ struct HouseCalendarView: View {
     @State private var content: [String: [CalendarView.Item]] = [:]   // yyyy-mm-dd → items, every platform
     @State private var platforms: [String: Set<String>] = [:]
     @State private var merch: [MerchView.Row] = []
+    /// The drop calendar: each piece chosen from the tally, on the day it was chosen (pl-cron door q/chosen).
+    struct Drop: Decodable, Identifiable { let chosen_no: Int; let cr: String; let product: String; let url: String?; let created_at: String; var id: Int { chosen_no } }
+    @State private var drops: [String: [Drop]] = [:]
     @State private var pictures: [String: URL] = [:]                  // product name → its picture
     @State private var picked: String?
     @State private var failed: String?
 
     private static let contentDot = PLOS.gold
     private static let merchDot = Color(hex: 0xa3453f)
+    private static let dropDot = PLOS.ok
     private var cal: Calendar { var c = Calendar(identifier: .gregorian); c.timeZone = TimeZone(identifier: "America/Los_Angeles")!; return c }
 
     var body: some View {
@@ -79,6 +84,7 @@ struct HouseCalendarView: View {
                                 HStack(spacing: 3) {
                                     if !(content[k] ?? []).isEmpty { Circle().fill(Self.contentDot).frame(width: 6, height: 6) }
                                     if isMerchDay(d) { Circle().fill(Self.merchDot).frame(width: 6, height: 6) }
+                                    if !(drops[k] ?? []).isEmpty { Circle().fill(Self.dropDot).frame(width: 6, height: 6) }
                                 }
                                 .frame(height: 6)
                             }
@@ -99,6 +105,7 @@ struct HouseCalendarView: View {
         HStack(spacing: 16) {
             Label { Text("Content going out").font(.caption) } icon: { Circle().fill(Self.contentDot).frame(width: 8, height: 8) }
             Label { Text("Merch season").font(.caption) } icon: { Circle().fill(Self.merchDot).frame(width: 8, height: 8) }
+            Label { Text("Drop").font(.caption) } icon: { Circle().fill(Self.dropDot).frame(width: 8, height: 8) }
         }
         .foregroundStyle(PLOS.dim(scheme))
     }
@@ -117,6 +124,22 @@ struct HouseCalendarView: View {
                     ForEach(on) { r in merchRow(r.product_name) }
                 }.listRowBackground(OSRowBackground())
                 if !off.isEmpty { Section("Resting from today") { ForEach(off) { r in merchRow(r.product_name) } }.listRowBackground(OSRowBackground()) }
+            }
+            if let ds = drops[k], !ds.isEmpty {
+                Section("Dropped · \(ds.count)") {
+                    ForEach(ds) { dr in
+                        HStack(spacing: 12) {
+                            AsyncImage(url: pictures[dr.product] ?? pictures[dr.cr]) { $0.resizable().scaledToFit() } placeholder: { Image(systemName: "sparkles").foregroundStyle(.secondary) }
+                                .frame(width: 64, height: 64)
+                            VStack(alignment: .leading, spacing: 2) {
+                                Text(dr.product).font(.callout)
+                                Text("\(dr.cr) · \(dr.fulfilled_at == nil ? "chosen" : "made")").font(.caption).foregroundStyle(.secondary)
+                            }
+                            Spacer()
+                            if let u = dr.url.flatMap(URL.init(string:)) { Link(destination: u) { Image(systemName: "arrow.up.right") } }
+                        }
+                    }
+                }.listRowBackground(OSRowBackground())
             }
             Section("Content · \(items.count)") {
                 if items.isEmpty { Text("Nothing scheduled this day.").foregroundStyle(.secondary) }
@@ -155,9 +178,13 @@ struct HouseCalendarView: View {
         failed = nil
         async let c = try? Console.get("api/content-calendar", CalendarView.Out.self, model: model, query: ["days": "45", "back": "35"])
         async let m = try? Console.q("merch", [MerchView.Row].self, model: model)
+        async let ch = try? Console.q("chosen", [Drop].self, model: model)
         async let cand = try? Console.get("api/drop-candidates", MerchView.C.self, model: model, timeout: 40)
         await ShopStore.shared.load()
-        let (cc, mm, cd) = await (c, m, cand)
+        let (cc, mm, cd, chosen) = await (c, m, cand, ch)
+        var byDrop: [String: [Drop]] = [:]
+        for d in chosen ?? [] { if let day = Date.pl(d.created_at) { byDrop[key(day), default: []].append(d) } }
+        drops = byDrop
         if let days = cc?.days {
             var byDay: [String: [CalendarView.Item]] = [:], plats: [String: Set<String>] = [:]
             for d in days {
@@ -187,6 +214,7 @@ struct HouseCalendarView: View {
         let n = content[k]?.count ?? 0
         if n > 0 { parts.append("\(n) post\(n == 1 ? "" : "s") going out") }
         if isMerchDay(d) { parts.append("merch season changes") }
+        if let n = drops[k]?.count, n > 0 { parts.append("\(n) drop\(n == 1 ? "" : "s")") }
         return parts.joined(separator: ", ")
     }
 }
