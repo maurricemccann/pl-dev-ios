@@ -99,6 +99,7 @@ struct RehearsalLiveActivity: Widget {
             }
             .padding(16)
             .activityBackgroundTint(Color.black.opacity(0.35))
+            .smallFamilyFit()
             .activitySystemActionForegroundColor(HouseTint.key)
             .widgetURL(URL(string: "pldev://section/practice/rehearsal"))
         } dynamicIsland: { ctx in
@@ -116,11 +117,12 @@ struct RehearsalLiveActivity: Widget {
             } compactLeading: {
                 Image(systemName: "wind").foregroundStyle(HouseTint.key)
             } compactTrailing: {
-                Text(timerInterval: ctx.attributes.started...ctx.attributes.ends, countsDown: true).font(.caption.monospacedDigit()).frame(width: 40)
+                Text(timerInterval: ctx.attributes.started...ctx.attributes.ends, countsDown: true).font(.caption.monospacedDigit()).frame(width: 40).lineLimit(1).minimumScaleFactor(0.6)   // iOS 27: the island in landscape cannot grow wider
             } minimal: {
                 Image(systemName: "wind").foregroundStyle(HouseTint.key)
             }
             .widgetURL(URL(string: "pldev://section/practice/rehearsal"))
         }
+        .supplementalActivityFamilies([.small, .medium])   // iOS 27 forwards it to the Watch Smart Stack and CarPlay
     }
 }

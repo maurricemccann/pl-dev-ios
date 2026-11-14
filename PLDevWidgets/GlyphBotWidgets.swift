@@ -94,6 +94,7 @@ struct SittingLiveActivity: Widget {
             }
             .padding(16)
             .activityBackgroundTint(Color.black.opacity(0.35))
+            .smallFamilyFit()
             .activitySystemActionForegroundColor(HouseTint.key)
             .widgetURL(URL(string: "pldev://section/glyphbot/interview"))
         } dynamicIsland: { ctx in
@@ -104,11 +105,12 @@ struct SittingLiveActivity: Widget {
             } compactLeading: {
                 Image(systemName: "bubbles.and.sparkles").foregroundStyle(HouseTint.key)
             } compactTrailing: {
-                Text("\(ctx.state.answers)").font(.caption.weight(.semibold)).monospacedDigit()
+                Text("\(ctx.state.answers)").font(.caption.weight(.semibold)).monospacedDigit().lineLimit(1).minimumScaleFactor(0.6)   // iOS 27: the island in landscape cannot grow wider
             } minimal: {
                 Image(systemName: "bubbles.and.sparkles").foregroundStyle(HouseTint.key)
             }
             .widgetURL(URL(string: "pldev://section/glyphbot/interview"))
         }
+        .supplementalActivityFamilies([.small, .medium])   // iOS 27 forwards it to the Watch Smart Stack and CarPlay
     }
 }

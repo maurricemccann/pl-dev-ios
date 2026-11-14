@@ -110,6 +110,7 @@ struct ShiftLiveActivity: Widget {
             }
             .padding(16)
             .activityBackgroundTint(Color.black.opacity(0.35))
+            .smallFamilyFit()
             .activitySystemActionForegroundColor(HouseTint.key)
             .widgetURL(URL(string: "pldev://section/house"))
         } dynamicIsland: { ctx in
@@ -129,11 +130,21 @@ struct ShiftLiveActivity: Widget {
             } compactLeading: {
                 Image(systemName: "checklist").foregroundStyle(HouseTint.key)
             } compactTrailing: {
-                Text("\(ctx.state.done)/\(ctx.state.total)").font(.caption.weight(.semibold)).monospacedDigit()
+                Text("\(ctx.state.done)/\(ctx.state.total)").font(.caption.weight(.semibold)).monospacedDigit().lineLimit(1).minimumScaleFactor(0.6)   // iOS 27: the island in landscape cannot grow wider
             } minimal: {
                 Text("\(ctx.state.total - ctx.state.done)").font(.caption.weight(.bold)).foregroundStyle(HouseTint.key)
             }
             .widgetURL(URL(string: "pldev://section/house"))
         }
+        .supplementalActivityFamilies([.small, .medium])   // iOS 27 forwards it to the Watch Smart Stack and CarPlay
     }
 }
+
+/// The Watch Smart Stack and CarPlay show a Live Activity small: the same Lock Screen view, scaled to fit (WWDC26 Live Activities essentials).
+struct SmallFamilyFit: ViewModifier {
+    @Environment(\.activityFamily) private var family
+    func body(content: Content) -> some View {
+        if family == .small { content.dynamicTypeSize(.xSmall).minimumScaleFactor(0.6) } else { content }
+    }
+}
+extension View { func smallFamilyFit() -> some View { modifier(SmallFamilyFit()) } }
