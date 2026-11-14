@@ -590,6 +590,23 @@ struct PieceViewer: View {
             }
             .sensoryFeedback(.impact(weight: .medium), trigger: tick)
             .onChange(of: selection, initial: true) { _, id in comment = ownComment(data.marks[id]?.comment); note = "" }
+            // the R1 remote / a keyboard, as the web viewer's RemoteKeys: K keep, C cut, M maybe, F favourite, arrows step (gap audit 11-14)
+            .focusable()
+            .onKeyPress(phases: .down) { press in
+                switch press.key {
+                case .leftArrow: step(-1); return .handled
+                case .rightArrow: step(1); return .handled
+                default: break
+                }
+                switch press.characters.lowercased() {
+                case "k": Task { await set("keep") }
+                case "c": Task { await set("cut") }
+                case "m": Task { await set("maybe") }
+                case "f": Task { await set("fav") }
+                default: return .ignored
+                }
+                return .handled
+            }
         }
     }
 

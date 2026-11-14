@@ -68,7 +68,7 @@ struct CurateView: View {
         }
         switch c {
         case "k": act("keep")
-        case "f": favourite()
+        case "f": act("keep")   // the web deck's rule (CurateDeck.tsx: "F keeps"): the R1 remote's F must mean the same on both (gap audit 11-14)
         case "c": act("cut")
         case "m": if allowsMaybe { act("maybe") }
         case "z": undo()
