@@ -97,7 +97,7 @@ extension NativeCanvasModel {
     func selectionToLayer() {
         guard live == nil, let d = doc, let sel = selection, sel.has else { say("Select something first."); return }
         let src = d.layers[d.active].pixels
-        guard d.addLayer() else { say("Not made. This phone holds no more layers at this size."); return }
+        guard d.addLayer() else { say(d.fullNote); return }
         let N = d.layers[d.active]
         N.meta["name"] = "From selection"; N.meta["raw"] = true
         if let img = src.image() { N.pixels.drawUpright(img, in: CGRect(x: 0, y: 0, width: d.w, height: d.h)) }
@@ -131,7 +131,7 @@ extension NativeCanvasModel {
         }
         guard let pic = img else { say("There is nothing to paste."); return }
         commitTransform()
-        guard d.addLayer() else { say("Not pasted. This phone holds no more layers at this size."); return }
+        guard d.addLayer() else { say(d.fullNote); return }
         let N = d.layers[d.active]
         N.meta["name"] = "Pasted"; N.meta["raw"] = true
         NativeEffects.put(pic, into: N.pixels, x: Double(origin.x), y: Double(origin.y))

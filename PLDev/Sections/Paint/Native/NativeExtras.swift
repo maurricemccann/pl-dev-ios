@@ -8,7 +8,7 @@ import UIKit
 extension NativeCanvasModel {
     /// A faint, softened copy of the layer's marks behind it, the way text sits over a ghost weave in his plates.
     func ghostBelow() {
-        guard live == nil, let d = doc, d.layers.indices.contains(d.active), d.layers.count < 40 else { say("This phone holds no more layers at this size."); return }
+        guard live == nil, let d = doc, d.layers.indices.contains(d.active), d.layers.count < NativeDoc.layerCap(w: d.w, h: d.h) else { say(d.fullNote); return }
         let src = d.layers[d.active]
         structDo("Ghost copy") {
             guard let soft = NativeAdjust.gauss(src.pixels, 2), let px = PixelBuffer(w: d.w, h: d.h), let img = soft.image() else { return false }
@@ -24,7 +24,7 @@ extension NativeCanvasModel {
 
     /// A copy of the layer slides half way round: a motif in the middle gains its four quarter copies in the corners.
     func cornerCopies() {
-        guard live == nil, let d = doc, d.layers.indices.contains(d.active), d.layers.count < 40 else { say("This phone holds no more layers at this size."); return }
+        guard live == nil, let d = doc, d.layers.indices.contains(d.active), d.layers.count < NativeDoc.layerCap(w: d.w, h: d.h) else { say(d.fullNote); return }
         let srcName = d.layers[d.active].name
         structDo("Corner copies") {
             guard d.duplicateActive() else { return false }

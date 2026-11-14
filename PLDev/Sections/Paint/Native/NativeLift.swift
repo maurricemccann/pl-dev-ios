@@ -106,7 +106,7 @@ extension NativeCanvasModel {
     func addPictureLayer(_ img: CGImage, name: String, fit: Bool = true) {
         guard live == nil, let d = doc else { return }
         commitTransform()
-        guard d.addLayer() else { say("Not added. This phone holds no more layers at this size."); return }
+        guard d.addLayer() else { say(d.fullNote); return }
         let N = d.layers[d.active]
         N.meta["name"] = name; N.meta["raw"] = true
         let k = fit ? min(1, min(Double(d.w) / Double(img.width), Double(d.h) / Double(img.height))) : 1

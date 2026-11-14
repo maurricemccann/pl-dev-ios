@@ -4,9 +4,14 @@ import SwiftUI
 import UIKit
 
 extension NativeDoc {
+    /// A phone has less memory for pictures than a laptop, so the layers it holds depend on the canvas size (his handbook, ch. 10: "about seven
+    /// at 2048 x 1536"). About 100 MB of layer pixels: seven at 2048 x 1536, five at 2048 x 2048, twenty-three at 1024 x 1024; never under 2 or over 40.
+    static func layerCap(w: Int, h: Int) -> Int { max(2, min(40, 100_000_000 / max(1, w * h * 4))) }
+    /// What it says when the cap is reached.
+    var fullNote: String { "This canvas holds \(NativeDoc.layerCap(w: w, h: h)) layers at this size. Merge some layers, or start smaller." }
     /// A new empty layer above the active one; inside a group when the layer under it is in one.
     func addLayer() -> Bool {
-        guard layers.count < 40, let px = PixelBuffer(w: w, h: h) else { return false }
+        guard layers.count < NativeDoc.layerCap(w: w, h: h), let px = PixelBuffer(w: w, h: h) else { return false }
         layerSeq += 1
         var meta = NativeLayer.defaultMeta("Layer \(layerSeq)")
         meta["grp"] = layers[active].meta["grp"] as? Int ?? 0
@@ -15,7 +20,7 @@ extension NativeDoc {
         return true
     }
     func duplicateActive() -> Bool {
-        guard layers.count < 40, let px = PixelBuffer(w: w, h: h) else { return false }
+        guard layers.count < NativeDoc.layerCap(w: w, h: h), let px = PixelBuffer(w: w, h: h) else { return false }
         let src = layers[active]
         memcpy(px.ptr, src.pixels.ptr, w * h * 4)
         var meta = src.meta; meta["name"] = String((src.name + " copy").prefix(40)); meta["raw"] = true; meta["id"] = freshLayerID()
@@ -72,7 +77,7 @@ extension NativeCanvasModel {
 
     func addLayer() {
         guard let d = doc else { return }
-        structDo("Layer added") { d.addLayer() ? true : { say("This phone holds no more layers at this size. Merge some, or use a smaller canvas."); return false }() }
+        structDo("Layer added") { d.addLayer() ? true : { say(d.fullNote); return false }() }
         if !layerRows.isEmpty { say("Layer added.") }
     }
     func duplicateLayer() { guard let d = doc else { return }; structDo("Layer duplicated") { d.duplicateActive() } }

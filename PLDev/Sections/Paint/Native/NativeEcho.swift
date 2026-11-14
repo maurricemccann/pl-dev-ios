@@ -128,7 +128,7 @@ extension NativeCanvasModel {
         guard let (m, _) = shapeUnder(p) else { return }
         let c = UIColor(color).rgb
         structDo("Light one") {
-            guard d.layers.count < 40, let px = PixelBuffer(w: d.w, h: d.h) else { say("This phone holds no more layers at this size."); return false }
+            guard d.layers.count < NativeDoc.layerCap(w: d.w, h: d.h), let px = PixelBuffer(w: d.w, h: d.h) else { say(d.fullNote); return false }
             let r = UInt8(c.0 * 255), g = UInt8(c.1 * 255), b = UInt8(c.2 * 255)
             for i in 0..<(d.w * d.h) where m[i] != 0 { px.ptr[i * 4] = r; px.ptr[i * 4 + 1] = g; px.ptr[i * 4 + 2] = b; px.ptr[i * 4 + 3] = 255 }
             var meta = NativeLayer.defaultMeta("Lit cell")

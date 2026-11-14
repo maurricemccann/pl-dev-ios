@@ -228,7 +228,7 @@ extension NativeCanvasModel {
         var note = "\(n) layer\(n == 1 ? "" : "s") from the PSD."
         if clipped { note += " The parts outside the canvas were cut off." }
         if nested { note += " Groups inside groups were folded into the outer group." }
-        if full { note += " This phone holds no more layers at this size, so the rest were left out." }
+        if full { note += " This canvas holds only \(NativeDoc.layerCap(w: d.w, h: d.h)) layers at this size, so the rest were left out." }
         if skippedBlend > 0 { note += " \(skippedBlend) used a blend mode PL Paint does not have; they are Normal." }
         syncFlags(); stage?.rebuild()
         say(note)
