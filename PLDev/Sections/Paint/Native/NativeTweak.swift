@@ -17,7 +17,7 @@ extension NativeCanvasModel {
     }
 
     /// One stroke laid down again from its recorded points. The path is fed to the engine as it was (already averaged), then finished the usual way.
-    private func replay(brush B: Brush, size: Double, op: Double, color: String, color2: String, layer: Int, pts: [[Any]], tool: NativeTool) {
+    func replay(brush B: Brush, size: Double, op: Double, color: String, color2: String, layer: Int, pts: [[Any]], tool: NativeTool) {
         guard let d = doc, live == nil, d.layers.indices.contains(layer) else { return }
         let L = d.layers[layer]
         if tool == .paint, wet == nil { wet = PixelBuffer(w: d.w, h: d.h) }
@@ -25,7 +25,7 @@ extension NativeCanvasModel {
         haloBrush = nil
         var st = NativeStroker(B, size: size); st.global = stabAll
         var s = Live(stroker: st, brush: B, tool: tool, layer: layer, target: L.pixels, onMask: false, maskHide: false, color: color, color2: color2, op: op, size: size, t0: 0)
-        wetState = WetState()
+        wetState = WetState(); seamStroke = SeamStroke()
         for r in pts where r.count >= 4 {
             let x = NativeCanvasModel.num(r[0]), y = NativeCanvasModel.num(r[1]), p = NativeCanvasModel.num(r[2]), t = NativeCanvasModel.num(r[3])
             let tilt: (Double, Double)? = r.count >= 6 ? (NativeCanvasModel.num(r[4]), NativeCanvasModel.num(r[5])) : nil
@@ -37,14 +37,14 @@ extension NativeCanvasModel {
     }
 
     /// The last stroke drawn again with new settings. `size` is in pixels; `over` holds brush parameters by their toolkit names.
-    func tweakLast(size: Double?, _ over: [String: Double]) {
+    func tweakLast(size: Double?, _ over: [String: Double], pts newPts: [[Any]]? = nil) {
         guard let l = tweakable, let d = doc else { say("The last thing you did was not a stroke you can adjust."); return }
         var B = l.brush
         for (k, v) in over { B = B.setting(k, v) }
         replaying = true; defer { replaying = false }
         undoStroke()
         if d.log.indices.contains(l.logIdx) { d.log.remove(at: l.logIdx) }
-        replay(brush: B, size: size ?? l.size, op: l.op, color: l.color, color2: l.color2, layer: l.layer, pts: l.pts, tool: .paint)
+        replay(brush: B, size: size ?? l.size, op: l.op, color: l.color, color2: l.color2, layer: l.layer, pts: newPts ?? l.pts, tool: .paint)
     }
 
     /// Makes what the last stroke was drawn with the brush's own setting.
@@ -57,7 +57,7 @@ extension NativeCanvasModel {
     }
 
     /// Every paint and erase stroke on the active layer drawn again from its pen path, with a size scale and brush overrides: one undo step.
-    func restyleLayer(scale k: Double, _ over: [String: Double]) {
+    func restyleLayer(scale k: Double, _ over: [String: Double], bend: (logIndex: Int, pts: [[Any]])? = nil) {
         guard live == nil, !trActive, let d = doc, d.layers.indices.contains(d.active) else { return }
         let L = d.layers[d.active], lid = d.layerID(d.active)
         guard L.meta["raw"] as? Bool != true else { say("This layer has fills, pasted or smudged parts. Restyle can only rebuild a layer made of strokes."); return }
@@ -74,8 +74,9 @@ extension NativeCanvasModel {
         let depth = undo.done.count, hadSel = selection, hadSym = sym
         selection = nil; replaying = true
         L.pixels.clear(CGRect(x: 0, y: 0, width: d.w, height: d.h))
-        for r in recs {
-            guard let pts = r["pts"] as? [[Any]], !pts.isEmpty else { continue }
+        for (n, r) in recs.enumerated() {
+            guard var pts = r["pts"] as? [[Any]], !pts.isEmpty else { continue }
+            if let b = bend, b.logIndex == idx[n] { pts = b.pts }
             let tool: NativeTool = (r["tool"] as? String) == "erase" ? .erase : .paint
             var B = all.first { $0.id == (r["brush"] as? String ?? "") } ?? brush
             if tool == .paint { for (key, v) in over { B = B.setting(key, v) } }

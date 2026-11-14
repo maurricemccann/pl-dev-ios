@@ -13,14 +13,16 @@ import WidgetKit
     static func settingsRows(model: AppModel) -> AnyView? { nil }
     static func notificationCategories() -> Set<UNNotificationCategory> { [] }
     static func handle(link: DeepLink, model: AppModel) -> Bool {
-        if case .section(_, let path, _) = link, path.first == "canvas" || path.first == "native" { state.openCanvas(work: nil) }
+        if case .section(_, let path, _) = link, path.first == "canvas" || path.first == "native" {
+            state.openCanvas(work: nil, panel: path.count > 1 ? PaintRoom(rawValue: path[1])?.panel : nil)
+        }
         return true
     }
-    static func refresh(model: AppModel) async -> SectionRefresh { await state.load(model: model); return SectionRefresh(badge: nil, notify: []) }
+    static func refresh(model: AppModel) async -> SectionRefresh { await state.load(model: model); await PaintSpotlight.index(); return SectionRefresh(badge: nil, notify: []) }
 }
 
 /// What the canvas is asked to open: the current work, or one by id.
-struct PaintCanvasRequest: Identifiable { let id = UUID(); let work: String? }
+struct PaintCanvasRequest: Identifiable { let id = UUID(); let work: String?; var panel: NativePanel? = nil }
 
 @MainActor @Observable final class PaintModel {
     struct Work: Identifiable { let id: String; let name: String; let w: Int; let h: Int; let updated: Date; let thumb: UIImage?; let here: Bool }
@@ -32,7 +34,7 @@ struct PaintCanvasRequest: Identifiable { let id = UUID(); let work: String? }
     var request: PaintCanvasRequest?
     var synced = false
 
-    func openCanvas(work: String?) { request = PaintCanvasRequest(work: work) }
+    func openCanvas(work: String?, panel: NativePanel? = nil) { request = PaintCanvasRequest(work: work, panel: panel) }
 
     /// His works: the ones on this phone first-hand, then the laptop's that are not here yet. The Daily Mark merges what the laptop counted.
     func load(model: AppModel) async {
@@ -126,7 +128,7 @@ struct PaintHome: View {
         .toolbarColorScheme(.dark, for: .navigationBar)
         .refreshable { await state.load(model: model) }
         .task { await state.load(model: model) }
-        .fullScreenCover(item: $state.request, onDismiss: { Task { await state.load(model: model) } }) { r in NativeCanvasView(model: model, openID: r.work) }
+        .fullScreenCover(item: $state.request, onDismiss: { Task { await state.load(model: model) } }) { r in NativeCanvasView(model: model, openID: r.work, openPanel: r.panel) }
         .sheet(isPresented: $handbook) { NativeHandbookView() }
         .preferredColorScheme(.dark)
     }

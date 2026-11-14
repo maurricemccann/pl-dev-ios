@@ -1,4 +1,5 @@
 import SwiftUI
+import TipKit
 import UIKit
 
 // MARK: colour
@@ -35,6 +36,7 @@ struct NativeColourSheet: View {
                             Text("Companion").font(.caption2).foregroundStyle(.secondary)
                         }
                     }
+                    NativeBrushColourCard(canvas: canvas)
                     if let sense = NativeToolkit.sense(of: UIColor(canvas.color).hex) {
                         Text(sense).font(.footnote).foregroundStyle(.secondary).padding(10).frame(maxWidth: .infinity, alignment: .leading)
                             .background(Color.secondary.opacity(0.1), in: RoundedRectangle(cornerRadius: 12, style: .continuous))
@@ -67,7 +69,11 @@ struct NativeColourSheet: View {
                         Text("Use it to build a piece in colours, one stroke after another, in the palette's order.").font(.caption).foregroundStyle(.secondary)
                     }
                     section("His palettes") {
-                        Picker("Palette", selection: $palette) { ForEach(Array(NativeToolkit.palettes.enumerated()), id: \.offset) { i, p in Text(p.name).tag(i) } }.pickerStyle(.menu)
+                        HStack {
+                            Picker("Palette", selection: $palette) { ForEach(Array(NativeToolkit.palettes.enumerated()), id: \.offset) { i, p in Text(p.name).tag(i) } }.pickerStyle(.menu)
+                            Button { NativeToolkit.shuffleRandoms(); palette = 1 } label: { Label("Shuffle", systemImage: "shuffle") }.buttonStyle(.bordered).controlSize(.small)
+                        }
+                        Text("The two Random palettes after the House one are new each time the app opens. Shuffle draws two more.").font(.caption).foregroundStyle(.secondary)
                         if NativeToolkit.palettes.indices.contains(palette) { swatches(NativeToolkit.palettes[palette].colors) }
                     }
                 }.padding()
@@ -115,10 +121,14 @@ struct NativeAssistSheet: View {
                 Section {
                     Picker("Tile mode", selection: $canvas.tile) { ForEach(TileMode.allCases, id: \.self) { Text($0.label).tag($0) } }
                     Button("Make tile (slide half way round)") { canvas.makeTile(); dismiss() }
+                    Toggle("Smart tile guides: the middle cross, gates, the live ghost", isOn: $canvas.tileGuides)
+                    Toggle("Show the tiles around", isOn: $canvas.tilePrev)
                 } header: { Text("Tile") } footer: { Text("With tile mode on, a mark that runs off one edge comes back on the other.") }
                 Section("Strokes") {
                     Toggle("QuickShape: hold still and the stroke snaps", isOn: $canvas.quickShape)
                     Toggle("Tangent lock: a stroke continues the line it starts beside", isOn: $canvas.tangentLock)
+                    Toggle("Facet and Curve: every stroke straight segments with rounded corners", isOn: $canvas.facet)
+                    Button("More tools: echo, nodes, lights, seams") { dismiss(); canvas.panel = .tools2 }
                 }
                 Section("Paper") {
                     Picker("Stock", selection: $canvas.paper) { ForEach(NativeToolkit.papers) { Text($0.name).tag($0.id) } }
@@ -152,6 +162,9 @@ struct NativeSettingsSheet: View {
                 Section("Controls") {
                     Button("Gesture controls") { canvas.panel = .gestures }
                     Button("Quick menu") { canvas.panel = .quickEditor }
+                    TipView(PaintPencilTip())
+                    Toggle("Swap the Pencil's two buttons", isOn: $canvas.swapPencil)
+                    Text("The Pencil's double tap runs the Pen side button's action; the squeeze of a Pencil Pro runs the Pen second button's. This trades them. Set what they run in Gesture controls.").font(.caption).foregroundStyle(.secondary)
                 }
                 Section {
                     LabeledContent("Sync key", value: model.config?.key("paintSync") == nil ? "Not set" : "Set")

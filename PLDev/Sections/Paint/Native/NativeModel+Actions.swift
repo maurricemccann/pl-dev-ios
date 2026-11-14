@@ -5,7 +5,7 @@ import UIKit
 
 /// The panels the canvas can open (each is a sheet over it).
 enum NativePanel: String, Identifiable {
-    case colour, layers, brushes, studio, adjust, works, settings, gestures, quickEditor, handbook, sync, exportPicture, send, newCanvas, rename, assists, lift, timelapse, study, bringIn, tweak, repeatCheck
+    case colour, layers, brushes, studio, adjust, works, settings, gestures, quickEditor, handbook, sync, exportPicture, send, newCanvas, rename, assists, lift, timelapse, study, bringIn, tweak, repeatCheck, tools2, shareFiles
     var id: String { rawValue }
 }
 
@@ -46,6 +46,7 @@ extension NativeCanvasModel {
         "Undo", "Redo", "Fit to screen", "Eyedropper", "Eraser (toggle)", "New layer", "Duplicate layer", "Merge down", "Clear layer", "Colour panel", "Layers panel", "Brush Studio",
         "Selection", "Transform", "Symmetry (cycle)", "Guide (cycle)", "Move vanishing points", "Assisted drawing", "QuickShape", "Adjustments", "Add / paint mask", "Clip to layer below",
         "Adjust last stroke", "Study (record how I draw)", "Lift (ink off a photo)", "Timelapse", "Ghost copy of the layer", "Corner copies", "Check the repeat (3 by 3)", "Gallery", "Gesture controls", "Copy", "Cut", "Paste", "Transparent background", "Make tile (slide half way round)", "ColorDrop", "Smudge (toggle)", "Hide interface", "Settings", "Handbook",
+        "Facet next stroke", "Facet (toggle)", "Echo Fill", "Node mode", "Lights off", "Light one", "Other ground", "Hand trace", "Seam mode (toggle)", "Save print files (seam mode)", "Tile (cycle)", "Show the tiles around", "Tangent Lock", "Export alive (breathe)", "More tools",
     ]
 
     func run(action name: String) {
@@ -94,6 +95,23 @@ extension NativeCanvasModel {
         case "Hide interface": uiHidden.toggle()
         case "Settings": panel = .settings
         case "Handbook": panel = .handbook
+        case "Facet next stroke": toggleFacetNext()
+        case "Facet (toggle)": facet.toggle(); say(facet ? "Every stroke is faceted." : "Facet off."); prefsSoon()
+        case "Echo Fill": toggleEcho()
+        case "Node mode": toggleNodes()
+        case "Lights off": toggleLightsOff()
+        case "Light one": toggleLightOne()
+        case "Other ground": otherGround()
+        case "Hand trace": handTrace()
+        case "Seam mode (toggle)": toggleSeam()
+        case "Save print files (seam mode)": seamPrintFiles()
+        case "Tile (cycle)":
+            let all = TileMode.allCases
+            tile = all[((all.firstIndex(of: tile) ?? 0) + 1) % all.count]; say("Tile: \(tile.label)."); stage?.updateOverlay(); markChanged()
+        case "Show the tiles around": tilePrev.toggle(); say(tilePrev ? "The tiles around show." : "The tiles around are hidden."); stage?.updateOverlay(); prefsSoon()
+        case "Tangent Lock": tangentLock.toggle(); say("Tangent lock \(tangentLock ? "on" : "off")."); prefsSoon()
+        case "Export alive (breathe)": panel = .timelapse
+        case "More tools": panel = .tools2
         default: say("\(name) is not on this phone.")
         }
     }
@@ -128,7 +146,7 @@ extension NativeCanvasModel {
                     memcpy(b.ptr, t.ptr, b.w * b.h * 4)
                 }
             }
-            tile = .both
+            tile = .both; tilePrev = true
             return true
         }
         say("Slid half way round. Tile mode is on, so what you paint at an edge comes back on the other.")

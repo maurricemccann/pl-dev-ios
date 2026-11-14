@@ -156,6 +156,7 @@ extension NativeCanvasModel {
         if let sel, let m = sel.mask.image() { L.pixels.drawUpright(m, in: CGRect(x: 0, y: 0, width: d.w, height: d.h), blend: .destinationOut) }   // the pixels now float; the layer keeps the rest
         else { L.pixels.clear(CGRect(x: 0, y: 0, width: d.w, height: d.h)) }
         transform = NativeTransform(layer: d.active, src: part, box: box, before: before, selBefore: snap)
+        transform?.docCentre = CGPoint(x: Double(d.w) / 2, y: Double(d.h) / 2)
         trMode = .free; trActive = true; mode = .transform
         stage?.refreshAll(); stage?.setFloat(transform)
         say("Transform: drag the corners to scale, the green dot to turn, the yellow square to move the pivot.")
