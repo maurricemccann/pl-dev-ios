@@ -13,7 +13,7 @@ struct HouseCalendarView: View {
     @State private var platforms: [String: Set<String>] = [:]
     @State private var merch: [MerchView.Row] = []
     /// The drop calendar: each piece chosen from the tally, on the day it was chosen (pl-cron door q/chosen).
-    struct Drop: Decodable, Identifiable { let chosen_no: Int; let cr: String; let product: String; let url: String?; let created_at: String; var id: Int { chosen_no } }
+    struct Drop: Decodable, Identifiable { let chosen_no: Int; let cr: String; let product: String; let url: String?; let fulfilled_at: String?; let created_at: String; var id: Int { chosen_no } }
     @State private var drops: [String: [Drop]] = [:]
     @State private var pictures: [String: URL] = [:]                  // product name → its picture
     @State private var picked: String?
