@@ -15,6 +15,14 @@ struct HousePalette: Codable, Hashable, Identifiable {
     let key: String
     let accent: String
     var id: String { name }
+    init(name: String, ground: String, text: String, key: String, accent: String) { self.name = name; self.ground = ground; self.text = text; self.key = key; self.accent = accent }
+    private enum K: String, CodingKey { case name, ground, text, key, accent }
+    init(from d: Decoder) throws {
+        let c = try d.container(keyedBy: K.self)
+        name = try c.decode(String.self, forKey: .name); ground = try c.decode(String.self, forKey: .ground)
+        text = try c.decode(String.self, forKey: .text); key = try c.decode(String.self, forKey: .key)
+        accent = try c.decodeIfPresent(String.self, forKey: .accent) ?? key
+    }
     var groundColor: Color { Color(hex: ground) ?? .black }
     var textColor: Color { Color(hex: text) ?? .white }
     var keyColor: Color { Color(hex: key) ?? .orange }
@@ -28,17 +36,29 @@ struct HousePalette: Codable, Hashable, Identifiable {
 @MainActor @Observable final class HouseKit {
     static let shared = HouseKit()
     private(set) var palettes: [HousePalette] = [.homeScreen]
+    /// More colourways from the Design Kit (11-13): his archive's palettes, his works' families, and each palette's harmonies.
+    private(set) var archivePalettes: [HousePalette] = []
+    private(set) var familyPalettes: [HousePalette] = []
+    struct Mix: Codable, Hashable { let palette: HousePalette; let base: String; let rule: String }
+    private(set) var mixes: [Mix] = []
+    /// The title face for navigation titles (his words stay in his V1 hand everywhere): v1, v2, ransom, ledger.
+    var titleFace: String = UserDefaults.standard.string(forKey: "pldev.titleFace") ?? "v1" {
+        didSet { UserDefaults.standard.set(titleFace, forKey: "pldev.titleFace"); apply() }
+    }
+    var allPalettes: [HousePalette] { palettes + archivePalettes + familyPalettes + mixes.map(\.palette) }
+    func harmonies(of base: String) -> [Mix] { mixes.filter { $0.base == base } }
     private(set) var titleFont: String?          // his hand, V1 (main), once registered
     var paletteName: String = UserDefaults.standard.string(forKey: "pldev.palette") ?? "home-screen" {
         didSet { UserDefaults.standard.set(paletteName, forKey: "pldev.palette"); apply() }
     }
-    var palette: HousePalette { palettes.first { $0.name == paletteName } ?? .homeScreen }
+    var palette: HousePalette { allPalettes.first { $0.name == paletteName } ?? .homeScreen }
 
     private let cache = FileManager.default.urls(for: .applicationSupportDirectory, in: .userDomainMask)[0].appendingPathComponent("house", isDirectory: true)
 
     private init() {
         try? FileManager.default.createDirectory(at: cache, withIntermediateDirectories: true)
         if let d = try? Data(contentsOf: cache.appendingPathComponent("palettes.json")), let p = try? JSONDecoder().decode([HousePalette].self, from: d), !p.isEmpty { palettes = [.homeScreen] + p.filter { $0.name != HousePalette.homeScreen.name } }
+        loadExtras(from: try? Data(contentsOf: cache.appendingPathComponent("extras.json")))
         registerFont(at: cache.appendingPathComponent("hand-v1.ttf"))
         if titleFont == nil, UIFont(name: PLFace.handV1, size: 12) != nil { titleFont = PLFace.handV1 }   // bundled since 11-13: his hand from the first frame, offline too
         apply()
@@ -52,6 +72,7 @@ struct HousePalette: Codable, Hashable, Identifiable {
            let p = try? JSONDecoder().decode(Kit.self, from: d).colors?.palettes, !p.isEmpty {
             palettes = [.homeScreen] + p.filter { $0.name != HousePalette.homeScreen.name }
             try? JSONEncoder().encode(p).write(to: cache.appendingPathComponent("palettes.json"))
+            if let x = extrasJSON(d) { loadExtras(from: x); try? x.write(to: cache.appendingPathComponent("extras.json")) }
         }
         let fontURL = cache.appendingPathComponent("hand-v1.ttf")
         if titleFont == nil, let d = try? await http.send(RequestPlan(origin: "gallery", path: "fonts/MaurriceMccannPsychedHandwrit-Regular.ttf"), timeout: 40) {
@@ -59,6 +80,25 @@ struct HousePalette: Codable, Hashable, Identifiable {
             registerFont(at: fontURL)
         }
         apply()
+    }
+
+    /// archive, families and mixes out of kit.json, kept as one small file for offline.
+    private func extrasJSON(_ kit: Data) -> Data? {
+        struct RawMix: Decodable { let name: String; let ground: String; let text: String; let key: String; let accent: String?; let base: String?; let rule: String? }
+        struct Kit: Decodable { struct C: Decodable { let archive: [HousePalette]?; let families: [HousePalette]?; let mixes: [RawMix]? }; let colors: C? }
+        guard let c = (try? JSONDecoder().decode(Kit.self, from: kit))?.colors else { return nil }
+        let mixes = (c.mixes ?? []).compactMap { m -> Mix? in
+            guard let base = m.base, let rule = m.rule else { return nil }
+            return Mix(palette: HousePalette(name: m.name, ground: m.ground, text: m.text, key: m.key, accent: m.accent ?? m.key), base: base, rule: rule)
+        }
+        struct Out: Encodable { let archive: [HousePalette]; let families: [HousePalette]; let mixes: [Mix] }
+        return try? JSONEncoder().encode(Out(archive: c.archive ?? [], families: c.families ?? [], mixes: mixes))
+    }
+
+    private func loadExtras(from d: Data?) {
+        struct In: Decodable { let archive: [HousePalette]; let families: [HousePalette]; let mixes: [Mix] }
+        guard let d, let x = try? JSONDecoder().decode(In.self, from: d) else { return }
+        archivePalettes = x.archive; familyPalettes = x.families; mixes = x.mixes
     }
 
     private func registerFont(at url: URL) {
@@ -71,7 +111,8 @@ struct HousePalette: Codable, Hashable, Identifiable {
     /// Pushes the house into UIKit's shared chrome: his hand on every navigation title, the palette's key as the window tint,
     /// and the palette to the widgets (App Group) so the Lock Screen and Home Screen wear the same colour.
     func apply() {
-        if let name = titleFont {
+        let face: String? = { switch titleFace { case "v2": return PLFace.handV2; case "ransom": return PLFace.ransom; case "ledger": return PLFace.ledger; default: return titleFont } }()
+        if let name = face ?? titleFont {
             let nav = UINavigationBarAppearance()
             nav.configureWithDefaultBackground()
             if let large = UIFont(name: name, size: 38) { nav.largeTitleTextAttributes = [.font: UIFontMetrics(forTextStyle: .largeTitle).scaledFont(for: large)] }
@@ -165,4 +206,22 @@ enum PLIcon {
     static func symbol(_ name: String) -> Image { Image("PLSymbols/\(name)") }
     /// The mark buttons: keep, cut, maybe, fav are his icons.
     static func mark(_ v: String) -> Image { image(v == "fav" ? "favorite" : v) }
+}
+
+
+/// Built-in theme packs (his ask 11-13): one tap sets a palette and the title face together. His words stay in his V1 hand in
+/// every pack; only navigation titles change face.
+struct PLThemePreset: Identifiable, Hashable {
+    let id: String, title: String, palette: String, face: String, note: String
+    static let all: [PLThemePreset] = [
+        .init(id: "home", title: "Your Home Screen", palette: "home-screen", face: "v1", note: "Orange curves on deep brown, your hand"),
+        .init(id: "studio-night", title: "Studio night", palette: "obsidian-gold", face: "v1", note: "pl-os at night: gold on obsidian"),
+        .init(id: "ember", title: "Ember", palette: "void-ember", face: "v2", note: "Void and ember, the second hand"),
+        .init(id: "totem", title: "Totem", palette: "totem-blue-gold", face: "v1", note: "Totem blue with gold"),
+        .init(id: "drop", title: "Drop day", palette: "bone-oxblood", face: "ransom", note: "Bone and oxblood, Ransom titles"),
+        .init(id: "ledger", title: "The ledger", palette: "cream-indigo", face: "ledger", note: "Cream and indigo, Ledger titles"),
+        .init(id: "silver", title: "Night silver", palette: "night-silver", face: "v2", note: "Silver on night"),
+        .init(id: "archive", title: "From the archive", palette: "archive-0a", face: "v1", note: "A palette pulled from your archive"),
+        .init(id: "pearl", title: "Pearl", palette: "pearl-gold", face: "v1", note: "Pearl and gold, light"),
+    ]
 }

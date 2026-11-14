@@ -412,6 +412,13 @@ struct HouseRows: View {
                                               ("AppIcon-VoidEmber", "Void ember"), ("AppIcon-DeepIndigo", "Deep indigo"), ("AppIcon-BoneOxblood", "Bone oxblood")]
     var body: some View {
         Section {
+            NavigationLink { ThemePacksView() } label: { SettingsLabel("Theme packs", "square.stack.3d.up.fill", kit.palette.keyColor) }
+            NavigationLink { ColourwaysView() } label: {
+                LabeledContent { Text(kit.palette.name == "home-screen" ? "Your Home Screen" : kit.palette.title) } label: { SettingsLabel("Colourways", "swatchpalette.fill", kit.palette.keyColor) }
+            }
+            Picker(selection: $kit.titleFace) {
+                Text("Your hand (V1)").tag("v1"); Text("Your hand (V2)").tag("v2"); Text("Ransom").tag("ransom"); Text("Ledger").tag("ledger")
+            } label: { SettingsLabel("Title face", "textformat", kit.palette.keyColor) }
             Picker(selection: $kit.paletteName) {
                 ForEach(kit.palettes) { p in
                     HStack {
@@ -433,4 +440,72 @@ struct HouseRows: View {
             Text("Your palettes and your hand come from the Design Kit on the gallery and stay on this iPhone; none of it ships in the app's public code. Status colours stay Apple's.")
         }
     }
+}
+
+
+/// The colourway gallery: his 13 house palettes, his archive's 24, his works' 36 families, and the harmonies of the one he wears.
+struct ColourwaysView: View {
+    @State private var kit = HouseKit.shared
+    var body: some View {
+        List {
+            group("House", kit.palettes)
+            let h = kit.harmonies(of: kit.palette.name)
+            if !h.isEmpty {
+                Section("Harmonies of \(kit.palette.title)") {
+                    ForEach(h, id: \.palette.name) { m in row(m.palette, label: m.rule.replacingOccurrences(of: "-", with: " ").capitalized) }
+                }
+            }
+            group("From the archive", kit.archivePalettes)
+            group("Families of your works", kit.familyPalettes)
+            if kit.archivePalettes.isEmpty { Text("Open the app online once and the archive palettes, families and harmonies arrive from your Design Kit.").font(.footnote).foregroundStyle(.secondary) }
+        }
+        .navigationTitle("Colourways")
+    }
+
+    @ViewBuilder private func group(_ title: String, _ list: [HousePalette]) -> some View {
+        if !list.isEmpty { Section(title) { ForEach(list) { row($0, label: nil) } } }
+    }
+
+    private func row(_ p: HousePalette, label: String?) -> some View {
+        Button { withAnimation(.snappy) { kit.paletteName = p.name } } label: {
+            HStack(spacing: 12) {
+                HStack(spacing: 0) { ForEach([p.groundColor, p.keyColor, p.accentColor, p.textColor], id: \.self) { Rectangle().fill($0) } }
+                    .frame(width: 64, height: 28).clipShape(RoundedRectangle(cornerRadius: 6, style: .continuous))
+                VStack(alignment: .leading, spacing: 1) {
+                    Text(p.name == "home-screen" ? "Your Home Screen" : p.title)
+                    if let label { Text(label).font(.caption).foregroundStyle(.secondary) }
+                }
+                Spacer()
+                if kit.paletteName == p.name { Image(systemName: "checkmark").foregroundStyle(p.keyColor) }
+            }
+        }
+        .foregroundStyle(.primary)
+        .accessibilityAddTraits(kit.paletteName == p.name ? .isSelected : [])
+    }
+}
+
+/// Built-in theme packs: a palette and a title face in one tap. A pack dropped in through Files (theme.json) still wins.
+struct ThemePacksView: View {
+    @State private var kit = HouseKit.shared
+    var body: some View {
+        List {
+            ForEach(PLThemePreset.all) { t in
+                let p = kit.allPalettes.first { $0.name == t.palette }
+                Button { withAnimation(.snappy) { kit.paletteName = t.palette; kit.titleFace = t.face } } label: {
+                    HStack(spacing: 12) {
+                        RoundedRectangle(cornerRadius: 10, style: .continuous).fill(p?.groundColor ?? .black)
+                            .overlay { Text("Aa").font(.custom(face(t.face), size: 20)).foregroundStyle(p?.keyColor ?? .orange) }
+                            .frame(width: 54, height: 54)
+                        VStack(alignment: .leading, spacing: 2) { Text(t.title).font(.headline); Text(t.note).font(.caption).foregroundStyle(.secondary) }
+                        Spacer()
+                        if kit.paletteName == t.palette && kit.titleFace == t.face { Image(systemName: "checkmark.circle.fill").foregroundStyle(p?.keyColor ?? .orange) }
+                    }
+                }
+                .foregroundStyle(.primary)
+                .disabled(p == nil)
+            }
+        }
+        .navigationTitle("Theme packs")
+    }
+    private func face(_ f: String) -> String { switch f { case "v2": return PLFace.handV2; case "ransom": return PLFace.ransom; case "ledger": return PLFace.ledger; default: return PLFace.handV1 } }
 }
