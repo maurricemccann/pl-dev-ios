@@ -26,10 +26,28 @@ struct LabRoomView: View {
     private static let obsidian = UIColor(red: 14 / 255, green: 12 / 255, blue: 8 / 255, alpha: 1)
 
     var body: some View {
-        let p = reduceMotion ? 0.35 : smooth
-        let reveal = reduceMotion ? 1 : min(1, max(0, (smooth - 0.88) / 0.12))
         ZStack {
             Color(Self.obsidian).ignoresSafeArea()
+            scene
+            if !reduceMotion { runway }
+            controls
+            odometer
+        }
+        .task {
+            // the page's own easing: toward the scroll position, 12 % of the way each frame
+            while !Task.isCancelled {
+                if abs(target - smooth) > 0.0005 { smooth += (target - smooth) * 0.12 } else { smooth = target }
+                try? await Task.sleep(for: .milliseconds(16))
+            }
+        }
+        .toolbar(.hidden, for: .navigationBar)
+        .statusBarHidden()
+        .accessibilityElement(children: .contain)
+        .accessibilityLabel("The room. A walk-in showroom with framed glyphs on the walls, a gold figure under a light, and a half-open door. Scroll to walk in.")
+    }
+
+    @ViewBuilder private var scene: some View {
+        let p: Double = reduceMotion ? 0.35 : smooth
             GeometryReader { geo in
                 RealityView { content in
                     let cam = Entity(); cam.name = "cam"
@@ -51,7 +69,9 @@ struct LabRoomView: View {
             .allowsHitTesting(false)
             // the page's vignette
             RadialGradient(colors: [.clear, .black.opacity(0.28), .black.opacity(0.55)], center: .center, startRadius: 160, endRadius: 520).ignoresSafeArea().allowsHitTesting(false)
+    }
 
+    @ViewBuilder private var runway: some View {
             if !reduceMotion {
                 ScrollView { Color.clear.frame(height: UIScreen.main.bounds.height * 4.5) }   // the page's 450vh runway
                     .scrollIndicators(.hidden)
@@ -59,6 +79,10 @@ struct LabRoomView: View {
                         target = min(1, max(0, v))
                     }
             }
+    }
+
+    @ViewBuilder private var controls: some View {
+        let reveal: Double = reduceMotion ? 1 : min(1, max(0, (smooth - 0.88) / 0.12))
             VStack {
                 HStack {
                     Spacer()
@@ -89,6 +113,10 @@ struct LabRoomView: View {
                     .opacity(reveal).offset(y: (1 - reveal) * 28).allowsHitTesting(reveal > 0.6).padding(.bottom, 60)
                 }
             }
+    }
+
+    @ViewBuilder private var odometer: some View {
+        let p: Double = reduceMotion ? 0.35 : smooth
             VStack {
                 Spacer()
                 HStack(alignment: .firstTextBaseline, spacing: 12) {
@@ -99,18 +127,6 @@ struct LabRoomView: View {
                 .padding(.leading, 24).padding(.bottom, 26).opacity(ready ? 1 : 0).animation(.easeIn(duration: 0.7), value: ready)
             }
             .allowsHitTesting(false)
-        }
-        .task {
-            // the page's own easing: toward the scroll position, 12 % of the way each frame
-            while !Task.isCancelled {
-                if abs(target - smooth) > 0.0005 { smooth += (target - smooth) * 0.12 } else { smooth = target }
-                try? await Task.sleep(for: .milliseconds(16))
-            }
-        }
-        .toolbar(.hidden, for: .navigationBar)
-        .statusBarHidden()
-        .accessibilityElement(children: .contain)
-        .accessibilityLabel("The room. A walk-in showroom with framed glyphs on the walls, a gold figure under a light, and a half-open door. Scroll to walk in.")
     }
 
     private static func camera(at progress: Double) -> (SIMD3<Float>, SIMD3<Float>) {
