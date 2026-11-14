@@ -112,7 +112,7 @@ struct NativeCanvasView: View {
     /// The ••• opens Actions (NativeActions.swift): tabs in a sheet that keeps its place. It was a 30-row Menu that redrew on every
     /// canvas change and jumped back to its top, so Settings, its last row, could not be reached (his note 11-14).
     private var moreMenu: some View {
-        Button { canvas.panel = .actions } label: { Image(systemName: "ellipsis").font(.body.weight(.semibold)).frame(width: 38, height: 38) }
+        Button { canvas.panel = .actions } label: { Image(systemName: "wrench.adjustable").font(.body.weight(.semibold)).frame(width: 38, height: 38) }
             .buttonStyle(.plain)
             .glassControl(in: Circle()).accessibilityLabel("Actions").accessibilityIdentifier("canvas.actions")
     }

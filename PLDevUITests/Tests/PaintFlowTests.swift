@@ -195,7 +195,7 @@ final class PaintFlowTests: XCTestCase {
 
     func test07_MenuAndTools() {
         makeCanvas()
-        actions("Edit"); shot("actions-edit")
+        actions("Canvas"); shot("actions-canvas")
         tapButton("Adjustments and effects", wait: 8); sleepFor(1.5); shot("adjustments")
         closeSheet(); sleepFor(0.5)
         tap("Select", wait: 8); sleepFor(0.8); shot("selection-bar")
@@ -205,10 +205,10 @@ final class PaintFlowTests: XCTestCase {
         sleepFor(0.5)
         tap("Pick a colour", wait: 8); sleepFor(0.5); shot("eyedropper-bar")
         tapButton("Done", wait: 8)
-        actions("Canvas")
+        actions("Assist")
         let mt = app.buttons.matching(NSPredicate(format: "label BEGINSWITH 'More tools'")).firstMatch
         if !mt.waitForExistence(timeout: 3) { app.swipeUp() }
-        XCTAssertTrue(mt.waitForExistence(timeout: 8), "More tools is in Actions, Canvas"); mt.tap(); sleepFor(1.5); shot("more-tools")
+        XCTAssertTrue(mt.waitForExistence(timeout: 8), "More tools is in Actions, Assist"); mt.tap(); sleepFor(1.5); shot("more-tools")
         closeSheet()
     }
 
@@ -216,7 +216,7 @@ final class PaintFlowTests: XCTestCase {
 
     func test07b_SettingsReachable() {
         makeCanvas()
-        actions("Settings"); shot("actions-settings")
+        actions("Prefs"); shot("actions-prefs")
         let s = app.buttons.matching(NSPredicate(format: "label BEGINSWITH 'Settings'")).firstMatch
         XCTAssertTrue(s.waitForExistence(timeout: 8), "Settings row in Actions"); s.tap(); sleepFor(1.5); shot("paint-settings")
         XCTAssertTrue(app.switches["Finger paints after the Pencil is used"].firstMatch.waitForExistence(timeout: 8), "Paint's Settings opened")
@@ -228,9 +228,9 @@ final class PaintFlowTests: XCTestCase {
     func test08_Export() {
         makeCanvas()
         stroke((0.35, 0.4), (0.85, 0.5))
-        actions("Picture"); tapButton("Timelapse", wait: 8); sleepFor(1.5); shot("timelapse")   // first: a share sheet left open would cover it
+        actions("Video"); tapButton("Timelapse", wait: 8); sleepFor(1.5); shot("timelapse")   // first: a share sheet left open would cover it
         closeSheet(); sleepFor(0.8)
-        actions("Picture"); tapButton("Save or share the picture", wait: 8); sleepFor(1.5); shot("export-sheet")
+        actions("Canvas"); tapButton("Save or share the picture", wait: 8); sleepFor(1.5); shot("export-sheet")
         for fmt in ["PDF", "JPEG", "PNG"] {
             let row = app.buttons.matching(NSPredicate(format: "label BEGINSWITH %@", fmt)).firstMatch
             XCTAssertTrue(row.waitForExistence(timeout: 8), "\(fmt) export row")
