@@ -279,6 +279,9 @@ struct FounderTab: View {
                     door("Search the corpus", "magnifyingglass", .corpus)
                     door("Council", "person.3", .council)
                     door("V.A.U.L.T. board · the local fleet, in chat", "terminal", .jarvis)
+                    Link(destination: URL(string: "psyclaupse://")!) {   // the call app, by its own scheme (11-13)
+                        OSRow(title: "Call Claude", meta: "Psyclaupse") { Image(systemName: "phone.fill").foregroundStyle(PLOS.gold) }
+                    }
                     door("Academy · reader, oracle, forge, drills", "graduationcap", .academy)
                 }
                 houseSwitches
