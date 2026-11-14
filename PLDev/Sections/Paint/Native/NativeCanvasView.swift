@@ -8,6 +8,7 @@ struct NativeCanvasView: View {
     let model: AppModel
     var openID: String? = nil
     var openPanel: NativePanel? = nil
+    var setup: (@MainActor (NativeCanvasModel) -> Void)? = nil   // the Gallery's "new canvas" and "import": runs once, instead of opening a work
     @State private var canvas = NativeCanvasModel()
     @State private var showSizes = false
     @State private var confirmClear = false
@@ -30,6 +31,7 @@ struct NativeCanvasView: View {
                 }
             }
             .padding(.horizontal, 12).padding(.vertical, 6)
+            if canvas.hasDoc && !canvas.uiHidden { sideBar }
         }
         .animation(.smooth(duration: 0.2), value: canvas.mode)
         .animation(.smooth(duration: 0.2), value: canvas.uiHidden)
@@ -48,7 +50,7 @@ struct NativeCanvasView: View {
 
     private func start() {
         canvas.onChange = { Task { await sync.changed(model: model, canvas: canvas) } }
-        if let id = openID { canvas.open(id: id) } else if !canvas.hasDoc, let id = NativeStore.loadIndex().current { canvas.open(id: id) }
+        if let s = setup { s(canvas) } else if let id = openID { canvas.open(id: id) } else if !canvas.hasDoc, let id = NativeStore.loadIndex().current { canvas.open(id: id) }
         if let p = openPanel { canvas.panel = p }
         Task { await sync.run(model: model, canvas: canvas) }
     }
@@ -77,8 +79,9 @@ struct NativeCanvasView: View {
 
     private var topBar: some View {
         HStack(spacing: 8) {
-            roundButton("xmark", "Close the canvas") { canvas.saveNow(); Task { await sync.run(model: model, canvas: canvas) }; dismiss() }
-            roundButton("square.grid.2x2", "Works") { canvas.panel = .works }
+            Button { canvas.saveNow(); Task { await sync.run(model: model, canvas: canvas) }; dismiss() } label: {
+                Label("Gallery", systemImage: "chevron.backward").font(.footnote.weight(.semibold)).padding(.horizontal, 10).frame(height: 38)
+            }.glassControl(in: Capsule()).accessibilityLabel("Gallery").accessibilityIdentifier("canvas.gallery")
             if canvas.hasDoc {
                 Text(canvas.name).font(.footnote.weight(.semibold)).lineLimit(1).padding(.horizontal, 10).frame(height: 30)
                     .glassControl(in: Capsule()).onTapGesture { renameText = canvas.name; canvas.panel = .rename }
@@ -91,6 +94,19 @@ struct NativeCanvasView: View {
                 moreMenu
             } else { roundButton("plus", "New canvas") { canvas.panel = .newCanvas } }
         }
+    }
+
+    /// The slim sidebar down the left edge, as the laptop's: brush size, the eyedropper, opacity, adjust the last stroke.
+    private var sideBar: some View {
+        VStack(spacing: 12) {
+            SideSlider(value: Binding(get: { sqrt(max(0, (canvas.size - 1) / 399)) }, set: { canvas.size = 1 + $0 * $0 * 399 }), label: "Brush size", id: "side.size", readout: "\(Int(canvas.size))")
+            roundButton("eyedropper", "Pick a colour", on: canvas.mode == .eyedrop) { canvas.setMode(canvas.mode == .eyedrop ? .draw : .eyedrop) }
+            SideSlider(value: Binding(get: { (canvas.opacity - 0.05) / 0.95 }, set: { canvas.opacity = 0.05 + $0 * 0.95 }), label: "Opacity", id: "side.opacity", readout: "\(Int(canvas.opacityPct))%")
+            roundButton("slider.horizontal.below.square.filled.and.square", "Adjust strokes") { canvas.panel = .tweak }
+        }
+        .padding(.vertical, 10).padding(.horizontal, 5)
+        .glassControl(in: RoundedRectangle(cornerRadius: 22, style: .continuous))
+        .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .leading).padding(.leading, 6).padding(.vertical, 120)
     }
 
     private var moreMenu: some View {
@@ -299,17 +315,6 @@ struct NativeCanvasView: View {
                 Spacer(minLength: 0)
                 Text(canvas.docSize).font(.caption2).foregroundStyle(.secondary)
             }
-            HStack(spacing: 8) {
-                Image(systemName: "circle.fill").font(.system(size: 6))
-                Slider(value: Binding(get: { sqrt(max(0, (canvas.size - 1) / 399)) }, set: { canvas.size = 1 + $0 * $0 * 399 })).accessibilityLabel("Brush size")
-                Image(systemName: "circle.fill").font(.system(size: 18))
-                Text("\(Int(canvas.size))").font(.caption2).monospacedDigit().frame(width: 28, alignment: .trailing)
-            }
-            HStack(spacing: 8) {
-                Image(systemName: "circle.lefthalf.filled").font(.caption)
-                Slider(value: $canvas.opacity, in: 0.05...1).accessibilityLabel("Opacity")
-                Text("\(Int(canvas.opacityPct))%").font(.caption2).monospacedDigit().frame(width: 34, alignment: .trailing)
-            }
         }
         .padding(12).glassControl(in: RoundedRectangle(cornerRadius: 22, style: .continuous))
     }
@@ -326,7 +331,7 @@ struct NativeCanvasView: View {
     @ViewBuilder private func sheet(_ p: NativePanel) -> some View {
         switch p {
         case .works: NativeWorksSheet(model: model, canvas: canvas)
-        case .newCanvas: NativeNewCanvasSheet(canvas: canvas)
+        case .newCanvas: NativeNewCanvasSheet { canvas.make($0) }
         case .brushes: NativeBrushSheet(canvas: canvas)
         case .studio: NativeStudioSheet(canvas: canvas)
         case .layers: NativeLayersSheet(canvas: canvas).presentationDetents([.medium, .large])
@@ -457,8 +462,19 @@ struct NativeWorksSheet: View {
 
 // MARK: new canvas
 
+/// What the New canvas card asks for.
+struct NewCanvasSpec { var w: Int; var h: Int; var transparent: Bool; var paper: String; var hoodie717 = false }
+
+extension NativeCanvasModel {
+    func make(_ s: NewCanvasSpec) {
+        startNew(w: s.w, h: s.h, transparent: s.transparent, paperID: s.paper)
+        if s.hoodie717 { loadSeam("717"); say("Hoodie 717: marks that cross a coloured edge carry on at the same number.") }
+    }
+}
+
+/// The New canvas card, the laptop's: sizes (his canvases), width and height, paper, transparent background, the garment sheet.
 struct NativeNewCanvasSheet: View {
-    let canvas: NativeCanvasModel
+    let make: (NewCanvasSpec) -> Void
     @Environment(\.dismiss) private var dismiss
     @State private var w = 2048
     @State private var h = 2048
@@ -481,7 +497,7 @@ struct NativeNewCanvasSheet: View {
                     else { Text("\(String(format: "%.1f", Double(w * h) / 1_000_000)) million pixels.").font(.caption).foregroundStyle(.secondary) }
                 }
                 Section {
-                    Button { canvas.startNew(w: 3150, h: 2400, transparent: false, paperID: paper); canvas.loadSeam("717"); canvas.say("Hoodie 717: marks that cross a coloured edge carry on at the same number."); dismiss() } label: {
+                    Button { make(NewCanvasSpec(w: 3150, h: 2400, transparent: false, paper: paper, hoodie717: true)); dismiss() } label: {
                         HStack { Text("Hoodie 717 zip (seams)"); Spacer(minLength: 0); Text("3150 × 2400").foregroundStyle(.secondary).font(.caption) }
                     }
                 } header: { Text("Garment") } footer: { Text("Printful's pieces on one sheet. A mark that runs off a sewn edge carries on at the same place on the edge it is sewn to. Save the print files from More tools.") }
@@ -494,9 +510,33 @@ struct NativeNewCanvasSheet: View {
             .navigationBarTitleDisplayMode(.inline)
             .toolbar {
                 ToolbarItem(placement: .cancellationAction) { Button("Cancel") { dismiss() } }
-                ToolbarItem(placement: .confirmationAction) { Button("Make it") { canvas.startNew(w: w, h: h, transparent: transparent, paperID: paper); dismiss() }.disabled(w * h > 16_777_216) }
+                ToolbarItem(placement: .confirmationAction) { Button("Make it") { make(NewCanvasSpec(w: w, h: h, transparent: transparent, paper: paper)); dismiss() }.disabled(w * h > 16_777_216) }
             }
         }
         .presentationDetents([.medium, .large])
+    }
+}
+
+/// A vertical slider for the side bar: drag anywhere on it; VoiceOver can adjust it up and down.
+struct SideSlider: View {
+    @Binding var value: Double          // 0 to 1
+    let label: String
+    let id: String
+    let readout: String
+
+    var body: some View {
+        GeometryReader { g in
+            ZStack(alignment: .bottom) {
+                Capsule().fill(.white.opacity(0.14))
+                Capsule().fill(Wallpaper.line.opacity(0.85)).frame(height: max(8, g.size.height * value))
+            }
+            .contentShape(Rectangle())
+            .gesture(DragGesture(minimumDistance: 0).onChanged { d in value = min(1, max(0, 1 - d.location.y / g.size.height)) })
+        }
+        .frame(width: 30, height: 150)
+        .overlay(alignment: .top) { Text(readout).font(.system(size: 9).monospacedDigit()).foregroundStyle(.white.opacity(0.8)).offset(y: -12) }
+        .padding(.top, 12)
+        .accessibilityElement().accessibilityLabel(label).accessibilityValue(readout).accessibilityIdentifier(id)
+        .accessibilityAdjustableAction { dir in value = min(1, max(0, value + (dir == .increment ? 0.1 : -0.1))) }
     }
 }
