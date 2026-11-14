@@ -29,7 +29,7 @@ import UserNotifications
             state.entryDone = true   // a link to a card goes straight there; the entry is for opening the app
             if first == "record" { state.tab = .trends }
             else if let tab = PracticeModel.Tab(rawValue: first) { state.tab = tab }
-            if let room = PracticeRoom(rawValue: first) { state.tab = room.tab; state.scrollTo = room.card }
+            if let room = PracticeRoom(rawValue: first) { state.tab = room.tab; state.scrollTo = room.card; if room == .preview { state.preview = true } }
         }
         return true
     }
@@ -53,7 +53,7 @@ struct HabitSwipeTip: Tip {
 
 /// Every Practice destination, by name, so a link, Siri, Spotlight or a notification can land on it.
 enum PracticeRoom: String, CaseIterable, Identifiable, Hashable {
-    case morning, evening, lesson, reframe, affirmations, coach, desires, habits, rehearsal, vision, notes, wins, review, trends
+    case morning, evening, lesson, reframe, affirmations, coach, desires, habits, rehearsal, vision, notes, wins, review, trends, preview
     var id: String { rawValue }
 
     var title: String {
@@ -61,7 +61,7 @@ enum PracticeRoom: String, CaseIterable, Identifiable, Hashable {
         case .morning: return "Morning check-in"; case .evening: return "Evening check-in"; case .lesson: return "Today's lesson"
         case .reframe: return "Reframe a belief"; case .affirmations: return "Affirmations"; case .coach: return "Talk it through"
         case .desires: return "Desires"; case .habits: return "Habits"; case .rehearsal: return "Rehearsal"; case .vision: return "Vision board"
-        case .notes: return "Notes"; case .wins: return "Wins and noticed"; case .review: return "Weekly review"; case .trends: return "The record"
+        case .notes: return "Notes"; case .wins: return "Wins and noticed"; case .review: return "Weekly review"; case .trends: return "The record"; case .preview: return "Vision preview"
         }
     }
 
@@ -70,18 +70,18 @@ enum PracticeRoom: String, CaseIterable, Identifiable, Hashable {
         case .morning: return "sunrise"; case .evening: return "moon.stars"; case .lesson: return "book"
         case .reframe: return "arrow.triangle.2.circlepath"; case .affirmations: return "quote.bubble"; case .coach: return "bubble.left.and.bubble.right"
         case .desires: return "sparkles"; case .habits: return "checklist"; case .rehearsal: return "wind"; case .vision: return "photo.on.rectangle"
-        case .notes: return "note.text"; case .wins: return "trophy"; case .review: return "calendar.badge.checkmark"; case .trends: return "chart.xyaxis.line"
+        case .notes: return "note.text"; case .wins: return "trophy"; case .review: return "calendar.badge.checkmark"; case .trends: return "chart.xyaxis.line"; case .preview: return "eye"
         }
     }
 
     /// Which screen the room lives on, and which card on it.
-    var tab: PracticeModel.Tab { [.review, .trends].contains(self) ? .trends : .today }
+    var tab: PracticeModel.Tab { [.review, .trends, .preview].contains(self) ? .trends : .today }
     var card: String {
         switch self {
         case .morning: return "morning"; case .evening: return "evening"; case .lesson: return "lesson"; case .reframe: return "reframe"
         case .affirmations: return "affirmations"; case .coach: return "conversation"; case .desires: return "desires"; case .habits: return "habits"
         case .rehearsal: return "meditation"; case .vision: return "vision"; case .notes: return "scratchpad"; case .wins: return "wins"
-        case .review: return "review"; case .trends: return "story"
+        case .review: return "review"; case .trends: return "story"; case .preview: return "preview"
         }
     }
 }
@@ -94,6 +94,8 @@ enum PracticeRoom: String, CaseIterable, Identifiable, Hashable {
     }
 
     var tab: Tab = .today
+    /// The vision preview (his private, made-up Mastermind Board) is pushed on this.
+    var preview = false
     /// The card a link, Siri or a notification wants in view; the screen scrolls to it and clears this.
     var scrollTo: String?
     /// Bumped on pull-to-refresh and after writes other cards care about; every card reloads when it changes.
@@ -192,6 +194,7 @@ struct PracticeView: View {
         .toolbar(state.entryDone ? .automatic : .hidden, for: .navigationBar)
         .overlay { if !state.entryDone { PracticeEntry(model: model, state: state).transition(.opacity) } }
         .sensoryFeedback(PLHaptic.commit, trigger: state.tick)
+        .navigationDestination(isPresented: $state.preview) { VisionPreviewView() }
         .task { await PracticeOutbox.flush(model: model); await state.loadToday(model: model) }
     }
 
