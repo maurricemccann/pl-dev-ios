@@ -189,6 +189,7 @@ struct LinkPreview: Equatable {
     var linkURL = ""
     var photo: Data?
     var photoNote: String?
+    var photoText = ""   // apple lane: the words Vision read in the photo, offered to add to the notes
     var preview: LinkPreview?
     var fetching = false
     var toBoard = false
@@ -313,7 +314,7 @@ struct LinkPreview: Equatable {
 
     func resetForm() {
         title = ""; medium = ""; year = ""; notes = ""; body = ""; words = ""; attribution = ""; linkURL = ""
-        photo = nil; photoNote = nil; preview = nil; done = false; doneOffline = false; message = nil
+        photo = nil; photoNote = nil; photoText = ""; preview = nil; done = false; doneOffline = false; message = nil
     }
 
     func setPhoto(_ data: Data?) {
@@ -321,6 +322,11 @@ struct LinkPreview: Equatable {
         guard let jpeg = CaptureModel.jpeg(data) else { message = "That picture could not be read or is too large. Try another."; photo = nil; return }
         photo = jpeg; message = nil
         photoNote = ByteCountFormatter.string(fromByteCount: Int64(jpeg.count), countStyle: .file)
+        photoText = ""
+        Task { [weak self] in
+            let read = await PLVision.text(in: jpeg)
+            if let self, self.photo == jpeg { self.photoText = read }
+        }
     }
 
     func pullLink() async {

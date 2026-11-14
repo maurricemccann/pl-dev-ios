@@ -183,6 +183,7 @@ struct RehearsalSection: View {
         do {
             try await Practice.post("sessions", ["script_id": flow.chosen, "duration_s": max(Int(Date().timeIntervalSince(flow.started)), 1), "intensity": n], model: model)
             flow.phase = .done; state.tick += 1; state.reload += 1
+            await PLHealth.logMindful(start: flow.started, end: .now)   // apple lane: mindful minutes in Health, only if he turned it on
             try? await Task.sleep(for: .seconds(4)); flow.phase = .setup
         } catch { result = error.localizedDescription }
     }

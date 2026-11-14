@@ -133,7 +133,7 @@ struct HouseStatusIntent: AppIntent {
     static let description: IntentDescription? = "Says how many drafts wait for you and how far today's shift has come."
     static let supportedModes: IntentModes = .background
 
-    @MainActor func perform() async throws -> some IntentResult & ProvidesDialog {
+    @MainActor func perform() async throws -> some IntentResult & ProvidesDialog & ShowsSnippetView {
         let model = try await readyModel()
         async let stats = try? Console.q("draftstats", HouseModel.DraftStats.self, model: model)
         async let plan = try? Console.get("api/day-plan", HouseModel.Plan.self, model: model)
@@ -145,7 +145,9 @@ struct HouseStatusIntent: AppIntent {
         if tasks.isEmpty { line += " Today's shift plan is not written yet." }
         else if left.isEmpty { line += " The shift is done: all \(tasks.count) tasks." }
         else { line += " \(left.count) of \(tasks.count) shift tasks left. Next: \(left[0].title ?? "")." }
-        return .result(dialog: "\(line)")
+        let card = AppleCard(title: "The house", rows: [("Drafts waiting", "\(s?.pending ?? 0)"), ("Queued to post", "\(s?.queued ?? 0)"), ("Held", "\(s?.held ?? 0)"),
+                                                       ("Shift tasks left", tasks.isEmpty ? "no plan" : "\(left.count) of \(tasks.count)")])
+        return .result(dialog: "\(line)", view: card)
     }
 }
 

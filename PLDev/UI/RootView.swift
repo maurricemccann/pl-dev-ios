@@ -37,6 +37,7 @@ struct RootView: View {
             }
         }
         .overlay(alignment: .top) { OfflineLine() }   // every app: says when it is showing saved copies
+        .appleActivity(model: model)   // Handoff and Siri suggestions: the screen he is on
         .animation(PLMotion.standard(reduce: reduce), value: unlocked)
         .animation(PLMotion.standard(reduce: reduce), value: hasConfig)
         .tint(PLTone.accent)

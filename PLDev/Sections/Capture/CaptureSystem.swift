@@ -93,11 +93,11 @@ struct WaitingOnMeIntent: AppIntent {
     static let description: IntentDescription? = "Says what waits on you across the house: drafts, Pins, tasks, the shift, captures, and anything still on this phone."
     static let supportedModes: IntentModes = .background
 
-    @MainActor func perform() async throws -> some IntentResult & ProvidesDialog {
+    @MainActor func perform() async throws -> some IntentResult & ProvidesDialog & ShowsSnippetView {
         let model = try await readyCaptureModel()
         await CaptureSection.state.loadWaiting(model: model)
         await model.drainInbox()
-        guard let w = CaptureSection.state.waiting else { return .result(dialog: "The house did not answer. Try again in a moment.") }
+        guard let w = CaptureSection.state.waiting else { return .result(dialog: "The house did not answer. Try again in a moment.", view: AppleCard(title: "Waiting on you", rows: [("The house", "did not answer")])) }
         func part(_ n: Int?, _ one: String, _ many: String) -> String? {
             guard let n, n > 0 else { return nil }
             return "\(n) \(n == 1 ? one : many)"
@@ -107,7 +107,9 @@ struct WaitingOnMeIntent: AppIntent {
                      part(w.shift_open, "open shift item", "open shift items")].compactMap { $0 }
         var line = parts.isEmpty ? "Nothing is waiting on you." : parts.joined(separator: ", ") + " waiting on you."
         if model.inboxCount > 0 { line += " \(model.inboxCount) \(model.inboxCount == 1 ? "capture is" : "captures are") still on this phone to send." }
-        return .result(dialog: "\(line)")
+        var rows: [(String, String)] = [("Drafts", "\(w.drafts ?? 0)"), ("Pins", "\(w.pins ?? 0)"), ("Tasks", "\(w.tasks ?? 0)"), ("New captures", "\(w.captures ?? 0)")]
+        if model.inboxCount > 0 { rows.append(("Still on this phone", "\(model.inboxCount)")) }
+        return .result(dialog: "\(line)", view: AppleCard(title: "Waiting on you", rows: rows))
     }
 }
 

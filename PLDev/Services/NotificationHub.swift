@@ -10,21 +10,24 @@ final class NotificationHub: NSObject, UNUserNotificationCenterDelegate, @unchec
     static let generalType = "general"   // the per-type switch used by a notice with no category
     /// Notification buttons: action id → what it does. Sections fill it when they declare their categories.
     @MainActor static var actions: [String: @MainActor () async -> Void] = [:]
+    /// Notification buttons that carry typed text (a reply): action id → what it does with the words.
+    @MainActor static var textActions: [String: @MainActor (String) async -> Void] = [:]
 
     /// Called from the app's init: the delegate and the categories must exist before launch ends.
     @MainActor func start() {
         let center = UNUserNotificationCenter.current()
         center.delegate = self
-        var categories = Set<UNNotificationCategory>()
+        var byID: [String: UNNotificationCategory] = [:]
+        for category in AppleWatch.categories() { byID[category.identifier] = category }
         for section in SectionRegistry.all {
-            categories.formUnion(section.notificationCategories())
+            for category in section.notificationCategories() { byID[category.identifier] = category }   // a section's own declaration wins
         }
-        center.setNotificationCategories(categories)
+        center.setNotificationCategories(Set(byID.values))
     }
 
     /// The notice types Settings shows a switch for: every category a registered section declared.
     @MainActor static var types: [String] {
-        var all = Set<String>()
+        var all = Set<String>(AppleWatch.categories().map(\.identifier))
         for section in SectionRegistry.all {
             for category in section.notificationCategories() { all.insert(category.identifier) }
         }
@@ -69,7 +72,9 @@ final class NotificationHub: NSObject, UNUserNotificationCenterDelegate, @unchec
         // The response is not Sendable: copy plain strings out before the task.
         let link = response.notification.request.content.userInfo[Self.linkKey] as? String
         let action = response.actionIdentifier
+        let typed = (response as? UNTextInputNotificationResponse)?.userText
         Task { @MainActor in
+            if let typed, let run = Self.textActions[action] { await run(typed); completionHandler(); return }   // a reply: send the words
             if let run = Self.actions[action] { await run(); completionHandler(); return }   // a button: act, do not open
             if let link, let url = URL(string: link), let target = DeepLink(url: url) {
                 AppModel.shared.open(target)

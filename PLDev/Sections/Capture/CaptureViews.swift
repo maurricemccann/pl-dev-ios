@@ -154,6 +154,12 @@ struct CaptureAddCard: View {
             CaptureField(label: "Notes (optional)") {
                 TextField("", text: $state.notes, prompt: Text("Context, series, pricing…").foregroundStyle(PLOS.dim(scheme)), axis: .vertical)
                     .lineLimit(2...5).captureInput()
+                if !state.photoText.isEmpty {   // apple lane: Vision read words in the photo
+                    Button {
+                        state.notes += (state.notes.isEmpty ? "" : "\n") + state.photoText
+                        state.photoText = ""
+                    } label: { Label("Add the words in the photo to the notes", systemImage: "text.viewfinder").font(.caption) }
+                }
             }
         }
     }

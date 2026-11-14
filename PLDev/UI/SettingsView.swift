@@ -172,7 +172,7 @@ struct SettingsView: View {
             if notify {
                 ForEach(NotificationHub.types, id: \.self) { type in
                     Toggle(isOn: typeSwitch(type)) {
-                        Text(type).plFont(.body)
+                        Text(AppleWatch.label(for: type)).plFont(.body)
                     }
                 }
                 toggleRow("Quiet hours", "No notices between the two times. They are not kept for later.", isOn: quietOn, icon: ("moon.fill", IOS27.SystemColors.indigo))

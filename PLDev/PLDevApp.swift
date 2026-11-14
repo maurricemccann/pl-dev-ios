@@ -6,6 +6,8 @@ struct PLDevApp: App {
     init() {
         PLFonts.register()
         ThemePack.shared.load()            // optional look from the app's Documents folder; none is fine
+        Poller.shared.registerProcessing() // the BGProcessingTask handler must exist before launch ends
+        AppleActionQueue.onAdd = { Task { @MainActor in await AppleWatch.drain(model: AppModel.shared) } }   // a widget button run in the app's own process is sent at once
         NotificationHub.shared.start()     // the delegate and the sections' categories must exist before launch ends
         IntentBridge.open = { link in AppModel.shared.open(link) }   // intents and controls route through the same door as links
         _ = AppModel.shared                // starts reading the saved config back, also on a background launch

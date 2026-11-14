@@ -141,9 +141,13 @@ struct AskTab: View {
             turn.answer = r.answer; turn.via = r.via; turn.passages = r.passages
         } else {
             let hit = store.cached(for: q)
-            turn.answer = hit?.answer ?? GlyphDoctrine.pick(q)
             let why = net.online ? "the Oracle did not answer" : "offline"   // online but refused is not "offline"
-            turn.via = hit == nil ? "doctrine · \(why)" : "cached · \(why)"
+            if hit == nil, let local = await PLIntelligence.glyphAnswer(question: q, turns: store.turns) {   // apple lane: Apple Intelligence, from the record only
+                turn.answer = local; turn.via = "on-device · \(why)"
+            } else {
+                turn.answer = hit?.answer ?? GlyphDoctrine.pick(q)
+                turn.via = hit == nil ? "doctrine · \(why)" : "cached · \(why)"
+            }
         }
         store.save(turn); typingID = turn.id
         await store.flush(model: model); state.publish()

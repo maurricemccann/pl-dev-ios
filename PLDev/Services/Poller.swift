@@ -47,6 +47,7 @@ enum Quiet {
 @MainActor final class Poller {
     static let shared = Poller()
     static let taskID = "com.psychedluxuries.dev.refresh"   // must match BGTaskSchedulerPermittedIdentifiers in the Info.plist
+    static let processID = "com.psychedluxuries.dev.process"   // the longer, plugged-in window iOS grants a BGProcessingTask
     private static let interval: Duration = .seconds(120)
 
     private var loop: Task<Void, Never>?
@@ -79,11 +80,30 @@ enum Quiet {
     func schedule() -> String? {
         let request = BGAppRefreshTaskRequest(identifier: Self.taskID)
         request.earliestBeginDate = Date(timeIntervalSinceNow: 15 * 60)
+        let heavy = BGProcessingTaskRequest(identifier: Self.processID)   // apple lane: a second, longer chance to check the house
+        heavy.requiresNetworkConnectivity = true
+        heavy.earliestBeginDate = Date(timeIntervalSinceNow: 60 * 60)
+        try? BGTaskScheduler.shared.submit(heavy)
         do {
             try BGTaskScheduler.shared.submit(request)
             return nil
         } catch {
             return error.localizedDescription
+        }
+    }
+
+    private final class TaskBox: @unchecked Sendable { let task: BGProcessingTask; init(_ t: BGProcessingTask) { task = t } }
+
+    /// Registers the processing task; must run before the app finishes launching.
+    func registerProcessing() {
+        BGTaskScheduler.shared.register(forTaskWithIdentifier: Self.processID, using: nil) { task in
+            guard let processing = task as? BGProcessingTask else { task.setTaskCompleted(success: false); return }
+            let box = TaskBox(processing)
+            let work = Task { @MainActor in
+                await Poller.shared.backgroundRefresh()
+                box.task.setTaskCompleted(success: true)
+            }
+            processing.expirationHandler = { work.cancel() }
         }
     }
 
@@ -106,6 +126,7 @@ enum Quiet {
             model.setBadge(result.badge, for: entry.id)
             for notice in result.notify { await raise(notice) }
         }
+        for notice in await AppleWatch.pass(model: model) { await raise(notice) }   // the apple lane: events no section owns
         await model.drainInbox()
         model.writeSnapshot()
     }
@@ -114,6 +135,7 @@ enum Quiet {
         let defaults = UserDefaults.standard
         guard defaults.bool(forKey: "pldev.notify") else { return }
         let type = notice.category ?? NotificationHub.generalType
+        if PLFocus.holds(type) { return }   // a Focus with the PL DEV filter is on
         if defaults.object(forKey: "pldev.notify." + type) != nil, !defaults.bool(forKey: "pldev.notify." + type) { return }   // unset means on
         let from = defaults.string(forKey: "pldev.quietFrom") ?? ""
         let to = defaults.string(forKey: "pldev.quietTo") ?? ""
