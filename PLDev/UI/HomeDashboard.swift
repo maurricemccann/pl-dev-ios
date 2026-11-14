@@ -16,7 +16,8 @@ struct HomeDashboard: View {
             var id: String { time }
             var date: Date { ISO8601DateFormatter().date(from: time) ?? .distantPast }
         }
-        let thermal: [Reading]?; let disk_free_gb: Double?; let disk_total_gb: Double?; let uptime_h: Double?; let sessions: Int?
+        struct Pool: Decodable { let time: String; let nonpaged_mb: Int; let paged_mb: Int; var gb: Double { Double(nonpaged_mb + paged_mb) / 1024 } }
+        let thermal: [Reading]?; let disk_free_gb: Double?; let disk_total_gb: Double?; let uptime_h: Double?; let sessions: Int?; let pool: [Pool]?
     }
     struct HouseGlanceNumbers { var needs = 0; var approve = 0; var standing = 0; var queued = 0; var week = 0 }
 
@@ -49,6 +50,10 @@ struct HomeDashboard: View {
                     stat("Battery", "\(last.battery_pct)%\(last.on_ac == "True" ? " ⚡︎" : "")", nil)
                     stat("Disk free", pc?.disk_free_gb.map { "\(Int($0)) GB" } ?? "·", (pc?.disk_free_gb).map { $0 < 30 ? PLTone.bad : $0 < 80 ? PLTone.warn : PLTone.good })
                     stat("Up", pc?.uptime_h.map { $0 >= 48 ? "\(Int($0 / 24)) d" : "\(Int($0)) h" } ?? "·", nil)
+                    // kernel pool: grows with file activity and only a reboot clears it; amber at 3 GB, red (reboot) at 5 GB (his ask 11-13)
+                    if let k = pc?.pool?.last {
+                        stat("Kernel pool", String(format: "%.1f GB", k.gb), k.gb >= 5 ? PLTone.bad : k.gb >= 3 ? PLTone.warn : PLTone.good)
+                    }
                 }
                 if let rows = pc?.thermal, rows.count > 2 {
                     Chart(rows) { r in
