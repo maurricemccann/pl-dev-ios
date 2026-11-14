@@ -118,8 +118,11 @@ struct ArchiveRoom: View {
     @State private var cat: String?
     @State private var color: String?
     @State private var subj: String?
-    @State private var search = ""
+    @State private var search: String
     @State private var open: Piece?
+
+    /// `query` opens the room already searched (the worlds' "View in archive" passes the piece's PL number).
+    init(model: AppModel, query: String = "") { self.model = model; _search = State(initialValue: query) }
 
     var body: some View {
         let cats = Array(Set(pieces.compactMap(\.cat))).sorted()

@@ -17,7 +17,7 @@ enum TownPainter {
             g.interpolationQuality = .none
             func px(_ x: CGFloat, _ y: CGFloat, _ w: CGFloat, _ h: CGFloat, _ c: UIColor) { g.setFillColor(c.cgColor); g.fill(CGRect(x: x.rounded(), y: y.rounded(), width: w.rounded(), height: h.rounded())) }
             func text(_ s: String, _ x: CGFloat, _ y: CGFloat, _ size: CGFloat, _ c: UIColor) {
-                (s as NSString).draw(at: CGPoint(x: x, y: y), withAttributes: [.font: UIFont.monospacedSystemFont(ofSize: size, weight: .heavy), .foregroundColor: c])
+                (s as NSString).draw(at: CGPoint(x: x, y: y), withAttributes: [.font: TownFace.ui(size), .foregroundColor: c])
             }
             // the back row: hazier buildings behind the street
             let haze = townHex("#7f8fb0")
@@ -178,14 +178,22 @@ enum TownPainter {
 
 /// His GlyphGuy as pixel sprites: the world model (`glyphguy-v4-world.usdz`, converted from his GLB) rendered once at the sprite size,
 /// in three turns (front, left, right), lit like the web's bake. Tinted per person in the scene. Never redrawn.
+/// GlyphGirl (the visitors, founder S331) is the same model with the web's `buildHer` triangle body (`glyph-rig.js`), kept as "her-down" etc.
 @MainActor enum TownSprites {
     static var frames: [String: SKTexture] = [:]
 
     static func bake() async {
         guard frames.isEmpty else { return }
+        guard bakeOne(her: false) else { fallback(); return }
+        if !bakeOne(her: true) { for k in ["down", "left", "right"] { frames["her-" + k] = frames[k] } }   // she stays him, as on the web until hers is baked
+    }
+
+    private static func bakeOne(her: Bool) -> Bool {
+        let pre = her ? "her-" : ""
         guard let url = Bundle.main.url(forResource: "town-glyphguy", withExtension: "usdz") ?? Bundle.main.url(forResource: "glyphguy-v4-world", withExtension: "usdz"),
-              let scene = try? SCNScene(url: url, options: nil), let device = MTLCreateSystemDefaultDevice() else { fallback(); return }
+              let scene = try? SCNScene(url: url, options: nil), let device = MTLCreateSystemDefaultDevice() else { return false }
         let model = scene.rootNode
+        if her { buildHer(model) }
         let white = SCNMaterial(); white.diffuse.contents = UIColor.white; white.lightingModel = .phong; white.shininess = 36
         model.enumerateHierarchy { n, _ in n.geometry?.materials = [white] }
         let (mn, mx) = model.boundingBox
@@ -207,7 +215,64 @@ enum TownPainter {
             holder.eulerAngles = SCNVector3(0, yaw, 0)
             let img = renderer.snapshot(atTime: 0, with: CGSize(width: 160, height: 224), antialiasingMode: .none)
             let t = SKTexture(image: img); t.filteringMode = .nearest
-            frames[name] = t
+            frames[pre + name] = t
+        }
+        return true
+    }
+
+    // MARK: GlyphGirl: the web's buildHer (glyph-rig.js; neck 0.3, flare 0.86, armGap 1.3), run on the model's vertices in world space
+
+    private static func worldPoints(_ node: SCNNode) -> [SIMD3<Float>] {
+        guard let src = (node.skinner?.baseGeometry ?? node.geometry)?.sources(for: .vertex).first, src.componentsPerVector == 3, src.bytesPerComponent == 4 else { return [] }
+        let w = node.simdWorldTransform
+        return src.data.withUnsafeBytes { raw in
+            (0..<src.vectorCount).map { i in
+                let o = src.dataOffset + i * src.dataStride
+                let p = w * SIMD4<Float>(raw.loadUnaligned(fromByteOffset: o, as: Float.self), raw.loadUnaligned(fromByteOffset: o + 4, as: Float.self), raw.loadUnaligned(fromByteOffset: o + 8, as: Float.self), 1)
+                return SIMD3(p.x, p.y, p.z)
+            }
+        }
+    }
+
+    private static func setWorldPoints(_ node: SCNNode, _ pts: [SIMD3<Float>]) {
+        guard let g = node.skinner?.baseGeometry ?? node.geometry else { return }
+        let inv = node.simdWorldTransform.inverse
+        let local = pts.map { p -> SCNVector3 in let q = inv * SIMD4<Float>(p.x, p.y, p.z, 1); return SCNVector3(q.x, q.y, q.z) }
+        let others = g.sources.filter { $0.semantic != .vertex }
+        let ng = SCNGeometry(sources: [SCNGeometrySource(vertices: local)] + others, elements: g.elements)
+        ng.materials = g.materials
+        if let skin = node.skinner { skin.baseGeometry = ng } else { node.geometry = ng }
+    }
+
+    private static func buildHer(_ model: SCNNode) {
+        var body: SCNNode?, parts: [SCNNode] = [], arms: [SCNNode] = []
+        model.enumerateHierarchy { n, _ in
+            let name = n.name ?? ""
+            if name.contains("rect9") { body = n; parts.append(n) }
+            else if name.contains("UV_SphereASSEMBLY") || name.hasPrefix("UV_Sphere") { parts.append(n) }
+            else if name.contains("path14") || name.contains("path16") { arms.append(n) }
+        }
+        guard let body else { return }
+        let b = worldPoints(body)
+        guard let lo = b.map(\.y).min(), let hi = b.map(\.y).max(), let xl = b.map(\.x).min(), let xh = b.map(\.x).max(), hi > lo, xh > xl else { return }
+        let szx = xh - xl, half = szx / 2, cx = (xl + xh) / 2
+        let sw = szx * 0.11, topW = szx * 0.3, hemW = szx * 0.86
+        for n in parts {
+            var p = worldPoints(n)
+            for i in p.indices {
+                let t = min(1, max(0, (p[i].y - lo) / (hi - lo))), want = hemW + (topW - hemW) * t, d = p[i].x - cx, a = min(1, abs(d) / half)
+                p[i].x += (d < 0 ? -1 : 1) * (want - half) * a * a * (3 - 2 * a)
+            }
+            setWorldPoints(n, p)
+        }
+        // the arm strokes slide in to the narrowed torso (the web also tilts the arm bones, which its clip overrides, so the rest bake keeps them as they hang)
+        let shift = szx * 0.5 - topW - sw * 1.3
+        for n in arms {
+            var p = worldPoints(n)
+            guard !p.isEmpty else { continue }
+            let dir: Float = cx - p.map(\.x).reduce(0, +) / Float(p.count) < 0 ? -1 : 1
+            for i in p.indices { p[i].x += dir * shift }
+            setWorldPoints(n, p)
         }
     }
 
@@ -221,7 +286,7 @@ enum TownPainter {
                 g.fill(CGRect(x: 12, y: 40, width: 6, height: 14)); g.fill(CGRect(x: 22, y: 40, width: 6, height: 14))
             }
             let t = SKTexture(image: img); t.filteringMode = .nearest
-            frames[name] = t
+            frames[name] = t; frames["her-" + name] = t
         }
     }
 }

@@ -163,6 +163,7 @@ struct ArchiveSpaceWorld: View {
     @State private var lanes: [String] = []
     @State private var lightbox: WorldPiece?
     @State private var openArchive = false
+    @State private var archiveQuery = ""
     @State private var size: CGSize = .zero
     @State private var lastDrag: CGSize = .zero
     @State private var lastMagnification: CGFloat = 1
@@ -224,7 +225,7 @@ struct ArchiveSpaceWorld: View {
         .background(Color(uiColor: ThreeDHouse.ground))
         .navigationTitle("Walk the archive").navigationBarTitleDisplayMode(.inline)
         .toolbarBackground(.hidden, for: .navigationBar)
-        .navigationDestination(isPresented: $openArchive) { ArchiveRoom(model: model) }
+        .navigationDestination(isPresented: $openArchive) { ArchiveRoom(model: model, query: archiveQuery) }
         .sensoryFeedback(PLHaptic.open, trigger: lightbox?.cr)
         .animation(.smooth(duration: 0.25), value: lightbox)
         .onAppear {
@@ -271,7 +272,7 @@ struct ArchiveSpaceWorld: View {
                             }
                             .buttonStyle(.plain).accessibilityLabel("Go to \(y)")
                         }
-                        Button { openArchive = true } label: {
+                        Button { archiveQuery = ""; openArchive = true } label: {
                             caps("Archive \u{2192}", 0.6, size: 10, tracking: 2).padding(.horizontal, 10).padding(.vertical, 6)
                         }.buttonStyle(.plain)
                     }
@@ -294,7 +295,7 @@ struct ArchiveSpaceWorld: View {
                         .font(.system(size: 9)).tracking(1.6).foregroundStyle(gold.opacity(0.52))
                 }
                 HStack(spacing: 18) {
-                    Button { lightbox = nil; openArchive = true } label: { Text("View in archive \u{2192}").font(.system(size: 10, weight: .medium)).tracking(2.2) }
+                    Button { archiveQuery = w.cr; lightbox = nil; openArchive = true } label: { Text("View in archive \u{2192}").font(.system(size: 10, weight: .medium)).tracking(2.2) }
                     if let u = w.fullURL { ShareLink(item: u) { Image(systemName: "square.and.arrow.up") }.accessibilityLabel("Share") }
                 }
                 .foregroundStyle(gold)

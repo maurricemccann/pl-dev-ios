@@ -4,6 +4,8 @@ import RealityKit
 /// The Oracle room's stage, as `GlyphRoom.tsx` draws it: his GlyphGuy v4 seated on the left (`sitting.glb` converted to
 /// `glyphbot-sitting.usdz` with Blender, never redrawn), breathing, with a warm gold aura that brightens while the room speaks,
 /// and the latest answer in a speech bubble beside him (its tail on the left, sources as small mono chips).
+/// He wears the room's "glass" look (`glyphLook.ts`): clear, cool-tinted, glossy. RealityKit has no refraction, so the web's transmission
+/// (1.0, ior 1.5, attenuation 0xcfe2ff) is a tinted, translucent physically based material with the same roughness and clearcoat.
 /// GlyphGuy has no face: the aura and the typewriter are the whole of his reaction.
 @MainActor private final class GlyphSeat {
     let root = Entity()
@@ -22,10 +24,29 @@ import RealityKit
         model.scale = SIMD3<Float>(repeating: 0.9 / r)           // fits a unit-ish sphere so any pose frames the same
         b = model.visualBounds(relativeTo: holder)
         model.position -= b.center
+        Self.dress(model)
         root.addChild(holder)
         base = root.position; amp = 0.012
         loaded = true
         return true
+    }
+
+    /// The web's glass: roughness 0.32, clearcoat 1 at 0.04, full specular, cool blue-white body (attenuationColor 0xcfe2ff).
+    static let glass: PhysicallyBasedMaterial = {
+        var m = PhysicallyBasedMaterial()
+        m.baseColor = .init(tint: UIColor(red: 0.81, green: 0.89, blue: 1, alpha: 1))
+        m.metallic = 0.0
+        m.roughness = 0.32
+        m.specular = 1.0
+        m.clearcoat = 1.0
+        m.clearcoatRoughness = 0.04
+        m.blending = .transparent(opacity: 0.42)
+        return m
+    }()
+
+    private static func dress(_ e: Entity) {
+        if var mc = e.components[ModelComponent.self] { mc.materials = mc.materials.map { _ in glass }; e.components.set(mc) }
+        for c in e.children { dress(c) }
     }
 
     func breathe(_ t: Float) {
@@ -78,6 +99,7 @@ private struct GlyphARStage: UIViewRepresentable {
         anchor.addChild(Self.light(1800, [2.5, 4, 5], UIColor(red: 1, green: 0.9, blue: 0.68, alpha: 1)))     // warm key
         anchor.addChild(Self.light(900, [-4, 1, 3], UIColor(red: 0.74, green: 0.83, blue: 1, alpha: 1)))      // cool fill
         anchor.addChild(Self.light(800, [-2, 4, -5], .white))                                                  // rim
+        anchor.addChild(Self.light(700, [0, 0.3, 4], UIColor(red: 1, green: 0.95, blue: 0.82, alpha: 1)))      // the web's face light, from the camera
         anchor.addChild(seat.root)
         v.scene.addAnchor(anchor)
         Task { @MainActor in onLoaded(await seat.load()) }
