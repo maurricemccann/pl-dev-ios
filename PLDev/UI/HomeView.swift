@@ -41,6 +41,7 @@ struct HomeView: View {
         return line
     }
 
+    @State private var showWidgetHelp = false
     @SceneStorage("home.page") private var page = HomeView.startPage   // opens on the apps, like the first Home Screen page
     private static var startPage: Int {
         #if targetEnvironment(simulator)
@@ -80,6 +81,18 @@ struct HomeView: View {
             }
             .padding(.top, PLSpace.roomy)
             HomeDashboard(model: model)
+            // Moonlitt's flow on Mobbin (11-13): the widget page ends by showing how to put them on your phone
+            Button { showWidgetHelp = true } label: {
+                HStack {
+                    Label("Add PL DEV widgets", systemImage: "rectangle.3.group").plFont(.callout, emphasized: true)
+                    Spacer()
+                    Image(systemName: "chevron.right").font(.caption.weight(.bold)).foregroundStyle(.secondary)
+                }
+                .padding(14)
+                .glassEffect(.regular, in: RoundedRectangle(cornerRadius: PLRadius.card, style: .continuous))
+            }
+            .buttonStyle(.plain)
+            .sheet(isPresented: $showWidgetHelp) { WidgetHowTo() }
         }
         .padding(.horizontal, PLSpace.margin).padding(.top, PLSpace.gap).padding(.bottom, PLSpace.block)
     }
@@ -318,5 +331,35 @@ struct InboxSheet: View {
                 await model.drainInbox()
             }
         }
+    }
+}
+
+
+/// How to put PL DEV's widgets on the Home Screen and the Lock Screen, in iOS 27's own steps (Apple's iPhone guide).
+private struct WidgetHowTo: View {
+    @State private var where_ = 0
+    @Environment(\.dismiss) private var dismiss
+    private let home = ["Touch and hold an empty part of the Home Screen until the apps jiggle.", "Tap Edit at the top, then Add Widget.",
+                        "Search PL DEV, pick a widget (House, Snapshot, Practice, Composer and the rest) and a size, then Add Widget.",
+                        "To see them all in one place, swipe right on your first Home Screen page: that is Today View."]
+    private let lock = ["Touch and hold the Lock Screen until Customize shows, then tap Customize and Lock Screen.",
+                        "Tap the space under the clock to open the widget tray.", "Search PL DEV and add House, Practice or the Status ring.",
+                        "Tap Done. Live Activities (the shift, renders) show on the Lock Screen on their own."]
+    var body: some View {
+        NavigationStack {
+            List {
+                Picker("Where", selection: $where_) { Text("Home Screen").tag(0); Text("Lock Screen").tag(1) }.pickerStyle(.segmented)
+                    .listRowBackground(Color.clear)
+                ForEach(Array((where_ == 0 ? home : lock).enumerated()), id: \.offset) { i, step in
+                    HStack(alignment: .top, spacing: 12) {
+                        Text("\(i + 1)").font(.headline.monospacedDigit()).foregroundStyle(PLTone.accent).frame(width: 22)
+                        Text(step)
+                    }
+                }
+            }
+            .navigationTitle("Add widgets")
+            .toolbar { ToolbarItem(placement: .confirmationAction) { Button("Done") { dismiss() } } }
+        }
+        .presentationDetents([.medium, .large])
     }
 }
