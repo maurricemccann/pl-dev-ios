@@ -26,7 +26,7 @@ import UniformTypeIdentifiers
         for (i, q) in pts.enumerated() { lay(st.add(x: q.0, y: q.1, p: q.2, t: Double(i) * 16)) }
         lay(st.flush())
         NativeStamp.applyGrain(buf.ctx, B, in: CGRect(x: 0, y: 0, width: w, height: h))
-        guard let img = buf.ctx.makeImage() else { return nil }   // a copy: the buffer goes away with this function
+        guard let img = buf.snapshot() else { return nil }   // a copy: the buffer goes away with this function
         let ui = UIImage(cgImage: img)
         if cached { if cache.count > 300 { cache.removeAll() }; cache[key] = ui }
         return ui

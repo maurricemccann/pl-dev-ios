@@ -216,7 +216,7 @@ extension NativeCanvasModel {
     /// Each piece's file cut from the sheet and scaled to the print size Printful takes (the template guide is never in it), as PNGs to share.
     func seamPrintFiles() {
         guard let S = seam, let d = doc else { say("Seam files need a garment template: New canvas, then Hoodie 717."); return }
-        guard let flat = d.compositeBuffer(includeBackground: true)?.ctx.makeImage() else { say("Print files not made. The picture could not be flattened."); return }
+        guard let flat = d.compositeBuffer(includeBackground: true)?.snapshot() else { say("Print files not made. The picture could not be flattened."); return }
         func cut(_ r: CGRect, _ w: Int, _ h: Int) -> CGImage? {
             guard let part = flat.cropping(to: r), let c = CGContext(data: nil, width: w, height: h, bitsPerComponent: 8, bytesPerRow: 0, space: CGColorSpaceCreateDeviceRGB(), bitmapInfo: CGImageAlphaInfo.premultipliedLast.rawValue) else { return nil }
             c.interpolationQuality = .high

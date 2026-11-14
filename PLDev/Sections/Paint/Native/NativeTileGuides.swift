@@ -34,7 +34,7 @@ extension NativeCanvasModel {
     /// The picture as one tile, kept so the neighbours around it can be drawn without composing every layer again.
     func tileSheetImage() -> CGImage? {
         if let t = tileSheet, t.version == docVersion { return t.image }
-        guard live == nil, let d = doc, let img = d.compositeBuffer(includeBackground: true)?.ctx.makeImage() else { return tileSheet?.image }
+        guard live == nil, let d = doc, let img = d.compositeBuffer(includeBackground: true)?.snapshot() else { return tileSheet?.image }
         tileSheet = (docVersion, img)
         return img
     }

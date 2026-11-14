@@ -85,7 +85,7 @@ extension NativeCanvasModel {
             text("Hand trace", 70, 110, size: 54, weight: .semibold, color: ink)
             text("\(name)  ·  \(isoDay)", 70, 156, size: 26, color: ink)
             var y = 200.0
-            if let flat = d.compositeBuffer(includeBackground: true)?.ctx.makeImage() {
+            if let flat = d.compositeBuffer(includeBackground: true)?.snapshot() {
                 let k = min(1100 / Double(flat.width), 640 / Double(flat.height)), tw = Double(flat.width) * k, th = Double(flat.height) * k
                 c.saveGState(); c.setShadow(offset: .zero, blur: 16, color: UIColor(white: 0, alpha: 0.25).cgColor); UIColor.white.setFill(); c.fill(CGRect(x: 70, y: y, width: tw, height: th)); c.restoreGState()
                 UIImage(cgImage: flat).draw(in: CGRect(x: 70, y: y, width: tw, height: th))

@@ -82,7 +82,7 @@ import UIKit
         if d.usesCustomBlend {
             // a PSD-only blend is on: the whole picture is composed per pixel, once, and shown as one layer
             cpuLayer.frame = frame; cpuLayer.contentsScale = 1; cpuLayer.contentsGravity = .resize
-            cpuLayer.contents = d.compositeBuffer(includeBackground: false)?.ctx.makeImage()
+            cpuLayer.contents = d.compositeBuffer(includeBackground: false)?.snapshot()
             cpuLayer.isHidden = false
             stageView.layer.addSublayer(cpuLayer)
             for (i, l) in d.layers.enumerated() {   // keep the indices aligned: hidden stand-ins
@@ -176,7 +176,7 @@ import UIKit
         if wetOpacity > 0, let w = model.wetBuffer {
             wetLayer.contents = w.image(); wetLayer.opacity = Float(wetOpacity); wetLayer.isHidden = false
         } else { wetLayer.isHidden = true }
-        if d.usesCustomBlend && wetOpacity == 0 { cpuLayer.contents = d.compositeBuffer(includeBackground: false)?.ctx.makeImage() }
+        if d.usesCustomBlend && wetOpacity == 0 { cpuLayer.contents = d.compositeBuffer(includeBackground: false)?.snapshot() }
         if wetOpacity == 0 { refreshGlow(active) }
     }
 
@@ -195,7 +195,7 @@ import UIKit
             refreshGlow(i)
         }
         for m in clipMasks where d.layers.indices.contains(m.base) { m.mask.contents = d.layers[m.base].pixels.image() }
-        if d.usesCustomBlend { cpuLayer.contents = d.compositeBuffer(includeBackground: false)?.ctx.makeImage() }
+        if d.usesCustomBlend { cpuLayer.contents = d.compositeBuffer(includeBackground: false)?.snapshot() }
         wetLayer.isHidden = true
         refreshSelection()
         overlay.setNeedsDisplay()

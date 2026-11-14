@@ -22,7 +22,7 @@ final class PixelMemory: @unchecked Sendable {   // immutable after init; freed 
 @MainActor final class PixelBuffer {
     static let tile = 128
     let w: Int, h: Int
-    private let mem: PixelMemory   // the context and every image keep it alive; it frees itself
+    private let mem: PixelMemory   // this buffer and every image() over it keep it alive (the context does not: use snapshot())
     nonisolated(unsafe) let ptr: UnsafeMutablePointer<UInt8>
     let ctx: CGContext
 
@@ -37,6 +37,11 @@ final class PixelMemory: @unchecked Sendable {   // immutable after init; freed 
         c.interpolationQuality = .high
         ctx = c
     }
+
+    /// A copied image of the pixels, made while this buffer is certainly alive. `compositeBuffer()?.ctx.makeImage()` let a
+    /// temporary buffer free its memory while the context still drew from it: every export, the hand trace and the tile guides
+    /// crashed in CGBitmapContextCreateImage (simulator crash report 11-14 07:10, EXC_BAD_ACCESS in memmove).
+    func snapshot() -> CGImage? { withExtendedLifetime(self) { ctx.makeImage() } }
 
     /// An image over the same memory (no copy). Make a new one after every change so Core Animation uploads it again.
     func image() -> CGImage? {
