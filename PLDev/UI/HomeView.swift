@@ -41,39 +41,74 @@ struct HomeView: View {
         return line
     }
 
+    @SceneStorage("home.page") private var page = 1   // opens on the apps, like the first Home Screen page
+
+    private var appsPage: some View {
+        VStack(alignment: .leading, spacing: PLSpace.roomy) {
+            header
+            if let line = model.configError ?? model.lastError {
+                NoteLine(symbol: "exclamationmark.triangle.fill", tint: PLTone.warn, text: line)
+            }
+            if model.sections.isEmpty {
+                EmptyNote(symbol: "square.grid.2x2", title: "Nothing to show yet",
+                          detail: "Your config lists sections this build does not have. Settings and the probes still work.",
+                          actionTitle: "Open Settings") { openSettings() }
+                    .padding(.top, PLSpace.block)
+            } else {
+                LazyVGrid(columns: columns, spacing: PLSpace.roomy + PLSpace.pad) {
+                    ForEach(model.sections.filter { $0.id != "status" }) { entry in tile(entry) }   // Status is a widget on the Today page
+                }
+                .animation(PLMotion.spring(reduce: reduce), value: model.sections.map(\.badge))
+            }
+        }
+        .padding(.horizontal, PLSpace.margin).padding(.top, PLSpace.gap).padding(.bottom, PLSpace.block)
+    }
+
+    /// The Today page: the date the way the iPhone's Today View heads it, then the widgets (status, the PC, the house).
+    private var todayPage: some View {
+        VStack(alignment: .leading, spacing: PLSpace.roomy) {
+            VStack(alignment: .leading, spacing: 2) {
+                Text(Date.now, format: .dateTime.weekday(.wide)).plFont(.subhead, emphasized: true).foregroundStyle(.white.opacity(0.85))
+                    .shadow(color: .black.opacity(0.55), radius: 3, y: 1)
+                Text(Date.now, format: .dateTime.month(.wide).day()).plTitle(.largeTitle).accessibilityAddTraits(.isHeader)
+            }
+            .padding(.top, PLSpace.roomy)
+            HomeDashboard(model: model)
+        }
+        .padding(.horizontal, PLSpace.margin).padding(.top, PLSpace.gap).padding(.bottom, PLSpace.block)
+    }
+
+    private var pageDots: some View {
+        HStack(spacing: 8) {
+            ForEach(0..<2, id: \.self) { i in
+                Circle().fill(.white.opacity(page == i ? 0.95 : 0.4)).frame(width: 7, height: 7)
+                    .onTapGesture { withAnimation(.snappy) { page = i } }
+            }
+        }
+        .padding(.horizontal, 10).padding(.vertical, 6)
+        .glassEffect(.regular, in: Capsule())
+        .accessibilityElement().accessibilityLabel(page == 0 ? "Today, page 1 of 2" : "Apps, page 2 of 2")
+        .accessibilityAdjustableAction { d in withAnimation { page = d == .increment ? 1 : 0 } }
+    }
+
     private var blocked: SectionEntry? { model.sections.first { $0.id == blockedID } }
 
     var body: some View {
         NavigationStack(path: $path) {
-            ScrollView {
-                VStack(alignment: .leading, spacing: PLSpace.roomy) {
-                    header
-                    if let line = model.configError ?? model.lastError {
-                        NoteLine(symbol: "exclamationmark.triangle.fill", tint: PLTone.warn, text: line)
-                    }
-                    if model.sections.isEmpty {
-                        EmptyNote(symbol: "square.grid.2x2", title: "Nothing to show yet",
-                                  detail: "Your config lists sections this build does not have. Settings and the probes still work.",
-                                  actionTitle: "Open Settings") { openSettings() }
-                            .padding(.top, PLSpace.block)
-                    } else {
-                        LazyVGrid(columns: columns, spacing: PLSpace.roomy + PLSpace.pad) {
-                            ForEach(model.sections.filter { $0.id != "status" }) { entry in   // Status lives in the strip under the grid (his mockup 11-13)
-                                tile(entry)
-                            }
-                        }
-                        .animation(PLMotion.spring(reduce: reduce), value: model.sections.map(\.badge))
-                    }
-                    HomeDashboard(model: model)   // his heart, the PC, the house at a glance (11-13)
-                }
-                .padding(.horizontal, PLSpace.margin)
-                .padding(.top, PLSpace.gap)
-                .padding(.bottom, PLSpace.block)
-                .environment(\.colorScheme, .dark)   // light text on the wallpaper, as on the Home Screen; pushed screens keep his setting
+            // Two pages, like the iPhone (his ask 11-13): the apps first, and to their left the Today page of widgets
+            // (Apple's Today View: swipe right from the first page). Page dots sit above the controls.
+            TabView(selection: $page) {
+                ScrollView { todayPage }.tag(0)
+                ScrollView { appsPage }.tag(1)
             }
+            .tabViewStyle(.page(indexDisplayMode: .never))
+            #if targetEnvironment(simulator)
+            .task { if let p = UserDefaults.standard.string(forKey: "simHomePage"), let n = Int(p) { page = n } }   // screens workflow only
+            #endif
+            .environment(\.colorScheme, .dark)   // light text on the wallpaper, as on the Home Screen; pushed screens keep his setting
             .background(Wallpaper(model: model))
             .refreshable { await Poller.shared.refreshAll() }
-            .safeAreaInset(edge: .bottom) { controls }
+            .safeAreaInset(edge: .bottom) { VStack(spacing: 6) { pageDots; controls } }
             .toolbar(.hidden, for: .navigationBar)
             .navigationDestination(for: String.self) { id in
                 destination(id)

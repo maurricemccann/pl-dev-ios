@@ -72,7 +72,7 @@ jobs:
           for l in $LINKS; do
             n=$(printf "%02d" $i)-$(echo "$l" | tr '/' '-')
             xcrun simctl terminate "$DEV" "$BID" || true
-            xcrun simctl launch "$DEV" "$BID" -simConfig "$CFG" -simLink "pldev://$l"; sleep ${{ inputs.wait }}
+            if [ "$l" = "today" ]; then xcrun simctl launch "$DEV" "$BID" -simConfig "$CFG" -simHomePage 0; else xcrun simctl launch "$DEV" "$BID" -simConfig "$CFG" -simLink "pldev://$l"; fi; sleep ${{ inputs.wait }}
             xcrun simctl io "$DEV" screenshot "shots/$n.png"
             i=$((i+1))
           done
