@@ -622,7 +622,11 @@ struct GroupRow: Identifiable { let id: Int; let name: String; let visible: Bool
         } else { layerRows = []; groupRows = []; activeLayer = 0; hasSelection = false }
     }
 
-    func say(_ s: String?) { line = s }
+    func say(_ s: String?) {
+        line = s
+        // 11-14: every refusal Paint shows ("Not made.", "Not opened.", "Not saved.") also goes to the Debug log, so "Paint didn't work" leaves a trace
+        if let s, s.hasPrefix("Not ") || s.hasPrefix("Could not") { AppModel.shared.debug.note("paint error", s) }
+    }
 
     // MARK: colours
 

@@ -71,17 +71,27 @@ actor HTTPClient {
             answer = try await exchange(plan, idempotent: idempotent, extraHeaders: extraHeaders, timeout: timeout, attempts: Self.maxAttempts)
         } catch {
             if isRead, !Self.wasCancelled(error), let (saved, at) = OfflineCache.load(key) { OfflineState.servedCopy(from: at); return saved }
+            if !Self.wasCancelled(error) { Self.logFailure(plan, "no answer: \(error.localizedDescription)") }
             throw error
         }
         let (status, data) = answer
-        if status == 401 { throw Failure.unauthorized }
+        if status == 401 { Self.logFailure(plan, "401, the key was refused"); throw Failure.unauthorized }
         guard (200..<300).contains(status) else {
             if isRead, status >= 500, let (saved, at) = OfflineCache.load(key) { OfflineState.servedCopy(from: at); return saved }
+            Self.logFailure(plan, "\(status)")
             throw Failure.http(status)
         }
         if isRead { OfflineCache.save(data, for: key) }
         OfflineState.answeredLive()   // a live answer clears the "showing what was saved" line
         return data
+    }
+
+    /// 11-14: every failed request goes to the Debug log (on screen in Settings, and to the house while Debug is on), so a section that
+    /// "didn't work" leaves a trace. The address name and path only (Scrub strips any key); the debug upload itself is never logged.
+    nonisolated private static func logFailure(_ plan: RequestPlan, _ what: String) {
+        guard plan.path != "api/debug" else { return }
+        let line = "\(plan.method) \(plan.origin)/\(plan.path.prefix(80)) failed: \(what)"
+        Task { @MainActor in AppModel.shared.debug.note("http error", line) }
     }
 
     /// One try, no retry: the status code whatever it is. For reachability checks, where any answer means "reachable".

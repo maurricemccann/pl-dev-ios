@@ -14,7 +14,18 @@ import Observation
     private struct Upload: Encodable {
         let app: String
         let device: String
-        let events: [DebugEvent]
+        let events: [Wire]
+    }
+    /// The debug door's own field names (pl-cron src/debug.ts: t, level, kind, msg). 11-14: the app sent at/category/message,
+    /// so every PL DEV event was stored blank; the buffer on the phone keeps its own shape, only the upload is translated.
+    private struct Wire: Encodable {
+        let t: Double, level: String, kind: String, msg: String
+        init(_ e: DebugEvent) {
+            t = (e.at.timeIntervalSince1970 * 1000).rounded()
+            let c = e.category.lowercased()
+            level = c.contains("error") || c.contains("fail") ? "error" : (c.contains("warn") ? "warn" : "info")
+            kind = e.category; msg = e.message
+        }
     }
 
     private var isOn: Bool { UserDefaults.standard.bool(forKey: "pldev.debug") }
@@ -61,9 +72,7 @@ import Observation
               config.origin("cron") != nil, let key = config.key("debug") else { return }
         let events = buffer.drain(max: 50)
         guard !events.isEmpty else { return }
-        let encoder = JSONEncoder()
-        encoder.dateEncodingStrategy = .iso8601
-        guard let body = try? encoder.encode(Upload(app: "pl-dev", device: device, events: events)) else { return }
+        guard let body = try? JSONEncoder().encode(Upload(app: "pl-dev", device: device, events: events.map(Wire.init))) else { return }
         let plan = RequestPlan(origin: "cron", method: "POST", path: "api/debug", headers: ["Content-Type": "application/json"], body: body)
         // the debug key goes on last, over whatever key the address itself carries
         _ = try? await http.send(plan, idempotent: false, extraHeaders: ["Authorization": "Bearer " + key], timeout: 15)
