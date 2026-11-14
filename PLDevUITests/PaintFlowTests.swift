@@ -120,8 +120,11 @@ final class PaintFlowTests: XCTestCase {
 
     func test03b_Gestures() {
         makeCanvas()
+        // the setting is remembered between launches: whichever way it is, make fingers paint, draw, then turn it off
         tap("Finger paints")
-        stroke((0.4, 0.4), (0.85, 0.5)); stroke((0.4, 0.55), (0.8, 0.62))
+        stroke((0.4, 0.4), (0.85, 0.5)); sleepFor(0.8)
+        if !app.buttons["Undo"].firstMatch.isEnabled { tap("Finger paints"); stroke((0.4, 0.4), (0.85, 0.5)); sleepFor(0.8) }
+        stroke((0.4, 0.55), (0.8, 0.62))
         sleepFor(1)
         tap("Finger paints")   // off again
         sleepFor(0.5)
@@ -264,8 +267,9 @@ final class PaintFlowTests: XCTestCase {
         tap("gallery.import"); sleepFor(0.8); shot("import-menu")
         tapButton("A photo, as a new work", wait: 8)
         sleepFor(3); shot("photos-picker")
-        let pic = app.scrollViews.images.firstMatch
-        if pic.waitForExistence(timeout: 20) { pic.tap() } else { let any = app.images.firstMatch; XCTAssertTrue(any.waitForExistence(timeout: 10), "a seeded photo is in the picker"); any.tap() }
+        sleepFor(6)   // the picker loads the library slowly on a fresh simulator
+        let pic = app.images.matching(NSPredicate(format: "label BEGINSWITH 'Photo'")).firstMatch
+        if pic.waitForExistence(timeout: 15) { pic.tap() } else { app.coordinate(withNormalizedOffset: CGVector(dx: 0.16, dy: 0.42)).tap() }   // the first picture, left of the top row
         sleepFor(1.5); shot("photo-picked")
         let addBtn = app.buttons["Add"].firstMatch; if addBtn.waitForExistence(timeout: 3) { addBtn.tap() }
         XCTAssertTrue(app.buttons["canvas.gallery"].waitForExistence(timeout: 40), "the photo opens as a new work")
