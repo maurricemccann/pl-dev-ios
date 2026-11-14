@@ -23,7 +23,7 @@ struct ComposerView: View {
         }
         .safeAreaInset(edge: .top, spacing: 0) {
             Picker("Area", selection: $room) { ForEach(ComposerRoom.allCases) { Text($0.title).tag($0) } }
-                .pickerStyle(.segmented).padding(.horizontal, PLSpace.margin).padding(.vertical, 8).background(.bar)
+                .pickerStyle(.segmented).padding(.horizontal, PLSpace.margin).padding(.vertical, 8).background(.bar).accessibilityIdentifier("composer.area")
         }
         .cmpScreen()
         .toolbarBackground(.hidden, for: .navigationBar)
