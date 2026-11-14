@@ -105,8 +105,8 @@ final class ComposerFlowsTests: XCTestCase {
         XCTAssertEqual(app.textFields["Title of shot 2"].value as? String, "the curve")
 
         // duration: raise shot 1 by two steps of 0.5 s
-        let inc = app.buttons["Duration, Increment"].firstMatch
-        if reveal(inc) { inc.tap(); inc.tap(); inc.tap() } else { tree("stepper"); XCTFail("no duration stepper") }
+        let inc = app.buttons.matching(identifier: "Increment").firstMatch
+        if reveal(inc) { for _ in 0..<3 { app.buttons.matching(identifier: "Increment").firstMatch.tap(); usleep(400_000) } } else { tree("stepper"); XCTFail("no duration stepper") }
         shot("duration-raised")
         for _ in 0..<8 { app.swipeDown() }
 
@@ -171,7 +171,12 @@ final class ComposerFlowsTests: XCTestCase {
         tree("picker-loaded")
         let total = imgs.count
         XCTAssertGreaterThanOrEqual(total, 2, "the seeded media is not in the library")
-        for i in 0..<min(total, 4) { imgs.element(boundBy: i).tap() }
+        // the clip first, then two pictures (the simulator also carries its own stock photos)
+        let vids = app.images.matching(NSPredicate(format: "label BEGINSWITH 'Video'"))
+        XCTAssertGreaterThan(vids.count, 0, "the seeded clip is not in the library")
+        if vids.count > 0 { vids.element(boundBy: 0).tap() }
+        let pics = app.images.matching(NSPredicate(format: "label BEGINSWITH 'Photo'"))
+        for i in 0..<min(pics.count, 2) { pics.element(boundBy: i).tap() }
         shot("photos-selected")
         // the picker's confirm is a check mark at the top right; its label has varied, so try the names, then the spot
         let confirm = ["Add", "Done", "Select"].map { app.buttons[$0] }.first { $0.exists }
