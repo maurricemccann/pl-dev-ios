@@ -27,6 +27,17 @@ struct PLDevApp: App {
     var body: some Scene {
         WindowGroup {
             RootView(model: AppModel.shared)
+                #if targetEnvironment(simulator)
+                // Simulator only (the screens workflow): a config file and a link handed in at launch, so every screen can be
+                // photographed without the system's "Open in PL DEV?" prompt. Never compiled into a device build.
+                .task {
+                    let d = UserDefaults.standard
+                    if let path = d.string(forKey: "simConfig"), AppModel.shared.config == nil { await AppModel.shared.loadConfig(from: URL(fileURLWithPath: path)) }
+                    if let s = d.string(forKey: "simLink"), let u = URL(string: s), let link = DeepLink(url: u) {
+                        try? await Task.sleep(for: .seconds(2)); AppModel.shared.open(link)
+                    }
+                }
+                #endif
                 .onOpenURL { url in
                     if url.isFileURL {
                         Task { await AppModel.shared.loadConfig(from: url) }   // a .json opened into the app is a config to load
