@@ -94,3 +94,8 @@ jobs:
             shots
             test.log
           retention-days: 5
+
+      # 11-14: this job used to stay green with 3 failed tests (the lead read the green mark as a pass); a failed test now fails the job
+      - name: Fail the job when a test failed
+        if: always()
+        run: grep -q "TEST SUCCEEDED" test.log
