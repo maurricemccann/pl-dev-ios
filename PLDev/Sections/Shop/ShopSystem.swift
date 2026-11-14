@@ -10,15 +10,15 @@ import WidgetKit
 // MARK: - Rooms
 
 enum ShopRoom: String, CaseIterable, Identifiable, Hashable {
-    case shop, closet, archive, signal, contact, track, orders, status, pages
+    case shop, closet, archive, curve, signal, contact, track, orders, status, pages
     var id: String { rawValue }
 
     /// The rooms listed under More; the first three are tabs.
-    static var moreRooms: [ShopRoom] { [.signal, .contact, .track, .orders, .status, .pages] }
+    static var moreRooms: [ShopRoom] { [.curve, .signal, .contact, .track, .orders, .status, .pages] }
 
     var title: String {
         switch self {
-        case .shop: return "The shop"; case .closet: return "The Closet"; case .archive: return "The archive"
+        case .shop: return "The shop"; case .closet: return "The Closet"; case .archive: return "The archive"; case .curve: return "The Curve"
         case .signal: return "The signal"; case .contact: return "Contact"; case .track: return "Track an order"; case .orders: return "Your orders"
         case .status: return "The site"; case .pages: return "Pages"
         }
@@ -26,7 +26,7 @@ enum ShopRoom: String, CaseIterable, Identifiable, Hashable {
 
     var symbol: String {
         switch self {
-        case .shop: return "bag"; case .closet: return "hanger"; case .archive: return "square.grid.3x3"
+        case .shop: return "bag"; case .closet: return "hanger"; case .archive: return "square.grid.3x3"; case .curve: return "scribble.variable"
         case .signal: return "antenna.radiowaves.left.and.right"; case .contact: return "envelope"; case .track: return "shippingbox"; case .orders: return "receipt"
         case .status: return "globe"; case .pages: return "doc.text"
         }
@@ -34,6 +34,7 @@ enum ShopRoom: String, CaseIterable, Identifiable, Hashable {
 
     @MainActor @ViewBuilder func view(_ model: AppModel) -> some View {
         switch self {
+        case .curve: CurveLiveView()
         case .signal: SignalView()
         case .contact: ContactView()
         case .track: TrackOrderView()

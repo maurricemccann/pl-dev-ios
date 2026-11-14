@@ -1,6 +1,6 @@
 import UIKit
 import SpriteKit
-import SceneKit
+
 
 /// Paints the street once per light mode: sidewalk, a hazy back row, every facade (brick or panels, cornice, windows lit by the hour,
 /// door, roof, neon sign), lamps and the clock face. The web paints the same street on a canvas; this draws it into one image.
@@ -176,104 +176,94 @@ enum TownPainter {
     }
 }
 
-/// His GlyphGuy as pixel sprites: the world model (`glyphguy-v4-world.usdz`, converted from his GLB) rendered once at the sprite size,
-/// in three turns (front, left, right), lit like the web's bake. Tinted per person in the scene. Never redrawn.
-/// GlyphGirl (the visitors, founder S331) is the same model with the web's `buildHer` triangle body (`glyph-rig.js`), kept as "her-down" etc.
+/// His GlyphGuy and GlyphGirl as pixel sprites, played the way the web town plays them. The frames are baked offline by running the web's own
+/// bake (`bakeGlyphRaw`, three.js, his `glyphguy-v4-world.glb` and `glyphguy-v4-clips.glb`) in headless Chrome and kept as grey sheets in
+/// `Resources/Models/Clips/town-{him,her}-{walk,dance}.png`: R = light, G = arm flag, A = silhouette (the walk sheet's rows are down, left,
+/// right, up: 8 stride frames then 4 standing-breath frames; the dance sheet is one row of 12). Colouring is the web's `colorize`, run here
+/// per person on demand and cached. Never redrawn: these are his model's own frames.
 @MainActor enum TownSprites {
+    /// A key here means the sprites are ready ("down" is him standing, "her-down" is her).
     static var frames: [String: SKTexture] = [:]
+    static let SW = 96, SH = 132
+
+    private struct Grey { let px: [UInt8]; let w: Int; let h: Int }
+    private static var greys: [String: Grey] = [:]
+    private static var sets: [String: [[SKTexture]]] = [:]
+    private static let gold = townHex("#d9a02e")
 
     static func bake() async {
         guard frames.isEmpty else { return }
-        guard bakeOne(her: false) else { fallback(); return }
-        if !bakeOne(her: true) { for k in ["down", "left", "right"] { frames["her-" + k] = frames[k] } }   // she stays him, as on the web until hers is baked
+        guard grey("him-walk") != nil, grey("her-walk") != nil else { fallback(); return }
+        frames["down"] = walk(her: false, tint: gold)[0][8]
+        frames["her-down"] = walk(her: true, tint: gold)[0][8]
     }
 
-    private static func bakeOne(her: Bool) -> Bool {
-        let pre = her ? "her-" : ""
-        guard let url = Bundle.main.url(forResource: "town-glyphguy", withExtension: "usdz") ?? Bundle.main.url(forResource: "glyphguy-v4-world", withExtension: "usdz"),
-              let scene = try? SCNScene(url: url, options: nil), let device = MTLCreateSystemDefaultDevice() else { return false }
-        let model = scene.rootNode
-        if her { buildHer(model) }
-        let white = SCNMaterial(); white.diffuse.contents = UIColor.white; white.lightingModel = .phong; white.shininess = 36
-        model.enumerateHierarchy { n, _ in n.geometry?.materials = [white] }
-        let (mn, mx) = model.boundingBox
-        let hgt = max(0.001, mx.y - mn.y)
-        let k = Float(1.8) / hgt
-        let holder = SCNNode(); scene.rootNode.addChildNode(holder)
-        for c in scene.rootNode.childNodes where c !== holder { holder.addChildNode(c) }
-        holder.scale = SCNVector3(k, k, k)
-        holder.position = SCNVector3(0, -((mn.y + mx.y) / 2) * k, 0)
-        scene.background.contents = UIColor.clear
-        let cam = SCNNode(); cam.camera = SCNCamera(); cam.camera?.usesOrthographicProjection = true; cam.camera?.orthographicScale = 1.05
-        cam.position = SCNVector3(0, 0.02, 4); scene.rootNode.addChildNode(cam)
-        let amb = SCNNode(); amb.light = SCNLight(); amb.light?.type = .ambient; amb.light?.intensity = 320; scene.rootNode.addChildNode(amb)
-        let sun = SCNNode(); sun.light = SCNLight(); sun.light?.type = .directional; sun.light?.intensity = 2300; sun.eulerAngles = SCNVector3(-0.7, -0.55, 0); scene.rootNode.addChildNode(sun)
-        let rim = SCNNode(); rim.light = SCNLight(); rim.light?.type = .directional; rim.light?.intensity = 900; rim.eulerAngles = SCNVector3(-0.4, 2.5, 0); scene.rootNode.addChildNode(rim)
-        let renderer = SCNRenderer(device: device, options: nil)
-        renderer.scene = scene; renderer.pointOfView = cam
-        for (name, yaw) in [("down", Float(0)), ("left", Float(0.61)), ("right", Float(-0.61))] {
-            holder.eulerAngles = SCNVector3(0, yaw, 0)
-            let img = renderer.snapshot(atTime: 0, with: CGSize(width: 160, height: 224), antialiasingMode: .none)
-            let t = SKTexture(image: img); t.filteringMode = .nearest
-            frames[pre + name] = t
+    /// The four walk rows (down, left, right, up), 12 frames each: 0 to 7 the stride, 8 to 11 the standing breath.
+    static func walk(her: Bool, tint: UIColor) -> [[SKTexture]] { sheet(her ? "her-walk" : "him-walk", tint) ?? fallbackRows(her: her) }
+    /// The dance, 12 frames front-on.
+    static func dance(her: Bool, tint: UIColor) -> [SKTexture] { sheet(her ? "her-dance" : "him-dance", tint)?.first ?? fallbackRows(her: her)[0] }
+
+    /// Only if a sheet cannot be read: the plain figure, held still.
+    private static func fallbackRows(her: Bool) -> [[SKTexture]] {
+        let p = her ? "her-" : ""
+        guard let d = frames[p + "down"] else { return [[SKTexture]](repeating: [], count: 4) }
+        return ["down", "left", "right", "down"].map { Array(repeating: frames[p + $0] ?? d, count: 12) }
+    }
+
+    private static func grey(_ name: String) -> Grey? {
+        if let g = greys[name] { return g }
+        guard let url = Bundle.main.url(forResource: "town-" + name, withExtension: "png"), let cg = UIImage(contentsOfFile: url.path)?.cgImage,
+              cg.width == SW * 12, cg.height % SH == 0 else { return nil }
+        var px = [UInt8](repeating: 0, count: cg.width * cg.height * 4)
+        let ok = px.withUnsafeMutableBytes { raw -> Bool in
+            guard let ctx = CGContext(data: raw.baseAddress, width: cg.width, height: cg.height, bitsPerComponent: 8, bytesPerRow: cg.width * 4, space: CGColorSpace(name: CGColorSpace.sRGB)!, bitmapInfo: CGImageAlphaInfo.premultipliedLast.rawValue) else { return false }
+            ctx.draw(cg, in: CGRect(x: 0, y: 0, width: cg.width, height: cg.height)); return true
         }
-        return true
+        guard ok else { return nil }
+        let g = Grey(px: px, w: cg.width, h: cg.height); greys[name] = g; return g
     }
 
-    // MARK: GlyphGirl: the web's buildHer (glyph-rig.js; neck 0.3, flare 0.86, armGap 1.3), run on the model's vertices in world space
-
-    private static func worldPoints(_ node: SCNNode) -> [SIMD3<Float>] {
-        guard let src = (node.skinner?.baseGeometry ?? node.geometry)?.sources(for: .vertex).first, src.componentsPerVector == 3, src.bytesPerComponent == 4 else { return [] }
-        let w = node.simdWorldTransform
-        return src.data.withUnsafeBytes { raw in
-            (0..<src.vectorCount).map { i in
-                let o = src.dataOffset + i * src.dataStride
-                let p = w * SIMD4<Float>(raw.loadUnaligned(fromByteOffset: o, as: Float.self), raw.loadUnaligned(fromByteOffset: o + 4, as: Float.self), raw.loadUnaligned(fromByteOffset: o + 8, as: Float.self), 1)
-                return SIMD3(p.x, p.y, p.z)
+    private static func sheet(_ name: String, _ tint: UIColor) -> [[SKTexture]]? {
+        var r: CGFloat = 0, g: CGFloat = 0, b: CGFloat = 0, a: CGFloat = 0
+        tint.getRed(&r, green: &g, blue: &b, alpha: &a)
+        let key = "\(name):\(Int(r * 255)),\(Int(g * 255)),\(Int(b * 255))"
+        if let s = sets[key] { return s }
+        guard let src = grey(name) else { return nil }
+        let base = [Int(r * 255), Int(g * 255), Int(b * 255)]
+        func mix(_ x: [Int], _ y: [Int], _ t: Double) -> [Int] { (0..<3).map { Int((Double(x[$0]) + Double(y[$0] - x[$0]) * t).rounded()) } }
+        // the web's four tones, derived from one colour the way its GOLD relates to its own mid tone
+        let rgb = [mix(base, [0, 0, 0], 0.73), mix(base, [0, 0, 0], 0.29), base, mix(base, [255, 240, 176], 0.62)]
+        let cool = [42, 32, 80], warm = [255, 240, 192], white = [255, 255, 255]
+        let ramp = [mix(mix(rgb[1], rgb[0], 0.45), cool, 0.25), mix(rgb[1], cool, 0.15), mix(rgb[1], rgb[2], 0.5), rgb[2], mix(mix(rgb[2], rgb[3], 0.5), warm, 0.1), mix(rgb[3], warm, 0.2)]
+        let glint = mix(rgb[3], white, 0.65), edge = mix(rgb[0], rgb[1], 0.25)
+        let bayer = [0, 8, 2, 10, 12, 4, 14, 6, 3, 11, 1, 9, 15, 7, 13, 5]
+        func tone(_ v: Int) -> Int { v < 45 ? 0 : v < 85 ? 1 : v < 125 ? 2 : v < 170 ? 3 : v < 215 ? 4 : 5 }
+        var out: [[SKTexture]] = []
+        for row in 0..<(src.h / SH) {
+            var line: [SKTexture] = []
+            for col in 0..<12 {
+                var buf = [UInt8](repeating: 0, count: SW * SH * 4)
+                func at(_ x: Int, _ y: Int) -> Int { ((row * SH + y) * src.w + col * SW + x) * 4 }
+                func on(_ x: Int, _ y: Int) -> Bool { x >= 0 && y >= 0 && x < SW && y < SH && src.px[at(x, y) + 3] > 0 }
+                for y in 0..<SH { for x in 0..<SW {
+                    let si = at(x, y), di = (y * SW + x) * 4
+                    var c: [Int]?
+                    if src.px[si + 3] > 0 {
+                        let light = Int(src.px[si]), arm = src.px[si + 1] > 0
+                        if !arm && light > 246 { c = glint }
+                        else { c = ramp[max(0, tone(max(0, min(255, light + Int((Double(bayer[(y & 3) * 4 + (x & 3)]) - 7.5) * 4)))) - (arm ? 1 : 0))] }
+                    } else if on(x - 1, y) || on(x + 1, y) || on(x, y - 1) || on(x, y + 1) { c = edge }
+                    if let c { buf[di] = UInt8(c[0]); buf[di + 1] = UInt8(c[1]); buf[di + 2] = UInt8(c[2]); buf[di + 3] = 255 }
+                } }
+                guard let prov = CGDataProvider(data: Data(buf) as CFData),
+                      let img = CGImage(width: SW, height: SH, bitsPerComponent: 8, bitsPerPixel: 32, bytesPerRow: SW * 4, space: CGColorSpace(name: CGColorSpace.sRGB)!, bitmapInfo: CGBitmapInfo(rawValue: CGImageAlphaInfo.premultipliedLast.rawValue), provider: prov, decode: nil, shouldInterpolate: false, intent: .defaultIntent) else { return nil }
+                let t = SKTexture(cgImage: img); t.filteringMode = .nearest
+                line.append(t)
             }
+            out.append(line)
         }
-    }
-
-    private static func setWorldPoints(_ node: SCNNode, _ pts: [SIMD3<Float>]) {
-        guard let g = node.skinner?.baseGeometry ?? node.geometry else { return }
-        let inv = node.simdWorldTransform.inverse
-        let local = pts.map { p -> SCNVector3 in let q = inv * SIMD4<Float>(p.x, p.y, p.z, 1); return SCNVector3(q.x, q.y, q.z) }
-        let others = g.sources.filter { $0.semantic != .vertex }
-        let ng = SCNGeometry(sources: [SCNGeometrySource(vertices: local)] + others, elements: g.elements)
-        ng.materials = g.materials
-        if let skin = node.skinner { skin.baseGeometry = ng } else { node.geometry = ng }
-    }
-
-    private static func buildHer(_ model: SCNNode) {
-        var body: SCNNode?, parts: [SCNNode] = [], arms: [SCNNode] = []
-        model.enumerateHierarchy { n, _ in
-            let name = n.name ?? ""
-            if name.contains("rect9") { body = n; parts.append(n) }
-            else if name.contains("UV_SphereASSEMBLY") || name.hasPrefix("UV_Sphere") { parts.append(n) }
-            else if name.contains("path14") || name.contains("path16") { arms.append(n) }
-        }
-        guard let body else { return }
-        let b = worldPoints(body)
-        guard let lo = b.map(\.y).min(), let hi = b.map(\.y).max(), let xl = b.map(\.x).min(), let xh = b.map(\.x).max(), hi > lo, xh > xl else { return }
-        let szx = xh - xl, half = szx / 2, cx = (xl + xh) / 2
-        let sw = szx * 0.11, topW = szx * 0.3, hemW = szx * 0.86
-        for n in parts {
-            var p = worldPoints(n)
-            for i in p.indices {
-                let t = min(1, max(0, (p[i].y - lo) / (hi - lo))), want = hemW + (topW - hemW) * t, d = p[i].x - cx, a = min(1, abs(d) / half)
-                p[i].x += (d < 0 ? -1 : 1) * (want - half) * a * a * (3 - 2 * a)
-            }
-            setWorldPoints(n, p)
-        }
-        // the arm strokes slide in to the narrowed torso (the web also tilts the arm bones, which its clip overrides, so the rest bake keeps them as they hang)
-        let shift = szx * 0.5 - topW - sw * 1.3
-        for n in arms {
-            var p = worldPoints(n)
-            guard !p.isEmpty else { continue }
-            let dir: Float = cx - p.map(\.x).reduce(0, +) / Float(p.count) < 0 ? -1 : 1
-            for i in p.indices { p[i].x += dir * shift }
-            setWorldPoints(n, p)
-        }
+        sets[key] = out
+        return out
     }
 
     /// Only if his model cannot be read on this device: a plain white pixel figure (tinted per person like the real sprite), so the town still works.

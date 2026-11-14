@@ -33,8 +33,12 @@ enum TownMode: String, CaseIterable, Identifiable, Sendable { case tasks = "Task
         var wanderAt: CGFloat = 0
         var mark: SKLabelNode?
         var scale: CGFloat
-        init(key: String, node: SKSpriteNode, role: String, task: TownFeed.Task?, tx: CGFloat, scale: CGFloat) {
-            self.key = key; self.node = node; self.role = role; self.task = task; self.tx = tx; self.scale = scale
+        var tint: UIColor
+        var step: CGFloat = 0          // the stride, in frames (the web's n.step)
+        var danceUntil: CGFloat = 0
+        var walkSet: [[SKTexture]]?
+        init(key: String, node: SKSpriteNode, role: String, task: TownFeed.Task?, tx: CGFloat, scale: CGFloat, tint: UIColor) {
+            self.key = key; self.node = node; self.role = role; self.task = task; self.tx = tx; self.scale = scale; self.tint = tint
         }
     }
 
@@ -148,9 +152,8 @@ enum TownMode: String, CaseIterable, Identifiable, Sendable { case tasks = "Task
     // MARK: sprites
 
     private func sprite(_ tint: UIColor?, scale: CGFloat = 1, her: Bool = false) -> SKSpriteNode {
-        let n = SKSpriteNode(texture: TownSprites.frames[(her ? "her-" : "") + "down"], size: CGSize(width: 40 * scale, height: 56 * scale))
+        let n = SKSpriteNode(texture: TownSprites.walk(her: her, tint: tint ?? .white)[0][8], size: CGSize(width: 40 * scale, height: 56 * scale))
         n.anchorPoint = CGPoint(x: 0.5, y: 0)
-        if let tint { n.color = tint; n.colorBlendFactor = 0.82 }
         return n
     }
 
@@ -165,7 +168,7 @@ enum TownMode: String, CaseIterable, Identifiable, Sendable { case tasks = "Task
         let g = sprite(townHex("#d9a02e"), scale: 1.05)
         g.zPosition = 20; g.position = CGPoint(x: door("home"), y: feet + 2)
         world.addChild(g)
-        let n = Npc(key: "__me", node: g, role: "me", task: nil, tx: door("home"), scale: 1.05)
+        let n = Npc(key: "__me", node: g, role: "me", task: nil, tx: door("home"), scale: 1.05, tint: townHex("#d9a02e"))
         me = n
     }
 
@@ -202,6 +205,7 @@ enum TownMode: String, CaseIterable, Identifiable, Sendable { case tasks = "Task
         let fresh = (new.tasks ?? []).filter { $0.state == "done" && (was[$0.id] ?? "") != "done" && was[$0.id] != nil }
         guard !fresh.isEmpty else { return }
         onCelebrate()
+        me?.danceUntil = clock + 3.2   // his own dance clip, front-on, while the fireworks go
         let x = me?.node.position.x ?? door("home")
         let cols = [townHex("#ffe07a"), .white, townHex("#ff8a2a"), townHex("#9fe8ff")]
         for i in 0..<22 {
@@ -261,7 +265,7 @@ enum TownMode: String, CaseIterable, Identifiable, Sendable { case tasks = "Task
         node.zPosition = 10 + scale; node.position = CGPoint(x: x, y: feet)
         node.name = "npc:" + key
         world.addChild(node)
-        let n = Npc(key: key, node: node, role: role, task: task, tx: tx ?? x, scale: scale)
+        let n = Npc(key: key, node: node, role: role, task: task, tx: tx ?? x, scale: scale, tint: tint)
         if role == "his" || role == "blocked" {
             let m = SKLabelNode(fontNamed: TownFace.name); m.fontSize = 9 * TownFace.scale; m.text = role == "his" ? "!" : "X"
             m.fontColor = role == "blocked" ? townHex("#ff4a3a") : townHex("#fff8e0")
@@ -401,10 +405,21 @@ enum TownMode: String, CaseIterable, Identifiable, Sendable { case tasks = "Task
             node.alpha = 0
             return
         }
-        let face = moving ? (dx > 0 ? "right" : "left") : "down"
-        if let tex = TownSprites.frames[(n.role == "visitor" ? "her-" : "") + face], node.texture !== tex { node.texture = tex }
-        let baseY = n.role == "me" ? feet + 2 : feet
-        node.position.y = baseY + (moving ? abs(sin(clock * 9 + CGFloat(townHash(n.key) % 7))) * 2.2 : 0)
+        // his real frames, as the web plays them: 8 stride frames while moving, a 4-frame breath standing, the dance clip on a celebration
+        let rm = UIAccessibility.isReduceMotionEnabled, her = n.role == "visitor"
+        let tex: SKTexture
+        if !moving, !rm, clock < n.danceUntil {
+            let d = TownSprites.dance(her: her, tint: n.tint)
+            tex = d[Int(clock * 10) % max(1, d.count)]
+        } else {
+            if n.walkSet == nil { n.walkSet = TownSprites.walk(her: her, tint: n.tint) }
+            let rows = n.walkSet ?? [], row = moving ? (dx > 0 ? 2 : 1) : 0
+            if moving && !rm { n.step += dt * 11 } else { n.step = 0 }
+            let i = moving && !rm ? Int(n.step) % 8 : (rm ? 8 : 8 + (Int(clock * 1.5) + townHash(n.key)) % 4)
+            tex = rows.indices.contains(row) && rows[row].indices.contains(i) ? rows[row][i] : (node.texture ?? SKTexture())
+        }
+        if node.texture !== tex { node.texture = tex }
+        node.position.y = n.role == "me" ? feet + 2 : feet
         if n.role == "ghost" { node.alpha = 0.5 + 0.12 * sin(clock * 2 + CGFloat(townHash(n.key) % 5)) }
     }
 

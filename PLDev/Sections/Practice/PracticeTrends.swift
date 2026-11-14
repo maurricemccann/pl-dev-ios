@@ -4,12 +4,13 @@ import SwiftUI
 
 struct TrendsScreen: View {
     let model: AppModel
-    let state: PracticeModel
+    @Bindable var state: PracticeModel
     var body: some View {
         VStack(spacing: 16) {
             ReviewCard(model: model, state: state)
             RehearsalsCard(model: model, state: state)
             StoryHistoryCard(model: model, state: state)
+            VisionPreviewCard(state: state)
         }
     }
 }
