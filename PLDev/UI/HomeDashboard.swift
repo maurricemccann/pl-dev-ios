@@ -66,6 +66,7 @@ struct HomeDashboard: View {
                 ProgressView().frame(maxWidth: .infinity)
             }
         }
+        .frame(maxWidth: .infinity, alignment: .leading)   // full width whatever the text (11-13: a short line shrank the card)
         .padding(14)
         .glassEffect(.regular, in: RoundedRectangle(cornerRadius: PLRadius.card, style: .continuous))
     }
@@ -87,6 +88,7 @@ struct HomeDashboard: View {
                 Text("Not read yet. House opens with the full console.").font(.callout).foregroundStyle(.secondary)
             }
         }
+        .frame(maxWidth: .infinity, alignment: .leading)   // full width whatever the text (11-13: a short line shrank the card)
         .padding(14)
         .glassEffect(.regular, in: RoundedRectangle(cornerRadius: PLRadius.card, style: .continuous))
     }

@@ -47,7 +47,7 @@ jobs:
       - name: Screenshot every section and room
         run: |
           mkdir -p shots
-          # Public addresses only, no keys, no private network: what any stranger can already reach. Keyed screens show their keyless state.
+          # Public addresses only, no private network; key NAMES with dummy values so every section opens (no origin carries auth, so no key is ever sent): what any stranger can already reach. Keyed screens show their keyless state.
           DATA=$(xcrun simctl get_app_container "$DEV" "$BID" data)
           mkdir -p "$DATA/Documents"
           cat > "$DATA/Documents/sim-config.json" <<'JSON'
@@ -57,11 +57,11 @@ jobs:
              "composer":{"base":"https://pl-composer.psychedluxuries.workers.dev/"},"os":{"base":"https://plos.beta.psychedluxuries.com/"},
              "practice":{"base":"https://pl-manifestation-practice.psychedluxuries.workers.dev/"},"interview":{"base":"https://pl-cron.psychedluxuries.com/"},
              "paint":{"base":"https://pl-cron.psychedluxuries.com/api/paint/"}},
-           "keys":{}}
+           "keys":{"widgetRead":"sim-no-key","widgetWrite":"sim-no-key","paintSync":"sim-no-key","debug":"sim-no-key","vault":"sim-no-key","call":"sim-no-key","board":"sim-no-key","pldev":"sim-no-key","interview":"sim-no-key","composer":"sim-no-key"}}
           JSON
           CFG="$DATA/Documents/sim-config.json"
           LINKS="${{ inputs.links }}"
-          [ -z "$LINKS" ] && LINKS="home section/house section/status section/shop section/congregation section/practice section/glyphbot section/library section/curate section/pick section/town section/capture section/composer section/paint section/library/labs section/library/worlds section/library/space section/library/curves section/glyphbot/record section/house/calendar section/house/atlas section/practice/affirmations section/town/lore settings"
+          [ -z "$LINKS" ] \&\& LINKS="home section/house section/status section/shop section/shop/curve section/congregation section/practice section/practice/affirmations section/practice/preview section/glyphbot section/glyphbot/record section/library section/library/curves section/library/live section/library/archive section/library/space section/library/kit section/library/forge section/library/labs section/library/worlds section/curate section/pick section/town section/town/lore section/capture section/composer section/paint section/house/calendar section/house/atlas settings"
           xcrun simctl launch "$DEV" "$BID" -simConfig "$CFG"; sleep 15
           xcrun simctl io "$DEV" screenshot shots/00-launch.png
           i=1

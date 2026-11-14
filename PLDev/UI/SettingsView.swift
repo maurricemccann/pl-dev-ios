@@ -35,10 +35,9 @@ struct SettingsView: View {
             List {
                 Section {
                     HStack(spacing: PLSpace.pad) {
-                        Image(systemName: "circle.circle")
-                            .font(.system(size: 30, weight: .semibold)).foregroundStyle(.white)
+                        Image("AppMark").resizable().scaledToFill()   // the gold bar icon (his ruling 11-13)
                             .frame(width: 60, height: 60)
-                            .background(Color(white: 0.09), in: RoundedRectangle(cornerRadius: 14, style: .continuous))
+                            .clipShape(RoundedRectangle(cornerRadius: 14, style: .continuous))
                             .accessibilityHidden(true)
                         VStack(alignment: .leading, spacing: 2) {
                             Text("PL DEV").font(.title3.weight(.semibold))
@@ -408,7 +407,7 @@ struct SettingsLabel: View {
 struct HouseRows: View {
     @State private var kit = HouseKit.shared
     @State private var icon = UIApplication.shared.alternateIconName
-    private let icons: [(String?, String)] = [(nil, "Plain"), ("AppIcon-HomeScreen", "Your Home Screen"), ("AppIcon-ObsidianGold", "Obsidian gold"),
+    private let icons: [(String?, String)] = [(nil, "Gold bar"), ("AppIcon-HomeScreen", "Your Home Screen"), ("AppIcon-ObsidianGold", "Obsidian gold"),
                                               ("AppIcon-VoidEmber", "Void ember"), ("AppIcon-DeepIndigo", "Deep indigo"), ("AppIcon-BoneOxblood", "Bone oxblood")]
     var body: some View {
         Section {
@@ -419,17 +418,6 @@ struct HouseRows: View {
             Picker(selection: $kit.titleFace) {
                 Text("Your hand (V1)").tag("v1"); Text("Your hand (V2)").tag("v2"); Text("Ransom").tag("ransom"); Text("Ledger").tag("ledger")
             } label: { SettingsLabel("Title face", "textformat", kit.palette.keyColor) }
-            Picker(selection: $kit.paletteName) {
-                ForEach(kit.palettes) { p in
-                    HStack {
-                        HStack(spacing: 0) { ForEach([p.groundColor, p.keyColor, p.accentColor, p.textColor], id: \.self) { Rectangle().fill($0) } }
-                            .frame(width: 44, height: 18).clipShape(RoundedRectangle(cornerRadius: 4, style: .continuous))
-                        Text(p.name == "home-screen" ? "Your Home Screen" : p.title)
-                    }
-                    .tag(p.name)
-                }
-            } label: { SettingsLabel("House palette", "paintpalette.fill", kit.palette.keyColor) }
-            .pickerStyle(.navigationLink)
             Picker(selection: Binding(get: { icon }, set: { name in
                 UIApplication.shared.setAlternateIconName(name) { err in if err == nil { Task { @MainActor in icon = name } } }
             })) {
