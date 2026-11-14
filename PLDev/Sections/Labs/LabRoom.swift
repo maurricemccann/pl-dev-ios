@@ -61,8 +61,7 @@ struct LabRoomView: View {
                     cam.position = pos
                     cam.look(at: look, from: pos, relativeTo: nil)
                     // the page widens the view on narrow screens: 40 degrees at 1.6:1 and wider, up to 60 at 0.4:1
-                    let a = geo.size.height > 0 ? Double(geo.size.width / geo.size.height) : 1
-                    cam.components.set(PerspectiveCameraComponent(near: 0.1, far: 100, fieldOfViewInDegrees: Float(a >= 1.6 ? 40 : 40 + min(1, (1.6 - a) / 1.2) * 20)))
+                    cam.components.set(PerspectiveCameraComponent(near: 0.1, far: 100, fieldOfViewInDegrees: Self.fov(geo.size)))
                 }
                 .onAppear { aspect = Double(geo.size.width / max(1, geo.size.height)) }
             }
@@ -127,6 +126,13 @@ struct LabRoomView: View {
                 .padding(.leading, 24).padding(.bottom, 26).opacity(ready ? 1 : 0).animation(.easeIn(duration: 0.7), value: ready)
             }
             .allowsHitTesting(false)
+    }
+
+    private static func fov(_ size: CGSize) -> Float {
+        let a: Double = size.height > 0 ? Double(size.width / size.height) : 1
+        if a >= 1.6 { return 40 }
+        let widen: Double = min(1.0, (1.6 - a) / 1.2) * 20
+        return Float(40 + widen)
     }
 
     private static func camera(at progress: Double) -> (SIMD3<Float>, SIMD3<Float>) {
