@@ -185,11 +185,22 @@ struct CalendarView: View {
     struct Item: Decodable, Identifiable { let id: String; let at: String?; let format: String?; let status: String?; let thumb: String?; let line: String? }
     struct Cell: Decodable { let items: [Item]?; let target: [String: Int]?; let short: [String: Int]?; let paused: Bool? }
     struct Day: Decodable, Identifiable { let date: String; let today: Bool?; let platforms: [String: Cell]?; var id: String { date } }
-    struct Out: Decodable { let days: [Day]? }
+    // pl-os's filler line and ghosts (the gap audit 11-14: the phone read only `days`): what the auto-filler slotted, or would slot
+    struct Move: Decodable { let id: String; let platform: String; let format: String?; let date: String; let to: String }
+    struct Ask: Decodable { let gen: String }
+    struct Fill: Decodable { let live: Bool; let at: String?; let planned: Int?; let moved: Int?; let moves: [Move]?; let asked: [Ask]? }
+    struct Out: Decodable { let days: [Day]?; let fill: Fill? }
     @State private var page: String?
+    @State private var fill: Fill?
 
     var body: some View {
-        Loaded(load: { try await Console.get("api/content-calendar", Out.self, model: model, query: ["days": "14", "back": "3"]).days ?? [] }) { days, _ in
+        Loaded(load: { () async throws -> [Day] in
+            let o = try await Console.get("api/content-calendar", Out.self, model: model, query: ["days": "14", "back": "3"])
+            await MainActor.run { fill = o.fill }
+            return o.days ?? []
+        }) { days, _ in
+          VStack(spacing: 0) {
+            fillLine.padding(.horizontal).padding(.vertical, 6)
             // pl-os's day pager: one day a page, swiped sideways, opening at today
             ScrollView(.horizontal) {
                 LazyHStack(spacing: 0) {
@@ -201,8 +212,22 @@ struct CalendarView: View {
             .scrollIndicators(.hidden)
             .scrollPosition(id: $page)
             .onAppear { if page == nil { page = days.first(where: { $0.today == true })?.date ?? days.first?.date } }
+          }
         }
         .navigationTitle("Calendar")
+    }
+
+    private static let gen = ["story-batch": "story batch", "queue-weekly-reel": "reel", "keep-feeder": "KEEP feeder", "content-wave": "content wave"]
+    private var fillLine: some View {
+        Group {
+            if let f = fill {
+                let asked = (f.asked ?? []).map { Self.gen[$0.gen] ?? $0.gen }.joined(separator: ", ")
+                Text("Filler \(f.live ? "on" : "dry run (not switched on)") · \(f.live ? "slotted \(f.moved ?? 0)" : "would slot \(f.planned ?? 0)")\(asked.isEmpty ? "" : " · \(f.live ? "asked" : "would ask") \(asked)")")
+            } else {
+                Text("Filler: no run recorded yet.")
+            }
+        }
+        .font(.caption.monospaced()).foregroundStyle(.secondary).frame(maxWidth: .infinity, alignment: .leading)
     }
 
     private func dayPage(_ d: Day) -> some View {
@@ -214,6 +239,13 @@ struct CalendarView: View {
                     let short = (cell?.short ?? [:]).values.reduce(0, +)
                     DisclosureGroup {
                         if (cell?.items ?? []).isEmpty { Text("Nothing scheduled.").foregroundStyle(.secondary) }
+                        // a dry run's moves into this cell, shown as ghosts before the filler is switched on
+                        if let f = fill, !f.live {
+                            ForEach((f.moves ?? []).filter { $0.platform == p && $0.date == d.date }, id: \.id) { m in
+                                Label("Would slot \(m.format ?? "") · \(Date.pl(m.to)?.formatted(date: .omitted, time: .shortened) ?? "")", systemImage: "square.dashed")
+                                    .font(.caption).foregroundStyle(PLOS.gold.opacity(0.8))
+                            }
+                        }
                         ForEach(cell?.items ?? []) { it in
                             HStack(spacing: 10) {
                                 if let t = it.thumb, let u = URL(string: t) {
