@@ -157,6 +157,11 @@ import UserNotifications
         }
         return true
     }
-    static func refresh(model: AppModel) async -> SectionRefresh { SectionRefresh(badge: nil, notify: []) }
+    // the web's gold "new pieces" dot (gap audit 11-14): the Library tile carries how many pieces wait for his verdict,
+    // from the same numbers the Library widget shows (written each time the Library or Curate loads)
+    static func refresh(model: AppModel) async -> SectionRefresh {
+        let n = SharedState.readLibrary()?.unmarked ?? 0
+        return SectionRefresh(badge: n > 0 ? n : nil, notify: [])
+    }
 }
 
