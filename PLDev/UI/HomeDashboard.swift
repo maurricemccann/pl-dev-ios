@@ -45,7 +45,7 @@ struct HomeDashboard: View {
             if let p = pool, p >= 5 { return (String(format: "Kernel pool at %.1f GB: reboot the PC soon.", p), PLTone.bad, "arrow.clockwise.circle.fill") }
             if let h = house, h.approve > 0 { return ("\(h.approve) to approve.", PLTone.warn, "checkmark.seal.fill") }
             if let p = pool, p >= 3 { return (String(format: "Kernel pool climbing: %.1f GB.", p), PLTone.warn, "square.stack.3d.down.right.fill") }
-            if house == nil && pc == nil { return ("Reading the house and the PC.", Color.secondary, "ellipsis.circle") }
+            if house == nil && pc == nil { return pcFailed ? ("The house and the PC are out of reach: Tailscale may be off.", PLTone.warn, "wifi.exclamationmark") : ("Reading the house and the PC.", Color.secondary, "ellipsis.circle") }
             return ("All clear.", PLTone.good, "checkmark.circle.fill")
         }()
         return HStack(spacing: 10) {
@@ -67,7 +67,7 @@ struct HomeDashboard: View {
                     HStack {
                         Text("The practice").plHand(20)
                         Spacer()
-                        Image(systemName: "arrow.right").font(.system(size: 11, weight: .bold)).foregroundStyle(PLTone.accent)
+                        Image(systemName: "arrow.right").font(.system(size: 11, weight: .bold)).foregroundStyle(.white.opacity(0.9))
                     }
                     HStack(alignment: .top) {
                         stat("This month", icon: "flame", "\(g.monthDays)", g.monthDays > 0 ? PLTone.good : nil)
@@ -89,10 +89,10 @@ struct HomeDashboard: View {
     private var askBar: some View {
         door("glyphbot/ask") {
             HStack(spacing: 10) {
-                Image(systemName: "sparkle").foregroundStyle(PLTone.accent)
-                Text("Ask GlyphBot anything").foregroundStyle(.secondary)
+                Image(systemName: "sparkle").foregroundStyle(.white)
+                Text("Ask GlyphBot anything").foregroundStyle(.white.opacity(0.85))
                 Spacer()
-                Image(systemName: "arrow.up.circle.fill").font(.title3).foregroundStyle(PLTone.accent)
+                Image(systemName: "arrow.up.circle.fill").font(.title3).foregroundStyle(.white)
             }
             .padding(.horizontal, 16).padding(.vertical, 12)
             .glassEffect(.regular.interactive(), in: Capsule())
@@ -159,7 +159,7 @@ struct HomeDashboard: View {
             }
             door("house") {   // the card's foot opens the whole room, like a widget's "see trends" (11-13)
                 HStack(spacing: 4) { Text("Open the house").plLabel(10); Image(systemName: "arrow.right").font(.system(size: 10, weight: .bold)) }
-                    .foregroundStyle(PLTone.accent).padding(.top, 2)
+                    .foregroundStyle(.white.opacity(0.9)).padding(.top, 2)   // white on the Today page: the key colour is the wallpaper's own (11-13)
             }
         }
         .frame(maxWidth: .infinity, alignment: .leading)   // full width whatever the text (11-13: a short line shrank the card)
