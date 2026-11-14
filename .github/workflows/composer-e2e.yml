@@ -5,9 +5,7 @@ name: composer-e2e
 # preview, the graph. Every step is screenshotted into the artifact `composer-e2e`, with the accessibility tree where a step missed.
 # Runs with NO real config: public addresses and dummy key names only (what a stranger can reach), the same as screens.yml.
 on:
-  push:
-    branches: [main]   # Composer regressions run on main (the lane branch is merged and gone)
-    paths: ['PLDevUITests/Tests/ComposerFlowsTests.swift', '.github/workflows/composer-e2e.yml', 'PLDev/Sections/Composer/**']
+  # by hand only: Composer was dropped from PL DEV 11-14 (his ruling), so a push no longer runs it
   workflow_dispatch:
     inputs:
       only:

@@ -50,7 +50,6 @@ struct PLDevLiveActivities: WidgetBundle {
 /// The second group: the first is at the builder's ten (11-13).
 struct PLDevMoreWidgets: WidgetBundle {
     var body: some Widget {
-        ComposerWidget()
-        AppleActionsWidget()
+        AppleActionsWidget()   // ComposerWidget dropped with the Composer section (his ruling 11-14)
     }
 }
