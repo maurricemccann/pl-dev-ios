@@ -423,7 +423,6 @@ struct HouseRows: View {
             })) {
                 ForEach(icons, id: \.1) { Text($0.1).tag($0.0) }
             } label: { SettingsLabel("App icon", "app.badge", kit.palette.keyColor) }
-            LabeledContent { Text(kit.titleFont == nil ? "Loading" : "Your hand") } label: { SettingsLabel("Titles", "signature", kit.palette.keyColor) }
         } header: { Text("The house") } footer: {
             Text("Your palettes and your hand come from the Design Kit on the gallery and stay on this iPhone; none of it ships in the app's public code. Status colours stay Apple's.")
         }

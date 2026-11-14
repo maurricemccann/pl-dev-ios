@@ -488,7 +488,8 @@ struct Tile: View {
         }
         .overlay(alignment: .bottomLeading) {
             Text(item.name ?? item.vault_id).font(.system(size: 9, weight: .semibold)).tracking(0.5).foregroundStyle(.white)
-                .lineLimit(1).padding(.leading, 6).padding(.trailing, 26).padding(.vertical, 3)
+                .lineLimit(1).truncationMode(.middle)   // names share their start (pl-short-his-...): keep the end that tells them apart (Gemini review, checked 11-13)
+                .padding(.leading, 6).padding(.trailing, 26).padding(.vertical, 3)
         }
         .aspectRatio(4.0 / 5.0, contentMode: .fit)
         .clipShape(RoundedRectangle(cornerRadius: 14, style: .continuous))

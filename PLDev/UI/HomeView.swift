@@ -113,8 +113,9 @@ struct HomeView: View {
                 .plTitle(.largeTitle)
                 .accessibilityAddTraits(.isHeader)
             Text(summary)
-                .plFont(.subhead)
-                .foregroundStyle(.secondary)
+                .plFont(.subhead, emphasized: true)
+                .foregroundStyle(.white.opacity(0.88))
+                .shadow(color: .black.opacity(0.55), radius: 3, y: 1)   // reads over the wallpaper's lines (Gemini review, checked 11-13)
         }
         .frame(maxWidth: .infinity, alignment: .leading)
         .padding(.top, PLSpace.roomy)

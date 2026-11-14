@@ -120,8 +120,10 @@ struct AskTab: View {
 
     private var status: some View {
         HStack(spacing: 6) {
-            Image(systemName: net.online ? "circle.fill" : "circle.dotted").font(.caption2).foregroundStyle(net.online ? Color.green : Color(hex: 0xb08948))
-            Text(net.online ? "Online" : "Offline: answering from memory").font(.caption).foregroundStyle(.secondary)
+            if !net.online {   // online is already shown in the header; said once (11-13)
+                Image(systemName: "circle.dotted").font(.caption2).foregroundStyle(Color(hex: 0xb08948))
+                Text("Offline: answering from memory").font(.caption).foregroundStyle(.secondary)
+            }
             Spacer()
             if store.unsynced.count > 0 {
                 Button("\(store.unsynced.count) to sync") { Task { await store.flush(model: model); state.publish() } }.font(.caption).buttonStyle(.bordered)
