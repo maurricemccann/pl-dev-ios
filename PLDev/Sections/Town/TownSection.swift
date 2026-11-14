@@ -220,9 +220,13 @@ struct TownView: View {
                     Spacer(minLength: 0)
                 }
                 if state.feed == nil {
-                    ZStack {
-                        TownInk.ground
-                        Text(state.error ?? "LOADING...").font(TownInk.px(10)).foregroundStyle(TownInk.gold).multilineTextAlignment(.center).padding(16)
+                    if let e = state.error {   // the town still stands without the feed (no empty state, 11-13); the reason sits at its foot
+                        VStack { Spacer(); Text(e).font(TownInk.px(9)).foregroundStyle(TownInk.gold).multilineTextAlignment(.center).padding(10).frame(maxWidth: .infinity).background(TownInk.hud) }
+                    } else {
+                        ZStack {
+                            TownInk.ground
+                            Text("LOADING...").font(TownInk.px(10)).foregroundStyle(TownInk.gold).multilineTextAlignment(.center).padding(16)
+                        }
                     }
                 }
             }

@@ -10,6 +10,10 @@ on:
         description: "Space-separated pldev:// paths after pldev:// (blank = every section and room)"
         type: string
         default: ""
+      wait:
+        description: "Seconds to wait on each screen"
+        type: string
+        default: "12"
 
 permissions:
   contents: read
@@ -68,7 +72,7 @@ jobs:
           for l in $LINKS; do
             n=$(printf "%02d" $i)-$(echo "$l" | tr '/' '-')
             xcrun simctl terminate "$DEV" "$BID" || true
-            xcrun simctl launch "$DEV" "$BID" -simConfig "$CFG" -simLink "pldev://$l"; sleep 12
+            xcrun simctl launch "$DEV" "$BID" -simConfig "$CFG" -simLink "pldev://$l"; sleep ${{ inputs.wait }}
             xcrun simctl io "$DEV" screenshot "shots/$n.png"
             i=$((i+1))
           done
