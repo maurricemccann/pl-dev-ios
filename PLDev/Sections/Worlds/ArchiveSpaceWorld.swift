@@ -217,7 +217,7 @@ struct ArchiveSpaceWorld: View {
                         Button("Try again") { Task { await archive.load(model: model, force: true) } }.buttonStyle(.borderedProminent).tint(gold)
                     }
                 } else {
-                    ProgressView().tint(gold)
+                    PLLoader().tint(gold)
                 }
             }
             if let w = lightbox { lightboxView(w) }
@@ -287,7 +287,7 @@ struct ArchiveSpaceWorld: View {
         ZStack {
             Color(red: 8 / 255, green: 7 / 255, blue: 5 / 255).opacity(0.95).ignoresSafeArea().onTapGesture { lightbox = nil }
             VStack(alignment: .leading, spacing: 12) {
-                AsyncImage(url: w.fullURL ?? w.thumbURL) { img in img.resizable().scaledToFit() } placeholder: { ProgressView().tint(gold).frame(maxWidth: .infinity, minHeight: 240) }
+                AsyncImage(url: w.fullURL ?? w.thumbURL) { img in img.resizable().scaledToFit() } placeholder: { PLLoader().tint(gold).frame(maxWidth: .infinity, minHeight: 240) }
                     .frame(maxHeight: 520)
                 VStack(alignment: .leading, spacing: 4) {
                     Text(w.title ?? w.cr).font(.system(size: 11)).tracking(2.4).foregroundStyle(gold.opacity(0.88))

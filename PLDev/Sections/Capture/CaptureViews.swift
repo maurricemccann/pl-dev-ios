@@ -219,7 +219,7 @@ struct CaptureAddCard: View {
                     .onChange(of: state.linkURL) { _, _ in state.preview = nil }
                     .captureInput()
                 Button { hideKeyboard(); Task { await state.pullLink() } } label: {
-                    Group { if state.fetching { ProgressView().tint(PLOS.gold) } else { Text("Pull it") } }
+                    Group { if state.fetching { PLLoader().tint(PLOS.gold) } else { Text("Pull it") } }
                         .osEyebrow(11).foregroundStyle(PLOS.goldDim(scheme)).frame(minWidth: 64, minHeight: 44)
                         .padding(.horizontal, 6)
                         .glassEffect(.clear.interactive(), in: RoundedRectangle(cornerRadius: 12, style: .continuous))
@@ -489,7 +489,7 @@ struct CaptureTrailRoom: View {
             ContentUnavailableView("Nothing captured yet", systemImage: "tray", description: Text("What you capture lands here, with where it went."))
                 .captureRow()
         } else if !state.trailLoaded {
-            ProgressView().frame(maxWidth: .infinity, minHeight: 80).captureRow()
+            PLLoader().frame(maxWidth: .infinity, minHeight: 80).captureRow()
         }
     }
 }
@@ -607,7 +607,7 @@ private struct CaptureDetailBody: View {
                     if let c = detail.created { Ago(text: c).font(.system(size: 12, design: .monospaced)).foregroundStyle(PLOS.dim(scheme)) }
                 }
                 if let img = captureTrailImage(detail.payload) {
-                    AsyncImage(url: img) { i in i.resizable().scaledToFit() } placeholder: { ProgressView().frame(maxWidth: .infinity, minHeight: 120) }
+                    AsyncImage(url: img) { i in i.resizable().scaledToFit() } placeholder: { PLLoader().frame(maxWidth: .infinity, minHeight: 120) }
                         .frame(maxWidth: .infinity).clipShape(RoundedRectangle(cornerRadius: 14, style: .continuous))
                 }
                 Text(detail.label).font(.body).foregroundStyle(PLOS.text(scheme)).textSelection(.enabled)

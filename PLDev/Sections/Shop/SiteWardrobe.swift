@@ -63,7 +63,7 @@ struct WardrobeStage: View {
         }
         .overlay {
             switch phase {
-            case .loading: ProgressView()
+            case .loading: PLLoader()
             case .failed: EmptyNote(symbol: "cube.transparent", title: "The model did not load", detail: "Check your connection. The piece itself is in the shop.")
             case .ready: EmptyView()
             }

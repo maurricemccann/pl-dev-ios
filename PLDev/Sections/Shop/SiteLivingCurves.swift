@@ -463,7 +463,7 @@ struct LivingCurvesSourceView: View {
                 }
                 if blocks.isEmpty {
                     if failed { EmptyNote(symbol: "wifi.exclamationmark", title: "Could not load the source", detail: "The site did not answer and the page has not been saved yet. Pull to try again.") }
-                    else { ProgressView().frame(maxWidth: .infinity, minHeight: 160) }
+                    else { PLLoader().frame(maxWidth: .infinity, minHeight: 160) }
                 }
                 ForEach(Array(blocks.enumerated()), id: \.offset) { i, code in
                     VStack(alignment: .leading, spacing: 12) {

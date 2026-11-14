@@ -74,7 +74,7 @@ struct ForgeBench: View {
             Section("Describe it") {
                 TextField("A slow gold spiral that pulses on the beat", text: $prompt, axis: .vertical).lineLimit(1...4).focused($editing)
                 Button { Task { await generate() } } label: {
-                    HStack { Text(busy ? "Writing it" : "Generate"); if busy { Spacer(); ProgressView() } }
+                    HStack { Text(busy ? "Writing it" : "Generate"); if busy { Spacer(); PLLoader() } }
                 }.disabled(busy || prompt.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty)
             }
             Section("The code") {

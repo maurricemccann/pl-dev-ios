@@ -102,7 +102,7 @@ struct OpsView: View {
                     .background(t.you ? PLTone.house.opacity(0.2) : Color.secondary.opacity(0.12), in: RoundedRectangle(cornerRadius: 14, style: .continuous))
                     .listRowSeparator(.hidden)
             }
-            if busy { ProgressView() }
+            if busy { PLLoader() }
         }
         .listStyle(.plain)
         .safeAreaInset(edge: .bottom) {
@@ -327,7 +327,7 @@ struct PrecedentView: View {
             .sheet(item: $open) { it in
                 NavigationStack {
                     ScrollView {
-                        AsyncImage(url: url(it)) { $0.resizable().scaledToFit() } placeholder: { ProgressView() }
+                        AsyncImage(url: url(it)) { $0.resizable().scaledToFit() } placeholder: { PLLoader() }
                         Text(it.note ?? "").padding()
                     }
                     .navigationTitle(it.pattern ?? it.slug).navigationBarTitleDisplayMode(.inline)
@@ -435,7 +435,7 @@ struct AutomationView: View {
                     HStack {
                         Label(j.1, systemImage: j.2)
                         Spacer()
-                        if running == j.0 { ProgressView() } else if let r = results[j.0] { Text(r).font(.caption).foregroundStyle(.secondary).lineLimit(2) }
+                        if running == j.0 { PLLoader() } else if let r = results[j.0] { Text(r).font(.caption).foregroundStyle(.secondary).lineLimit(2) }
                     }
                 }
                 .disabled(running != nil)

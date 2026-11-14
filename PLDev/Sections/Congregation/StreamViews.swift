@@ -375,7 +375,7 @@ struct StreamCardView: View {
                     switch phase {
                     case .success(let i): i.resizable().scaledToFit().frame(maxWidth: .infinity)
                     case .failure: Bone.line(scheme).opacity(0.4).frame(height: 160).overlay { Image(systemName: "photo").foregroundStyle(Bone.inkFaint(scheme)) }
-                    default: Bone.line(scheme).opacity(0.3).frame(height: 200).overlay { ProgressView() }
+                    default: Bone.line(scheme).opacity(0.3).frame(height: 200).overlay { PLLoader() }
                     }
                 }
                 .clipShape(RoundedRectangle(cornerRadius: 10, style: .continuous))
@@ -482,7 +482,7 @@ struct StreamDetailView: View {
                                 switch phase {
                                 case .success(let i): i.resizable().scaledToFit()
                                 case .failure: Image(systemName: "photo").font(.largeTitle).foregroundStyle(.tertiary).frame(maxWidth: .infinity, minHeight: 160)
-                                default: ProgressView().frame(maxWidth: .infinity, minHeight: 160)
+                                default: PLLoader().frame(maxWidth: .infinity, minHeight: 160)
                                 }
                             }
                             .clipShape(RoundedRectangle(cornerRadius: PLRadius.row, style: .continuous))

@@ -392,7 +392,7 @@ struct SeedAuthView: View {
     var body: some View {
         Form {
             if let p = item.photo_url, let u = URL(string: p) {
-                Section("Their photo") { AsyncImage(url: u) { $0.resizable().scaledToFit() } placeholder: { ProgressView() }.frame(maxHeight: 320) }
+                Section("Their photo") { AsyncImage(url: u) { $0.resizable().scaledToFit() } placeholder: { PLLoader() }.frame(maxHeight: 320) }
             }
             Section("Certificate") {
                 TextField("Piece name", text: $piece)

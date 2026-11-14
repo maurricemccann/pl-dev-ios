@@ -69,7 +69,7 @@ struct ChosenView: View {
                 }
                 .padding(.horizontal, 24).padding(.top, 24).padding(.bottom, 40)
                 Group {
-                    if !store.loaded && !store.failed { ProgressView().frame(maxWidth: .infinity, minHeight: 120) }
+                    if !store.loaded && !store.failed { PLLoader().frame(maxWidth: .infinity, minHeight: 120) }
                     else if store.failed {
                         EmptyNote(symbol: "wifi.exclamationmark", title: "Could not load the record", detail: "The site did not answer and the record has not been saved yet. Pull to try again.")
                     } else if store.entries.isEmpty {

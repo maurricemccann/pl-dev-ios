@@ -292,7 +292,7 @@ struct CollectionView: View {
                 .padding(.horizontal, 24).padding(.top, 20)
                 }
                 if pieces.isEmpty {
-                    if store.pieces.isEmpty && store.failure == nil { ProgressView().frame(maxWidth: .infinity, minHeight: 160) }
+                    if store.pieces.isEmpty && store.failure == nil { PLLoader().frame(maxWidth: .infinity, minHeight: 160) }
                     else if let f = store.failure, store.pieces.isEmpty {
                         EmptyNote(symbol: "wifi.exclamationmark", title: "Could not reach the catalogue", detail: f, actionTitle: "Try again") { Task { await store.load(force: true) } }
                     } else {

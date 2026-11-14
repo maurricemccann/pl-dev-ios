@@ -54,7 +54,7 @@ struct CodeArtGate<Content: View>: View {
                     Button("Try again") { Task { await boot.retry(model: model) } }.buttonStyle(.borderedProminent)
                 }
             default:
-                VStack(spacing: 10) { ProgressView(); Text("Loading the pieces").font(.footnote).foregroundStyle(.secondary) }.frame(maxWidth: .infinity, maxHeight: .infinity)
+                VStack(spacing: 10) { PLLoader(); Text("Loading the pieces").font(.footnote).foregroundStyle(.secondary) }.frame(maxWidth: .infinity, maxHeight: .infinity)
             }
         }
         .task { FontResolver.handName = HouseKit.shared.titleFont; await boot.ensure(model: model) }
@@ -280,7 +280,7 @@ struct LivePieceCard: View {
 
     @ViewBuilder private var still: some View {
         if let thumb {
-            AsyncImage(url: thumb) { $0.resizable().scaledToFit() } placeholder: { ProgressView() }
+            AsyncImage(url: thumb) { $0.resizable().scaledToFit() } placeholder: { PLLoader() }
         } else {
             ContentUnavailableView("No picture yet", systemImage: "photo", description: Text("This piece has not been captured."))
         }

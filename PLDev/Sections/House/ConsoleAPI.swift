@@ -133,7 +133,7 @@ struct Loaded<T, Content: View>: View {
                     .padding(.top, 60)
                 }
             }
-            else { ProgressView().frame(maxWidth: .infinity, minHeight: 120) }
+            else { PLLoader().frame(maxWidth: .infinity, minHeight: 120) }
         }
         .plGround()
         .task { await reload() }

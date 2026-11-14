@@ -210,7 +210,7 @@ struct MoneyRoomWorld: View {
                 ready = true
             }
             .ignoresSafeArea()
-            if !ready { ProgressView().tint(PLG.gold) }
+            if !ready { PLLoader().tint(PLG.gold) }
             VStack {
                 Spacer()
                 HStack {

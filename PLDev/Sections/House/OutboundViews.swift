@@ -563,7 +563,7 @@ struct PinterestView: View {
     var body: some View {
         List {
             if let failed, s == nil { Text(failed).foregroundStyle(.secondary) }
-            if s == nil && failed == nil { ProgressView() }
+            if s == nil && failed == nil { PLLoader() }
             if let s {
                 Section {
                     LabeledContent("Account", value: s.connected == true ? "@\(s.account?.username ?? "")" : "Not connected")

@@ -383,7 +383,7 @@ struct SitTab: View {
                             }
                         }
                     }
-                    if sitting.busy { ProgressView().frame(maxWidth: .infinity, alignment: .leading).padding(.leading, 12).id("typing") }
+                    if sitting.busy { PLThinkingOrb(size: 34).frame(maxWidth: .infinity, alignment: .leading).padding(.leading, 12).id("typing") }   // GlyphBot thinking (11-13)
                     if let e = sitting.error { ResultLine(text: e) }
                     if let note { Text(note).font(.footnote).foregroundStyle(.secondary) }
                     if sitting.done { Text("The sitting is over. Everything you said is kept word for word.").font(.footnote).foregroundStyle(.secondary).padding(.top, 8) }
@@ -460,7 +460,7 @@ struct GlyphRecordTab: View {
             } else if !OfflineState.shared.online {
                 ContentUnavailableView("The record needs a connection the first time", systemImage: "wifi.slash", description: Text("Once it has loaded, it stays on this iPhone for offline use."))
             } else {
-                ProgressView().frame(maxWidth: .infinity, minHeight: 120)
+                PLLoader().frame(maxWidth: .infinity, minHeight: 120)
             }
             Section {
                 LabeledContent("Oracle questions on this phone", value: "\(store.turns.count)")

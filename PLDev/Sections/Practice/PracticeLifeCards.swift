@@ -20,7 +20,7 @@ struct ConversationCard: View {
                     ScrollView {
                         VStack(spacing: 6) {
                             ForEach(thread) { m in PracticeBubble(text: m.text, mine: m.role != "assistant").id(m.id) }
-                            if sending { HStack { ProgressView().tint(Candle.gold); Spacer() }.id("typing") }
+                            if sending { HStack { PLLoader().tint(Candle.gold); Spacer() }.id("typing") }
                         }
                         .padding(.vertical, 2)
                     }

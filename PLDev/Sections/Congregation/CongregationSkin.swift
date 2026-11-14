@@ -334,7 +334,7 @@ struct PostMediaView: View {
                     switch phase {
                     case .success(let i): i.resizable().scaledToFit().frame(maxWidth: .infinity)
                     case .failure: Bone.line(scheme).opacity(0.4).frame(height: 140).overlay { Image(systemName: "photo").foregroundStyle(Bone.inkFaint(scheme)) }
-                    default: Bone.line(scheme).opacity(0.3).frame(height: 160).overlay { ProgressView() }
+                    default: Bone.line(scheme).opacity(0.3).frame(height: 160).overlay { PLLoader() }
                     }
                 }
                 .clipShape(RoundedRectangle(cornerRadius: 10, style: .continuous))
@@ -396,7 +396,7 @@ struct Lightbox: View {
                     switch phase {
                     case .success(let i): i.resizable().scaledToFit()
                     case .failure: Image(systemName: "photo").font(.largeTitle).foregroundStyle(.white.opacity(0.5))
-                    default: ProgressView().tint(.white)
+                    default: PLLoader().tint(.white)
                     }
                 }
                 .scaleEffect(scale)

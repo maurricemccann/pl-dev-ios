@@ -23,13 +23,79 @@ struct HomeDashboard: View {
 
     var body: some View {
         VStack(spacing: 14) {
+            nowLine
             HomeStatusStrip(model: model)
             pcCard
             houseCard
+            practiceCard
+            askBar
         }
         .task { await load() }
         .task {   // the PC moves; read it again every minute while Home is on screen
             while !Task.isCancelled { try? await Task.sleep(for: .seconds(60)); await loadPC() }
+        }
+    }
+
+    // MARK: now (WHOOP's insight line on Mobbin, 11-13): the one thing worth knowing, in a sentence, from the real numbers
+
+    private var nowLine: some View {
+        let pool = pc?.pool?.last?.gb
+        let (text, tint, symbol): (String, Color, String) = {
+            if let h = house, h.needs > 0 { return ("\(h.needs) need\(h.needs == 1 ? "s" : "") you\(h.approve > 0 ? ", \(h.approve) to approve" : "").", PLTone.bad, "exclamationmark.circle.fill") }
+            if let p = pool, p >= 5 { return (String(format: "Kernel pool at %.1f GB: reboot the PC soon.", p), PLTone.bad, "arrow.clockwise.circle.fill") }
+            if let h = house, h.approve > 0 { return ("\(h.approve) to approve.", PLTone.warn, "checkmark.seal.fill") }
+            if let p = pool, p >= 3 { return (String(format: "Kernel pool climbing: %.1f GB.", p), PLTone.warn, "square.stack.3d.down.right.fill") }
+            if house == nil && pc == nil { return ("Reading the house and the PC.", Color.secondary, "ellipsis.circle") }
+            return ("All clear.", PLTone.good, "checkmark.circle.fill")
+        }()
+        return HStack(spacing: 10) {
+            Image(systemName: symbol).foregroundStyle(tint)
+            Text(text).plFont(.callout, emphasized: true).lineLimit(2)
+            Spacer(minLength: 0)
+        }
+        .padding(14)
+        .glassEffect(.regular.tint(tint.opacity(0.18)), in: RoundedRectangle(cornerRadius: PLRadius.card, style: .continuous))
+        .accessibilityElement(children: .combine)
+    }
+
+    // MARK: practice (the streak tiles of How We Feel and pillowtalk on Mobbin): read from the glance Practice writes
+
+    @ViewBuilder private var practiceCard: some View {
+        if let g = PracticeGlance.read() {
+            door("practice") {
+                VStack(alignment: .leading, spacing: 10) {
+                    HStack {
+                        Text("The practice").plHand(20)
+                        Spacer()
+                        Image(systemName: "arrow.right").font(.system(size: 11, weight: .bold)).foregroundStyle(PLTone.accent)
+                    }
+                    HStack(alignment: .top) {
+                        stat("This month", icon: "flame", "\(g.monthDays)", g.monthDays > 0 ? PLTone.good : nil)
+                        stat("This week", icon: "calendar", "\(g.weekDays)/7", nil)
+                        stat("Morning", icon: "sunrise", g.morning ? "Done" : "Open", g.morning ? PLTone.good : PLTone.warn)
+                        stat("Evening", icon: "moon.stars", g.evening ? "Done" : "Open", g.evening ? PLTone.good : nil)
+                    }
+                    if let line = g.line { Text(line).plHand(16).foregroundStyle(.primary).lineLimit(3) }
+                }
+                .frame(maxWidth: .infinity, alignment: .leading)
+                .padding(14)
+                .glassEffect(.regular, in: RoundedRectangle(cornerRadius: PLRadius.card, style: .continuous))
+            }
+        }
+    }
+
+    // MARK: ask (Bevel's "Ask anything" bar on Mobbin): one tap from the dashboard to the Oracle
+
+    private var askBar: some View {
+        door("glyphbot/ask") {
+            HStack(spacing: 10) {
+                Image(systemName: "sparkle").foregroundStyle(PLTone.accent)
+                Text("Ask GlyphBot anything").foregroundStyle(.secondary)
+                Spacer()
+                Image(systemName: "arrow.up.circle.fill").font(.title3).foregroundStyle(PLTone.accent)
+            }
+            .padding(.horizontal, 16).padding(.vertical, 12)
+            .glassEffect(.regular.interactive(), in: Capsule())
         }
     }
 
@@ -67,7 +133,7 @@ struct HomeDashboard: View {
             } else if pcFailed {
                 Text("The PC did not answer. It may be asleep, or off the tailnet.").font(.callout).foregroundStyle(.secondary)
             } else {
-                ProgressView().frame(maxWidth: .infinity)
+                PLLoader().frame(maxWidth: .infinity)
             }
         }
         .frame(maxWidth: .infinity, alignment: .leading)   // full width whatever the text (11-13: a short line shrank the card)

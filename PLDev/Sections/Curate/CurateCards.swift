@@ -104,7 +104,7 @@ struct EssayCard: View {
                 }
                 .frame(maxWidth: .infinity, alignment: .leading).padding(.horizontal, 24).padding(.top, 26).padding(.bottom, 40)
             } else {
-                ProgressView().frame(maxWidth: .infinity).padding(40)
+                PLLoader().frame(maxWidth: .infinity).padding(40)
             }
         }
         .task(id: url) {
@@ -167,7 +167,7 @@ struct CurateCardMedia: View {
                 switch phase {
                 case .success(let i): i.resizable().scaledToFit()
                 case .failure: if thumb == nil { palette }
-                default: if thumb == nil { ProgressView() }
+                default: if thumb == nil { PLLoader() }
                 }
             }
         }
@@ -180,7 +180,7 @@ struct CurateCardMedia: View {
                     switch phase {
                     case .success(let i): i.resizable().scaledToFit()
                     case .failure: palette
-                    default: ProgressView()
+                    default: PLLoader()
                     }
                 }
             } else { palette }

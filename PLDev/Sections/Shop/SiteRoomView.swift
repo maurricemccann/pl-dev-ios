@@ -73,7 +73,7 @@ struct SiteRoomView: View {
                         .padding(.bottom, geo.size.height * 0.08)
                     }
                 }
-                if !ready { ProgressView().tint(Bone.gold) }
+                if !ready { PLLoader().tint(Bone.gold) }
             }
         }
         .toolbar(.hidden, for: .navigationBar)

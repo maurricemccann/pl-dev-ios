@@ -89,7 +89,7 @@ struct ContactView: View {
                         SiteField(label: "Message", text: $message, prompt: "Orders, the work, press, or anything else.", lines: 5)
                         HumanGate(siteKey: ballot?.siteKey ?? "")
                         Button { Task { await send() } } label: {
-                            HStack(spacing: 10) { Text(sending ? "Sending" : needsCheck ? "Continue on the site" : "Send"); if sending { ProgressView().tint(.white) } }
+                            HStack(spacing: 10) { Text(sending ? "Sending" : needsCheck ? "Continue on the site" : "Send"); if sending { PLLoader().tint(.white) } }
                         }
                         .buttonStyle(SitePill())
                         .disabled(!canSend)

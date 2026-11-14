@@ -221,7 +221,7 @@ struct PickView: View {
                             .accessibilityAddTraits(state.selected == p.name ? .isSelected : [])
                         }
                     }
-                    if state.palettes.isEmpty && state.message == nil { ProgressView().frame(maxWidth: .infinity).padding(.top, 30) }
+                    if state.palettes.isEmpty && state.message == nil { PLLoader().frame(maxWidth: .infinity).padding(.top, 30) }
                     if let m = state.message {
                         Label(m, systemImage: isError(m) ? "exclamationmark.triangle" : "checkmark.circle")
                             .font(.footnote).foregroundStyle(isError(m) ? PLG.red : PLG.goldDim(scheme))

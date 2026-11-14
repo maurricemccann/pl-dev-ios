@@ -15,7 +15,7 @@ struct FlatImage: View {
                     switch phase {
                     case .success(let image): image.resizable().scaledToFit().padding(padding)
                     case .failure: Image(systemName: "photo").font(.title).foregroundStyle(Bone.inkFaint(.light).opacity(0.5))
-                    default: ProgressView()
+                    default: PLLoader()
                     }
                 }
             } else {
@@ -256,7 +256,7 @@ struct PieceView: View {
     var body: some View {
         Group {
             if let piece { content(piece) }
-            else if store.pieces.isEmpty && store.failure == nil { ProgressView().frame(maxWidth: .infinity, maxHeight: .infinity) }
+            else if store.pieces.isEmpty && store.failure == nil { PLLoader().frame(maxWidth: .infinity, maxHeight: .infinity) }
             else { EmptyNote(symbol: "bag", title: "That piece is not in the shop", detail: "It may have been retired. The shop's list has what is there now.") }
         }
         .siteScreen()

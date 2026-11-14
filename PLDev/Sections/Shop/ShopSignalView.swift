@@ -40,7 +40,7 @@ struct SignalView: View {
                         SiteField(label: "Email", text: $email, prompt: "your@email.com", keyboard: .emailAddress, contentType: .emailAddress, capitalize: .never)
                         HumanGate(siteKey: ballot?.siteKey ?? "")
                         Button { Task { await send() } } label: {
-                            HStack(spacing: 10) { Text(sending ? "Tuning in" : needsCheck ? "Continue on the site" : "Receive the Signal"); if sending { ProgressView().tint(.white) } }
+                            HStack(spacing: 10) { Text(sending ? "Tuning in" : needsCheck ? "Continue on the site" : "Receive the Signal"); if sending { PLLoader().tint(.white) } }
                         }
                         .buttonStyle(SitePill())
                         .disabled(!canSend)

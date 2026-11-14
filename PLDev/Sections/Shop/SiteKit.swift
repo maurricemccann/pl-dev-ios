@@ -167,7 +167,7 @@ struct SiteShopList: View {
         ScrollView {
             VStack(alignment: .leading, spacing: 20) {
                 SitePageHead(eyebrow: "The shop" + (store.pieces.isEmpty ? "" : " \u{2014} \(store.pieces.count) pieces"), lead: "Wearable", accent: "doctrine.")
-                if store.pieces.isEmpty { ProgressView().frame(maxWidth: .infinity, minHeight: 160) }
+                if store.pieces.isEmpty { PLLoader().frame(maxWidth: .infinity, minHeight: 160) }
                 else { PieceGrid(pieces: store.pieces, state: ShopSection.state) }
             }
             .padding(.bottom, 32)

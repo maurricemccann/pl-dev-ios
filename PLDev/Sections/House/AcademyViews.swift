@@ -331,7 +331,7 @@ struct AcademyReaderView: View {
                         .buttonStyle(OSPill()).padding(.top, 12)
                 } else if let failure {
                     ContentUnavailableView("Could not open this", systemImage: "wifi.exclamationmark", description: Text(failure))
-                } else { ProgressView().frame(maxWidth: .infinity, minHeight: 120) }
+                } else { PLLoader().frame(maxWidth: .infinity, minHeight: 120) }
             }
             .padding(.horizontal, 18).padding(.bottom, 40)
         }
@@ -406,7 +406,7 @@ struct AcademyOracleView: View {
                         if let s = t.sources { Text(s).font(.system(size: 11)).foregroundStyle(PLOS.dim(scheme)) }
                     }
                 }
-                if busy { ProgressView() }
+                if busy { PLLoader() }
             }
             .padding(.horizontal, 18).padding(.bottom, 20)
         }

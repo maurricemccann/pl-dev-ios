@@ -45,7 +45,7 @@ struct TrackOrderView: View {
                 TextField("Email on the order", text: $email).textContentType(.emailAddress).keyboardType(.emailAddress).textInputAutocapitalization(.never).autocorrectionDisabled()
                 TextField("Order number", text: $orderId).textInputAutocapitalization(.characters).autocorrectionDisabled()
                 Button { Task { await look() } } label: {
-                    HStack { Text("Look it up"); if busy { Spacer(); ProgressView() } }.frame(minHeight: PLMetric.touch)
+                    HStack { Text("Look it up"); if busy { Spacer(); PLLoader() } }.frame(minHeight: PLMetric.touch)
                 }
                 .disabled(busy || email.isEmpty || orderId.isEmpty)
                 ResultLine(text: line)

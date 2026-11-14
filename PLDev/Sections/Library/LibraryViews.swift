@@ -598,7 +598,7 @@ struct PieceViewer: View {
         return Group {
             if it.class == "code-piece" { LivePieceCard(model: model, pieceID: it.item_id, thumb: m.still) }
             else if let vid = m.video { LoopingClip(url: vid) }
-            else if let s = m.still { AsyncImage(url: s) { $0.resizable().scaledToFit() } placeholder: { ProgressView() } }
+            else if let s = m.still { AsyncImage(url: s) { $0.resizable().scaledToFit() } placeholder: { PLLoader() } }
             else { Text(it.name ?? it.vault_id).foregroundStyle(PLG.dim(scheme)) }
         }
         .clipShape(RoundedRectangle(cornerRadius: 14, style: .continuous))

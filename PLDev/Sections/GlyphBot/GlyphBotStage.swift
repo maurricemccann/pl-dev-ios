@@ -74,7 +74,7 @@ struct GlyphStageFigure: View {
             }
             .overlay {
                 if missing { Image(systemName: "figure.seated.side").font(.system(size: 44)).foregroundStyle(PLOS.gold.opacity(0.4)) }
-                else if !ready { ProgressView().tint(PLOS.gold.opacity(0.5)) }
+                else if !ready { PLThinkingOrb(size: 64) }
             }
             .shadow(color: PLOS.gold.opacity(speaking ? 0.5 : 0.22), radius: speaking ? 22 : 16)
             .animation(.easeInOut(duration: 0.5), value: speaking)

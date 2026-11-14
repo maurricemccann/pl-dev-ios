@@ -23,7 +23,7 @@ struct VaultFileView: View {
                     Button("Try again") { Task { await fetch() } }.buttonStyle(.borderedProminent)
                 }
             } else {
-                VStack(spacing: 12) { ProgressView(); Text("Bringing it down\u{2026}").font(.caption).foregroundStyle(.secondary) }
+                VStack(spacing: 12) { PLLoader(); Text("Bringing it down\u{2026}").font(.caption).foregroundStyle(.secondary) }
             }
         }
         .navigationTitle(name)

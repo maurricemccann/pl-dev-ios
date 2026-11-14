@@ -23,7 +23,7 @@ struct SiteReaderView: View {
             if shownArt == .corridor { SiteCorridor() }
             VStack(alignment: .leading, spacing: 14) {
                 if let failed { ContentUnavailableView("Could not load", systemImage: "wifi.exclamationmark", description: Text(failed)) }
-                else if !loaded { ProgressView().frame(maxWidth: .infinity, minHeight: 160) }
+                else if !loaded { PLLoader().frame(maxWidth: .infinity, minHeight: 160) }
                 ForEach(Array(blocks.enumerated()), id: \.offset) { _, b in
                     switch b {
                     case .heading(let t, let level):

@@ -117,7 +117,7 @@ struct ClosetView: View {
 
                 if store.pieces.isEmpty {
                     if let f = store.failure { EmptyNote(symbol: "wifi.exclamationmark", title: "Could not load the shop", detail: f, actionTitle: "Try again") { Task { await store.load(force: true) } } }
-                    else { ProgressView().frame(maxWidth: .infinity, minHeight: 240) }
+                    else { PLLoader().frame(maxWidth: .infinity, minHeight: 240) }
                 } else {
                     stage
                     rackRow

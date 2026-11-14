@@ -241,7 +241,7 @@ struct StillsRoom: View {
         }
         .sheet(item: $open) { it in
             NavigationStack {
-                AsyncImage(url: url(it)) { $0.resizable().scaledToFit() } placeholder: { ProgressView() }
+                AsyncImage(url: url(it)) { $0.resizable().scaledToFit() } placeholder: { PLLoader() }
                     .navigationTitle(it.id).navigationBarTitleDisplayMode(.inline)
                     .toolbar { Button("Done") { open = nil }; if let u = url(it) { ShareLink(item: u) } }
             }
@@ -486,7 +486,7 @@ struct ClassifyRoom: View {
             Section { LabeledContent("Classified", value: "\(reviewed)"); LabeledContent("Left", value: "\(queue.count)") }
             if let p = cur {
                 Section {
-                    AsyncImage(url: URL(string: p.thumb ?? p.url ?? "")) { $0.resizable().scaledToFit() } placeholder: { ProgressView() }.frame(maxHeight: 300)
+                    AsyncImage(url: URL(string: p.thumb ?? p.url ?? "")) { $0.resizable().scaledToFit() } placeholder: { PLLoader() }.frame(maxHeight: 300)
                     Text(p.cr).font(.caption).foregroundStyle(.secondary)
                     TextField("Title", text: $title)
                     TextField("Year (optional, 2009 to 2030)", text: $year).keyboardType(.numberPad)

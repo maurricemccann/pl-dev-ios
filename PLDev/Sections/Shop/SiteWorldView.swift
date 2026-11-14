@@ -84,7 +84,7 @@ struct SiteWorldView: View {
             Text("The signal, live").siteLabel()
             if feed.isEmpty {
                 if feedFailed { Text("The signal did not answer. Pull to try again.").siteBody(14) }
-                else { ProgressView().frame(maxWidth: .infinity, minHeight: 120) }
+                else { PLLoader().frame(maxWidth: .infinity, minHeight: 120) }
             } else {
                 LazyVGrid(columns: [GridItem(.flexible(), spacing: 6), GridItem(.flexible(), spacing: 6)], spacing: 6) {
                     ForEach(feed) { it in

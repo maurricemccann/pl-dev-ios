@@ -250,7 +250,7 @@ struct ArchiveView: View {
                     switch phase {
                     case .success(let i): i.resizable().scaledToFit()
                     case .failure: Image(systemName: "photo").font(.largeTitle).foregroundStyle(.tertiary).frame(maxWidth: .infinity, minHeight: 200)
-                    default: ProgressView().frame(maxWidth: .infinity, minHeight: 200)
+                    default: PLLoader().frame(maxWidth: .infinity, minHeight: 200)
                     }
                 }
                 .frame(maxWidth: .infinity)
@@ -377,7 +377,7 @@ struct ArchiveEntryView: View {
                     switch phase {
                     case .success(let i): i.resizable().scaledToFit()
                     case .failure: Image(systemName: "photo").font(.largeTitle).foregroundStyle(.tertiary).frame(maxWidth: .infinity, minHeight: 240)
-                    default: ProgressView().frame(maxWidth: .infinity, minHeight: 240)
+                    default: PLLoader().frame(maxWidth: .infinity, minHeight: 240)
                     }
                 }
                 .frame(maxWidth: .infinity)
@@ -560,7 +560,7 @@ struct RequestBallot: View {
                 }
                 HumanGate(siteKey: account.signedIn ? "" : (cfg?.siteKey ?? ""))
                 Button { Task { await cast() } } label: {
-                    HStack(spacing: 10) { Text(sending ? "Casting" : needsCheck ? "Continue on the site" : "Cast the request"); if sending { ProgressView().tint(.white) } }
+                    HStack(spacing: 10) { Text(sending ? "Casting" : needsCheck ? "Continue on the site" : "Cast the request"); if sending { PLLoader().tint(.white) } }
                 }
                 .buttonStyle(SitePill())
                 .disabled(!canCast)
