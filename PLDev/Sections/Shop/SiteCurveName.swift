@@ -24,8 +24,7 @@ struct CurveNameView: View {
     var body: some View {
         ScrollView {
             VStack(spacing: 0) {
-                ZStack {
-                    CurveDepthGlyphs()
+                do {
                     VStack(spacing: 22) {
                         CurveHeadline()
                         Text("A seed is a hand-made piece, meant to open your eyes to a new perspective. What you\u{2019}re holding is real \u{2014} it\u{2019}s a token of my life. It found you for a reason. Stay psyched.")
@@ -63,6 +62,7 @@ struct CurveNameView: View {
                         .padding(.top, 40)
                     }
                     .padding(.horizontal, 24).padding(.top, 32).padding(.bottom, 48)
+                    .background { CurveDepthGlyphs() }
                 }
                 VStack(spacing: 18) {
                     SiteRule().padding(.bottom, 32)

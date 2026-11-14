@@ -155,7 +155,7 @@ private struct GlyphsTop: View {
         VStack(alignment: .leading, spacing: 28) {
             StoryHead(eyebrow: "Glyphs \u{2014} the visual vocabulary", parts: [("Glyphs.", true)],
                       lede: "Every mark is a word in a language that existed before it had an audience. These are not graphics. They are glyphs \u{2014} symbols carrying psychological weight, pulled from a seven-year archive of original work.")
-            GlyphPair().frame(height: 260).padding(.horizontal, 24)
+            GlyphPair().frame(height: 300).padding(.horizontal, 24)
             VStack(spacing: 0) {
                 ForEach(SiteGlyph.four) { g in
                     NavigationLink { CollectionView(slug: g.slug, state: ShopSection.state) } label: {
@@ -218,7 +218,7 @@ struct GlyphPair: View {
     var body: some View {
         RealityView { content in
             let cam = PerspectiveCamera(); cam.camera.fieldOfViewInDegrees = 34
-            cam.position = [0, 0.9, 4.4]; cam.look(at: [0, 0.85, 0], from: cam.position, relativeTo: nil)
+            cam.position = [0, 0.9, 3.3]; cam.look(at: [0, 0.85, 0], from: cam.position, relativeTo: nil)
             content.add(cam)
             content.add(ThreeDModels.light(intensity: 3000, at: [2, 4, 3], look: [0, 1, 0]))
             content.add(ThreeDModels.light(intensity: 1200, at: [-3, 2, 2], look: [0, 1, 0]))
