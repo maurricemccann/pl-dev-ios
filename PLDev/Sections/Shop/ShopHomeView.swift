@@ -195,6 +195,9 @@ struct ShopHomeView: View {
     /// The wall's newest approved declarations, as the home page prints them (there is no JSON route for the wall: the page
     /// reads D1 in a server action). `“text”` then an optional `— name`.
     static func loadDesires() async -> [Desire] {
+        // the JSON route first (S348·9a3e: /api/desires, anonymous names never leave the server); the page's markup as fallback
+        struct R: Decodable { struct D: Decodable { let text: String; let name: String? }; let desires: [D] }
+        if let r = try? await Site.get("api/desires", R.self, query: ["limit": "3"]), !r.desires.isEmpty { return r.desires.map { Desire(text: $0.text, name: $0.name) } }
         guard let html = await SiteData.html("") else { return [] }
         return parseDesires(html)
     }

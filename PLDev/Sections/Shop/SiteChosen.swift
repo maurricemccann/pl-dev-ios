@@ -24,6 +24,15 @@ struct ChosenEntry: Hashable, Identifiable {
 
     func load(force: Bool = false) async {
         if loaded && !force { return }
+        // the JSON route first (/api/chosen, S348·9a3e), the page's markup as fallback
+        struct R: Decodable { struct E: Decodable { let chosen_no: Int; let cr: String; let product: String; let fourthwall_url: String?; let created_at: String? }; let entries: [E] }
+        if let r = try? await Site.get("api/chosen", R.self) {
+            entries = r.entries.map { e in
+                let wear = e.fourthwall_url.flatMap(URL.init(string:))
+                return ChosenEntry(no: e.chosen_no, cr: e.cr, product: e.product, date: String((e.created_at ?? "").prefix(10)), wearURL: wear?.scheme == "https" ? wear : nil)
+            }.sorted { $0.no < $1.no }
+            loaded = true; failed = false; return
+        }
         guard let html = await SiteData.html("chosen") else { failed = !loaded; return }
         entries = Self.parse(html); loaded = true; failed = false
     }
