@@ -69,9 +69,9 @@ extension NativeCanvasModel {
             if nodePick(a) { return }
             redoStroke()
         }
-        guard let l = tweakable, d.log.indices.contains(l.logIndex), l.pts.count >= 3 else { nodes = nil; stage?.updateOverlay(); return }
+        guard let l = tweakable, d.log.indices.contains(l.logIdx), l.pts.count >= 3 else { nodes = nil; stage?.updateOverlay(); return }
         let xy = l.pts.map { CGPoint(x: Self.num($0[0]), y: Self.num($0[1])) }
-        nodes = NodeState(logIndex: l.logIndex, pts: l.pts, idx: Self.nodeFit(xy, nodeMax))
+        nodes = NodeState(logIndex: l.logIdx, pts: l.pts, idx: Self.nodeFit(xy, nodeMax))
         stage?.updateOverlay()
     }
 
@@ -147,7 +147,7 @@ extension NativeCanvasModel {
             newPts[i] = r
         }
         let keep = n.idx
-        if let l = tweakable, l.logIndex == n.logIndex {
+        if let l = tweakable, l.logIdx == n.logIndex {
             tweakLast(size: nil, [:], pts: newPts)
             n.logIndex = d.log.count - 1
         } else {
