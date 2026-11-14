@@ -549,7 +549,7 @@ extension CanvasStage: UIGestureRecognizerDelegate, UIPencilInteractionDelegate 
         guard let m = model, let t = tracked, touches.contains(t) else { return }
         if t.type != .pencil, (event?.touches(for: self)?.count ?? 0) > 1 { m.touchCancelled(); tracked = nil; return }
         let all = event?.coalescedTouches(for: t) ?? [t]   // every sample the pen produced, not one per frame
-        for c in all { m.touchMoved(c.preciseLocation(in: self),   // preciseLocation: sub-point positions (ProCraft's CanvasView does the same, 11-14)
+        for c in all { m.touchMoved(c.preciseLocation(in: self),   // preciseLocation: sub-point positions for a truer line (11-14)
                                  pressure: Self.pressure(c), time: c.timestamp, tilt: Self.tilt(c)) }
     }
 
