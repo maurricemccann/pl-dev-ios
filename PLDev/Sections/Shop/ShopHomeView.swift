@@ -132,13 +132,13 @@ struct ShopHomeView: View {
         SitePaper {
             Text("Enter the World").siteLabel().frame(maxWidth: .infinity).padding(.bottom, 12)
             VStack(spacing: 0) {
-                gate("The Shop", "Wearable doctrine. Each piece traces to a Truth.") { Button { withAnimation { state.homeScroll += 1 } } label: { $0 }.buttonStyle(.plain) }
+                gate("The Shop", "Wearable doctrine. Each piece traces to a Truth.") { v in Button { withAnimation { state.homeScroll += 1 } } label: { v }.buttonStyle(.plain) }
                 SiteRule()
-                gate("The Archive", "The complete works, dated and documented. The evidence.") { Button { state.tab = .archive } label: { $0 }.buttonStyle(.plain) }
+                gate("The Archive", "The complete works, dated and documented. The evidence.") { v in Button { state.tab = .archive } label: { v }.buttonStyle(.plain) }
                 SiteRule()
-                gate("Living Curves", "The law of all becoming, made visible.") { NavigationLink { LivingCurvesView() } label: { $0 }.buttonStyle(.plain) }
+                gate("Living Curves", "The law of all becoming, made visible.") { v in NavigationLink { LivingCurvesView() } label: { v }.buttonStyle(.plain) }
                 SiteRule()
-                gate("The Study", "The practice, made accessible to the mind.") { NavigationLink { StudyView() } label: { $0 }.buttonStyle(.plain) }
+                gate("The Study", "The practice, made accessible to the mind.") { v in NavigationLink { StudyView() } label: { v }.buttonStyle(.plain) }
             }
         }
     }

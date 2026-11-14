@@ -76,7 +76,7 @@ struct ChosenView: View {
                                 VStack(alignment: .leading, spacing: 8) {
                                     Text("Chosen \u{2014} \u{2116}\(e.no)").font(SiteFont.display(24)).foregroundStyle(Bone.gold)
                                     HStack(spacing: 14) {
-                                        NavigationLink { ChosenWork(cr: e.cr) } label: { Text(e.cr).font(SiteFont.body(14)).foregroundStyle(Bone.ink(scheme)) }.buttonStyle(.plain)
+                                        NavigationLink { ChosenWorkPage(cr: e.cr) } label: { Text(e.cr).font(SiteFont.body(14)).foregroundStyle(Bone.ink(scheme)) }.buttonStyle(.plain)
                                         Text(e.productText).siteBody(14)
                                         Text(e.date).font(SiteFont.body(12)).foregroundStyle(Bone.inkFaint(scheme))
                                     }
@@ -106,7 +106,7 @@ struct ChosenView: View {
 }
 
 /// A chosen work opened in the archive's own page (stepping through the chosen line).
-private struct ChosenWork: View {
+private struct ChosenWorkPage: View {
     let cr: String
     var body: some View {
         let ids = ChosenStore.shared.entries.map(\.cr)
@@ -128,7 +128,7 @@ struct ChosenStrip: View {
                 ScrollView(.horizontal, showsIndicators: false) {
                     HStack(spacing: 1) {
                         ForEach(store.entries) { e in
-                            NavigationLink { ChosenWork(cr: e.cr) } label: {
+                            NavigationLink { ChosenWorkPage(cr: e.cr) } label: {
                                 VStack(alignment: .leading, spacing: 6) {
                                     Text("No. \(e.padded)").font(.system(size: 11, design: .monospaced)).tracking(2).foregroundStyle(Bone.gold)
                                     Text(e.cr).font(SiteFont.display(18)).foregroundStyle(Bone.ink(scheme))

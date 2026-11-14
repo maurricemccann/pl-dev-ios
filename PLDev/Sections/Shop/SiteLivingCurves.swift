@@ -73,7 +73,7 @@ struct LivingCurvesView: View {
 
 // MARK: - I and II: the cloth engine
 
-private final class Cloth {
+@MainActor private final class Cloth {
     struct Opts { let bg: (Double, Double, Double); let a: (Double, Double, Double); let b: (Double, Double, Double); let thick: (Double, Double); let trail: Int; let travel: Double; let spawn: Double; let hl: (Double, Double, Double, Double)? }
     struct Pt { var x: Double; var y: Double; var gap: Bool }
     final class Stroke {

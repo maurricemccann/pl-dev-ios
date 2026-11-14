@@ -31,7 +31,9 @@ struct SiteRoomView: View {
                 Color(hex: 0x0e0c08).ignoresSafeArea()
                 RealityView { content in
                     let aspect = Double(geo.size.width / max(geo.size.height, 1))
-                    cam.camera.fieldOfViewInDegrees = Float(aspect >= 1.6 ? 42 : 42 + min(1, max(0, (1.6 - aspect) / 1.2)) * 20)
+                    let narrow: Double = min(1.0, max(0.0, (1.6 - aspect) / 1.2))
+                    let fov: Double = aspect >= 1.6 ? 42.0 : 42.0 + narrow * 20.0
+                    cam.camera.fieldOfViewInDegrees = Float(fov)
                     content.add(cam)
                     await build(&content)
                     place(reduce ? 1 : 0)
@@ -111,7 +113,11 @@ struct SiteRoomView: View {
         let x = u * Float(n), i = min(n - 1, Int(x)), t = x - Float(i)
         let p0 = pts[max(0, i - 1)], p1 = pts[i], p2 = pts[i + 1], p3 = pts[min(n, i + 2)]
         let t2 = t * t, t3 = t2 * t
-        return 0.5 * ((2 * p1) + (-p0 + p2) * t + (2 * p0 - 5 * p1 + 4 * p2 - p3) * t2 + (-p0 + 3 * p1 - 3 * p2 + p3) * t3)
+        let a: SIMD3<Float> = 2 * p1
+        let b: SIMD3<Float> = (p2 - p0) * t
+        let c: SIMD3<Float> = (2 * p0 - 5 * p1 + 4 * p2 - p3) * t2
+        let d: SIMD3<Float> = (3 * p1 - p0 - 3 * p2 + p3) * t3
+        return 0.5 * (a + b + c + d)
     }
 
     // MARK: the room
@@ -151,7 +157,7 @@ struct SiteRoomView: View {
         key.look(at: [0, 0, 0], from: [2, 6, 5], relativeTo: nil); content.add(key)
 
         // his heart mark, high above the door
-        if let mark = await SiteLogo.path(), let mesh = try? MeshResource(extruding: mark.applying(CGAffineTransform(scaleX: 1, y: -1)), extrusionOptions: .init()) {
+        if let mark = await SiteLogo.path(), let mesh = try? await MeshResource(extruding: mark.applying(CGAffineTransform(scaleX: 1, y: -1)), extrusionOptions: .init()) {
             let e = ModelEntity(mesh: mesh, materials: [UnlitMaterial(color: Self.gold)])
             let b = e.visualBounds(relativeTo: nil), s = 1.25 / max(b.extents.x, b.extents.y, 0.001)
             e.scale = [s, s, 0.01 * s]
@@ -175,7 +181,7 @@ struct SiteRoomView: View {
                     let paper = ModelEntity(mesh: .generatePlane(width: 0.92, height: 1.24), materials: [UnlitMaterial(color: UIColor(red: 0xf4 / 255, green: 0xf1 / 255, blue: 0xea / 255, alpha: 1))])
                     paper.position.z = 0.012; grp.addChild(paper)
                     let ar = Float(tex.width) / Float(max(tex.height, 1)), s = min(0.92 * 0.84 / ar, 1.24 * 0.84)
-                    var ink = UnlitMaterial(); ink.color = .init(tint: UIColor(white: 0.07, alpha: 1), texture: .init(tex)); ink.blending = .transparent(opacity: 1)
+                    var ink = UnlitMaterial(); ink.color = .init(tint: UIColor(white: 0.07, alpha: 1), texture: .init(tex)); ink.blending = .transparent(opacity: .init(floatLiteral: 1))
                     let art = ModelEntity(mesh: .generatePlane(width: s * ar, height: s), materials: [ink]); art.position.z = 0.02; grp.addChild(art)
                     content.add(grp)
                 }
