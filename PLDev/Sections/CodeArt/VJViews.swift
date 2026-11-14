@@ -46,6 +46,26 @@ struct VJInstrument: View {
             }
         }
         .safeAreaInset(edge: .bottom, spacing: 0) { rack }
+        // PL LIVE's keyboard (gap audit 11-14), for the R1 or a Bluetooth keyboard during a set:
+        // 1-6 the pads, arrows step pieces, Space plays or stops the sound, Tab opens the pieces, T taps tempo, S snaps
+        .focusable()
+        .onKeyPress(phases: .down) { press in
+            switch press.key {
+            case .leftArrow: vj.step(-1); return .handled
+            case .rightArrow: vj.step(1); return .handled
+            case .space: audio.toggle(); return .handled
+            case .tab: browsing = .deckA; return .handled
+            default: break
+            }
+            let c = press.characters.lowercased()
+            if let n = Int(c), (1...6).contains(n) { let id = vj.p.slots[n - 1]; if !id.isEmpty { vj.p.pieceA = id }; return .handled }
+            switch c {
+            case "t": vj.tapTempo()
+            case "s": vj.snap(model: model)
+            default: return .ignored
+            }
+            return .handled
+        }
         .sheet(item: $browsing) { t in VJBrowser(vj: vj, target: t) { vj.choose($0, for: t); browsing = nil } }
         .sheet(item: $vj.share) { CodeArtShareSheet(items: $0.items) }
         .task { vj.start() }
