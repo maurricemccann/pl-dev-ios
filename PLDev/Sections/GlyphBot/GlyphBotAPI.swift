@@ -256,8 +256,7 @@ enum GlyphDoctrine {
         stop()
         do {
             let data = try await GlyphBot.speak(text, model: model)
-            try AVAudioSession.sharedInstance().setCategory(.playback, mode: .spokenAudio)
-            try AVAudioSession.sharedInstance().setActive(true)
+            try PLAudio.speaking()
             let p = try AVAudioPlayer(data: data)
             p.delegate = self
             guard p.play() else { return "The voice would not play." }
@@ -267,9 +266,9 @@ enum GlyphDoctrine {
         catch { return "The voice would not load. \(plainSentence(error))" }
     }
 
-    func stop() { player?.stop(); player = nil; speaking = false }
+    func stop() { player?.stop(); player = nil; if speaking { PLAudio.release() }; speaking = false }
 
     nonisolated func audioPlayerDidFinishPlaying(_ player: AVAudioPlayer, successfully flag: Bool) {
-        Task { @MainActor in self.speaking = false; self.player = nil }
+        Task { @MainActor in self.speaking = false; self.player = nil; PLAudio.release() }
     }
 }

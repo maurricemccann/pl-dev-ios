@@ -316,7 +316,10 @@ struct LabMetalProbeView: View {
     static func lines() -> [(String, String)] {
         guard let d = LabGPU.device else { return [("device", "Metal is not available")] }
         var fams: [String] = []
-        let all: [(MTLGPUFamily, String)] = [(.apple4, "apple4"), (.apple5, "apple5"), (.apple6, "apple6"), (.apple7, "apple7"), (.apple8, "apple8"), (.apple9, "apple9"), (.metal3, "metal3"), (.metal4, "metal4")]
+        var all: [(MTLGPUFamily, String)] = [(.apple4, "apple4"), (.apple5, "apple5"), (.apple6, "apple6"), (.apple7, "apple7"), (.apple8, "apple8"), (.apple9, "apple9"), (.metal3, "metal3")]
+        #if !targetEnvironment(simulator)
+        all.append((.metal4, "metal4"))   // the simulator SDK has no metal4 family
+        #endif
         for (f, n) in all where d.supportsFamily(f) { fams.append(n) }
         let mb = { (b: UInt64) in ByteCountFormatter.string(fromByteCount: Int64(b), countStyle: .memory) }
         return [

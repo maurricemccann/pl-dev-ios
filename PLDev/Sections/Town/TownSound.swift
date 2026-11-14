@@ -14,8 +14,7 @@ private final class WindState: @unchecked Sendable { var last: Float = 0; var ph
     func start(dark: Bool) {
         guard !running else { return }
         self.dark = dark
-        try? AVAudioSession.sharedInstance().setCategory(.ambient, mode: .default)
-        try? AVAudioSession.sharedInstance().setActive(true)
+        PLAudio.ambient()
         let fmt = engine.outputNode.inputFormat(forBus: 0)
         let sr = fmt.sampleRate
         let wind = Self.makeWind(sr: sr)   // built outside the main actor: it runs on the audio thread

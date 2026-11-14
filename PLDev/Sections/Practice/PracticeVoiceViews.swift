@@ -45,8 +45,7 @@ enum PracticeDeck {
         guard Self.available else { return "This build has no microphone line yet." }
         guard await AVAudioApplication.requestRecordPermission() else { return "The microphone is off for PL DEV in Settings." }
         do {
-            try AVAudioSession.sharedInstance().setCategory(.playAndRecord, mode: .default)
-            try AVAudioSession.sharedInstance().setActive(true)
+            try PLAudio.listening()
             let url = FileManager.default.temporaryDirectory.appendingPathComponent("practice-\(UUID().uuidString).m4a")
             let r = try AVAudioRecorder(url: url, settings: [AVFormatIDKey: kAudioFormatMPEG4AAC, AVSampleRateKey: 44100, AVNumberOfChannelsKey: 1, AVEncoderAudioQualityKey: AVAudioQuality.high.rawValue])
             guard r.record() else { return "Recording would not start." }
@@ -58,7 +57,7 @@ enum PracticeDeck {
     /// Stops and returns the recording's bytes. The file stays until `discard()` (called once the upload has landed),
     /// so a failed upload loses nothing: the next tap tries again with the same take.
     func stop() -> Data? {
-        recorder?.stop(); recorder = nil; recordingKey = nil
+        recorder?.stop(); recorder = nil; recordingKey = nil; PLAudio.release()
         guard let file, let d = try? Data(contentsOf: file), !d.isEmpty else { return nil }
         return d
     }

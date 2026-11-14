@@ -63,17 +63,14 @@ final class VJAudio: @unchecked Sendable {
     // MARK: sources
 
     private func configureSession(record: Bool) throws {
-        let s = AVAudioSession.sharedInstance()
-        if record { try s.setCategory(.playAndRecord, mode: .default, options: [.defaultToSpeaker, .allowBluetoothA2DP, .mixWithOthers]) }
-        else { try s.setCategory(.playback, mode: .default, options: []) }
-        try s.setActive(true)
+        if record { try PLAudio.listening() } else { try PLAudio.playing() }
     }
 
     func stop() {
         generation += 1
         if engine.isRunning { engine.stop() }
         if micTap { engine.inputNode.removeTap(onBus: 0); micTap = false }
-        engine.mainMixerNode.removeTap(onBus: 0)
+        engine.mainMixerNode.removeTap(onBus: 0); PLAudio.release()
         player.stop()
         if player.engine != nil { engine.detach(player) }
         player = AVAudioPlayerNode()

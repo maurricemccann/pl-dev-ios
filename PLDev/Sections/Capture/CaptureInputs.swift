@@ -67,7 +67,7 @@ final class CaptureDictation: @unchecked Sendable {
         self.request = request
         do {
             let session = AVAudioSession.sharedInstance()
-            try session.setCategory(.record, mode: .measurement, options: .duckOthers)
+            try PLAudio.listening()
             try session.setActive(true, options: .notifyOthersOnDeactivation)
             let input = engine.inputNode
             let format = input.outputFormat(forBus: 0)

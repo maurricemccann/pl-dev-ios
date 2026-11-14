@@ -158,8 +158,7 @@ struct PracticeBoardImages: Decodable, Sendable {
         stop()
         do {
             let data = try await Practice.bytes(path, model: model)
-            try AVAudioSession.sharedInstance().setCategory(.playback, mode: .spokenAudio)
-            try AVAudioSession.sharedInstance().setActive(true)
+            try PLAudio.speaking()
             let p = try AVAudioPlayer(data: data)
             p.delegate = self
             guard p.play() else { return "The clip would not play." }
@@ -168,7 +167,7 @@ struct PracticeBoardImages: Decodable, Sendable {
         } catch { return "The clip would not load. \(plainSentence(error))" }
     }
 
-    func stop() { player?.stop(); player = nil; playing = nil; onFinish = nil }
+    func stop() { if player != nil { PLAudio.release() }; player?.stop(); player = nil; playing = nil; onFinish = nil }
 
     /// The player bar reads these on a timeline; nothing here is observed per frame.
     var position: TimeInterval { player?.currentTime ?? 0 }
@@ -178,7 +177,7 @@ struct PracticeBoardImages: Decodable, Sendable {
     var onFinish: (() -> Void)?
 
     nonisolated func audioPlayerDidFinishPlaying(_ player: AVAudioPlayer, successfully flag: Bool) {
-        Task { @MainActor in self.playing = nil; self.player = nil; let f = self.onFinish; self.onFinish = nil; if flag { f?() } }
+        Task { @MainActor in self.playing = nil; self.player = nil; PLAudio.release(); let f = self.onFinish; self.onFinish = nil; if flag { f?() } }
     }
 }
 

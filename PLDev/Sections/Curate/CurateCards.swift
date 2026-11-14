@@ -67,7 +67,7 @@ struct CurateClip: View {
     private func start() {
         let p = AVQueuePlayer()
         p.isMuted = !CurateSound.on
-        if CurateSound.on { try? AVAudioSession.sharedInstance().setCategory(.playback); try? AVAudioSession.sharedInstance().setActive(true) }
+        if CurateSound.on { PLAudio.ambient() }
         looper = AVPlayerLooper(player: p, templateItem: AVPlayerItem(url: url))
         player = p; sound = CurateSound.on
         p.play()
@@ -79,7 +79,7 @@ struct CurateClip: View {
 
     private func toggle() {
         sound.toggle(); CurateSound.on = sound
-        if sound { try? AVAudioSession.sharedInstance().setCategory(.playback); try? AVAudioSession.sharedInstance().setActive(true) }
+        if sound { PLAudio.ambient() }
         player?.isMuted = !sound
         if sound { player?.play() }
     }
