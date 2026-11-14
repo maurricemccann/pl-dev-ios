@@ -390,7 +390,7 @@ private struct WrapPills: View {
     let dim: Color
     let pick: (String) -> Void
     var body: some View {
-        FlowRows {
+        JarvisFlowRows {
             ForEach(items, id: \.0) { k, label in
                 Button { pick(k) } label: {
                     Text(label).font(.system(size: 11, design: .monospaced)).foregroundStyle(selected == k ? accent : dim)
@@ -404,7 +404,7 @@ private struct WrapPills: View {
     }
 }
 
-private struct FlowRows: Layout {
+private struct JarvisFlowRows: Layout {
     func sizeThatFits(proposal: ProposedViewSize, subviews: Subviews, cache: inout ()) -> CGSize {
         let w = proposal.width ?? 320
         var x: CGFloat = 0, y: CGFloat = 0, h: CGFloat = 0

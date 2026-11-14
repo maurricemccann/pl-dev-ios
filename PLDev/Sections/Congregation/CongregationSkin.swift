@@ -272,6 +272,7 @@ struct LinkedText: View {
             .fixedSize(horizontal: false, vertical: true)
             .environment(\.openURL, OpenURLAction { url in
                 if url.scheme == "plmember", let h = url.host { onMember(h); return .handled }
+                if url.scheme == "pltag", let t = url.host { CongregationSection.state.tag = t; return .handled }   // a hashtag stays in the app
                 onWeb(url); return .handled
             })
     }
@@ -288,7 +289,7 @@ struct LinkedText: View {
             if seg.hasPrefix("@") {
                 a = AttributedString(seg); a.link = URL(string: "plmember://\(seg.dropFirst().lowercased())")
             } else if seg.hasPrefix("#") {
-                a = AttributedString(seg); a.link = Site.page("tag/\(seg.dropFirst().lowercased())")
+                a = AttributedString(seg); a.link = URL(string: "pltag://\(seg.dropFirst().lowercased())")
             } else {
                 a = AttributedString(seg.replacingOccurrences(of: "https://", with: "").replacingOccurrences(of: "http://", with: ""))
                 a.link = URL(string: seg); a.underlineStyle = .single

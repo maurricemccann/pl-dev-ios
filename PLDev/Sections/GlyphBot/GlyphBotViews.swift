@@ -230,7 +230,9 @@ struct SourcesSheet: View {
         if visible { lines.append(mineLine) }
         do {
             let dom: String? = mode == .free ? (sid == nil ? "free" : nil) : (sid == nil && !domain.isEmpty ? domain : nil)
-            let r = try await GlyphBot.turn(session: sid, text: text, domain: dom, settings: settings, model: model)
+            var engine = settings
+            InterviewPrefs.apply(to: &engine)   // model, adventure, reply length and the bank, from Voice and answers
+            let r = try await GlyphBot.turn(session: sid, text: text, domain: dom, settings: engine, model: model)
             sid = r.session_id ?? sid
             if visible { answers += 1 }
             done = r.done == true
@@ -261,6 +263,7 @@ struct SitTab: View {
     @Bindable var sitting: SittingModel
     private let voice = GlyphBotVoice.shared
     @State private var note: String?
+    @State private var talk = InterviewTalk()
 
     var body: some View {
         Group {
@@ -269,7 +272,14 @@ struct SitTab: View {
             } else if sitting.active { thread } else { setup }
         }
         .sensoryFeedback(PLHaptic.select, trigger: sitting.lines.count)
-        .onDisappear { voice.stop() }
+        .onDisappear { voice.stop(); talk.stopAll() }
+        .onChange(of: sitting.lines.count) { _, _ in
+            // Voice: each question the interviewer asks is spoken aloud in an Apple voice, then it listens (hands free) or waits for the held gold.
+            guard talk.on, sitting.active, !sitting.done, let last = sitting.lines.last, !last.mine else { return }
+            talk.speak(last.text) { heard in sitting.draft = heard; Task { await sitting.send(model: model) } }
+        }
+        .onChange(of: sitting.error) { _, e in if talk.on, let e { talk.idle(e) } }
+        .onChange(of: sitting.active) { _, a in if !a { talk.stopAll() } }
     }
 
     private var setup: some View {
@@ -292,11 +302,32 @@ struct SitTab: View {
                 }
             }
             Section {
+                if talk.supported {
+                    Toggle("Talk to it", isOn: Binding(get: { talk.on }, set: { talk.setOn($0) }))
+                } else {
+                    Text("Voice answers need Speech Recognition and the microphone. Allow them for PL DEV in Settings.").font(.footnote).foregroundStyle(.secondary)
+                }
+                NavigationLink { InterviewSettingsView(sitting: sitting) } label: { Label("Voice and answers", systemImage: "slider.horizontal.3") }
+            } header: { Text("Voice") } footer: { Text("It speaks each question in an Apple voice on this iPhone and hears you with Apple's on-device speech. Hands free or push to talk, the pause, the speed and the model are in Voice and answers.") }
+            Section {
                 Button(sitting.mode == .interview ? "Begin the sitting" : "Start talking") { Task { await sitting.begin(model: model) } }
                 if sitting.savedSitting { Button("Continue the last sitting") { sitting.resume() } }
             }
         }
         .glyphList()
+    }
+
+    /// The page's orb: the gold button, what it hears, and a way back to typing.
+    private var orbPanel: some View {
+        VStack(spacing: 8) {
+            Text(talk.heard.isEmpty ? " " : talk.heard).font(.system(size: 15)).foregroundStyle(PLOS.text(scheme)).lineLimit(3).frame(maxWidth: .infinity, minHeight: 22)
+            InterviewOrb(talk: talk)
+            Text(talk.statusLine).osEyebrow(10).foregroundStyle(talk.note == nil ? PLOS.dim(scheme) : PLOS.danger)
+            HStack(spacing: 18) {
+                Button("Type instead") { talk.setOn(false) }
+                NavigationLink { InterviewSettingsView(sitting: sitting) } label: { Text("Voice settings") }
+            }.font(.footnote)
+        }
     }
 
     private var thread: some View {
@@ -334,6 +365,7 @@ struct SitTab: View {
         }
         .safeAreaInset(edge: .bottom) {
             VStack(spacing: 6) {
+                if talk.on { orbPanel } else {
                 HStack(alignment: .bottom, spacing: 8) {
                     Text("\u{203A}").font(.system(size: 17, design: .monospaced)).foregroundStyle(PLOS.gold.opacity(0.5)).padding(.bottom, 8)
                     TextField("Your answer", text: $sitting.draft, axis: .vertical).lineLimit(1...8)
@@ -341,8 +373,16 @@ struct SitTab: View {
                     Button { Task { await sitting.send(model: model) } } label: { Image(systemName: "arrow.up.circle.fill").font(.title).foregroundStyle(PLOS.gold) }
                         .disabled(sitting.busy || sitting.draft.trimmingCharacters(in: .whitespaces).isEmpty)
                         .accessibilityLabel("Send")
+                    if talk.supported {
+                        Button {
+                            talk.setOn(true)
+                            if let q = sitting.lines.last, !q.mine, !sitting.done { talk.speak(q.text) { heard in sitting.draft = heard; Task { await sitting.send(model: model) } } }
+                        } label: { Image(systemName: "mic.circle").font(.title).foregroundStyle(PLOS.gold) }
+                            .accessibilityLabel("Answer by voice")
+                    }
                 }
-                Button(sitting.done ? "Finish" : "End the sitting") { Task { await sitting.end() } }.font(.footnote).buttonStyle(.borderless)
+                }
+                Button(sitting.done ? "Finish" : "End the sitting") { talk.stopAll(); Task { await sitting.end() } }.font(.footnote).buttonStyle(.borderless)
             }
             .padding(.horizontal, PLSpace.margin).padding(.vertical, PLSpace.gap).background(.bar)
         }

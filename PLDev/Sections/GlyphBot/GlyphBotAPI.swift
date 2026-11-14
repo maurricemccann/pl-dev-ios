@@ -34,6 +34,10 @@ import SwiftUI
         var boldness = "light"      // light, gentle, probing
         var targetMin = 0           // 0 = open
         var deep = false            // let the deeper model ask when an answer is rich
+        var model = "auto"          // auto, haiku, sonnet, opus (InterviewPrefs)
+        var adventure = 0.5         // how far a follow-up may wander
+        var maxLen = 400            // reply length in tokens
+        var bank = "start"          // the 501 as starting points, or off
     }
 
     struct Reply: Decodable { let session_id: Int?; let reply: String?; let seat: String?; let domain: String?; let done: Bool?; let error: String?; let tier: String? }
@@ -56,7 +60,8 @@ import SwiftUI
 
     /// One turn. His words reach this call only from the Send button; nothing else on the phone calls it with an answer.
     static func turn(session: Int?, text: String, domain: String?, settings: Settings, model: AppModel) async throws -> Reply {
-        var body: [String: Any] = ["text": text, "settings": ["boldness": settings.boldness, "target_min": settings.targetMin, "deep": settings.deep]]
+        var body: [String: Any] = ["text": text, "settings": ["boldness": settings.boldness, "target_min": settings.targetMin, "deep": settings.deep, "model": settings.model,
+                                                                   "adventure": settings.adventure, "max_len": settings.maxLen, "bank": settings.bank] as [String: Any]]
         if let session, session > 0 { body["session_id"] = session }
         if let domain, !domain.isEmpty { body["domain"] = domain }
         let data = try await client(model).send(RequestPlan(origin: "interview", method: "POST", path: "api/r1/interview/turn", headers: ["content-type": "application/json"],

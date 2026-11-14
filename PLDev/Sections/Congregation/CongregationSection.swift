@@ -35,6 +35,7 @@ import UserNotifications
         if let tab = CongregationModel.Tab(rawValue: first) { state.tab = tab }
         else if let room = CongregationRoom(rawValue: first) { state.open(room) }
         else if first == "member", path.count > 1 { state.tab = .members; state.memberHandle = path[1] }
+        else if first == "tag", path.count > 1 { state.tag = path[1] }
         return true
     }
 
@@ -74,6 +75,8 @@ struct StreamProbe: Decodable { let total: Int? }
     var tab: Tab = .stream
     var room: CongregationRoom?
     var memberHandle: String?
+    /// A tapped #hashtag: the tag page opens in the app.
+    var tag: String?
     /// The owner's tab inside Me to land on (Boards, Settings, Games), read once by the member hub.
     var hubTab: String?
     var tick = 0
@@ -117,6 +120,7 @@ struct CongregationView: View {
         .sensoryFeedback(PLHaptic.commit, trigger: state.tick)
         .navigationDestination(item: $state.room) { room in room.view(model, state: state) }
         .navigationDestination(item: $state.memberHandle) { handle in MemberView(handle: handle, state: state) }
+        .navigationDestination(item: $state.tag) { tag in TagView(tag: tag, state: state) }
         .task { await SiteAccount.shared.refresh() }
     }
 }

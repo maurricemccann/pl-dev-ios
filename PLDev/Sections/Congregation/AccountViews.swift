@@ -239,7 +239,7 @@ struct SettingsPanel: View {
                 Text("News that a post went live or was removed always reaches you.").siteLabel(10)
             }
             SiteRule()
-            Button { if let u = URL(string: "https://pl-academy.psychedluxuries.workers.dev") { web = WebPage(u) } } label: {
+            NavigationLink { AcademyView(model: AppModel.shared).osScreen() } label: {
                 VStack(alignment: .leading, spacing: 4) {
                     Text("Persona Academy").siteLabel(10)
                     Text("Enter The Study \u{2197}").font(SiteFont.body(15)).foregroundStyle(Bone.ink(scheme))

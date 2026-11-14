@@ -541,7 +541,7 @@ struct AcademyDrillsView: View {
 }
 
 /// A line-wrapping layout for the words of a passage.
-private struct WrapLayout: Layout {
+private struct AcademyWrapLayout: Layout {
     var spacing: CGFloat = 4
     func sizeThatFits(proposal: ProposedViewSize, subviews: Subviews, cache: inout ()) -> CGSize {
         let w = proposal.width ?? 320
@@ -579,7 +579,7 @@ private struct PurgeDrill: View {
         let violationParts = Set(item.violations.flatMap { $0.lowercased().split(separator: " ").map(String.init) })
         VStack(alignment: .leading, spacing: 14) {
             Text("Tap every word that violates the voice. If the passage is clean, accuse nothing.").font(.system(.callout, design: .serif).italic()).foregroundStyle(PLOS.dim(scheme))
-            WrapLayout {
+            AcademyWrapLayout {
                 ForEach(Array(words.enumerated()), id: \.offset) { i, w in
                     let isViolation = verdict != nil && violationParts.contains(norm(w))
                     Text(w).font(.system(.title3, design: .serif))
