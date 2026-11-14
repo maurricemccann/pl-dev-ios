@@ -94,7 +94,8 @@ struct HomeView: View {
             .buttonStyle(.plain)
             .sheet(isPresented: $showWidgetHelp) { WidgetHowTo() }
         }
-        .padding(.horizontal, PLSpace.margin).padding(.top, PLSpace.gap).padding(.bottom, PLSpace.block)
+        // room under the last card for the page dots and the Settings pill that float over it (his screenshot 11-14: the card sat cut off beneath them)
+        .padding(.horizontal, PLSpace.margin).padding(.top, PLSpace.gap).padding(.bottom, 120)
     }
 
     private var pageDots: some View {
