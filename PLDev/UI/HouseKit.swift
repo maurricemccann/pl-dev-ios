@@ -138,13 +138,15 @@ struct HouseGround: View {
     @Environment(\.colorScheme) private var scheme
     @Environment(\.accessibilityReduceTransparency) private var reduce
     @State private var kit = HouseKit.shared
+    // the same Settings dial as Home's wallpaper: 0.5 = the quiet default; up to 1 = the bold curves behind glass he liked on pl-os (11-13 screenshot)
+    @AppStorage("pldev.tileStrength") private var strength = 0.5
     var body: some View {
-        let p = kit.palette
+        let p = kit.palette, k = 0.14 * max(0.2, strength) * (1 + max(0, strength - 0.5) * 4)   // 0.5 -> 0.07 as before, 1 -> about 0.42
         ZStack {
             if scheme == .dark { p.groundColor } else { ZStack { Color(uiColor: .systemGroupedBackground); p.textColor.opacity(0.45) } }
             if !reduce, let tile = Wallpaper.stencil {
                 Image(uiImage: tile).renderingMode(.template).resizable(resizingMode: .tile)
-                    .foregroundStyle(scheme == .dark ? p.textColor.opacity(0.07) : p.groundColor.opacity(0.06))
+                    .foregroundStyle(scheme == .dark ? p.textColor.opacity(k) : p.groundColor.opacity(k * 0.86))
             }
         }
         .ignoresSafeArea()
