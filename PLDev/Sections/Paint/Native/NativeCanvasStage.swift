@@ -62,8 +62,12 @@ import UIKit
         super.layoutSubviews()
         stageView.center = CGPoint(x: bounds.midX, y: bounds.midY)
         overlay.frame = bounds
-        if xf == .identity { fit() }
+        // the phone turned (handbook ch. 10: "the app fits itself to the screen"): fit again; a still phone keeps his own zoom
+        let turned = laidOutSize != .zero && (laidOutSize.width > laidOutSize.height) != (bounds.width > bounds.height)
+        laidOutSize = bounds.size
+        if xf == .identity || turned { fit() }
     }
+    private var laidOutSize: CGSize = .zero
 
     // MARK: layers on screen
 

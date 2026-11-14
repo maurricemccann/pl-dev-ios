@@ -3,6 +3,7 @@ import TipKit
 
 @main
 struct PLDevApp: App {
+    @UIApplicationDelegateAdaptor(PLAppDelegate.self) private var appDelegate   // which ways the phone may turn (PLOrientation)
     init() {
         PLFonts.register()
         ThemePack.shared.load()            // optional look from the app's Documents folder; none is fine

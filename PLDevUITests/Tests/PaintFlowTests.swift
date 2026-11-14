@@ -242,6 +242,19 @@ final class PaintFlowTests: XCTestCase {
         closeSheet()
     }
 
+    // MARK: 08b landscape (his handbook ch. 10: "Turn the phone and the app fits itself to the screen")
+
+    func test08b_Landscape() {
+        makeCanvas()
+        stroke((0.3, 0.4), (0.7, 0.45)); sleepFor(0.6)
+        XCUIDevice.shared.orientation = .landscapeLeft; sleepFor(2.5); shot("landscape")
+        let undo = app.buttons["Undo"].firstMatch
+        stroke((0.35, 0.55), (0.75, 0.6)); sleepFor(0.8); shot("landscape-drawn")
+        XCTAssertTrue(undo.isEnabled, "drawing works in landscape")
+        XCUIDevice.shared.orientation = .portrait; sleepFor(2.5); shot("portrait-again")
+        tapButton("Gallery", wait: 8); sleepFor(1.5); shot("gallery-upright")
+    }
+
     // MARK: 09 the Gallery's own actions: open, rename, duplicate, share, stack, delete
 
     func test09_GalleryActions() {

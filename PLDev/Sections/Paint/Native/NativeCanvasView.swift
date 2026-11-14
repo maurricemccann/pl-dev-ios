@@ -38,6 +38,8 @@ struct NativeCanvasView: View {
         .statusBarHidden()
         .persistentSystemOverlays(.hidden)
         .sheet(item: $canvas.panel) { p in sheet(p) }
+        .onAppear { PLOrientation.allow(.allButUpsideDown) }   // a canvas turns with the phone; everything else stays upright
+        .onDisappear { PLOrientation.allow(.portrait) }
         .sensoryFeedback(PLHaptic.select, trigger: canvas.activeLayer)
         .sensoryFeedback(PLHaptic.commit, trigger: canvas.docVersion)
         .onChange(of: phase) { _, p in if p != .active { canvas.saveNow(); Task { await sync.run(model: model, canvas: canvas) } } }
