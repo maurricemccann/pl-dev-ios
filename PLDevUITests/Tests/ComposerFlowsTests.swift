@@ -68,6 +68,13 @@ final class ComposerFlowsTests: XCTestCase {
         if app.keyboards.buttons["Return"].exists { app.keyboards.buttons["Return"].tap() } else if app.keyboards.buttons["return"].exists { app.keyboards.buttons["return"].tap() }
     }
 
+    /// Lists render lazily: scroll until the element is on screen (down first, then back up).
+    @discardableResult func reveal(_ e: XCUIElement) -> Bool {
+        for _ in 0..<10 { if e.exists && e.isHittable { return true }; app.swipeUp() }
+        for _ in 0..<12 { if e.exists && e.isHittable { return true }; app.swipeDown() }
+        return e.exists && e.isHittable
+    }
+
     func area(_ name: String) {
         let seg = app.segmentedControls["composer.area"].exists ? app.segmentedControls["composer.area"] : app.segmentedControls.firstMatch
         tap(seg.buttons[name], "area " + name)
@@ -98,9 +105,8 @@ final class ComposerFlowsTests: XCTestCase {
         XCTAssertEqual(app.textFields["Title of shot 2"].value as? String, "the curve")
 
         // duration: raise shot 1 by two steps of 0.5 s
-        for _ in 0..<8 where !app.steppers["Duration"].firstMatch.isHittable { app.swipeUp() }
-        let step = app.steppers["Duration"].firstMatch
-        if tap(step.buttons["Increment"], "duration increment") { step.buttons["Increment"].tap(); step.buttons["Increment"].tap() }
+        let inc = app.buttons["Duration, Increment"].firstMatch
+        if reveal(inc) { inc.tap(); inc.tap(); inc.tap() } else { tree("stepper"); XCTFail("no duration stepper") }
         shot("duration-raised")
         for _ in 0..<8 { app.swipeDown() }
 
@@ -170,14 +176,14 @@ final class ComposerFlowsTests: XCTestCase {
         // the picker's confirm is a check mark at the top right; its label has varied, so try the names, then the spot
         let confirm = ["Add", "Done", "Select"].map { app.buttons[$0] }.first { $0.exists }
         if let c = confirm { c.tap() } else { app.coordinate(withNormalizedOffset: CGVector(dx: 0.9, dy: 0.15)).tap() }
-        let note = app.staticTexts.matching(NSPredicate(format: "label BEGINSWITH 'Added'")).firstMatch
-        XCTAssertTrue(note.waitForExistence(timeout: 30), "the picks were not copied in")
-        sleep(1)
+        // the copy runs behind the picker; the note sits on the shot card, so scroll to find the names
+        let named = app.staticTexts.matching(NSPredicate(format: "label BEGINSWITH 'photo-'")).firstMatch
+        var found = false
+        for _ in 0..<15 { if reveal(named) { found = true; break }; sleep(2) }
+        XCTAssertTrue(found, "the picks were not copied in")
         shot("photos-attached")
-        XCTAssertTrue(app.staticTexts.matching(NSPredicate(format: "label BEGINSWITH 'photo-'")).firstMatch.exists, "no picture is named on the shot")
-        // trim the clip
         let trimBtn = has("label BEGINSWITH 'Trim clip'").firstMatch
-        if trimBtn.waitForExistence(timeout: 5) {
+        if reveal(trimBtn) {
             trimBtn.tap()
             sleep(1)
             shot("trim-open")
