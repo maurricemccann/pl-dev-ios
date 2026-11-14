@@ -63,7 +63,8 @@ struct OutboundTab: View {
                 OSHeader()
                 OSKpis(items: [("Instagram", (state.ig?.followers ?? 0).formatted(), "followers"), ("Drafted", "\(state.stats?.week_total ?? 0)", "this week"),
                                ("Queued", "\(state.stats?.queued ?? 0)", nil), ("Sent", "\(state.sent)", nil)],
-                       status: state.runway?.low == true ? ("Watch  the Instagram runway is low", PLOS.warn) : nil)
+                       status: state.runway?.low == true ? ("Watch  the Instagram runway is low", PLOS.warn) : nil,
+                       levels: [nil, nil, state.runway?.low == true ? PLStatus.warn : nil, nil])   // Queued is the runway: tinted only when the server says it is low
                 if !shown.isEmpty {
                     VStack(alignment: .leading, spacing: 10) {
                         Picker("Range", selection: $state.range) { Text("7D").tag(7); Text("30D").tag(30); Text("90D").tag(90) }.pickerStyle(.segmented)

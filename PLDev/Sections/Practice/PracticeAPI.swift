@@ -152,6 +152,7 @@ struct PracticeBoardImages: Decodable, Sendable {
     static let shared = PracticeClips()
     private(set) var playing: String?
     private var player: AVAudioPlayer?
+    private var playStart: Date?   // when the clip began, so the minutes he listened can be written to Health (Settings, Mindful minutes)
 
     func toggle(_ key: String, path: String, model: AppModel) async -> String? {
         if playing == key { stop(); return nil }
@@ -162,12 +163,20 @@ struct PracticeBoardImages: Decodable, Sendable {
             let p = try AVAudioPlayer(data: data)
             p.delegate = self
             guard p.play() else { return "The clip would not play." }
-            player = p; playing = key
+            player = p; playing = key; playStart = .now
             return nil
         } catch { return "The clip would not load. \(plainSentence(error))" }
     }
 
-    func stop() { if player != nil { PLAudio.release() }; player?.stop(); player = nil; playing = nil; onFinish = nil }
+    func stop() { writeMindful(); if player != nil { PLAudio.release() }; player?.stop(); player = nil; playing = nil; onFinish = nil }
+
+    /// Listening to an affirmation is a practice session with a length: 20 seconds or more goes to Health as mindful minutes (when he turned it on).
+    private func writeMindful() {
+        guard let s = playStart else { return }
+        playStart = nil
+        let end = Date.now
+        if end.timeIntervalSince(s) >= 20 { Task { await PLHealth.logMindful(start: s, end: end) } }
+    }
 
     /// The player bar reads these on a timeline; nothing here is observed per frame.
     var position: TimeInterval { player?.currentTime ?? 0 }
@@ -177,7 +186,7 @@ struct PracticeBoardImages: Decodable, Sendable {
     var onFinish: (() -> Void)?
 
     nonisolated func audioPlayerDidFinishPlaying(_ player: AVAudioPlayer, successfully flag: Bool) {
-        Task { @MainActor in self.playing = nil; self.player = nil; PLAudio.release(); let f = self.onFinish; self.onFinish = nil; if flag { f?() } }
+        Task { @MainActor in self.writeMindful(); self.playing = nil; self.player = nil; PLAudio.release(); let f = self.onFinish; self.onFinish = nil; if flag { f?() } }
     }
 }
 

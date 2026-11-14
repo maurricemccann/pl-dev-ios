@@ -12,6 +12,10 @@ import RealityKit
     var base: SIMD3<Float> = .zero
     var amp: Float = 0.01
     var loaded = false
+    private var model: Entity?
+    private var holder: Entity?
+    private var aspect: Float = 112.0 / 176.0   // the frame's width over its height; the stage tells us the real one
+    private static let camZ: Float = 2.6, fov: Float = 33
 
     func load() async -> Bool {
         guard let url = Bundle.main.url(forResource: "glyphbot-sitting", withExtension: "usdz"),
@@ -19,16 +23,45 @@ import RealityKit
         // the recline lives in the (single-frame) clip, not the bind pose: play it before measuring, as the web does
         if let anim = model.availableAnimations.first { model.playAnimation(anim.repeat(), transitionDuration: 0, startsPaused: false) }
         let holder = Entity(); holder.addChild(model)
-        var b = model.visualBounds(relativeTo: holder)
-        let r = max(b.boundingRadius, 0.001)
-        model.scale = SIMD3<Float>(repeating: 0.9 / r)           // fits a unit-ish sphere so any pose frames the same
-        b = model.visualBounds(relativeTo: holder)
-        model.position -= b.center
         Self.dress(model)
         root.addChild(holder)
+        self.model = model; self.holder = holder
+        fit()
         base = root.position; amp = 0.012
         loaded = true
         return true
+    }
+
+    /// The frame changed (rotation, Dynamic Type, a different phone): fit him inside it again.
+    func setFrame(_ size: CGSize) {
+        guard size.width > 1, size.height > 1 else { return }
+        let a = Float(size.width / size.height)
+        guard abs(a - aspect) > 0.002 else { return }
+        aspect = a
+        if loaded { fit() }
+    }
+
+    /// His feet clipped (his note 11-14: "Glyph's feet are clipping because he doesn't fit his frame"): the old fit scaled him to a
+    /// sphere and ignored the frame, so a seated figure wider or taller than the frame lost its feet and its edges. Now his own measured
+    /// box is fitted inside what the camera sees at his depth, at THIS frame's aspect: 86 % of the height at most, 90 % of the width,
+    /// and at least 7 % of the height left under his feet.
+    func fit() {
+        guard let model, let holder else { return }
+        model.scale = .one; model.position = .zero
+        let n = model.visualBounds(relativeTo: holder).extents
+        guard n.x > 0.0001, n.y > 0.0001 else { return }
+        let tanHalf = Float(tan(Double(Self.fov) * .pi / 360))
+        var s: Float = 1
+        var visH: Float = 1
+        for _ in 0..<5 {   // the nearest part of him sits closer to the camera than his centre, so its view is a little smaller
+            let d = max(1.0, Self.camZ - 0.5 * s * n.z)
+            visH = 2 * d * tanHalf
+            s = min(visH * 0.86 / n.y, visH * aspect * 0.90 / n.x)
+        }
+        model.scale = SIMD3<Float>(repeating: s)
+        let b = model.visualBounds(relativeTo: holder)
+        let room = max(visH * 0.07, (visH - b.extents.y) / 2)   // a little room under the feet, centred when there is more
+        model.position = -b.center + SIMD3<Float>(0, -visH / 2 + room + b.extents.y / 2, 0)
     }
 
     /// The web's glass: roughness 0.32, clearcoat 1 at 0.04, full specular, cool blue-white body (attenuationColor 0xcfe2ff).
@@ -64,9 +97,13 @@ struct GlyphStageFigure: View {
     @Environment(\.accessibilityReduceMotion) private var reduceMotion
 
     var body: some View {
-        GlyphARStage(seat: seat, onLoaded: { ok in if ok { ready = true } else { missing = true } })
+        GeometryReader { geo in
+            GlyphARStage(seat: seat, size: geo.size, onLoaded: { ok in if ok { ready = true } else { missing = true } })
+        }
             .task {
                 let start = Date()
+                try? await Task.sleep(for: .milliseconds(400))
+                if seat.loaded { seat.fit() }   // the clip's pose is in by now: measure him once more
                 while !Task.isCancelled {
                     if seat.loaded && !reduceMotion { seat.breathe(Float(Date().timeIntervalSince(start))) }
                     try? await Task.sleep(for: .milliseconds(33))
@@ -85,6 +122,7 @@ struct GlyphStageFigure: View {
 /// A non-AR RealityKit view with a clear background (the web's transparent three.js canvas).
 private struct GlyphARStage: UIViewRepresentable {
     let seat: GlyphSeat
+    let size: CGSize
     let onLoaded: (Bool) -> Void
 
     func makeUIView(context: Context) -> ARView {
@@ -102,11 +140,12 @@ private struct GlyphARStage: UIViewRepresentable {
         anchor.addChild(Self.light(700, [0, 0.3, 4], UIColor(red: 1, green: 0.95, blue: 0.82, alpha: 1)))      // the web's face light, from the camera
         anchor.addChild(seat.root)
         v.scene.addAnchor(anchor)
+        seat.setFrame(size)
         Task { @MainActor in onLoaded(await seat.load()) }
         return v
     }
 
-    func updateUIView(_ v: ARView, context: Context) {}
+    func updateUIView(_ v: ARView, context: Context) { seat.setFrame(size) }
 
     private static func light(_ intensity: Float, _ p: SIMD3<Float>, _ tint: UIColor) -> Entity {
         let e = Entity()

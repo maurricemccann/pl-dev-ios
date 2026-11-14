@@ -19,17 +19,17 @@ enum TownFace {
 }
 
 enum TownInk {
-    static let ground = Color(hex: 0x120c06)
-    static let panel = Color(hex: 0x2a1a10)
-    static let gold = Color(hex: 0xffe07a)
-    static let goldDeep = Color(hex: 0x9a6a1c)
-    static let text = Color(hex: 0xf8ecd0)
+    static var ground: Color { PLCarry.tone(.ground, .dark, Color(hex: 0x120c06)) }
+    static var panel: Color { PLCarry.tone(.surface2, .dark, Color(hex: 0x2a1a10)) }
+    static var gold: Color { PLCarry.tone(.accentHi, .dark, Color(hex: 0xffe07a)) }
+    static var goldDeep: Color { PLCarry.tone(.accentDim, .dark, Color(hex: 0x9a6a1c)) }
+    static var text: Color { PLCarry.tone(.ink, .dark, Color(hex: 0xf8ecd0)) }
     static let paper = Color(hex: 0xf8f0d8)
     static let cyan = Color(hex: 0x9fe8ff)
     static let red = Color(hex: 0xd04a3a)
     static let warn = Color(hex: 0x5a1a12)
-    static let dim = Color(hex: 0x8a7a60)
-    static let hud = Color(red: 20 / 255, green: 12 / 255, blue: 4 / 255).opacity(0.82)
+    static var dim: Color { PLCarry.tone(.dim, .dark, Color(hex: 0x8a7a60)) }
+    static var hud: Color { PLCarry.tone(.ground, .dark, Color(red: 20 / 255, green: 12 / 255, blue: 4 / 255).opacity(0.82), alpha: 0.82) }
 
     static func px(_ size: CGFloat, relativeTo style: Font.TextStyle = .caption) -> Font { .custom(TownFace.name, size: size * TownFace.scale, relativeTo: style) }
 }

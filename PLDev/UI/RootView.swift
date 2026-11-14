@@ -36,6 +36,7 @@ struct RootView: View {
                     .transition(.opacity)
             }
         }
+        .background { WindowGround().frame(width: 1, height: 1) }   // the window itself wears the house ground from the first frame
         .overlay(alignment: .top) { OfflineLine() }   // every app: says when it is showing saved copies
         .appleActivity(model: model)   // Handoff and Siri suggestions: the screen he is on
         .animation(PLMotion.standard(reduce: reduce), value: unlocked)

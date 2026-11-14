@@ -12,10 +12,10 @@ enum PLC {
     static func wash(_ s: ColorScheme) -> Color { s == .dark ? Color(hex: 0x2a1d10) : Color(hex: 0xf8e1c8) }
     static func orange(_ s: ColorScheme) -> Color { s == .dark ? Color(hex: 0xe0813a) : Color(hex: 0x9c4a0e) }
     /// The card's own ground: the web card is `--cream-surface`, bone over the page.
-    static let bone = Color(hex: 0xece7da)
-    static let ink = Color(hex: 0x1a1510)
+    static var bone: Color { PLCarry.tone(.ink, .dark, Color(hex: 0xece7da)) }
+    static var ink: Color { PLCarry.tone(.ink, .light, Color(hex: 0x1a1510)) }
     /// The keycap tray: a black case the five caps sit edge to edge in (`#141210`, 8 pt corner).
-    static let tray = Color(hex: 0x141210)
+    static var tray: Color { PLCarry.tone(.well, .dark, Color(hex: 0x141210)) }
 }
 
 extension TasteMark {

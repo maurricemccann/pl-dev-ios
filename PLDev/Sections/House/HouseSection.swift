@@ -40,7 +40,7 @@ import UserNotifications
     }
     static func handle(link: DeepLink, model: AppModel) -> Bool {
         if case .section(_, let path, _) = link, let first = path.first {
-            if let tab = HouseModel.Tab(rawValue: first) { state.tab = tab }
+            if let tab = HouseModel.Tab(rawValue: first) { state.tab = tab; state.room = nil }   // a tab link lands on the tab, not on the room House was last left in
             if let room = HouseRoom(rawValue: first) { state.room = room }
         }
         return true
@@ -359,7 +359,8 @@ struct FounderTab: View {
         let word: (String, Color) = needs > 0 ? ("Act  \(needs) need you · \(pending) to approve", PLOS.danger)
             : pending > 0 ? ("Watch  \(pending) to approve", PLOS.warn) : ("Clear", PLOS.ok)
         return OSKpis(items: [("Needs you", "\(needs)", nil), ("Shift", "\(done)/\(tasks.count)", "done today"),
-                              ("Approve", "\(pending)", nil), ("Standing", "\(state.standing?.total ?? 0)", "of 100")], status: word)
+                              ("Approve", "\(pending)", nil), ("Standing", "\(state.standing?.total ?? 0)", "of 100")], status: word,
+                       levels: [PLStatus.waiting(needs, whenAny: .bad), nil, PLStatus.waiting(pending), nil])   // a count owed to him: none is clear; Shift and Standing have no known good or bad
     }
 
     // MARK: Shift (DayPlanPanel): the plan, the Amazon week, the record, the Lock Screen

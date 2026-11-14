@@ -97,8 +97,10 @@ struct GlyphGuyRoom: View {
     private var clips: [GlyphClip] { kind == .glyphbot ? GlyphClip.lab : GlyphClip.allCases }
 
     var body: some View {
-        ZStack(alignment: .bottom) {
-            OrbitStage(distance: 4.2, height: 0.9, autoSpin: false) { pivot in
+        // the stage and the bar are stacked, not overlaid (his note 11-14: "Glyph's feet are clipping"): the bar was laid over the bottom of
+        // the stage and covered his feet, most of all in landscape. The stage now is exactly the space above the bar.
+        VStack(spacing: 0) {
+            OrbitStage(distance: 4.6, height: 0.95, autoSpin: false) { pivot in
                 let floor = ModelEntity(mesh: .generateCylinder(height: 0.02, radius: 1.8), materials: [SimpleMaterial(color: ThreeDHouse.ground, roughness: 0.9, isMetallic: false)])
                 floor.position.y = -0.01
                 pivot.addChild(floor)
@@ -121,7 +123,7 @@ struct GlyphGuyRoom: View {
                         .onChange(of: look) { _, l in figure.setLook(l) }
                 }
             }
-            .padding(.bottom, 10)
+            .padding(.top, 8).padding(.bottom, 10)
             .background(.bar)
         }
         .task {

@@ -110,22 +110,82 @@ enum PLVision {
     private static let store = HKHealthStore()
     private static var type: HKCategoryType { HKCategoryType(.mindfulSession) }
 
-    /// Asks Health for permission to write mindful minutes. Nil when granted, else one plain sentence.
+    /// What iOS itself says when the build has no HealthKit entitlement. Shown to him as it is, never softened (his note 11-14).
+    static let missingEntitlement = "Missing com.apple.developer.healthkit entitlement."
+
+    /// The exact result of the last write (or the last refusal), kept where Settings reads it: one line, whether it worked, and when.
+    static let lastKey = "pldev.health.last", lastOKKey = "pldev.health.lastOK"
+    private static func record(_ line: String, ok: Bool) {
+        UserDefaults.standard.set(line, forKey: lastKey); UserDefaults.standard.set(ok, forKey: lastOKKey)
+    }
+
+    /// Whether THIS build carries the HealthKit entitlement, read from the provisioning profile embedded in the app (the profile is what
+    /// iOS checks). SideStore signs with its own free-account profile, and AltSign hands a free account only the entitlements on
+    /// its short list (app groups, keychain groups, inter-app audio, memory limit): HealthKit is not on it, so the profile has none and
+    /// iOS refuses Health. nil = no embedded profile to read (the simulator, a store build): try it and let iOS answer.
+    static func hasEntitlement() -> Bool? {
+        #if targetEnvironment(simulator)
+        if UserDefaults.standard.bool(forKey: "simNoHealthKit") { return false }   // the screenshots workflow acts out a free-account build
+        #endif
+        return entitlementRead
+    }
+    private static let entitlementRead: Bool? = {
+        guard let path = Bundle.main.path(forResource: "embedded", ofType: "mobileprovision"),
+              let data = FileManager.default.contents(atPath: path),
+              let start = data.range(of: Data("<?xml".utf8)), let end = data.range(of: Data("</plist>".utf8)), start.lowerBound < end.upperBound,
+              let dict = try? PropertyListSerialization.propertyList(from: data.subdata(in: start.lowerBound..<end.upperBound), options: [], format: nil) as? [String: Any],
+              let ents = dict["Entitlements"] as? [String: Any] else { return nil }
+        return ents["com.apple.developer.healthkit"] != nil
+    }()
+
+    /// Asks Health for permission to write mindful minutes. Nil when granted, else one plain sentence (also kept as the last result).
     static func enable() async -> String? {
+        let problem = await authorize()
+        if let problem { record("Not on. " + problem, ok: false) }
+        else { record("Allowed. Practice sessions now write mindful minutes to Health.", ok: true) }
+        return problem
+    }
+
+    /// The permission step both the switch and the test use. Never calls HealthKit when the build has no entitlement: HealthKit answers
+    /// that with an Objective-C exception, which Swift cannot catch and which would close the app.
+    private static func authorize() async -> String? {
         guard HKHealthStore.isHealthDataAvailable() else { return "Health is not available on this device." }
+        if hasEntitlement() == false { return missingEntitlement }
         do {
             try await store.requestAuthorization(toShare: [type], read: [])
-            return store.authorizationStatus(for: type) == .sharingAuthorized ? nil : "Allow PL DEV to write Mindful Minutes in Health first."
         } catch {
             return "Health did not allow it: \(error.localizedDescription)"
         }
+        switch store.authorizationStatus(for: type) {
+        case .sharingAuthorized: return nil
+        case .sharingDenied: return "Mindful Minutes is switched off for PL DEV in Health. Open Health, Sharing, Apps, PL DEV and allow it."
+        default: return "Health has not been asked yet. Try the switch again."
+        }
     }
 
-    /// Writes one mindful session. Quietly does nothing when the switch is off or Health has not been allowed.
-    static func logMindful(start: Date, end: Date) async {
-        guard on, HKHealthStore.isHealthDataAvailable(), end > start, store.authorizationStatus(for: type) == .sharingAuthorized else { return }
+    /// Writes one mindful session and records exactly what happened. Does nothing when the switch is off (a test passes `force`).
+    @discardableResult
+    static func logMindful(start: Date, end: Date, force: Bool = false) async -> String? {
+        guard on || force else { return nil }
+        guard end > start else { return nil }
+        if let problem = await authorize() { let line = "Not written. " + problem; record(line, ok: false); return line }
         let sample = HKCategorySample(type: type, value: HKCategoryValue.notApplicable.rawValue, start: start, end: end)
-        try? await store.save(sample)
+        do {
+            try await store.save(sample)
+            let secs = Int(end.timeIntervalSince(start).rounded())
+            let len = secs >= 90 ? "\(Int((Double(secs) / 60).rounded())) min" : "\(secs) s"
+            let line = "Written \(len) at \(end.formatted(date: .omitted, time: .shortened))."
+            record(line, ok: true); return line
+        } catch {
+            let line = "Not written. \(error.localizedDescription)"
+            record(line, ok: false); return line
+        }
+    }
+
+    /// The test button: one minute ending now, written whether or not the switch is on, with the real result.
+    static func writeTest() async -> String {
+        let end = Date.now
+        return await logMindful(start: end.addingTimeInterval(-60), end: end, force: true) ?? "Nothing was written."
     }
 }
 

@@ -507,7 +507,8 @@ struct CaptureWaitingRoom: View {
         let w = state.waiting
         OSKpis(items: [("Drafts", w?.drafts.map(String.init) ?? "…", nil), ("Pins", w?.pins.map(String.init) ?? "…", nil),
                        ("Tasks", w?.tasks.map(String.init) ?? "…", nil), ("Shift", w?.shift_open.map(String.init) ?? "…", "open")],
-               status: statusLine)
+               status: statusLine,
+               levels: [w?.drafts.map { PLStatus.waiting($0) }, w?.pins.map { PLStatus.waiting($0) }, w?.tasks.map { PLStatus.waiting($0) }, nil])   // each is a count waiting on his hand: none is clear, any is amber
             .captureRow()
 
         OSPanel(title: "To send from this phone", badge: "\(model.inboxCount)", owed: model.inboxCount > 0, startOpen: true) {

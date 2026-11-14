@@ -5,23 +5,23 @@ import SwiftUI
 /// spaced capitals on labels. Native twins: New York for Cormorant Garamond, the system face for DM Sans, SF Mono for JetBrains Mono.
 /// Panels lean Liquid Glass (thin fills, clear glass pills); the well, nodes and wires are drawn, never glass.
 enum CMP {
-    static let bg = Color(hex: 0x0e0c09)
-    static let surface = Color(hex: 0x1a1510)
-    static let surface2 = Color(hex: 0x262018)
-    static let line = Color.white.opacity(0.12)
-    static let gold = Color(hex: 0xc9a84c)
-    static let goldDim = Color(hex: 0x8a7235)
-    static let text = Color(hex: 0xf2ece0)
-    static let dim = Color(hex: 0xb8a890)
-    static let muted = Color(hex: 0x9a8d78)
+    static var bg: Color { PLCarry.tone(.ground, .dark, Color(hex: 0x0e0c09)) }
+    static var surface: Color { PLCarry.tone(.surface, .dark, Color(hex: 0x1a1510)) }
+    static var surface2: Color { PLCarry.tone(.surface2, .dark, Color(hex: 0x262018)) }
+    static var line: Color { PLCarry.tone(.ink, .dark, Color.white.opacity(0.12), alpha: 0.12) }
+    static var gold: Color { PLCarry.tone(.accent, .dark, Color(hex: 0xc9a84c)) }
+    static var goldDim: Color { PLCarry.tone(.accentDim, .dark, Color(hex: 0x8a7235)) }
+    static var text: Color { PLCarry.tone(.ink, .dark, Color(hex: 0xf2ece0)) }
+    static var dim: Color { PLCarry.tone(.dim, .dark, Color(hex: 0xb8a890)) }
+    static var muted: Color { PLCarry.tone(.faint, .dark, Color(hex: 0x9a8d78)) }
     static let ok = Color(hex: 0x2d8a6e)
     static let warn = Color(hex: 0xb07d2a)
     static let danger = Color(hex: 0xc0392b)
     static let info = Color(hex: 0x5f93a3)
-    static let well = Color(hex: 0x14110c)
-    static let node = Color(hex: 0x201a13)
-    static let nodeLine = Color(hex: 0xc9a84c).opacity(0.20)
-    static let edge = Color(hex: 0xc9a84c).opacity(0.55)
+    static var well: Color { PLCarry.tone(.well, .dark, Color(hex: 0x14110c)) }
+    static var node: Color { PLCarry.tone(.surface2, .dark, Color(hex: 0x201a13)) }
+    static var nodeLine: Color { PLCarry.tone(.line, .dark, Color(hex: 0xc9a84c).opacity(0.20), alpha: 0.9) }
+    static var edge: Color { PLCarry.tone(.accent, .dark, Color(hex: 0xc9a84c).opacity(0.55), alpha: 0.55) }
     static let radius: CGFloat = 14
 
     /// A board lane's colour: the house's own, never a new hue.
