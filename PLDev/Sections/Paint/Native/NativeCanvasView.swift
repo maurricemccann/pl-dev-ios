@@ -438,8 +438,8 @@ extension NativeCanvasModel {
 struct NativeNewCanvasSheet: View {
     let make: (NewCanvasSpec) -> Void
     @Environment(\.dismiss) private var dismiss
-    @State private var w = 2048
-    @State private var h = 2048
+    @State private var w = Int(UIScreen.main.nativeBounds.width)    // his handbook, ch. 10: "The first canvas on a phone is the phone's own screen, upright"
+    @State private var h = Int(UIScreen.main.nativeBounds.height)
     @State private var transparent = false
     @State private var paper = "plain"
 
