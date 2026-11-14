@@ -1,10 +1,13 @@
 name: composer-e2e
 
-# Started by hand only. Builds PL DEV for the iPhone simulator, seeds the simulator's Photos with generated pictures and a clip (never his
+# Started by hand, or by a push to wave-composer2 that touches Composer or its tests (a new workflow cannot be dispatched until it is on main). Builds PL DEV for the iPhone simulator, seeds the simulator's Photos with generated pictures and a clip (never his
 # media), then DRIVES Composer with XCUITest (PLDevUITests): taps, a drag to reorder, the Photos picker, the library panes, the spec, the
 # preview, the graph. Every step is screenshotted into the artifact `composer-e2e`, with the accessibility tree where a step missed.
 # Runs with NO config: public addresses and dummy key names only (what a stranger can reach), the same as screens.yml.
 on:
+  push:
+    branches: [wave-composer2]
+    paths: ['PLDevUITests/**', '.github/workflows/composer-e2e.yml', 'PLDev/Sections/Composer/**']
   workflow_dispatch:
     inputs:
       only:
