@@ -44,14 +44,14 @@ struct HomeDashboard: View {
             }
             if let last = pc?.thermal?.last {
                 LazyVGrid(columns: Array(repeating: GridItem(.flexible(), spacing: 8), count: 3), spacing: 10) {
-                    stat("Heat", "\(last.temp_c)°", Double(last.temp_c).map { $0 >= 85 ? PLTone.bad : $0 >= 70 ? PLTone.warn : PLTone.good })
-                    stat("CPU", "\(last.cpu_pct)%", nil)
-                    stat("Free RAM", "\(last.free_ram_gb) GB", Double(last.free_ram_gb).map { $0 < 2 ? PLTone.bad : $0 < 4 ? PLTone.warn : PLTone.good })
-                    stat("Disk free", pc?.disk_free_gb.map { "\(Int($0)) GB" } ?? "·", (pc?.disk_free_gb).map { $0 < 30 ? PLTone.bad : $0 < 80 ? PLTone.warn : PLTone.good })
-                    stat("Up", pc?.uptime_h.map { $0 >= 48 ? "\(Int($0 / 24)) d" : "\(Int($0)) h" } ?? "·", nil)
+                    stat("Heat", icon: "thermometer.medium", "\(last.temp_c)°", Double(last.temp_c).map { $0 >= 85 ? PLTone.bad : $0 >= 70 ? PLTone.warn : PLTone.good })
+                    stat("CPU", icon: "cpu", "\(last.cpu_pct)%", nil)
+                    stat("Free RAM", icon: "memorychip", "\(last.free_ram_gb) GB", Double(last.free_ram_gb).map { $0 < 2 ? PLTone.bad : $0 < 4 ? PLTone.warn : PLTone.good })
+                    stat("Disk free", icon: "internaldrive", pc?.disk_free_gb.map { "\(Int($0)) GB" } ?? "·", (pc?.disk_free_gb).map { $0 < 30 ? PLTone.bad : $0 < 80 ? PLTone.warn : PLTone.good })
+                    stat("Up", icon: "clock", pc?.uptime_h.map { $0 >= 48 ? "\(Int($0 / 24)) d" : "\(Int($0)) h" } ?? "·", nil)
                     // kernel pool: grows with file activity and only a reboot clears it; amber at 3 GB, red (reboot) at 5 GB (his ask 11-13)
                     if let k = pc?.pool?.last {
-                        stat("Kernel pool", String(format: "%.1f GB", k.gb), k.gb >= 5 ? PLTone.bad : k.gb >= 3 ? PLTone.warn : PLTone.good)
+                        stat("Kernel pool", icon: "square.stack.3d.down.right", String(format: "%.1f GB", k.gb), k.gb >= 5 ? PLTone.bad : k.gb >= 3 ? PLTone.warn : PLTone.good)
                     }
                 }
                 if let rows = pc?.thermal, rows.count > 2 {
@@ -82,14 +82,18 @@ struct HomeDashboard: View {
             Text("The house").plHand(20)
             if let h = house {
                 HStack(alignment: .top) {
-                    door("house/founder") { stat("Needs you", "\(h.needs)", h.needs > 0 ? PLTone.bad : nil) }   // a tap opens what needs him (his note 11-13)
-                    door("house/approvals") { stat("Approve", "\(h.approve)", nil) }
-                    stat("In the drip", "\(h.queued)", nil)
-                    stat("Standing", "\(h.standing)", nil)
+                    door("house/founder") { stat("Needs you", icon: "exclamationmark.circle", "\(h.needs)", h.needs > 0 ? PLTone.bad : nil) }   // a tap opens what needs him (his note 11-13)
+                    door("house/approvals") { stat("Approve", icon: "checkmark.seal", "\(h.approve)", nil) }
+                    stat("In the drip", icon: "drop", "\(h.queued)", nil)
+                    stat("Standing", icon: "chart.bar", "\(h.standing)", nil)
                 }
                 Text("\(h.week) drafts made this week").font(.caption).foregroundStyle(.secondary)
             } else {
                 Text("Not read yet. House opens with the full console.").font(.callout).foregroundStyle(.secondary)
+            }
+            door("house") {   // the card's foot opens the whole room, like a widget's "see trends" (11-13)
+                HStack(spacing: 4) { Text("Open the house").plLabel(10); Image(systemName: "arrow.right").font(.system(size: 10, weight: .bold)) }
+                    .foregroundStyle(PLTone.accent).padding(.top, 2)
             }
         }
         .frame(maxWidth: .infinity, alignment: .leading)   // full width whatever the text (11-13: a short line shrank the card)
@@ -102,8 +106,10 @@ struct HomeDashboard: View {
         Button { if let u = URL(string: "pldev://section/" + path) { openURL(u) } } label: { content().contentShape(Rectangle()) }.buttonStyle(.plain)
     }
 
-    private func stat(_ name: String, _ value: String, _ tint: Color?) -> some View {
-        VStack(alignment: .leading, spacing: 2) {
+    /// A tile the way the tile dashboards draw one (How We Feel, Bevel on Mobbin, 11-13): the icon, the number, the word.
+    private func stat(_ name: String, icon: String, _ value: String, _ tint: Color?) -> some View {
+        VStack(alignment: .leading, spacing: 3) {
+            Image(systemName: icon).font(.system(size: 13, weight: .semibold)).foregroundStyle(tint ?? PLTone.accent).frame(height: 16)
             Text(value).font(.system(.title3, design: .monospaced).weight(.semibold)).monospacedDigit().foregroundStyle(tint ?? .primary)
                 .lineLimit(1).minimumScaleFactor(0.6).contentTransition(.numericText())
             Text(name).plLabel(10).foregroundStyle(.secondary).lineLimit(1).minimumScaleFactor(0.6)   // "Standing" kept its g on one line (11-13)
