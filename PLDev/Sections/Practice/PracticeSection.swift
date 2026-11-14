@@ -53,7 +53,7 @@ struct HabitSwipeTip: Tip {
 
 /// Every Practice destination, by name, so a link, Siri, Spotlight or a notification can land on it.
 enum PracticeRoom: String, CaseIterable, Identifiable, Hashable {
-    case morning, evening, lesson, reframe, affirmations, coach, desires, habits, rehearsal, vision, notes, wins, review, trends, preview
+    case morning, evening, lesson, reframe, affirmations, coach, desires, habits, rehearsal, vision, notes, wins, review, trends, preview, seeds, tarot
     var id: String { rawValue }
 
     var title: String {
@@ -62,6 +62,7 @@ enum PracticeRoom: String, CaseIterable, Identifiable, Hashable {
         case .reframe: return "Reframe a belief"; case .affirmations: return "Affirmations"; case .coach: return "Talk it through"
         case .desires: return "Desires"; case .habits: return "Habits"; case .rehearsal: return "Rehearsal"; case .vision: return "Vision board"
         case .notes: return "Notes"; case .wins: return "Wins and noticed"; case .review: return "Weekly review"; case .trends: return "The record"; case .preview: return "Vision preview"
+        case .seeds: return "Seed phrase draw"; case .tarot: return "PL tarot"
         }
     }
 
@@ -71,6 +72,7 @@ enum PracticeRoom: String, CaseIterable, Identifiable, Hashable {
         case .reframe: return "arrow.triangle.2.circlepath"; case .affirmations: return "quote.bubble"; case .coach: return "bubble.left.and.bubble.right"
         case .desires: return "sparkles"; case .habits: return "checklist"; case .rehearsal: return "wind"; case .vision: return "photo.on.rectangle"
         case .notes: return "note.text"; case .wins: return "trophy"; case .review: return "calendar.badge.checkmark"; case .trends: return "chart.xyaxis.line"; case .preview: return "eye"
+        case .seeds: return "leaf"; case .tarot: return "rectangle.portrait.on.rectangle.portrait"
         }
     }
 
@@ -82,6 +84,7 @@ enum PracticeRoom: String, CaseIterable, Identifiable, Hashable {
         case .affirmations: return "affirmations"; case .coach: return "conversation"; case .desires: return "desires"; case .habits: return "habits"
         case .rehearsal: return "meditation"; case .vision: return "vision"; case .notes: return "scratchpad"; case .wins: return "wins"
         case .review: return "review"; case .trends: return "story"; case .preview: return "preview"
+        case .seeds: return "seeds"; case .tarot: return "tarot"
         }
     }
 }
@@ -229,6 +232,8 @@ struct TodayScreen: View {
             LessonCard(model: model, state: state)
             ReframeCard(model: model, state: state)
             AffirmationsCard(model: model, state: state)
+            SeedDrawCard()
+            TarotCard(model: model)
             ConversationCard(model: model, state: state)
             DesireListCard(model: model, state: state)
             HabitsCard(model: model, state: state)

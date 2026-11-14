@@ -11,7 +11,9 @@ enum LabPage: String, CaseIterable, Identifiable, Hashable {
     // Instruments and experiments
     case ribbon, goldenMend, fluid, ar, fly
     // Figures and models
-    case dance, glyphbot, heart, wordmark, cards, curveWho
+    case dance, glyphbot, heart, wordmark, cards, curveWho, curveWhoReader
+    // The room (the scroll room and world gallery)
+    case room
     // Studies
     case hero, homeStudy, study, components, curveMotion, hand
 
@@ -24,7 +26,7 @@ enum LabPage: String, CaseIterable, Identifiable, Hashable {
         case .wordmark: return "Wordmark"; case .cards: return "Cards"; case .hero: return "Hero grammar"; case .fluid: return "Fluid"
         case .glitch: return "Glitch"; case .warp: return "Warp"; case .reaction: return "Reaction diffusion"; case .plotter: return "Glyph plotter"
         case .kinematic: return "Kinematic"; case .phyllotaxis: return "Phyllotaxis"; case .homeStudy: return "Home study"; case .study: return "The study"
-        case .webgpu: return "Metal"; case .components: return "Components"; case .curveWho: return "Curve who"
+        case .webgpu: return "Metal"; case .components: return "Components"; case .curveWho: return "Curve who"; case .curveWhoReader: return "The Curve Who, reader"; case .room: return "The room"
         case .curveMotion: return "The curve in motion"; case .hand: return "His hand"
         }
     }
@@ -39,6 +41,7 @@ enum LabPage: String, CaseIterable, Identifiable, Hashable {
         case .kinematic: return "Five chains following"; case .phyllotaxis: return "The golden angle"; case .homeStudy: return "2,000 curves"
         case .study: return "A door and the Three Truths"; case .webgpu: return "What this phone's GPU reports"
         case .components: return "Glass, borders, countdowns"; case .curveWho: return "Clay story, in progress"
+        case .curveWhoReader: return "Scroll from birth to the mark"; case .room: return "Scroll into the showroom"
         case .curveMotion: return "Curves in motion"; case .hand: return "Type, rendered in his hands"
         }
     }
@@ -50,7 +53,7 @@ enum LabPage: String, CaseIterable, Identifiable, Hashable {
         case .glitch: return "rectangle.split.3x1"; case .warp: return "wind"; case .reaction: return "circle.hexagongrid"; case .plotter: return "pencil.and.ruler"
         case .kinematic: return "point.3.connected.trianglepath.dotted"; case .phyllotaxis: return "sunflower"; case .homeStudy: return "scribble"
         case .study: return "door.left.hand.open"; case .webgpu: return "cpu"; case .components: return "square.on.square.intersection.dashed"
-        case .curveWho: return "face.smiling"; case .curveMotion: return "waveform.path"; case .hand: return "signature"
+        case .curveWho: return "face.smiling"; case .curveWhoReader: return "face.dashed"; case .room: return "door.left.hand.open"; case .curveMotion: return "waveform.path"; case .hand: return "signature"
         }
     }
     /// The public page this piece ports, for the share sheet.
@@ -61,7 +64,7 @@ enum LabPage: String, CaseIterable, Identifiable, Hashable {
         case .cards: return "lab/nft-candidates"; case .hero: return "lab/trained-hero"; case .fluid: return "lab/fluid"; case .glitch: return "lab/glitch"
         case .warp: return "lab/warp"; case .reaction: return "lab/reaction-diffusion"; case .plotter: return "lab/glyph-plotter"; case .kinematic: return "lab/kinematic"
         case .phyllotaxis: return "lab/phyllotaxis"; case .homeStudy: return "lab/home"; case .study: return "lab/study"; case .webgpu: return "lab/webgpu-probe"
-        case .components: return "components"; case .curveWho: return "lab/curve-who"; case .curveMotion: return "living-curves-art/"; case .hand: return "hand.html"
+        case .components: return "components"; case .curveWho: return "lab/curve-who"; case .curveWhoReader: return "curve-who"; case .room: return "lab/room"; case .curveMotion: return "living-curves-art/"; case .hand: return "hand.html"
         }
     }
 
@@ -102,6 +105,8 @@ enum LabPage: String, CaseIterable, Identifiable, Hashable {
         case .wordmark: LabWordmarkView()
         case .cards: LabCardsView(model: model)
         case .curveWho: LabCurveWhoView()
+        case .curveWhoReader: LabCurveWhoReaderView()
+        case .room: LabRoomView(model: model)
         case .hero: LabHeroView()
         case .homeStudy: LabHomeStudyView()
         case .study: LabStudyView()
@@ -136,7 +141,7 @@ struct LabsRoom: View {
             } header: { Text("Instruments and experiments. The VJ lives here now.") }
             Section("The Mirror") { ForEach(LabPage.mirrorOrder) { row($0) } }
             Section("Instruments") { ForEach([LabPage.goldenMend, .fluid, .ar, .fly]) { row($0) } }
-            Section("Figures and models") { ForEach([LabPage.dance, .glyphbot, .heart, .wordmark, .cards, .curveWho]) { row($0) } }
+            Section("Figures and models") { ForEach([LabPage.dance, .glyphbot, .heart, .wordmark, .cards, .curveWho, .curveWhoReader, .room]) { row($0) } }
             Section("Studies") { ForEach([LabPage.hero, .homeStudy, .study, .components, .curveMotion, .hand]) { row($0) } }
         }
         .gScreen()

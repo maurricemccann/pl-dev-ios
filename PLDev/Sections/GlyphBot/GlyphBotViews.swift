@@ -290,6 +290,35 @@ struct SitTab: View {
                 Text(sitting.mode == .interview ? "GlyphBot asks, one question at a time, and pulls on what you say. Everything you answer is saved word for word."
                                                 : "You start. GlyphBot answers like someone who has read everything you ever said.")
             }
+            if sitting.mode == .interview, let b = state.interview?.bank, (b.total ?? 0) > 0 {
+                // the page's bank card: how much of the 501 has been asked, and which round is next
+                Section {
+                    VStack(alignment: .leading, spacing: 6) {
+                        HStack { Text("The 501").osEyebrow(10); Spacer(); Text("\(b.asked ?? 0) of \(b.total ?? 0) asked").font(.footnote).monospacedDigit().foregroundStyle(.secondary) }
+                        ProgressView(value: Double(b.asked ?? 0), total: Double(max(1, b.total ?? 1))).tint(PLOS.gold)
+                        Text(b.next_round.map { "Next: \($0.capitalized)" } ?? "All asked").font(.footnote).foregroundStyle(.secondary)
+                    }
+                    .accessibilityElement(children: .combine)
+                }
+            }
+            if sitting.mode == .interview {
+                // the page's doors: one tap sits you down on that domain, with how much it already holds
+                Section("Doors") {
+                    let cov = state.interview?.coverage ?? [:]
+                    ForEach(GlyphBot.domains, id: \.self) { d in
+                        Button { sitting.domain = d; Task { await sitting.begin(model: model) } } label: {
+                            HStack {
+                                Text(GlyphBot.domainTitle(d)).foregroundStyle(.primary)
+                                Spacer()
+                                Text((cov[d] ?? 0) == 0 ? "Untouched" : "\(cov[d] ?? 0) answer\((cov[d] ?? 0) == 1 ? "" : "s")").font(.footnote).foregroundStyle(.secondary)
+                                Image(systemName: "chevron.right").font(.caption2.weight(.bold)).foregroundStyle(.tertiary)
+                            }
+                            .frame(minHeight: 44).contentShape(Rectangle())
+                        }
+                        .buttonStyle(.plain)
+                    }
+                }
+            }
             if sitting.mode == .interview {
                 Section("This sitting") {
                     Picker("Domain", selection: $sitting.domain) {
