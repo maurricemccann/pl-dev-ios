@@ -78,6 +78,8 @@ enum TownMode: String, CaseIterable, Identifiable, Sendable { case tasks = "Task
     var onTap: () -> Void = {}
 
     override func didMove(to view: SKView) {
+        // SwiftUI re-presents the scene after a relayout; the nodes already have their parent then, and addChild would throw (crash 11-14, build 167)
+        guard world.parent == nil else { return }
         backgroundColor = townHex("#120c06")
         anchorPoint = .zero
         scaleMode = .aspectFit
