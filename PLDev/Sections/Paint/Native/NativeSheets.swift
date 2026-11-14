@@ -153,7 +153,7 @@ struct NativeSettingsSheet: View {
         NavigationStack {
             Form {
                 Section {
-                    Toggle("Finger paints", isOn: $canvas.fingerPaints)
+                    Toggle("Finger paints after the Pencil is used", isOn: $canvas.fingerPaints)   // a finger always paints until a Pencil touches (Procreate), 11-14
                     Toggle("Palm guard: the view stays still while the Pencil is down", isOn: $canvas.palmGuard)
                     HStack { Text("Stabilization"); Slider(value: $canvas.stabAll, in: 0...1); Text("\(Int(canvas.stabAll * 100))%").font(.caption).monospacedDigit().frame(width: 40) }
                     Toggle("Brushes bring their own colours", isOn: $canvas.brushColors)

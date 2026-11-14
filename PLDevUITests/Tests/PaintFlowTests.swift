@@ -101,7 +101,10 @@ final class PaintFlowTests: XCTestCase {
         XCTAssertTrue(el("side.opacity").exists, "the opacity slider is on the side")
         let undo = app.buttons["Undo"].firstMatch
         XCTAssertFalse(undo.isEnabled, "nothing to undo yet")
-        tap("Finger paints")
+        // 11-14, his note on build 152: a finger must draw with no switch touched (Procreate's rule; an iPhone has no Pencil)
+        stroke((0.3, 0.3), (0.7, 0.35)); sleepFor(0.8); shot("finger-draws-by-default")
+        XCTAssertTrue(undo.isEnabled, "a finger stroke drew with Finger paints untouched")
+        undo.tap(); sleepFor(0.5)
         // size and opacity: drag each slider and read it back
         let size = el("side.size"), before = size.value as? String ?? ""
         size.coordinate(withNormalizedOffset: CGVector(dx: 0.5, dy: 0.8)).press(forDuration: 0.05, thenDragTo: size.coordinate(withNormalizedOffset: CGVector(dx: 0.5, dy: 0.35)))
@@ -213,7 +216,7 @@ final class PaintFlowTests: XCTestCase {
         actions("Settings"); shot("actions-settings")
         let s = app.buttons.matching(NSPredicate(format: "label BEGINSWITH 'Settings'")).firstMatch
         XCTAssertTrue(s.waitForExistence(timeout: 8), "Settings row in Actions"); s.tap(); sleepFor(1.5); shot("paint-settings")
-        XCTAssertTrue(app.switches["Finger paints"].firstMatch.waitForExistence(timeout: 8), "Paint's Settings opened")
+        XCTAssertTrue(app.switches["Finger paints after the Pencil is used"].firstMatch.waitForExistence(timeout: 8), "Paint's Settings opened")
         closeSheet()
     }
 

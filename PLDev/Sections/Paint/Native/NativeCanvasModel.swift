@@ -279,10 +279,13 @@ struct GroupRow: Identifiable { let id: Int; let name: String; let visible: Bool
 
     // MARK: touches
 
-    /// Fingers draw only if "Finger paints"; in every other mode a single finger is the tool (select, transform, pick, fill).
+    /// Procreate's rule (his note 11-14 on build 152: "I'm trying to draw with my finger and nothing draws"): a finger paints until an
+    /// Apple Pencil has touched the canvas; after that fingers are gestures unless "Finger paints" is on. An iPhone never has a Pencil,
+    /// so there a finger always paints. (The laptop rule, fingers only with the switch on, left the iPhone unable to draw at all.)
+    /// In every other mode a single finger is the tool (select, transform, pick, fill).
     func accepts(pencil: Bool) -> Bool {
         guard doc != nil else { return false }
-        if mode == .draw { return pencil || fingerPaints || echoOn || lightOneOn || (nodeOn && nodes != nil) }
+        if mode == .draw { return pencil || fingerPaints || pencilDownAt == 0 || echoOn || lightOneOn || (nodeOn && nodes != nil) }
         return true
     }
 
