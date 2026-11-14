@@ -12,6 +12,8 @@ struct NativeCanvasView: View {
     @State private var canvas = NativeCanvasModel()
     @State private var showSizes = false
     @State private var confirmClear = false
+    // his handbook, ch. 10: "The tools fold into one button at the top left: the tool in your hand and three dots", so the picture gets the screen
+    @AppStorage("plpn.dockFolded") private var folded = false
     @State private var renameText = ""
     @Environment(\.dismiss) private var dismiss
     @Environment(\.scenePhase) private var phase
@@ -27,7 +29,7 @@ struct NativeCanvasView: View {
                 if canvas.uiHidden { hiddenControls }
                 else {
                     if let l = canvas.line { ResultLine(text: l).padding(8).glassControl(in: Capsule()).transition(.opacity) }
-                    if canvas.hasDoc { TipView(PaintGesturesTip()).tipBackground(.regularMaterial).padding(.leading, 64); modeBar; bottomBar }   // a glass card: on .clear the text floated over the canvas edge (sim shot 006, 11-14)
+                    if canvas.hasDoc { TipView(PaintGesturesTip()).tipBackground(.regularMaterial).padding(.leading, 64); modeBar; if !folded { bottomBar } }   // a glass card: on .clear the text floated over the canvas edge (sim shot 006, 11-14)
                 }
             }
             .padding(.horizontal, 12).padding(.vertical, 6)
@@ -84,7 +86,16 @@ struct NativeCanvasView: View {
             Button { canvas.saveNow(); Task { await sync.run(model: model, canvas: canvas) }; dismiss() } label: {
                 Label("Gallery", systemImage: "chevron.backward").font(.footnote.weight(.semibold)).padding(.horizontal, 10).frame(height: 38)
             }.glassControl(in: Capsule()).accessibilityLabel("Gallery").accessibilityIdentifier("canvas.gallery")
-            if canvas.hasDoc {
+            if canvas.hasDoc && folded {
+                Button { withAnimation(.snappy) { folded = false } } label: {
+                    HStack(spacing: 6) {
+                        Image(systemName: canvas.tool == .erase ? "eraser.fill" : canvas.tool == .smudge ? "hand.point.up.braille" : "paintbrush.pointed.fill")
+                        Text("\(Int(canvas.size))").font(.caption.monospacedDigit())
+                        Image(systemName: "ellipsis")
+                    }.font(.footnote.weight(.semibold)).padding(.horizontal, 10).frame(height: 38)
+                }.buttonStyle(.plain).glassControl(in: Capsule()).accessibilityLabel("Open the toolbar").accessibilityIdentifier("canvas.unfold")
+            }
+            if canvas.hasDoc && !folded {
                 Text(canvas.name).font(.footnote.weight(.semibold)).lineLimit(1).padding(.horizontal, 10).frame(height: 30)
                     .glassControl(in: Capsule()).onTapGesture { renameText = canvas.name; canvas.panel = .rename }
             }
@@ -259,6 +270,7 @@ struct NativeCanvasView: View {
                 Spacer(minLength: 0)
                 Toggle(isOn: $canvas.fingerPaints) { Image(systemName: "hand.point.up.left") }
                     .toggleStyle(.button).controlSize(.small).accessibilityLabel("Finger paints")
+                dockButton("chevron.down", "Fold the toolbar", on: false) { withAnimation(.snappy) { folded = true } }
             }
             HStack(spacing: 10) {
                 Button { canvas.panel = .brushes } label: {

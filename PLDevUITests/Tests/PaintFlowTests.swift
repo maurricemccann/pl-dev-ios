@@ -242,6 +242,17 @@ final class PaintFlowTests: XCTestCase {
         closeSheet()
     }
 
+    // MARK: 08a the folded toolbar (his handbook ch. 10: the tools fold into one button so the picture has the screen)
+
+    func test08a_FoldedToolbar() {
+        makeCanvas()
+        tapButton("Fold the toolbar", wait: 8); sleepFor(0.8); shot("toolbar-folded")
+        XCTAssertFalse(app.buttons["Brush"].firstMatch.exists, "the dock is folded away")
+        stroke((0.3, 0.6), (0.75, 0.7)); sleepFor(0.6); shot("drawn-while-folded")
+        tapButton("Open the toolbar", wait: 8); sleepFor(0.8); shot("toolbar-open-again")
+        XCTAssertTrue(app.buttons["Brush"].firstMatch.waitForExistence(timeout: 5), "the dock is back")
+    }
+
     // MARK: 08b landscape (his handbook ch. 10: "Turn the phone and the app fits itself to the screen")
 
     func test08b_Landscape() {
