@@ -278,9 +278,8 @@ struct FounderTab: View {
                     door("Precedent", "square.grid.2x2", .precedent)
                     door("Search the corpus", "magnifyingglass", .corpus)
                     door("Council", "person.3", .council)
-                    if let u = model.config?.origins["board"].flatMap({ URL(string: $0.base) }) {
-                        Link(destination: u) { OSRow(title: "V.A.U.L.T. board", meta: "Full board · Conductor · over Tailscale") { Image(systemName: "arrow.up.right").foregroundStyle(PLOS.gold) } }
-                    }
+                    door("V.A.U.L.T. board · the local fleet, in chat", "terminal", .jarvis)
+                    door("Academy · reader, oracle, forge, drills", "graduationcap", .academy)
                 }
                 houseSwitches
                 standingPanel

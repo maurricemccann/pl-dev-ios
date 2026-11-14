@@ -28,9 +28,8 @@ struct MoreTab: View {
                     door("Catalog") { CatalogMatrixView(model: model) }
                     door("Precedent") { PrecedentView(model: model) }
                     door("Crew") { CrewView(model: model) }
-                    Link(destination: URL(string: "https://pl-academy.psychedluxuries.workers.dev")!) {
-                        OSRow(title: "Academy") { Image(systemName: "arrow.up.right").foregroundStyle(PLOS.gold) }
-                    }
+                    door("Academy · reader, oracle, forge, drills") { AcademyView(model: model) }
+                    door("V.A.U.L.T. board · the local fleet, in chat") { JarvisView(model: model) }
                 }
                 OSPanel(title: "System", startOpen: true) {
                     door("Stack health") { StackHealthView(model: model) }

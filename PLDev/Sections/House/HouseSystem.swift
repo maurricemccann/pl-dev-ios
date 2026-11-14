@@ -13,7 +13,7 @@ import SwiftUI
 enum HouseRoom: String, CaseIterable, Identifiable, Hashable {
     case approvals, make, site, inbox, support, seeds, record, leads, tally, calendar, tempo, pipeline, feed, drip, vault, reach,
          opportunities, outbound, pinterest, council, ops, corpus, craft, codex, source, comments, merch, catalog, atlas,
-         precedent, crew, health, jobs, costs
+         precedent, crew, health, jobs, costs, academy, jarvis
     var id: String { rawValue }
 
     var title: String {
@@ -27,7 +27,7 @@ enum HouseRoom: String, CaseIterable, Identifiable, Hashable {
         case .council: return "Council"; case .ops: return "Ops"; case .corpus: return "Search the corpus"; case .craft: return "Craft"
         case .codex: return "Codex"; case .source: return "Source interview"; case .comments: return "Comments to post"
         case .merch: return "Merch calendar"; case .catalog: return "Catalog"; case .atlas: return "Atlas"; case .precedent: return "Precedent"
-        case .crew: return "Crew"; case .health: return "Stack health"; case .jobs: return "Run a job"; case .costs: return "Costs and revenue"
+        case .crew: return "Crew"; case .health: return "Stack health"; case .jobs: return "Run a job"; case .costs: return "Costs and revenue"; case .academy: return "Academy"; case .jarvis: return "V.A.U.L.T. board"
         }
     }
 
@@ -67,6 +67,8 @@ enum HouseRoom: String, CaseIterable, Identifiable, Hashable {
         case .health: StackHealthView(model: model)
         case .jobs: AutomationView(model: model)
         case .costs: CostView(model: model)
+        case .academy: AcademyView(model: model)
+        case .jarvis: JarvisView(model: model)
         }
     }
 }
