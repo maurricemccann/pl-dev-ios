@@ -28,7 +28,7 @@ struct SiteWorldView: View {
                         if WardrobePiece.hasVisible { NavigationLink { WardrobeView() } label: { Text("The Wardrobe \u{2014} in 3D") }.buttonStyle(SiteGhost()) }
                         NavigationLink { StudyView() } label: { Text("Read the Philosophy") }.buttonStyle(SiteGhost())
                     }
-                    .frame(maxWidth: .infinity).padding(.vertical, 80)
+                    .frame(maxWidth: .infinity).padding(.vertical, 16)
                 }
                 SitePaper {
                     VStack(spacing: 10) {

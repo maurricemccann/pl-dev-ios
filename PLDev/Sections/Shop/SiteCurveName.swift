@@ -103,7 +103,7 @@ struct CurveNameView: View {
 }
 
 /// "You were gifted a seed." in his hand, gold, word by word out of a soft blur (`CurveHeader`); still under Reduce Motion.
-private struct CurveHeadline: View {
+struct CurveHeadline: View {
     @State private var shown = 0
     @Environment(\.accessibilityReduceMotion) private var reduce
     private let words = ["You", "were", "gifted", "a", "seed."]
@@ -125,7 +125,7 @@ private struct CurveHeadline: View {
 }
 
 /// The background glyphs on three planes, faint ink (`DepthGlyphs`).
-private struct CurveDepthGlyphs: View {
+struct CurveDepthGlyphs: View {
     private static let glyphs = ["glyph-guy", "money", "love-yourself", "smiley"]
     private static let spots: [(Int, Double, Double, Double, Double)] = [(0, 0.03, 0.03, 78, -12), (1, 0.54, 0.82, 62, 8), (2, 0.68, 0.02, 72, 15), (3, 0.01, 0.78, 66, -6),
                                                                          (1, 0.24, 0.04, 54, 22), (3, 0.82, 0.70, 58, -18), (0, 0.90, 0.04, 50, 6)]
@@ -146,7 +146,7 @@ private struct CurveDepthGlyphs: View {
 
 /// The three seals are the control: they rest dim and ash-grey with a gold breath behind them; held for 0.9 s they fill with
 /// gold and land with a stamp (`StampHero`). Stamped stays stamped for the session.
-private struct StampSeals: View {
+struct StampSeals: View {
     @State private var progress: Double = 0
     @State private var holding = false
     @State private var stamped = false

@@ -78,7 +78,7 @@ struct GlyphSolo: View {
             content.add(cam)
             content.add(ThreeDModels.light(intensity: 3000, at: [2, 4, 3], look: [0, 1, 0]))
             content.add(ThreeDModels.light(intensity: 1400, at: [-3, 2, 2], look: [0, 1, 0]))
-            guard await fig.load(height: 1.7, look: look, world: false) else { missing = true; return }
+            guard await fig.load(height: 1.7, look: look, world: true) else { missing = true; return }
             content.add(fig.root)
             if !reduce { await fig.play(clip) }
         }
@@ -121,9 +121,7 @@ struct ArchiveClose: View {
                 .overlay(alignment: .top) { SiteRule() }
             }
 
-            ZStack {
-                Color(hex: 0x0e0c08)
-                GoldCurvesLayer(opacity: 0.6)
+            do {
                 VStack(spacing: 22) {
                     Text("The Sanctuary \u{2014} a built space").siteTag(11, Bone.gold)
                     (Text("The archive does not\nend at the ") + Text("page.").foregroundColor(Bone.gold))
@@ -139,7 +137,8 @@ struct ArchiveClose: View {
                     }
                     .background(Color.white.opacity(0.1))
                 }
-                .padding(.horizontal, 24).padding(.vertical, 72)
+                .padding(.horizontal, 24).padding(.vertical, 72).frame(maxWidth: .infinity)
+                .background { ZStack { Color(hex: 0x0e0c08); GoldCurvesLayer(opacity: 0.6) } }
                 .environment(\.colorScheme, .dark)
             }
         }

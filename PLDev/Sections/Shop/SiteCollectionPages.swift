@@ -73,7 +73,7 @@ private struct SeedsTop: View {
             Text(label).siteLabel(9).multilineTextAlignment(.center)
             if w == .now { Text("you are here").plHand(18).foregroundStyle(Bone.gold) }
         }
-        .frame(maxWidth: .infinity, minHeight: 150, alignment: .top).padding(.vertical, 20).padding(.horizontal, 4)
+        .frame(maxWidth: .infinity, minHeight: 120, alignment: .top).padding(.vertical, 20).padding(.horizontal, 4)
         .background(Color(hex: 0x0e0c08))
         .accessibilityElement(children: .combine)
     }
@@ -222,7 +222,7 @@ struct GlyphPair: View {
             content.add(cam)
             content.add(ThreeDModels.light(intensity: 3000, at: [2, 4, 3], look: [0, 1, 0]))
             content.add(ThreeDModels.light(intensity: 1200, at: [-3, 2, 2], look: [0, 1, 0]))
-            guard await him.load(height: 1.7, look: .gold, world: false), await her.load(height: 1.6, look: .gold, world: false) else { missing = true; return }
+            guard await him.load(height: 1.7, look: .gold, world: true), await her.load(height: 1.6, look: .gold, world: true) else { missing = true; return }
             if let m = her.model { ThreeDModels.paint(m, SimpleMaterial(color: UIColor(red: 0.76, green: 0.55, blue: 0.43, alpha: 1), roughness: 0.8, isMetallic: false)) }
             him.root.position.x = -0.55; her.root.position.x = 0.55
             content.add(him.root); content.add(her.root)

@@ -10,7 +10,7 @@ struct SiteBand<Content: View>: View {
     @ViewBuilder let content: Content
     var body: some View {
         VStack(alignment: .leading, spacing: 18) { content }
-            .padding(.horizontal, padding).padding(.vertical, 56)
+            .padding(.horizontal, padding).padding(.vertical, 40)
             .frame(maxWidth: .infinity, alignment: .leading)
             .background(Color(hex: 0x0e0c08))
             .environment(\.colorScheme, .dark)

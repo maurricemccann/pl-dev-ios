@@ -105,6 +105,7 @@ struct LivingCurvesView: View {
         size = s
         strokes = (0..<4).map { Stroke(dir: $0, o: o) }
         strokes.forEach(spawn)
+        for _ in 0..<160 { tick() }   // the first look already has strokes crossing the cloth
     }
 
     func tick() {

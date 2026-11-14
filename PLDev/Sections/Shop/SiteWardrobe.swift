@@ -144,7 +144,7 @@ struct WardrobeView: View {
                         Text("Each piece, rendered in three dimensions. Turn it in your hand. On a phone, place it in your room at full scale. The same doctrine the avatar wears in Horizon \u{2014} the garment is one object with two bodies, the physical and the dimensional.")
                             .siteBody(15).multilineTextAlignment(.center)
                     }
-                    .frame(maxWidth: .infinity).padding(.vertical, 40)
+                    .frame(maxWidth: .infinity).padding(.vertical, 8)
                 }
                 if WardrobePiece.hasVisible {
                     SitePaper {

@@ -56,17 +56,14 @@ struct SiteSystemView: View {
     }
 
     private var law: some View {
-        ZStack {
-            Color(hex: 0x0e0c08)
-            GoldCurvesLayer(opacity: 0.18)
-            VStack(spacing: 24) {
+        VStack(spacing: 24) {
                 Text("The Law").siteTag(11, Bone.gold)
                 Text("The founder is the mind. The fleet is the instrument.").font(SiteFont.display(32, italic: true)).foregroundStyle(Color(hex: 0xf1ece1)).multilineTextAlignment(.center)
                 Text("An instrument can research a subject again. It cannot re-think the founder\u{2019}s thought. Every word, every mark, every decision passes through his judgment before it ships. The machine drafts. The founder decides.")
                     .font(SiteFont.body(14)).foregroundStyle(Color(hex: 0x9b937f)).lineSpacing(5).multilineTextAlignment(.center)
-            }
-            .padding(.horizontal, 24).padding(.vertical, 96)
         }
+        .padding(.horizontal, 24).padding(.vertical, 72).frame(maxWidth: .infinity)
+        .background { ZStack { Color(hex: 0x0e0c08); GoldCurvesLayer(opacity: 0.18) } }
     }
 
     private func anchor(_ n: String, _ title: String, dark: Bool = false) -> some View {
@@ -366,7 +363,7 @@ struct SystemVeil: View {
 
 // MARK: - The architecture, laid flat
 
-private struct SystemFlow: View {
+struct SystemFlow: View {
     var body: some View {
         VStack(spacing: 0) {
             ForEach(Array(SystemData.tiers.enumerated()), id: \.offset) { ti, tier in
@@ -396,7 +393,7 @@ private struct SystemFlow: View {
 }
 
 /// A fleet plate (`/fleet/<name>.svg`), his own vector marks, drawn natively from the site's file (the paths, filled in gold).
-private struct SiteFleetPlate: View {
+struct SiteFleetPlate: View {
     let url: URL
     @State private var path: Path?
     var body: some View {
@@ -489,7 +486,7 @@ struct TelemetryFigure: View {
 
 /// `InnerVeil`: a stranger meets a sealed panel ("Belonging parts this veil."), which opens the congregation's sign-in; a
 /// signed-in member finds themselves in the record: their mark, their marks (points), their standing.
-private struct InnerVeilView: View {
+struct InnerVeilView: View {
     private let account = SiteAccount.shared
     @Environment(\.colorScheme) private var scheme
     @Environment(\.openURL) private var openURL
