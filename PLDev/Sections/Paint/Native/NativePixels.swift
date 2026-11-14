@@ -1,6 +1,11 @@
 import CoreGraphics
 import Foundation
 
+/// Core Graphics calls this when an image over a layer's pixels is freed, on whatever thread drops it last (often SwiftUI's
+/// render thread). A closure written inside the @MainActor class inherits main-actor isolation and Swift 6 traps off the main
+/// thread: his crash 11-14 05:09 PT, build 163, adjusting the last stroke. A free function has no isolation. Nothing to free: the buffer owns the memory.
+private func plNoRelease(_ info: UnsafeMutableRawPointer?, _ data: UnsafeRawPointer, _ size: Int) {}
+
 /// One layer's pixels: premultiplied RGBA, row 0 on top, y-down like the laptop's canvas (his file stores the same pixels).
 /// Undo is a patch stack of tiles (before and after), so a stroke on a 16 MP canvas costs the strokes' own area, not the canvas.
 @MainActor final class PixelBuffer {
@@ -24,7 +29,7 @@ import Foundation
 
     /// An image over the same memory (no copy). Make a new one after every change so Core Animation uploads it again.
     func image() -> CGImage? {
-        guard let p = CGDataProvider(dataInfo: nil, data: ptr, size: w * h * 4, releaseData: { _, _, _ in }) else { return nil }
+        guard let p = CGDataProvider(dataInfo: nil, data: ptr, size: w * h * 4, releaseData: plNoRelease) else { return nil }
         return CGImage(width: w, height: h, bitsPerComponent: 8, bitsPerPixel: 32, bytesPerRow: w * 4, space: CGColorSpaceCreateDeviceRGB(),
                        bitmapInfo: CGBitmapInfo(rawValue: CGImageAlphaInfo.premultipliedLast.rawValue), provider: p, decode: nil, shouldInterpolate: true, intent: .defaultIntent)
     }
