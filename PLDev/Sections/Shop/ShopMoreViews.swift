@@ -123,7 +123,8 @@ struct SitePagesView: View {
     struct PageGroup: Identifiable { let name: String; let links: [PageLink]; var id: String { name } }
     private let groups: [PageGroup] = [
         PageGroup(name: "The house", links: [PageLink(title: "The brand", symbol: "seal", path: "the-brand"), PageLink(title: "The Three Truths", symbol: "triangle", path: "the-three-truths"),
-                                             PageLink(title: "Three bodies of work", symbol: "square.stack.3d.up", path: "three-bodies"), PageLink(title: "The Forge", symbol: "hammer", path: "the-forge")]),
+                                             PageLink(title: "Three bodies of work", symbol: "square.stack.3d.up", path: "three-bodies"), PageLink(title: "The Forge", symbol: "hammer", path: "the-forge"),
+                                             PageLink(title: "The Journal", symbol: "text.book.closed", path: "journal")]),
         PageGroup(name: "Help", links: [PageLink(title: "Contact", symbol: "envelope", path: "contact"), PageLink(title: "Gift cards", symbol: "giftcard", path: "gift-card"),
                                         PageLink(title: "Returns", symbol: "arrow.uturn.backward", path: "returns")]),
         PageGroup(name: "The fine print", links: [PageLink(title: "Terms", symbol: "doc.text", path: "terms"), PageLink(title: "Privacy", symbol: "hand.raised", path: "privacy")]),
@@ -140,7 +141,7 @@ struct SitePagesView: View {
                         } else if l.path == "gift-card" {   // Square's gift cards are bought through the site's checkout
                             Button { if let url = Site.page(l.path) { web = WebPage(url) } } label: { Label(l.title, systemImage: l.symbol) }
                         } else {
-                            NavigationLink { SiteReaderView(path: l.path, title: l.title) } label: { Label(l.title, systemImage: l.symbol) }
+                            NavigationLink { SiteReaderView(path: l.path, title: l.title, art: Self.art(l.path)) } label: { Label(l.title, systemImage: l.symbol) }
                         }
                     }
                 }
@@ -149,5 +150,10 @@ struct SitePagesView: View {
         .siteList()
         .plScreenTitle("Pages")
         .sheet(item: $web) { SafariSheet(url: $0.url).ignoresSafeArea() }
+    }
+
+    /// Each doctrine page keeps the art the site draws for it.
+    static func art(_ path: String) -> SiteReaderArt {
+        switch path { case "the-three-truths": return .curves; case "the-forge": return .corridor; case "the-brand", "journal": return .goldLine; default: return .none }
     }
 }

@@ -11,16 +11,20 @@ import WidgetKit
 
 enum ShopRoom: String, CaseIterable, Identifiable, Hashable {
     case shop, closet, archive, curve, signal, contact, track, orders, status, pages
+    case world, wardrobe, chosen, livingCurves = "living-curves", source, study, curveName = "curve-name", system, room, journal
     var id: String { rawValue }
 
     /// The rooms listed under More; the first three are tabs.
-    static var moreRooms: [ShopRoom] { [.curve, .signal, .contact, .track, .orders, .status, .pages] }
+    static var moreRooms: [ShopRoom] { [.world, .study, .livingCurves, .chosen, .wardrobe, .room, .system, .curveName, .curve, .signal, .contact, .track, .orders, .status, .pages] }
 
     var title: String {
         switch self {
         case .shop: return "The shop"; case .closet: return "The Closet"; case .archive: return "The archive"; case .curve: return "The Curve"
         case .signal: return "The signal"; case .contact: return "Contact"; case .track: return "Track an order"; case .orders: return "Your orders"
         case .status: return "The site"; case .pages: return "Pages"
+        case .world: return "The Collections"; case .wardrobe: return "The Wardrobe"; case .chosen: return "The Chosen"
+        case .livingCurves: return "Living Curves"; case .source: return "The source"; case .study: return "The Psyched Study"
+        case .curveName: return "You were gifted a seed"; case .system: return "The System"; case .room: return "The Room"; case .journal: return "The Journal"
         }
     }
 
@@ -29,6 +33,9 @@ enum ShopRoom: String, CaseIterable, Identifiable, Hashable {
         case .shop: return "bag"; case .closet: return "hanger"; case .archive: return "square.grid.3x3"; case .curve: return "scribble.variable"
         case .signal: return "antenna.radiowaves.left.and.right"; case .contact: return "envelope"; case .track: return "shippingbox"; case .orders: return "receipt"
         case .status: return "globe"; case .pages: return "doc.text"
+        case .world: return "square.grid.2x2"; case .wardrobe: return "tshirt"; case .chosen: return "number"; case .livingCurves: return "scribble"
+        case .source: return "chevron.left.forwardslash.chevron.right"; case .study: return "book"; case .curveName: return "signature"
+        case .system: return "point.3.connected.trianglepath.dotted"; case .room: return "door.left.hand.open"; case .journal: return "text.book.closed"
         }
     }
 
@@ -41,6 +48,16 @@ enum ShopRoom: String, CaseIterable, Identifiable, Hashable {
         case .orders: MyOrdersView()
         case .status: SiteStatusView()
         case .pages: SitePagesView()
+        case .world: SiteWorldView()
+        case .wardrobe: WardrobeView()
+        case .chosen: ChosenView()
+        case .livingCurves: LivingCurvesView()
+        case .source: LivingCurvesSourceView()
+        case .study: StudyView()
+        case .curveName: CurveNameView()
+        case .system: SiteSystemView()
+        case .room: SiteRoomView()
+        case .journal: SiteReaderView(path: "journal", title: "The Journal", art: .goldLine)
         default: EmptyView()   // the three tabs are not pushed
         }
     }
