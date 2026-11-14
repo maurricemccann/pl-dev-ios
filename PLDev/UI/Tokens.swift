@@ -44,3 +44,38 @@ enum PLTone {
     /// The wash on a home tile: the pack's "tile" colour, else the accent.
     @MainActor static var tileWash: Color { ThemePack.shared.colors["tile"] ?? accent }
 }
+
+/// Good, warn, bad: one shared tint for a number whose meaning is known (his note 11-14 on the PC tiles: "the number and percent
+/// that's green to be green when good and red when bad, and so should most of any information: a slight red tint when it is bad,
+/// a slight green tint when it is good"). The value takes the full tone, its tile a faint wash of it and the name a slight hint
+/// of it. A number whose good and bad are not known is passed as nil and wears no tint at all: never guess a threshold.
+enum PLStatus: Equatable {
+    case good, warn, bad
+
+    var tone: Color { switch self { case .good: return PLTone.good; case .warn: return PLTone.warn; case .bad: return PLTone.bad } }
+
+    /// A reading where a LOWER number is worse (free RAM, free disk): under `bad` is red, under `warn` is amber.
+    static func lowerIsWorse(_ v: Double, warn: Double, bad: Double) -> PLStatus { v < bad ? .bad : v < warn ? .warn : .good }
+    /// A reading where a HIGHER number is worse (heat, load, kernel pool): from `bad` is red, from `warn` is amber.
+    static func higherIsWorse(_ v: Double, warn: Double, bad: Double) -> PLStatus { v >= bad ? .bad : v >= warn ? .warn : .good }
+    /// A count of things waiting: none is good; any is `whenAny` (amber for "waiting on a tap", red for "owed").
+    static func waiting(_ n: Int, whenAny: PLStatus = .warn) -> PLStatus { n <= 0 ? .good : whenAny }
+}
+
+extension View {
+    /// The value text of a number in its tone (full strength), or untouched when no level is known.
+    func plStatusValue(_ level: PLStatus?) -> some View { foregroundStyle(level?.tone ?? Color.primary) }
+    /// The name of a number: secondary, with a slight hint of the tone.
+    func plStatusName(_ level: PLStatus?) -> some View {
+        foregroundStyle(level.map { Color(uiColor: .secondaryLabel).mix(with: $0.tone, by: 0.45) } ?? Color(uiColor: .secondaryLabel))
+    }
+    /// A tile for one number: a faint wash of its tone and a hairline of it. No level, no tile (the number sits as it did).
+    func plStatusTile(_ level: PLStatus?, radius: CGFloat = PLRadius.row) -> some View {
+        background {
+            if let level {
+                RoundedRectangle(cornerRadius: radius, style: .continuous).fill(level.tone.opacity(0.13))
+                    .overlay { RoundedRectangle(cornerRadius: radius, style: .continuous).strokeBorder(level.tone.opacity(0.28), lineWidth: 0.7) }
+            }
+        }
+    }
+}

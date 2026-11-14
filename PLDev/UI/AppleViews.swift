@@ -6,6 +6,9 @@ import SwiftUI
 /// Settings rows, placed under House's rows: Health, Calendar, haptics, Apple Intelligence.
 struct AppleSettingsRows: View {
     @AppStorage("pldev.health.mindful") private var health = false
+    @AppStorage("pldev.health.last") private var healthLast = ""      // the exact result of the last Health write or refusal
+    @AppStorage("pldev.health.lastOK") private var healthLastOK = false
+    @State private var testing = false
     @AppStorage("pldev.haptics") private var haptics = true
     @AppStorage("pldev.intel") private var intel = true
     @State private var note: String?
@@ -17,9 +20,24 @@ struct AppleSettingsRows: View {
                 .onChange(of: health) { _, on in
                     guard on else { return }
                     Task {
-                        if let problem = await PLHealth.enable() { health = false; note = problem } else { note = "Rehearsals now write mindful minutes to Health." }
+                        // a refusal stays on screen as the exact sentence (his note 11-14), under the switch, until the next try
+                        if await PLHealth.enable() != nil { health = false }
                     }
                 }
+            // what the last write did, in its own words, and a way to try one now (his note 11-14: "Mindful minutes in Health doesn't work")
+            if !healthLast.isEmpty {
+                Label { Text(healthLast).plFont(.footnote) } icon: { Image(systemName: healthLastOK ? "checkmark.circle.fill" : "exclamationmark.triangle.fill") }
+                    .foregroundStyle(healthLastOK ? PLTone.good : PLTone.bad)
+            }
+            if PLHealth.hasEntitlement() == false {
+                Text("This build is signed by SideStore with a free Apple account. That account does not carry HealthKit, so iOS refuses Health for this build: \(PLHealth.missingEntitlement) A paid Apple Developer account signs it with HealthKit; the free one cannot.")
+                    .plFont(.footnote).foregroundStyle(.secondary)
+            }
+            Button {
+                Task { testing = true; _ = await PLHealth.writeTest(); testing = false }
+            } label: { SettingsLabel("Write a 1-minute test", "heart.text.square.fill", IOS27.SystemColors.pink) }.disabled(testing)
+            Text("Every practice session with a length writes its minutes while the switch is on: a rehearsal, and an affirmation you listen to for 20 seconds or more.")
+                .plFont(.footnote).foregroundStyle(.secondary)
             Button { Task { busy = true; note = await PLCalendar.addShifts(model: AppModel.shared); busy = false } } label: {
                 SettingsLabel("Add my shift days to Calendar", "calendar.badge.plus", IOS27.SystemColors.red)
             }.disabled(busy)

@@ -40,22 +40,28 @@ struct HomeDashboard: View {
 
     private var nowLine: some View {
         let pool = pc?.pool?.last?.gb
-        let (text, tint, symbol): (String, Color, String) = {
-            if let h = house, h.needs > 0 { return ("\(h.needs) need\(h.needs == 1 ? "s" : "") you\(h.approve > 0 ? ", \(h.approve) to approve" : "").", PLTone.bad, "exclamationmark.circle.fill") }
-            if let p = pool, p >= 5 { return (String(format: "Kernel pool at %.1f GB: reboot the PC soon.", p), PLTone.bad, "arrow.clockwise.circle.fill") }
-            if let h = house, h.approve > 0 { return ("\(h.approve) to approve.", PLTone.warn, "checkmark.seal.fill") }
-            if let p = pool, p >= 3 { return (String(format: "Kernel pool climbing: %.1f GB.", p), PLTone.warn, "square.stack.3d.down.right.fill") }
-            if house == nil && pc == nil { return pcFailed ? ("The house and the PC are out of reach: Tailscale may be off.", PLTone.warn, "wifi.exclamationmark") : ("Reading the house and the PC.", Color.secondary, "ellipsis.circle") }
-            return ("All clear.", PLTone.good, "checkmark.circle.fill")
+        // the fourth value is where a tap goes (his note 11-14: "The 230 approve at the top: if I click on it, it should take me to where
+        // I need to approve"): the approvals list when drafts wait, the founder's list when only requests wait, nothing for the PC lines
+        let (text, tint, symbol, target): (String, Color, String, String?) = {
+            if let h = house, h.needs > 0 { return ("\(h.needs) need\(h.needs == 1 ? "s" : "") you\(h.approve > 0 ? ", \(h.approve) to approve" : "").", PLTone.bad, "exclamationmark.circle.fill", h.approve > 0 ? "house/approvals" : "house/founder") }
+            if let p = pool, p >= 5 { return (String(format: "Kernel pool at %.1f GB: reboot the PC soon.", p), PLTone.bad, "arrow.clockwise.circle.fill", nil) }
+            if let h = house, h.approve > 0 { return ("\(h.approve) to approve.", PLTone.warn, "checkmark.seal.fill", "house/approvals") }
+            if let p = pool, p >= 3 { return (String(format: "Kernel pool climbing: %.1f GB.", p), PLTone.warn, "square.stack.3d.down.right.fill", nil) }
+            if house == nil && pc == nil { return pcFailed ? ("The house and the PC are out of reach: Tailscale may be off.", PLTone.warn, "wifi.exclamationmark", nil) : ("Reading the house and the PC.", Color.secondary, "ellipsis.circle", nil) }
+            return ("All clear.", PLTone.good, "checkmark.circle.fill", nil)
         }()
-        return HStack(spacing: 10) {
+        let line = HStack(spacing: 10) {
             Image(systemName: symbol).foregroundStyle(tint)
             Text(text).plFont(.callout, emphasized: true).lineLimit(2)
             Spacer(minLength: 0)
+            if target != nil { Image(systemName: "chevron.right").font(.caption.weight(.bold)).foregroundStyle(.secondary) }
         }
         .padding(14)
         .glassEffect(.regular.tint(tint.opacity(0.18)), in: RoundedRectangle(cornerRadius: PLRadius.card, style: .continuous))
         .accessibilityElement(children: .combine)
+        return Group {
+            if let target { door(target) { line }.accessibilityHint("Opens the list") } else { line }
+        }
     }
 
     // MARK: practice (the streak tiles of How We Feel and pillowtalk on Mobbin): read from the glance Practice writes
@@ -70,10 +76,10 @@ struct HomeDashboard: View {
                         Image(systemName: "arrow.right").font(.system(size: 11, weight: .bold)).foregroundStyle(.white.opacity(0.9))
                     }
                     HStack(alignment: .top) {
-                        stat("This month", icon: "flame", "\(g.monthDays)", g.monthDays > 0 ? PLTone.good : nil)
+                        stat("This month", icon: "flame", "\(g.monthDays)", g.monthDays > 0 ? PLStatus.good : nil)
                         stat("This week", icon: "calendar", "\(g.weekDays)/7", nil)
-                        stat("Morning", icon: "sunrise", g.morning ? "Done" : "Open", g.morning ? PLTone.good : PLTone.warn)
-                        stat("Evening", icon: "moon.stars", g.evening ? "Done" : "Open", g.evening ? PLTone.good : nil)
+                        stat("Morning", icon: "sunrise", g.morning ? "Done" : "Open", g.morning ? PLStatus.good : PLStatus.warn)
+                        stat("Evening", icon: "moon.stars", g.evening ? "Done" : "Open", g.evening ? PLStatus.good : nil)
                     }
                     if let line = g.line { Text(line).plHand(16).foregroundStyle(.primary).lineLimit(3) }
                 }
@@ -106,18 +112,24 @@ struct HomeDashboard: View {
             HStack {
                 Text("The PC").plHand(20)
                 Spacer()
-                if let at = pc?.thermal?.last?.date { Text(at, style: .relative).font(.caption2.monospacedDigit()).foregroundStyle(.secondary) + Text(" ago").font(.caption2).foregroundStyle(.secondary) }
+                if let at = pc?.thermal?.last?.date {
+                    // the PC logs every 5 minutes: a reading over 10 minutes old is late, over 30 means the logger has stopped
+                    let fresh = PLStatus.higherIsWorse(Date.now.timeIntervalSince(at) / 60, warn: 10, bad: 30)
+                    Text(at, style: .relative).font(.caption2.monospacedDigit()).foregroundStyle(fresh.tone) + Text(" ago").font(.caption2).foregroundStyle(fresh.tone)
+                }
             }
             if let last = pc?.thermal?.last {
                 LazyVGrid(columns: Array(repeating: GridItem(.flexible(), spacing: 8), count: 3), spacing: 10) {
-                    stat("Heat", icon: "thermometer.medium", "\(last.temp_c)°", Double(last.temp_c).map { $0 >= 85 ? PLTone.bad : $0 >= 70 ? PLTone.warn : PLTone.good })
-                    stat("CPU", icon: "cpu", "\(last.cpu_pct)%", nil)
-                    stat("Free RAM", icon: "memorychip", "\(last.free_ram_gb) GB", Double(last.free_ram_gb).map { $0 < 2 ? PLTone.bad : $0 < 4 ? PLTone.warn : PLTone.good })
-                    stat("Disk free", icon: "internaldrive", pc?.disk_free_gb.map { "\(Int($0)) GB" } ?? "·", (pc?.disk_free_gb).map { $0 < 30 ? PLTone.bad : $0 < 80 ? PLTone.warn : PLTone.good })
+                    // every threshold below is what the number means on this PC: the chassis heat (throttling starts near 85), the CPU's load at this
+                    // instant, free RAM (under 2 GB it pages to disk), free disk. Uptime has no good or bad of its own: the kernel pool is its signal.
+                    stat("Heat", icon: "thermometer.medium", "\(last.temp_c)°", Double(last.temp_c).map { PLStatus.higherIsWorse($0, warn: 70, bad: 85) })
+                    stat("CPU", icon: "cpu", "\(last.cpu_pct)%", Double(last.cpu_pct).map { PLStatus.higherIsWorse($0, warn: 70, bad: 90) })
+                    stat("Free RAM", icon: "memorychip", "\(last.free_ram_gb) GB", Double(last.free_ram_gb).map { PLStatus.lowerIsWorse($0, warn: 4, bad: 2) })
+                    stat("Disk free", icon: "internaldrive", pc?.disk_free_gb.map { "\(Int($0)) GB" } ?? "·", (pc?.disk_free_gb).map { PLStatus.lowerIsWorse($0, warn: 80, bad: 30) })
                     stat("Up", icon: "clock", pc?.uptime_h.map { $0 >= 48 ? "\(Int($0 / 24)) d" : "\(Int($0)) h" } ?? "·", nil)
                     // kernel pool: grows with file activity and only a reboot clears it; amber at 3 GB, red (reboot) at 5 GB (his ask 11-13)
                     if let k = pc?.pool?.last {
-                        stat("Kernel pool", icon: "square.stack.3d.down.right", String(format: "%.1f GB", k.gb), k.gb >= 5 ? PLTone.bad : k.gb >= 3 ? PLTone.warn : PLTone.good)
+                        stat("Kernel pool", icon: "square.stack.3d.down.right", String(format: "%.1f GB", k.gb), PLStatus.higherIsWorse(k.gb, warn: 3, bad: 5))
                     }
                 }
                 if let rows = pc?.thermal, rows.count > 2 {
@@ -148,8 +160,8 @@ struct HomeDashboard: View {
             Text("The house").plHand(20)
             if let h = house {
                 HStack(alignment: .top) {
-                    door("house/founder") { stat("Needs you", icon: "exclamationmark.circle", "\(h.needs)", h.needs > 0 ? PLTone.bad : nil) }   // a tap opens what needs him (his note 11-13)
-                    door("house/approvals") { stat("Approve", icon: "checkmark.seal", "\(h.approve)", nil) }
+                    door("house/founder") { stat("Needs you", icon: "exclamationmark.circle", "\(h.needs)", PLStatus.waiting(h.needs, whenAny: .bad)) }   // a tap opens what needs him (his note 11-13)
+                    door("house/approvals") { stat("Approve", icon: "checkmark.seal", "\(h.approve)", PLStatus.waiting(h.approve)) }   // drafts waiting on his tap: none is clear, any is amber
                     stat("In the drip", icon: "drop", "\(h.queued)", nil)
                     stat("Standing", icon: "chart.bar", "\(h.standing)", nil)
                 }
@@ -172,16 +184,20 @@ struct HomeDashboard: View {
         Button { if let u = URL(string: "pldev://section/" + path) { openURL(u) } } label: { content().contentShape(Rectangle()) }.buttonStyle(.plain)
     }
 
-    /// A tile the way the tile dashboards draw one (How We Feel, Bevel on Mobbin, 11-13): the icon, the number, the word.
-    private func stat(_ name: String, icon: String, _ value: String, _ tint: Color?) -> some View {
+    /// A tile the way the tile dashboards draw one (How We Feel, Bevel on Mobbin, 11-13): the icon, the number, the word. A known
+    /// good or bad (his note 11-14) tints the number, washes the tile and hints the name; no level, no tint.
+    private func stat(_ name: String, icon: String, _ value: String, _ level: PLStatus?) -> some View {
         VStack(alignment: .leading, spacing: 3) {
-            Image(systemName: icon).font(.system(size: 13, weight: .semibold)).foregroundStyle(tint ?? PLTone.accent).frame(height: 16)
-            Text(value).font(.system(.title3, design: .monospaced).weight(.semibold)).monospacedDigit().foregroundStyle(tint ?? .primary)
+            Image(systemName: icon).font(.system(size: 13, weight: .semibold)).foregroundStyle(level?.tone ?? PLTone.accent).frame(height: 16)
+            Text(value).font(.system(.title3, design: .monospaced).weight(.semibold)).monospacedDigit().plStatusValue(level)
                 .lineLimit(1).minimumScaleFactor(0.6).contentTransition(.numericText())
-            Text(name).plLabel(10).foregroundStyle(.secondary).lineLimit(1).minimumScaleFactor(0.6)   // "Standing" kept its g on one line (11-13)
+            Text(name).plLabel(10).plStatusName(level).lineLimit(1).minimumScaleFactor(0.6)   // "Standing" kept its g on one line (11-13)
         }
         .frame(maxWidth: .infinity, alignment: .leading)
+        .padding(.horizontal, level == nil ? 0 : 8).padding(.vertical, level == nil ? 0 : 6)
+        .plStatusTile(level)
         .accessibilityElement(children: .combine)
+        .accessibilityValue(level.map { $0 == .good ? "fine" : $0 == .warn ? "watch" : "needs you" } ?? "")
     }
 
     // MARK: reads
@@ -219,6 +235,8 @@ struct HomeDashboard: View {
 struct HomeStatusStrip: View {
     let model: AppModel
     private var state: StatusModel { StatusSection.state }
+    /// The strip's wash: green while every address answers, red when one does not, none until the first check is back.
+    private var stripTone: Color? { state.checkedAt == nil ? nil : state.downCount == 0 ? PLTone.good : PLTone.bad }
 
     var body: some View {
         let origins = model.config?.origins.keys.sorted() ?? []
@@ -251,7 +269,7 @@ struct HomeStatusStrip: View {
                 }
             }
             .padding(14)
-            .glassEffect(.regular, in: RoundedRectangle(cornerRadius: PLRadius.card, style: .continuous))
+            .glassEffect(.regular.tint(stripTone.map { $0.opacity(0.14) }), in: RoundedRectangle(cornerRadius: PLRadius.card, style: .continuous))
         }
         .buttonStyle(.plain)
         .task { if state.checkedAt == nil { await state.check(model: model) } }

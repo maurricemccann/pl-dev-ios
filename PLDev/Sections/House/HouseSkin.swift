@@ -226,17 +226,22 @@ struct OSTabBar: View {
 struct OSKpis: View {
     let items: [(String, String, String?)]
     var status: (String, Color)? = nil
+    /// One level per item, in order, where the number's good and bad are known (his note 11-14); a missing or nil level wears no tint.
+    var levels: [PLStatus?] = []
     @Environment(\.colorScheme) private var scheme
     var body: some View {
         VStack(alignment: .leading, spacing: 10) {
             HStack(alignment: .top, spacing: 8) {
                 ForEach(items.indices, id: \.self) { i in
+                    let level: PLStatus? = i < levels.count ? levels[i] : nil
                     VStack(alignment: .leading, spacing: 2) {
-                        Text(items[i].0).plHand(15, relativeTo: .footnote).foregroundStyle(PLOS.dim(scheme)).lineLimit(1).minimumScaleFactor(0.7)
-                        Text(items[i].1).osValue(28).foregroundStyle(PLOS.text(scheme)).contentTransition(.numericText()).lineLimit(1).minimumScaleFactor(0.6)
+                        Text(items[i].0).plHand(15, relativeTo: .footnote).foregroundStyle(level.map { PLOS.dim(scheme).mix(with: $0.tone, by: 0.4) } ?? PLOS.dim(scheme)).lineLimit(1).minimumScaleFactor(0.7)
+                        Text(items[i].1).osValue(28).foregroundStyle(level?.tone ?? PLOS.text(scheme)).contentTransition(.numericText()).lineLimit(1).minimumScaleFactor(0.6)
                         if let sub = items[i].2 { Text(sub).font(.system(size: 10, design: .monospaced)).foregroundStyle(PLOS.dim(scheme)) }
                     }
                     .frame(maxWidth: .infinity, alignment: .leading)
+                    .padding(.horizontal, level == nil ? 0 : 8).padding(.vertical, level == nil ? 0 : 6)
+                    .plStatusTile(level)
                     .accessibilityElement(children: .combine)
                 }
             }

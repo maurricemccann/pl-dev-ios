@@ -90,6 +90,7 @@ struct StatusView: View {
                     ForEach(origins, id: \.self) { name in
                         if let answer = state.reach[name] {
                             originRow(name, answer)
+                                .listRowBackground(rowWash(answer))
                         } else {
                             SkeletonRow()
                         }
@@ -108,6 +109,7 @@ struct StatusView: View {
                 } else {
                     ForEach(keyNames, id: \.self) { name in
                         KeyRow(name: name, isSet: model.config?.key(name) != nil)
+                            .listRowBackground(model.config?.key(name) != nil ? nil : PLTone.warn.opacity(0.10))   // a key the config lists but leaves empty
                     }
                 }
             } header: {
@@ -128,6 +130,11 @@ struct StatusView: View {
     private var footer: String {
         guard let at = state.checkedAt else { return "Asking each address for an answer. Only its name is shown, never where it is." }
         return "Checked at \(at.formatted(date: .omitted, time: .shortened)). Any answer counts as reachable. Pull down to ask again."
+    }
+
+    /// A faint wash of the row's state (his note 11-14): green when the address answers, red when it does not, none while unknown.
+    private func rowWash(_ answer: OriginReach) -> Color? {
+        switch answer { case .up: return PLTone.good.opacity(0.10); case .down: return PLTone.bad.opacity(0.12); case .unknown, .checking: return nil }
     }
 
     private func refresh() async {
