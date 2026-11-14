@@ -7,7 +7,7 @@ import UserNotifications
 /// Twin of `pl-curves-gallery/public/pick/index.html`: same words, same swatch, same order; the phone adds what a browser could not
 /// (a vote made offline waits and goes in later, a closer look at each colourway, a widget, Siri and Spotlight).
 @MainActor enum PickSection: PLSection {
-    static let manifest = SectionManifest(id: "pick", title: "Pick", symbol: "paintpalette", needsKeys: [], needsOrigins: ["cron", "gallery"])
+    static let manifest = SectionManifest(id: "pick", title: "Colour Survey", symbol: "paintpalette", needsKeys: [], needsOrigins: ["cron", "gallery"])
     static let state = PickModel()
 
     static func makeRoot(model: AppModel) -> AnyView { AnyView(PickView(model: model, state: state)) }
@@ -267,9 +267,9 @@ struct PickView: View {
             .background(.bar)
         }
         .sensoryFeedback(PLHaptic.select, trigger: state.showResults)
-        .background { GalleryGround() }.tint(PLG.gold)
+        .background { OSGround() }.tint(PLG.gold)   // his glyph field (House), not the tiled curves: his ask 11-14
         .toolbarBackground(.hidden, for: .navigationBar)
-        .navigationTitle("Pick").navigationBarTitleDisplayMode(.inline)
+        .navigationTitle("Colour Survey").navigationBarTitleDisplayMode(.inline)
         .sheet(item: $state.looking) { p in PickLook(state: state, p: p) }
         .task { if state.palettes.isEmpty { await state.load(model: model) } else { await state.loadTally(model: model) } }
         .onChange(of: state.showResults) { _, on in if on { Task { await state.loadTally(model: model) } } }
@@ -340,7 +340,7 @@ struct PickLook: View {
                 }
                 .padding(PLSpace.margin)
             }
-            .background { GalleryGround() }.tint(PLG.gold)
+            .background { OSGround() }.tint(PLG.gold)   // his glyph field (House), not the tiled curves: his ask 11-14
             .toolbar { ToolbarItem(placement: .cancellationAction) { Button("Close") { dismiss() } } }
             .navigationTitle("Colourway \(state.number(p))").navigationBarTitleDisplayMode(.inline)
         }

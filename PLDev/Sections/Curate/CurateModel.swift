@@ -194,6 +194,26 @@ let curateCategories: [(String, String)] = [("digital", "Digital"), ("physical",
 
     func ensureTags(model: AppModel) async { if tagNames.isEmpty { await loadTags(model: model) } }
 
+    /// The tags on the piece in front of him (his note 11-14: "there's no way to add tags in curate").
+    var currentTags: [String] { current.map { tagMap[$0.vault_id] ?? [] } ?? [] }
+
+    /// Adds or removes one tag on the current piece through the gallery's /api/tags, the same store the web Library writes.
+    @discardableResult func setTag(_ raw: String, on: Bool, model: AppModel) async -> Bool {
+        let tag = raw.trimmingCharacters(in: .whitespacesAndNewlines).lowercased()
+        guard let it = current, !tag.isEmpty, tag.count <= 60, let http = model.http,
+              let body = try? JSONSerialization.data(withJSONObject: ["ids": [it.vault_id], (on ? "add" : "remove"): tag]) else { return false }
+        do {
+            _ = try await http.send(RequestPlan(origin: "gallery", method: "POST", path: "api/tags",
+                                                headers: ["content-type": "application/json", "Origin": LibraryData.shared.base(model)], body: body),
+                                    idempotent: false)
+        } catch { return false }
+        var t = tagMap[it.vault_id] ?? []
+        if on { if !t.contains(tag) { t.append(tag) } } else { t.removeAll { $0 == tag } }
+        tagMap[it.vault_id] = t
+        if on, !tagNames.contains(tag) { tagNames = (tagNames + [tag]).sorted() }
+        return true
+    }
+
     func select(_ m: CurateMode, model: AppModel) async {
         mode = m
         await deal(model: model)

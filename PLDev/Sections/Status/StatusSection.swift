@@ -7,7 +7,7 @@ import UserNotifications
     static let manifest = SectionManifest(id: "status", title: "Status", symbol: "waveform.path.ecg")
 
     /// Address name -> a health path to GET. This build knows none, so every address is asked with a HEAD of its base.
-    static let healthPaths: [String: String] = ["cron": "health"]
+    static let healthPaths: [String: String] = ["cron": "health", "paint": "index"]   // paint: the door has no root page (a HEAD of it is 404); its work list answers with the key
 
     static let state = StatusModel()
 

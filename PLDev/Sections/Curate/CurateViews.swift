@@ -17,6 +17,8 @@ struct CurateView: View {
     @State private var showFavourites = false
     @State private var tips = TipGroup(.ordered) { CurateSwipeTip(); CurateFullTip() }
     @FocusState private var commentFocus: Bool
+    @State private var tagInput = ""
+    @State private var tagFailed = false
     @FocusState private var noteFocus: Bool
     @Environment(\.colorScheme) private var scheme
     private let threshold: CGFloat = 110
@@ -196,7 +198,39 @@ struct CurateView: View {
             case .failed: Text("NOT SAVED: tap the box and tap away to retry").gEyebrow(10).foregroundStyle(PLG.red)
             case .idle: EmptyView()
             }
+            tagRow
         }
+    }
+
+    /// His tags on this piece, removable, and a field to add one (existing tags offered as he types).
+    private var tagRow: some View {
+        VStack(alignment: .leading, spacing: 6) {
+            ScrollView(.horizontal, showsIndicators: false) {
+                HStack(spacing: 6) {
+                    ForEach(state.currentTags, id: \.self) { t in
+                        Button { Task { tagFailed = !(await state.setTag(t, on: false, model: model)) } } label: {
+                            Label(t, systemImage: "xmark").labelStyle(.titleAndIcon).font(.caption)
+                        }
+                        .buttonStyle(.bordered).tint(PLG.gold).accessibilityLabel("Remove tag \(t)")
+                    }
+                    TextField("Add a tag", text: $tagInput).font(.caption).frame(minWidth: 90).submitLabel(.done)
+                        .textInputAutocapitalization(.never).autocorrectionDisabled()
+                        .onSubmit { let t = tagInput; tagInput = ""; Task { tagFailed = !(await state.setTag(t, on: true, model: model)) } }
+                }
+            }
+            let q = tagInput.trimmingCharacters(in: .whitespaces).lowercased()
+            if !q.isEmpty {
+                let hits = state.tagNames.filter { $0.contains(q) && !state.currentTags.contains($0) }.prefix(6)
+                HStack(spacing: 6) {
+                    ForEach(Array(hits), id: \.self) { t in
+                        Button(t) { tagInput = ""; Task { tagFailed = !(await state.setTag(t, on: true, model: model)) } }
+                            .font(.caption).buttonStyle(.bordered)
+                    }
+                }
+            }
+            if tagFailed { Text("TAG NOT SAVED: is the vault key loaded?").gEyebrow(10).foregroundStyle(PLG.red) }
+        }
+        .task { await state.ensureTags(model: model) }
     }
 
     private var noteBox: some View {

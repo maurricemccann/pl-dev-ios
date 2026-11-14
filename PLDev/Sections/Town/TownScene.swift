@@ -11,7 +11,9 @@ enum TownMode: String, CaseIterable, Identifiable, Sendable { case tasks = "Task
 /// earlier sessions; the sky and the lights follow the real sun where the phone is. Units are street pixels, y up.
 @MainActor final class TownScene: SKScene {
     private let LH = TownStreet.LH
-    private var feet: CGFloat { TownStreet.LH - TownStreet.WALK + 4 }
+    // the middle of the sidewalk (painted y 8 to 20), less the ~4 empty units under every sprite's feet (sheet rows end 8-9 px
+    // above the cell bottom): was the sidewalk's back edge + 4, so GlyphGuy hovered over it (his note 11-14 "he's floating")
+    private var feet: CGFloat { TownStreet.LH - TownStreet.WALK - 6 }
     private let streetNode = SKSpriteNode()
     private let skyNode = SKSpriteNode()
     private let nightWash = SKSpriteNode()
@@ -166,7 +168,7 @@ enum TownMode: String, CaseIterable, Identifiable, Sendable { case tasks = "Task
     private func spawnMe() {
         guard me == nil, TownSprites.frames["down"] != nil else { return }
         let g = sprite(townHex("#d9a02e"), scale: 1.05)
-        g.zPosition = 20; g.position = CGPoint(x: door("home"), y: feet + 2)
+        g.zPosition = 20; g.position = CGPoint(x: door("home"), y: feet)
         world.addChild(g)
         let n = Npc(key: "__me", node: g, role: "me", task: nil, tx: door("home"), scale: 1.05, tint: townHex("#d9a02e"))
         me = n
@@ -419,7 +421,7 @@ enum TownMode: String, CaseIterable, Identifiable, Sendable { case tasks = "Task
             tex = rows.indices.contains(row) && rows[row].indices.contains(i) ? rows[row][i] : (node.texture ?? SKTexture())
         }
         if node.texture !== tex { node.texture = tex }
-        node.position.y = n.role == "me" ? feet + 2 : feet
+        node.position.y = feet
         if n.role == "ghost" { node.alpha = 0.5 + 0.12 * sin(clock * 2 + CGFloat(townHash(n.key) % 5)) }
     }
 
