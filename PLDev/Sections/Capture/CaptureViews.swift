@@ -156,8 +156,7 @@ struct CaptureAddCard: View {
                     .lineLimit(2...5).captureInput()
                 if !state.photoText.isEmpty {   // apple lane: Vision read words in the photo
                     Button {
-                        state.notes += (state.notes.isEmpty ? "" : "
-") + state.photoText
+                        state.notes += (state.notes.isEmpty ? "" : "\n") + state.photoText
                         state.photoText = ""
                     } label: { Label("Add the words in the photo to the notes", systemImage: "text.viewfinder").font(.caption) }
                 }
