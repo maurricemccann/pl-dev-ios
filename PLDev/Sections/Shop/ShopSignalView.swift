@@ -7,18 +7,14 @@ import SwiftUI
 struct SignalView: View {
     @State private var email = ""
     @State private var ballot: SiteBallot?
-    @State private var sending = false
-    @State private var done: String?
     @State private var line: String?
-    @State private var needsSite = false
     @State private var web: WebPage?
     @State private var tick = 0
     @Environment(\.colorScheme) private var scheme
     @Environment(\.openURL) private var openURL
 
     private var emailOK: Bool { email.range(of: #"^[^\s@]+@[^\s@]+\.[^\s@]+$"#, options: .regularExpression) != nil }
-    private var needsCheck: Bool { !(ballot?.siteKey ?? "").isEmpty }
-    private var canSend: Bool { !sending && emailOK }
+    private var canSend: Bool { emailOK }
 
     var body: some View {
         ScrollView {
@@ -29,26 +25,13 @@ struct SignalView: View {
                     Text("A seven-year daily practice, still running. The transmission is the record of it \u{2014} what was made, what it cost, what it turned out to mean. Sent as the work happens, not on a marketing calendar.").siteBody(16)
                 }
 
-                if let done {
-                    VStack(alignment: .leading, spacing: 12) {
-                        Text(done).font(SiteFont.display(26, italic: true)).foregroundStyle(Bone.gold)
-                        Text("The signal goes out as the work does. You will be the first to see what arrives.").siteBody(15)
-                        Button { if let u = URL(string: "pldev://section/congregation/stream") { openURL(u) } } label: { Text("See the transmission").frame(maxWidth: 260) }.buttonStyle(SiteGhost())
-                    }
-                } else {
-                    VStack(alignment: .leading, spacing: 16) {
-                        SiteField(label: "Email", text: $email, prompt: "your@email.com", keyboard: .emailAddress, contentType: .emailAddress, capitalize: .never)
-                        HumanGate(siteKey: ballot?.siteKey ?? "")
-                        Button { Task { await send() } } label: {
-                            HStack(spacing: 10) { Text(sending ? "Tuning in" : needsCheck ? "Continue on the site" : "Receive the Signal"); if sending { PLLoader().tint(.white) } }
-                        }
+                VStack(alignment: .leading, spacing: 16) {
+                    SiteField(label: "Email", text: $email, prompt: "your@email.com", keyboard: .emailAddress, contentType: .emailAddress, capitalize: .never)
+                    HumanGate(siteKey: ballot?.siteKey ?? "")
+                    Button { Task { await send() } } label: { Text("Continue on the site") }
                         .buttonStyle(SitePill())
                         .disabled(!canSend)
-                        ResultLine(text: line)
-                        if needsSite {
-                            Button { if let url = Site.page("signal?src=app") { web = WebPage(url) } } label: { Text("Open the signal page on the site").siteLabel(10).frame(minHeight: 44, alignment: .leading) }.buttonStyle(.plain)
-                        }
-                    }
+                    ResultLine(text: line)
                 }
 
                 VStack(alignment: .leading, spacing: 14) {
@@ -74,26 +57,12 @@ struct SignalView: View {
         .sensoryFeedback(PLHaptic.commit, trigger: tick)
     }
 
+    /// Sign-ups pass the site's human check, and the site has no app door for the signal (api/signal is 404, ruled 11-13), so the
+    /// form copies the email and opens the site's own signal page in Apple's sheet every time, with no dead request first.
     private func send() async {
-        if needsCheck {   // the human check runs on the site's own page, in Apple's sheet
-            UIPasteboard.keep(email.trimmingCharacters(in: .whitespaces).lowercased())
-            line = "Your email is copied. Paste it on the site\u{2019}s page."
-            if let url = Site.page("signal?src=app") { web = WebPage(url) }
-            return
-        }
-        sending = true; line = nil; needsSite = false
-        defer { sending = false }
-        do {
-            let r = try await Site.call("POST", "api/signal", body: ["email": email.trimmingCharacters(in: .whitespaces).lowercased(), "source": "app"])
-            if r.status == 404 {   // the route is not on the site yet
-                line = "Not sent. The app's door to the signal is not open on the site yet. The site's own page works."
-                needsSite = true
-                return
-            }
-            if r.ok { done = r.message ?? "You are on the signal. Watch this."; tick += 1 }
-            else { line = "Not sent. \(r.message ?? "The site said no.")" }
-        } catch {
-            line = "Not sent. \(error.localizedDescription)"
-        }
+        UIPasteboard.keep(email.trimmingCharacters(in: .whitespaces).lowercased())
+        line = "Your email is copied. Paste it on the site\u{2019}s page."
+        if let url = Site.page("signal?src=app") { web = WebPage(url) }
+        tick += 1
     }
 }

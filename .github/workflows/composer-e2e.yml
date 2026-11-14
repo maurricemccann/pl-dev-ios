@@ -6,7 +6,7 @@ name: composer-e2e
 # Runs with NO config: public addresses and dummy key names only (what a stranger can reach), the same as screens.yml.
 on:
   push:
-    branches: [wave-composer2]
+    branches: [main]   # Composer regressions run on main (the lane branch is merged and gone)
     paths: ['PLDevUITests/**', '.github/workflows/composer-e2e.yml', 'PLDev/Sections/Composer/**']
   workflow_dispatch:
     inputs:

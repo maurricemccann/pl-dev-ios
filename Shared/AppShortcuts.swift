@@ -27,11 +27,11 @@ struct PLDevShortcuts: AppShortcutsProvider {
             shortTitle: "Cards in a deck",
             systemImageName: "rectangle.stack"
         )
-        AppShortcut(
-            intent: ColourwayLeaderIntent(),
-            phrases: ["Which colourway is winning in \(.applicationName)"],
-            shortTitle: "Colourway vote",
-            systemImageName: "paintpalette"
+        AppShortcut(   // 11-14: Paint's daily canvas in place of the colourway vote (cap of 10; the vote stays an action in Shortcuts)
+            intent: OpenPaintCanvasIntent(),
+            phrases: ["Open the canvas in \(.applicationName)", "Paint in \(.applicationName)"],
+            shortTitle: "Open the canvas",
+            systemImageName: "paintbrush.pointed"
         )
         AppShortcut(
             intent: TownStatusIntent(),
