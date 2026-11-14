@@ -4,32 +4,46 @@ import Foundation
 /// Core Graphics calls this when an image over a layer's pixels is freed, on whatever thread drops it last (often SwiftUI's
 /// render thread). A closure written inside the @MainActor class inherits main-actor isolation and Swift 6 traps off the main
 /// thread: his crash 11-14 05:09 PT, build 163, adjusting the last stroke. A free function has no isolation. Nothing to free: the buffer owns the memory.
-private func plNoRelease(_ info: UnsafeMutableRawPointer?, _ data: UnsafeRawPointer, _ size: Int) {}
+private func plReleaseMemory(_ info: UnsafeMutableRawPointer?, _ data: UnsafeRawPointer, _ size: Int) {
+    if let info { Unmanaged<PixelMemory>.fromOpaque(info).release() }
+}
+
+/// The pixels' own owner. Each image made over them holds one retain until Core Graphics lets the image go, so a picture
+/// still on screen never points at freed memory after its layer is deleted or the canvas closes (Apple's Swift security
+/// talk, 11-14: an image outliving its buffer is the dangling-pointer case; ours had an empty release, nothing kept the memory alive).
+final class PixelMemory: @unchecked Sendable {   // immutable after init; freed once, by whoever holds the last retain
+    let p: UnsafeMutablePointer<UInt8>
+    init(count: Int) { p = .allocate(capacity: count); p.initialize(repeating: 0, count: count) }
+    deinit { p.deallocate() }
+}
 
 /// One layer's pixels: premultiplied RGBA, row 0 on top, y-down like the laptop's canvas (his file stores the same pixels).
 /// Undo is a patch stack of tiles (before and after), so a stroke on a 16 MP canvas costs the strokes' own area, not the canvas.
 @MainActor final class PixelBuffer {
     static let tile = 128
     let w: Int, h: Int
-    nonisolated(unsafe) let ptr: UnsafeMutablePointer<UInt8>   // freed in deinit only
+    private let mem: PixelMemory   // the context and every image keep it alive; it frees itself
+    nonisolated(unsafe) let ptr: UnsafeMutablePointer<UInt8>
     let ctx: CGContext
 
     init?(w: Int, h: Int) {
         guard w > 0, h > 0, w * h <= 16_777_216 else { return nil }
         self.w = w; self.h = h
-        ptr = UnsafeMutablePointer<UInt8>.allocate(capacity: w * h * 4)
-        ptr.initialize(repeating: 0, count: w * h * 4)
+        mem = PixelMemory(count: w * h * 4)
+        ptr = mem.p
         guard let c = CGContext(data: ptr, width: w, height: h, bitsPerComponent: 8, bytesPerRow: w * 4,
-                                space: CGColorSpaceCreateDeviceRGB(), bitmapInfo: CGImageAlphaInfo.premultipliedLast.rawValue) else { ptr.deallocate(); return nil }
+                                space: CGColorSpaceCreateDeviceRGB(), bitmapInfo: CGImageAlphaInfo.premultipliedLast.rawValue) else { return nil }
         c.translateBy(x: 0, y: CGFloat(h)); c.scaleBy(x: 1, y: -1)   // doc space is y-down
         c.interpolationQuality = .high
         ctx = c
     }
-    deinit { ptr.deallocate() }
 
     /// An image over the same memory (no copy). Make a new one after every change so Core Animation uploads it again.
     func image() -> CGImage? {
-        guard let p = CGDataProvider(dataInfo: nil, data: ptr, size: w * h * 4, releaseData: plNoRelease) else { return nil }
+        let info = Unmanaged.passRetained(mem).toOpaque()   // released by plReleaseMemory when Core Graphics frees the image
+        guard let p = CGDataProvider(dataInfo: info, data: ptr, size: w * h * 4, releaseData: plReleaseMemory) else {
+            Unmanaged<PixelMemory>.fromOpaque(info).release(); return nil
+        }
         return CGImage(width: w, height: h, bitsPerComponent: 8, bitsPerPixel: 32, bytesPerRow: w * 4, space: CGColorSpaceCreateDeviceRGB(),
                        bitmapInfo: CGBitmapInfo(rawValue: CGImageAlphaInfo.premultipliedLast.rawValue), provider: p, decode: nil, shouldInterpolate: true, intent: .defaultIntent)
     }
