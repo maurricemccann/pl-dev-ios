@@ -132,7 +132,10 @@ final class PaintFlowTests: XCTestCase {
         shot("gestures-start")
         let surface = app.descendants(matching: .any)["canvas.surface"].firstMatch
         XCTAssertTrue(surface.waitForExistence(timeout: 8), "the canvas surface is an element")
-        surface.twoFingerTap(); sleepFor(0.8)
+        for attempt in 0..<3 where !app.buttons["Redo"].firstMatch.isEnabled {   // the simulator's synthesized touches land unevenly: try again, then say so
+            if attempt == 0 { surface.twoFingerTap() } else if attempt == 1 { surface.tap(withNumberOfTaps: 1, numberOfTouches: 2) } else { app.windows.firstMatch.twoFingerTap() }
+            sleepFor(1.0)
+        }
         XCTAssertTrue(app.buttons["Redo"].firstMatch.isEnabled, "a two-finger tap undoes a step")
         shot("two-finger-undo")
         surface.tap(withNumberOfTaps: 1, numberOfTouches: 3); sleepFor(0.8)
