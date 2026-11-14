@@ -58,8 +58,8 @@ final class ComposerFlowsTests: XCTestCase {
 
     func clear(_ f: XCUIElement) {
         guard let v = f.value as? String, !v.isEmpty else { return }
-        f.tap()
-        f.typeText(String(repeating: XCUIKeyboardKey.delete.rawValue, count: v.count))
+        f.coordinate(withNormalizedOffset: CGVector(dx: 0.97, dy: 0.5)).tap()   // the caret goes to the end, so the deletes take everything
+        f.typeText(String(repeating: XCUIKeyboardKey.delete.rawValue, count: v.count + 2))
     }
 
     func type(_ f: XCUIElement, _ text: String, _ what: String) {
@@ -86,8 +86,7 @@ final class ComposerFlowsTests: XCTestCase {
 
         // add three shots
         for n in 1...3 {
-            let add = app.buttons["Add shot"].firstMatch
-            tap(add, "add shot \(n)")
+            tap(app.buttons["composer.addshot"], "add shot \(n)")
             sleep(1)
         }
         shot("three-shots")
@@ -142,7 +141,7 @@ final class ComposerFlowsTests: XCTestCase {
         shot("one-deleted")
         XCTAssertFalse(app.textFields["Title of shot 3"].exists, "the deleted shot is still there")
         // keep two shots for the rest: add one back
-        tap(app.buttons["Add shot"].firstMatch, "add shot back")
+        tap(app.buttons["composer.addshot"], "add shot back")
         type(app.textFields["Title of shot 3"], "last", "title 3")
         shot("piece-ready")
     }
@@ -159,7 +158,10 @@ final class ComposerFlowsTests: XCTestCase {
         tree("picker")
         // the picker runs out of process; its pictures show up as images
         let imgs = app.images.matching(NSPredicate(format: "label BEGINSWITH 'Photo' OR label BEGINSWITH 'Video' OR label BEGINSWITH 'Live'"))
-        XCTAssertTrue(imgs.firstMatch.waitForExistence(timeout: 20), "the picker shows no photos")
+        XCTAssertTrue(imgs.firstMatch.waitForExistence(timeout: 40), "the picker shows no photos")
+        for _ in 0..<20 where imgs.count < 4 { sleep(2) }   // the library fills in after the first cell
+        shot("photos-loaded")
+        tree("picker-loaded")
         let total = imgs.count
         XCTAssertGreaterThanOrEqual(total, 2, "the seeded media is not in the library")
         for i in 0..<min(total, 4) { imgs.element(boundBy: i).tap() }
@@ -207,7 +209,7 @@ final class ComposerFlowsTests: XCTestCase {
         let src = app.segmentedControls["composer.library.source"]
         tap(src.buttons["Curve Library"], "source Curve Library")
         let still = has("label CONTAINS ', still'")
-        XCTAssertTrue(still.firstMatch.waitForExistence(timeout: 60), "the Curve Library did not load")
+        XCTAssertTrue(has("label CONTAINS ', code-piece'").firstMatch.waitForExistence(timeout: 60), "the Curve Library did not load")
         shot("curve-loaded")
         tap(has("label BEGINSWITH 'clips'").firstMatch, "clips chip")
         sleep(2)
@@ -237,7 +239,7 @@ final class ComposerFlowsTests: XCTestCase {
         let txt = app.staticTexts.matching(NSPredicate(format: "label CONTAINS 'sources:'")).firstMatch
         XCTAssertTrue(txt.exists, "the spec lists no sources")
         XCTAssertTrue(app.staticTexts.matching(NSPredicate(format: "label CONTAINS 'trim '")).firstMatch.exists, "the clip's trim is not in the spec")
-        tap(app.buttons["Close"], "close spec")
+        tap(app.navigationBars["The spec"].buttons["Close"], "close spec")
     }
 
     func test6_Preview() {
@@ -267,7 +269,7 @@ final class ComposerFlowsTests: XCTestCase {
     func test7_GraphSendBoard() {
         launch()
         // open the first shot's graph
-        let graph = app.buttons.matching(NSPredicate(format: "label CONTAINS 'Graph'")).firstMatch
+        let graph = app.buttons["composer.shot.graph"].firstMatch
         XCTAssertTrue(graph.waitForExistence(timeout: 15), "no Graph button on the shot")
         graph.tap()
         sleep(3)

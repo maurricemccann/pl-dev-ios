@@ -100,6 +100,7 @@ struct PieceRoom: View {
     @State private var tick = 0
     @State private var warnTick = 0
     @State private var previewing = false
+    @State private var graphShot: String?
 
     private var piece: ComposerPiece { store.piece }
     private var untitled: Int { piece.shots.filter { $0.title.trimmingCharacters(in: .whitespaces).isEmpty || $0.title == "untitled shot" }.count }
@@ -124,7 +125,7 @@ struct PieceRoom: View {
                     TipView(ComposerShotTip()).listRowBackground(Color.clear)
                     ForEach(Array(piece.shots.enumerated()), id: \.element.id) { i, s in
                         ShotCard(model: model, shot: s, index: i, first: i == 0, last: i == piece.shots.count - 1, pieceTransition: piece.transition, store: store, lib: lib,
-                                 onAttach: { attachTo = s }, onSend: { sending = s }, onDelete: { askDelete = s.id })
+                                 onAttach: { attachTo = s }, onSend: { sending = s }, onDelete: { askDelete = s.id }, onGraph: { store.selected = s.id; graphShot = s.id })
                             .listRowBackground(Color.clear).listRowSeparator(.hidden).listRowInsets(EdgeInsets(top: 5, leading: 16, bottom: 5, trailing: 16))
                             .swipeActions(edge: .trailing) {
                                 Button { sending = s } label: { Label("Send to render", systemImage: "play.fill") }.tint(CMP.gold)
@@ -141,7 +142,11 @@ struct PieceRoom: View {
         }
         .listStyle(.plain)
         .environment(\.editMode, .constant(reordering ? .active : .inactive))
-        .toolbar { ToolbarItem(placement: .topBarTrailing) { if piece.shots.count > 1 { Button(reordering ? "Done" : "Reorder") { withAnimation { reordering.toggle() } } } } }
+        .toolbar {
+            ToolbarItem(placement: .topBarTrailing) { if piece.shots.count > 1 { Button(reordering ? "Done" : "Reorder") { withAnimation { reordering.toggle() } } } }
+            ToolbarItem(placement: .topBarTrailing) { Button { withAnimation(.snappy) { store.addShot() }; tick += 1 } label: { Image(systemName: "plus") }.accessibilityLabel("Add a shot").accessibilityIdentifier("composer.addshot") }
+        }
+        .navigationDestination(item: $graphShot) { id in ComposerGraphView(model: model, shotId: id) }
         .sheet(item: Binding(get: { spec.map { SpecDoc(text: $0) } }, set: { if $0 == nil { spec = nil } })) { doc in ComposerSpecSheet(text: doc.text, name: piece.piece) }
         .sheet(isPresented: $previewing) { ComposerPreviewSheet(piece: piece) }
         .sheet(item: $attachTo) { shot in
@@ -278,6 +283,7 @@ struct ShotCard: View {
     let onAttach: () -> Void
     let onSend: () -> Void
     let onDelete: () -> Void
+    let onGraph: () -> Void
     @State private var picks: [PhotosPickerItem] = []
     @State private var importing = false
     @State private var trimming: ComposerExtra?
@@ -292,11 +298,11 @@ struct ShotCard: View {
             HStack(spacing: 8) {
                 Text(String(format: "%02d", index + 1)).cmpNum(13).foregroundStyle(CMP.muted)
                 Spacer()
-                NavigationLink { ComposerGraphView(model: model, shotId: shot.id) } label: {
+                Button(action: onGraph) {
                     Label("Graph", systemImage: "point.3.connected.trianglepath.dotted").labelStyle(.titleAndIcon).font(.system(size: 12, weight: .medium)).foregroundStyle(shot.nodes?.isEmpty == false ? CMP.gold : CMP.dim)
                         .padding(.horizontal, 12).frame(minHeight: 36).overlay { Capsule().strokeBorder(CMP.line, lineWidth: 0.8) }
                 }
-                .simultaneousGesture(TapGesture().onEnded { store.selected = shot.id })
+                .buttonStyle(.plain).accessibilityIdentifier("composer.shot.graph")
                 Menu { actions } label: { Image(systemName: "ellipsis.circle").font(.system(size: 20)).foregroundStyle(CMP.dim).frame(width: 40, height: 40).contentShape(Rectangle()) }
                     .accessibilityLabel("Shot actions")
             }
