@@ -219,7 +219,7 @@ struct HomeDashboard: View {
         var rows: [PCStats.Reading] = []
         for i in 0..<12 { rows.append(r(60 + i * 2, 40 + (i % 5) * 9, 5.2 - Double(i) * 0.15, ISO8601DateFormatter().string(from: .now.addingTimeInterval(Double(-(60 - i * 5)) * 60)))) }
         rows.append(r(78, 93, 1.6, now))
-        pc = PCStats(thermal: rows, disk_free_gb: 412, disk_total_gb: 953, uptime_h: 61, sessions: 3, pool: [.init(time: now, nonpaged_mb: 2900, paged_mb: 2600)])
+        pc = PCStats(thermal: rows, disk_free_gb: 412, disk_total_gb: 953, uptime_h: 61, sessions: 3, pool: [.init(time: now, nonpaged_mb: 1800, paged_mb: 1700)])
         house = HouseGlanceNumbers(needs: 0, approve: 230, standing: 71, queued: 38, week: 142)
         pcFailed = false
     }

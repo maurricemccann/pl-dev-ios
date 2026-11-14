@@ -55,6 +55,9 @@ enum PLCarry {
         guard s.active else { return orig }
         let dark = scheme == .dark
         let g = rgb(dark ? s.deep : s.pale), t = rgb(dark ? s.pale : s.deep), key = rgb(s.key)
+        // the accent must be seen on its ground: a dark key (oxblood) on a dark ground takes the palette's lighter harmony; a pale key on a pale ground is deepened
+        let lk = luminance(s.key)
+        let readable: (Double, Double, Double) = dark ? (lk >= 0.30 ? key : rgb(s.accent)) : (lk <= 0.55 ? key : mix(key, t, 0.45))
         switch role {
         case .ground: return color(g, alpha)
         case .surface: return color(mix(g, t, dark ? 0.07 : 0.045), alpha)
@@ -64,8 +67,8 @@ enum PLCarry {
         case .dim: return color(mix(t, g, 0.30), alpha)
         case .faint: return color(mix(t, g, 0.48), alpha)
         case .line: return color(key, alpha * (dark ? 0.22 : 0.28))
-        case .accent: return color(key, alpha)
-        case .accentDim: return color(dark ? mix(key, g, 0.16) : mix(key, t, 0.30), alpha)
+        case .accent: return color(readable, alpha)
+        case .accentDim: return color(dark ? mix(readable, g, 0.16) : mix(readable, t, 0.30), alpha)
         case .accentHi: return color(mix(key, (1, 1, 1), 0.55), alpha)
         }
     }

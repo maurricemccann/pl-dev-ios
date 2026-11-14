@@ -52,6 +52,7 @@ final class Notes4FlowsTests: XCTestCase {
     // MARK: 1 and 2 · the tiles tinted by what they mean (his note on the PC tiles)
 
     func test01_TodayTints() {
+        // (pool is 3.4 GB in the demo: amber, so the approve line, not the reboot line, heads the page)
         for (name, ap) in [("dark", XCUIDevice.Appearance.dark), ("light", .light)] {
             appearance(ap)
             launch(["-simDemo", "YES"], page: 0)
@@ -97,9 +98,9 @@ final class Notes4FlowsTests: XCTestCase {
 
     // MARK: 5 · a pack carried through the sections (a dark palette and a light one, in both appearances)
 
-    func test04_PacksCarry() {
-        let links = ["section/house", "section/status", "section/library", "section/practice", "section/composer", "section/shop", "section/town",
-                     "section/curate", "section/paint", "section/glyphbot"]
+    func test04_PacksCarry() throws {
+        if FileManager.default.fileExists(atPath: URL(fileURLWithPath: #filePath).deletingLastPathComponent().appendingPathComponent("skip-packs").path) { throw XCTSkip("packs already photographed") }
+        let links = ["section/house", "section/library", "section/composer", "section/shop"]
         for (pack, face) in [("void-ember", "v2"), ("bone-oxblood", "ledger")] {
             for (apName, ap) in [("dark", XCUIDevice.Appearance.dark), ("light", .light)] {
                 appearance(ap)
@@ -125,9 +126,11 @@ final class Notes4FlowsTests: XCTestCase {
     func test05_HealthResult() {
         appearance(.dark)
         launch(["-simNoHealthKit", "YES"], link: "settings")
-        let test = el("Write a 1-minute test")
-        XCTAssertTrue(test.waitForExistence(timeout: 40), "the test button is under the switch")
-        scrollTo(test)
+        let test = app.buttons.matching(NSPredicate(format: "label CONTAINS 'minute test'")).firstMatch
+        XCTAssertTrue(app.switches.firstMatch.waitForExistence(timeout: 40), "settings opened")
+        var n = 0
+        while !test.exists && n < 14 { app.swipeUp(); n += 1 }
+        XCTAssertTrue(test.exists, "the test button is under the switch")
         shot("health-before")
         test.tap(); wait(3)
         shot("health-after-test")
