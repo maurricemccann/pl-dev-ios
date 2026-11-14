@@ -69,6 +69,8 @@ struct PaintHome: View {
     @State private var busy: String?
     private let sync = NativeSync.shared
 
+    init(model: AppModel, state: PaintModel) { self.model = model; self.state = state }
+
     private var stacks: [(name: String, works: [PaintModel.Work])] {
         var names: [String] = []
         for w in state.works { if let s = w.stack, !names.contains(s) { names.append(s) } }

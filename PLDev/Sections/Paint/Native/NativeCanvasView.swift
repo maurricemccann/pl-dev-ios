@@ -481,6 +481,8 @@ struct NativeNewCanvasSheet: View {
     @State private var transparent = false
     @State private var paper = "plain"
 
+    init(make: @escaping (NewCanvasSpec) -> Void) { self.make = make }
+
     var body: some View {
         NavigationStack {
             Form {
