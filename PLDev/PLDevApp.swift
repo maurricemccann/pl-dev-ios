@@ -32,7 +32,7 @@ struct PLDevApp: App {
                 // photographed without the system's "Open in PL DEV?" prompt. Never compiled into a device build.
                 .task {
                     let d = UserDefaults.standard
-                    if let path = d.string(forKey: "simConfig"), AppModel.shared.config == nil { await AppModel.shared.loadConfig(from: URL(fileURLWithPath: path)) }
+                    if let path = d.string(forKey: "simConfig"), AppModel.shared.config == nil { AppModel.shared.loadConfigForSimulator(from: URL(fileURLWithPath: path)) }
                     if let s = d.string(forKey: "simLink"), let u = URL(string: s), let link = DeepLink(url: u) {
                         try? await Task.sleep(for: .seconds(2)); AppModel.shared.open(link)
                     }

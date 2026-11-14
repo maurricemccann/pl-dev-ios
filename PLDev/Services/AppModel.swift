@@ -50,6 +50,15 @@ enum OriginReach: Equatable {
         }
     }
 
+    #if targetEnvironment(simulator)
+    /// Simulator only (screens workflow): an unsigned simulator build has no Keychain entitlement (-34018), so the
+    /// public test config is read straight from the file and never stored. Device builds never compile this.
+    func loadConfigForSimulator(from url: URL) {
+        do { apply(try JSONDecoder().decode(PLDevConfig.self, from: Data(contentsOf: url))) }
+        catch { configError = plainSentence(error) }
+    }
+    #endif
+
     func forgetConfig() {
         Task { await store.forget() }
         SharedState.clearPublicConfig()   // the extensions lose their keyless copy too
