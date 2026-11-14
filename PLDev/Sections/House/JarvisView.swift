@@ -189,7 +189,7 @@ struct JarvisView: View {
 
     private var titleBar: some View {
         HStack {
-            Text("\u{273B} JARVIS").font(.system(size: 12, design: .monospaced)).tracking(2.4).foregroundStyle(accent)
+            Text("\u{273B}").font(.system(size: 14, design: .monospaced)).foregroundStyle(accent)
             Spacer()
             HStack(spacing: 5) {
                 Circle().fill(j.online == true ? amber : dim).frame(width: 6, height: 6)
