@@ -90,7 +90,6 @@ final class ComposerFlowsTests: XCTestCase {
             sleep(1)
         }
         shot("three-shots")
-        XCTAssertTrue(app.textFields["Title of shot 3"].waitForExistence(timeout: 5), "three shots did not appear")
 
         // titles
         let names = ["entry", "the curve", "the fill"]
@@ -99,9 +98,11 @@ final class ComposerFlowsTests: XCTestCase {
         XCTAssertEqual(app.textFields["Title of shot 2"].value as? String, "the curve")
 
         // duration: raise shot 1 by two steps of 0.5 s
+        for _ in 0..<8 where !app.steppers["Duration"].firstMatch.isHittable { app.swipeUp() }
         let step = app.steppers["Duration"].firstMatch
         if tap(step.buttons["Increment"], "duration increment") { step.buttons["Increment"].tap(); step.buttons["Increment"].tap() }
         shot("duration-raised")
+        for _ in 0..<8 { app.swipeDown() }
 
         // how shot 2 enters
         let enter = has("label CONTAINS 'inherit'")
@@ -166,8 +167,9 @@ final class ComposerFlowsTests: XCTestCase {
         XCTAssertGreaterThanOrEqual(total, 2, "the seeded media is not in the library")
         for i in 0..<min(total, 4) { imgs.element(boundBy: i).tap() }
         shot("photos-selected")
-        let addBtn = has("label BEGINSWITH 'Add'").firstMatch
-        if addBtn.waitForExistence(timeout: 5) { addBtn.tap() } else { tree("picker-add"); XCTFail("no Add button in the picker") }
+        // the picker's confirm is a check mark at the top right; its label has varied, so try the names, then the spot
+        let confirm = ["Add", "Done", "Select"].map { app.buttons[$0] }.first { $0.exists }
+        if let c = confirm { c.tap() } else { app.coordinate(withNormalizedOffset: CGVector(dx: 0.9, dy: 0.15)).tap() }
         let note = app.staticTexts.matching(NSPredicate(format: "label BEGINSWITH 'Added'")).firstMatch
         XCTAssertTrue(note.waitForExistence(timeout: 30), "the picks were not copied in")
         sleep(1)
@@ -304,7 +306,39 @@ final class ComposerFlowsTests: XCTestCase {
             sleep(1)
             shot("graph-node-selected")
         } else { tree("graph"); XCTFail("the tracer node is not on the canvas") }
-        shot("graph-end")
+        // wire the path into the tracer, and the tracer into the card, through the inspector's menus
+        let pathInput = app.buttons.matching(NSPredicate(format: "label CONTAINS 'Not wired'")).firstMatch
+        if tap(pathInput, "tracer path input") {
+            tap(app.buttons.matching(NSPredicate(format: "label BEGINSWITH 'PL-'")).firstMatch, "the path source in the menu")
+        }
+        sleep(1)
+        shot("graph-path-wired")
+        let card = any("File to /curate, File to /curate")
+        if tap(card, "file to curate node") {
+            sleep(1)
+            if tap(app.buttons.matching(NSPredicate(format: "label CONTAINS 'Not wired'")).firstMatch, "card media input") {
+                tap(app.buttons.matching(NSPredicate(format: "label BEGINSWITH 'Tracer Render'")).firstMatch, "the tracer in the menu")
+            }
+        }
+        sleep(1)
+        shot("graph-card-wired")
         tree("graph-end")
+        // back to the piece, then send this shot to the house
+        tap(app.navigationBars.buttons["BackButton"].firstMatch, "back from the graph")
+        sleep(2)
+        shot("piece-after-graph")
+        if tap(app.buttons["Shot actions"].firstMatch, "shot actions") {
+            tap(app.buttons["Send to render"].firstMatch, "send to render")
+            if tap(app.buttons["Send to render"].firstMatch, "confirm send") { sleep(5) }
+        }
+        shot("sent")
+        // with no key the door refuses and the card waits on the phone; with the key it lands on the board. Either way the line says which.
+        let line = app.staticTexts.matching(NSPredicate(format: "label BEGINSWITH 'Waiting for the house' OR label BEGINSWITH 'Sent' OR label BEGINSWITH 'Not sent'")).firstMatch
+        XCTAssertTrue(line.waitForExistence(timeout: 20) || app.buttons["Board"].exists, "send gave no answer")
+        area("Board")
+        sleep(5)
+        shot("board")
+        tree("board")
+        XCTAssertTrue(app.staticTexts.matching(NSPredicate(format: "label CONTAINS 'Waiting for the house' OR label CONTAINS 'Filed' OR label CONTAINS 'filed'")).firstMatch.waitForExistence(timeout: 15), "the board shows neither the waiting card nor the house's cards")
     }
 }

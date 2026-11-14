@@ -140,7 +140,7 @@ struct PieceRoom: View {
                 }
             }
         }
-        .listStyle(.plain)
+        .listStyle(.plain).scrollDismissesKeyboard(.interactively)
         .environment(\.editMode, .constant(reordering ? .active : .inactive))
         .toolbar {
             ToolbarItem(placement: .topBarTrailing) { if piece.shots.count > 1 { Button(reordering ? "Done" : "Reorder") { withAnimation { reordering.toggle() } } } }
