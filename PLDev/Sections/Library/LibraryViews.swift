@@ -361,15 +361,21 @@ struct LibraryView: View {
                     Button("None", systemImage: "circle") { picked.removeAll() }
                     Toggle("Range: tap two to take all between", isOn: $range)
                     Button("Tag…", systemImage: "tag") { showTag = true }.disabled(picked.isEmpty)
+                    Divider()
+                    Button("Favourite", systemImage: "star.fill") { let ids = Array(picked); Task { await apply(ids, "fav"); picked.removeAll() } }.disabled(picked.isEmpty)
+                    Button("Clear the mark", systemImage: "eraser") { let ids = Array(picked); Task { await apply(ids, "clear"); picked.removeAll() } }.disabled(picked.isEmpty)
                 }
                 Spacer()
-                bulk("cut", "xmark", PLG.red, "Cut"); bulk("maybe", "questionmark", PLG.amber, "Maybe"); bulk("keep", "checkmark", PLG.teal, "Keep"); bulk("fav", "star.fill", PLG.gold, "Favourite"); bulk("clear", "eraser", nil, "Clear the mark")
+                // three verdicts with their words: five icons overflowed into a dead "..." on a phone (his note 11-13)
+                bulk("cut", "xmark", PLG.red, "Cut"); bulk("maybe", "questionmark", PLG.amber, "Maybe"); bulk("keep", "checkmark", PLG.teal, "Keep")
             }
         }
     }
 
     private func bulk(_ w: String, _ symbol: String, _ tint: Color?, _ label: String) -> some View {
-        Button { let ids = Array(picked); Task { await apply(ids, w); picked.removeAll() } } label: { Image(systemName: symbol) }
+        Button { let ids = Array(picked); Task { await apply(ids, w); picked.removeAll() } } label: {
+            VStack(spacing: 1) { Image(systemName: symbol); Text(label).font(.system(size: 9, weight: .semibold)) }
+        }
             .tint(tint).disabled(picked.isEmpty).accessibilityLabel(label)
     }
 

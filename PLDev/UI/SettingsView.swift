@@ -49,6 +49,7 @@ struct SettingsView: View {
                     .padding(.vertical, 4)
                     .accessibilityElement(children: .combine)
                 }
+                AccountsRows(model: model)
                 HouseRows()
                 appearance
                 notifications
@@ -495,4 +496,67 @@ struct ThemePacksView: View {
         .navigationTitle("Theme packs")
     }
     private func face(_ f: String) -> String { switch f { case "v2": return PLFace.handV2; case "ransom": return PLFace.ransom; case "ledger": return PLFace.ledger; default: return PLFace.handV1 } }
+}
+
+
+/// Accounts (his note 11-13: "sign into accounts for quick account access and not having to log in"): sign in once here and
+/// every section uses it. The site account's session lives in the Keychain (SiteAccount); the console, gallery, board and call
+/// are opened by the config's keys, so they need no sign-in at all, and say so.
+struct AccountsRows: View {
+    let model: AppModel
+    @State private var account = SiteAccount.shared
+    @State private var signingIn = false
+    var body: some View {
+        Section {
+            HStack {
+                SettingsLabel("Psyched Luxuries", "person.crop.circle.fill", Color(hex: 0xc9a84c))
+                Spacer()
+                if account.signedIn {
+                    Text(account.me?.handle.map { "@" + $0 } ?? account.me?.email ?? "Signed in").foregroundStyle(.secondary).lineLimit(1)
+                } else {
+                    Button("Sign in") { signingIn = true }.buttonStyle(.bordered)
+                }
+            }
+            if account.signedIn {
+                Button("Sign out of Psyched Luxuries", role: .destructive) { Task { await account.signOut() } }
+            }
+            LabeledContent {
+                Text(model.config == nil ? "Load your config" : "By your config").foregroundStyle(.secondary)
+            } label: { SettingsLabel("Console, gallery, board, call", "key.fill", Color(hex: 0xc9a84c)) }
+        } header: { Text("Accounts") } footer: {
+            Text("Sign in once: the Shop, the Congregation and your orders use it, and it stays in this iPhone's Keychain. Your saved password fills in from iCloud Keychain.")
+        }
+        .task { if !account.checked { await account.refresh() } }
+        .sheet(isPresented: $signingIn) { AccountSignInSheet(account: account) }
+    }
+}
+
+private struct AccountSignInSheet: View {
+    let account: SiteAccount
+    @Environment(\.dismiss) private var dismiss
+    @State private var email = ""
+    @State private var password = ""
+    @State private var line = ""
+    @State private var busy = false
+    var body: some View {
+        NavigationStack {
+            Form {
+                Section {
+                    TextField("Email", text: $email).textContentType(.username).keyboardType(.emailAddress).textInputAutocapitalization(.never).autocorrectionDisabled()
+                    SecureField("Password", text: $password).textContentType(.password)
+                } footer: { if !line.isEmpty { Text(line).foregroundStyle(.red) } }
+                Section {
+                    Button(busy ? "Signing in..." : "Sign in") {
+                        busy = true
+                        Task {
+                            if let err = await account.signIn(email: email, password: password) { line = "Not signed in. \(err)" } else { dismiss() }
+                            busy = false
+                        }
+                    }.disabled(busy || email.isEmpty || password.isEmpty)
+                }
+            }
+            .navigationTitle("Psyched Luxuries")
+            .toolbar { ToolbarItem(placement: .cancellationAction) { Button("Cancel") { dismiss() } } }
+        }
+    }
 }

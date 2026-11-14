@@ -78,8 +78,8 @@ struct HomeDashboard: View {
             Text("The house").plHand(20)
             if let h = house {
                 HStack(alignment: .top) {
-                    stat("Needs you", "\(h.needs)", h.needs > 0 ? PLTone.bad : nil)
-                    stat("Approve", "\(h.approve)", nil)
+                    door("house/founder") { stat("Needs you", "\(h.needs)", h.needs > 0 ? PLTone.bad : nil) }   // a tap opens what needs him (his note 11-13)
+                    door("house/approvals") { stat("Approve", "\(h.approve)", nil) }
                     stat("In the drip", "\(h.queued)", nil)
                     stat("Standing", "\(h.standing)", nil)
                 }
@@ -93,11 +93,16 @@ struct HomeDashboard: View {
         .glassEffect(.regular, in: RoundedRectangle(cornerRadius: PLRadius.card, style: .continuous))
     }
 
+    @Environment(\.openURL) private var openURL
+    private func door<V: View>(_ path: String, @ViewBuilder _ content: () -> V) -> some View {
+        Button { if let u = URL(string: "pldev://section/" + path) { openURL(u) } } label: { content().contentShape(Rectangle()) }.buttonStyle(.plain)
+    }
+
     private func stat(_ name: String, _ value: String, _ tint: Color?) -> some View {
         VStack(alignment: .leading, spacing: 2) {
             Text(value).font(.system(.title3, design: .monospaced).weight(.semibold)).monospacedDigit().foregroundStyle(tint ?? .primary)
                 .lineLimit(1).minimumScaleFactor(0.6).contentTransition(.numericText())
-            Text(name).plLabel(10).foregroundStyle(.secondary)
+            Text(name).plLabel(10).foregroundStyle(.secondary).lineLimit(1).minimumScaleFactor(0.6)   // "Standing" kept its g on one line (11-13)
         }
         .frame(maxWidth: .infinity, alignment: .leading)
         .accessibilityElement(children: .combine)
@@ -151,14 +156,21 @@ struct HomeStatusStrip: View {
                     Text(state.checkedAt == nil ? "checking" : down == 0 ? "all answering" : "\(down) not answering")
                         .plLabel(10).foregroundStyle(down == 0 ? PLTone.good : PLTone.bad)
                 }
-                FlowRow {
-                    ForEach(origins, id: \.self) { name in mark(reach: state.reach[name]).accessibilityLabel("\(name): \(label(state.reach[name]))") }
+                // a signal per address and a key per key (his note 11-13: checkmarks said nothing about what they were)
+                HStack(spacing: 8) {
+                    Image(systemName: "antenna.radiowaves.left.and.right").font(.system(size: 12, weight: .semibold)).foregroundStyle(.secondary).frame(width: 18)
+                    FlowRow {
+                        ForEach(origins, id: \.self) { name in mark(reach: state.reach[name]).accessibilityLabel("\(name): \(label(state.reach[name]))") }
+                    }
                 }
-                FlowRow {
-                    ForEach(keys, id: \.key) { k in
-                        Image(systemName: k.value.isEmpty ? "circle.dashed" : "checkmark.circle.fill")
-                            .font(.system(size: 18)).foregroundStyle(k.value.isEmpty ? Color.secondary : Color(hex: 0xc9a84c))
-                            .accessibilityLabel("\(k.key) key \(k.value.isEmpty ? "not set" : "set")")
+                HStack(spacing: 8) {
+                    Image(systemName: "key.horizontal").font(.system(size: 12, weight: .semibold)).foregroundStyle(.secondary).frame(width: 18)
+                    FlowRow {
+                        ForEach(keys, id: \.key) { k in
+                            Image(systemName: k.value.isEmpty ? "key.slash" : "key.fill")
+                                .font(.system(size: 17)).foregroundStyle(k.value.isEmpty ? Color.secondary : Color(hex: 0xc9a84c))
+                                .accessibilityLabel("\(k.key) key \(k.value.isEmpty ? "not set" : "set")")
+                        }
                     }
                 }
             }
@@ -171,7 +183,7 @@ struct HomeStatusStrip: View {
 
     private func mark(reach: OriginReach?) -> some View {
         let (symbol, tint): (String, Color) = {
-            switch reach { case .up?: return ("checkmark.circle.fill", PLTone.good); case .down?: return ("xmark.circle.fill", PLTone.bad); default: return ("circle.dashed", Color.secondary) }
+            switch reach { case .up?: return ("cellularbars", PLTone.good); case .down?: return ("antenna.radiowaves.left.and.right.slash", PLTone.bad); default: return ("cellularbars", Color.secondary) }
         }()
         return Image(systemName: symbol).font(.system(size: 18)).foregroundStyle(tint)
     }

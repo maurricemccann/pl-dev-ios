@@ -45,17 +45,24 @@ struct HouseWidgetView: View {
                         Spacer()
                         Text(g.updatedAt, style: .relative).font(.caption2).foregroundStyle(.secondary)
                     }
-                    HStack(alignment: .firstTextBaseline, spacing: 4) {
-                        Text("\(g.drafts)").font(.system(.largeTitle, design: .rounded, weight: .bold)).contentTransition(.numericText())
-                        Text("drafts").font(.caption).foregroundStyle(.secondary)
+                    // the drafts lead to what needs approving, the next task to what needs him (his note 11-13; Links work in medium and up)
+                    Link(destination: URL(string: "pldev://section/house/approvals")!) {
+                        HStack(alignment: .firstTextBaseline, spacing: 4) {
+                            Text("\(g.drafts)").font(.system(.largeTitle, design: .rounded, weight: .bold)).contentTransition(.numericText())
+                            Text("to approve").font(.caption).foregroundStyle(.secondary)
+                        }
                     }
                     ProgressView(value: Double(g.done), total: Double(max(g.total, 1))) {
                         Text("Shift \(g.done) of \(g.total)").font(.caption)
                     }
                     .widgetAccentable()
                     if family != .systemSmall, let n = g.next {
-                        Text(n).font(.callout).lineLimit(2)
-                        if let t = g.nextTime { Text(t).font(.caption2).foregroundStyle(.secondary) }
+                        Link(destination: URL(string: "pldev://section/house/founder")!) {
+                            VStack(alignment: .leading, spacing: 2) {
+                                Text(n).font(.callout).lineLimit(2)
+                                if let t = g.nextTime { Text(t).font(.caption2).foregroundStyle(.secondary) }
+                            }
+                        }
                     }
                 }
             }
