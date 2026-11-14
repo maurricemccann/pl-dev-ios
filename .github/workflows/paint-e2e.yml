@@ -4,6 +4,9 @@ name: paint-e2e
 # with an XCUITest (taps, drags, strokes, the Photos picker) and screenshots every step. Public addresses and dummy key names only (the same as
 # screens.yml): nothing private is read, and no media of his is ever used.
 on:
+  push:
+    branches: [wave-paint3]
+    paths: [PLDevUITests/RUN]   # a branch-only workflow cannot be dispatched by hand: bump this file to run it
   workflow_dispatch:
     inputs:
       only:
