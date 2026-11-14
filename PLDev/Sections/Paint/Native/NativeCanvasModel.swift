@@ -181,7 +181,8 @@ struct GroupRow: Identifiable { let id: Int; let name: String; let visible: Bool
     // MARK: works
 
     func startNew(w: Int, h: Int, transparent: Bool = false, paperID: String? = nil) {
-        guard live == nil else { return }
+        // 11-14 his report: "trying to create a canvas, nothing happened". This refusal was silent; it now says why.
+        guard live == nil else { say("A stroke is still open. Lift your finger, then make the canvas again."); return }
         commitTransform()
         saveNow()
         do {
