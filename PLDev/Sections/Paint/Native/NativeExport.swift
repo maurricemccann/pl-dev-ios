@@ -14,9 +14,15 @@ import UniformTypeIdentifiers
 
     /// A one-page PDF at the picture's pixel size (a page point per pixel), the picture on its paper, transparent where the paper is hidden.
     static func pdf(_ d: NativeDoc) -> Data? {
-        guard let png = d.flatPNG(), let ui = UIImage(data: png) else { return nil }
-        let r = UIGraphicsPDFRenderer(bounds: CGRect(x: 0, y: 0, width: d.w, height: d.h), format: { let f = UIGraphicsPDFRendererFormat(); f.documentInfo = [kCGPDFContextCreator as String: "PL Paint"]; return f }())
-        return r.pdfData { c in c.beginPage(); ui.draw(in: CGRect(x: 0, y: 0, width: d.w, height: d.h)) }
+        // Plain Core Graphics, no renderer closure: PDF export killed the app in every simulator run 11-14 (Export and Gallery share,
+        // both right after the PDF tap) while PNG/JPEG/PSD passed; the UIKit renderer's actions closure was the one PDF-only piece.
+        guard let png = d.flatPNG(), let img = UIImage(data: png)?.cgImage else { return nil }
+        let out = NSMutableData()
+        var box = CGRect(x: 0, y: 0, width: d.w, height: d.h)
+        guard let consumer = CGDataConsumer(data: out as CFMutableData),
+              let ctx = CGContext(consumer: consumer, mediaBox: &box, [kCGPDFContextCreator as String: "PL Paint"] as CFDictionary) else { return nil }
+        ctx.beginPDFPage(nil); ctx.draw(img, in: box); ctx.endPDFPage(); ctx.closePDF()
+        return out as Data
     }
 
     /// A JPEG has no transparency, so a hidden paper goes onto white.
