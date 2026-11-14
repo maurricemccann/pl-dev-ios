@@ -1,4 +1,5 @@
 import SwiftUI
+import AuthenticationServices
 
 /// Settings: how the app looks, when it may notify, which keys the sections need, each section's own rows,
 /// the debug log, the probes, forget the config, about. Every switch says in plain words what it does.
@@ -537,8 +538,24 @@ private struct AccountSignInSheet: View {
     @State private var password = ""
     @State private var line = ""
     @State private var busy = false
+    @Environment(\.webAuthenticationSession) private var webAuth
     var body: some View {
         Form {
+                Section {
+                    // his way in (11-14: "I always sign into Psyched Luxuries through Google"): the site's own Google flow in Apple's sign-in sheet
+                    Button {
+                        guard let start = Site.page("api/auth/login?app=pldev") else { line = "Load your config first."; return }
+                        busy = true
+                        Task {
+                            do {
+                                let back = try await webAuth.authenticate(using: start, callbackURLScheme: "pldev", preferredBrowserSession: .shared)
+                                if let err = await account.finishGoogle(callback: back) { line = "Not signed in. \(err)" } else { dismiss() }
+                            } catch { line = "Google sign-in was cancelled." }
+                            busy = false
+                        }
+                    } label: { Label(busy ? "Signing in..." : "Continue with Google", systemImage: "g.circle.fill") }
+                        .disabled(busy)
+                } footer: { Text("Or with your email and password:") }
                 Section {
                     TextField("Email", text: $email).textContentType(.username).keyboardType(.emailAddress).textInputAutocapitalization(.never).autocorrectionDisabled()
                     SecureField("Password", text: $password).textContentType(.password)

@@ -157,6 +157,22 @@ import SwiftUI
         } catch { return error.localizedDescription }
     }
 
+    /// Google sign-in, his usual way in (11-14): the site ran Google and sent back pldev://auth?code=… ; swap that one-time
+    /// code (2 minutes, works once) for this phone's own session. Nil on success, else the site's sentence.
+    func finishGoogle(callback: URL) async -> String? {
+        guard let code = URLComponents(url: callback, resolvingAgainstBaseURL: false)?.queryItems?.first(where: { $0.name == "code" })?.value,
+              !code.isEmpty else { return "Google did not finish. Try again." }
+        do {
+            let r = try await Site.call("POST", "api/auth/app-exchange", body: ["code": code])
+            guard r.ok else { return r.message ?? "That did not work." }
+            guard let t = r.cookies["pl_session"], !t.isEmpty else { return "The site signed you in but sent no session. Try again." }
+            token = t
+            try? KeyStore.save(Data(t.utf8), account: Self.keyName)
+            await refresh()
+            return signedIn ? nil : "The site did not recognise the session. Try again."
+        } catch { return error.localizedDescription }
+    }
+
     func signOut() async {
         _ = try? await Site.call("POST", "api/auth/logout")
         expire()
