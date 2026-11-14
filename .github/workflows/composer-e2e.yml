@@ -7,7 +7,7 @@ name: composer-e2e
 on:
   push:
     branches: [main]   # Composer regressions run on main (the lane branch is merged and gone)
-    paths: ['PLDevUITests/**', '.github/workflows/composer-e2e.yml', 'PLDev/Sections/Composer/**']
+    paths: ['PLDevUITests/Tests/ComposerFlowsTests.swift', '.github/workflows/composer-e2e.yml', 'PLDev/Sections/Composer/**']
   workflow_dispatch:
     inputs:
       only:
@@ -17,6 +17,11 @@ on:
 
 permissions:
   contents: read
+
+# one run per branch: a newer push cancels the older run (11-14: stale runs filled the Mac runners)
+concurrency:
+  group: composer-e2e-${{ github.ref }}
+  cancel-in-progress: true
 
 jobs:
   e2e:

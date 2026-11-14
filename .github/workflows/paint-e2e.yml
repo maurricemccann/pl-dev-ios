@@ -17,6 +17,11 @@ on:
 permissions:
   contents: read
 
+# one run per branch: a newer push cancels the older run (11-14: stale runs filled the Mac runners)
+concurrency:
+  group: paint-e2e-${{ github.ref }}
+  cancel-in-progress: true
+
 jobs:
   e2e:
     runs-on: xcode-27
