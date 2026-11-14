@@ -39,11 +39,9 @@ import UIKit
         let pan = UIPanGestureRecognizer(target: self, action: #selector(pan(_:)))
         pan.minimumNumberOfTouches = 2; pan.maximumNumberOfTouches = 2
         for g in [pinch, rot, pan] as [UIGestureRecognizer] { g.delegate = self; g.cancelsTouchesInView = false; addGestureRecognizer(g) }
-        for n in 2...4 {   // a tap of two, three or four fingers runs what it is bound to (Gesture controls)
-            let t = UITapGestureRecognizer(target: self, action: #selector(tap(_:)))
-            t.numberOfTouchesRequired = n; t.cancelsTouchesInView = false; t.delegate = self
-            addGestureRecognizer(t)
-        }
+        // a tap of two, three or four fingers is counted from the touches themselves (noteDown / noteUp below), the way his own
+        // app does it (pl-paint src/app.js: every finger up within 320 ms, none moved). The system's tap recognizers competed
+        // with drawing and never fired under test.
         for n in 2...3 {   // hold two or three fingers: the bound action runs, and Undo and Redo keep stepping
             let h = UILongPressGestureRecognizer(target: self, action: #selector(hold(_:)))
             h.numberOfTouchesRequired = n; h.minimumPressDuration = 0.65; h.allowableMovement = 20; h.cancelsTouchesInView = false; h.delegate = self
@@ -311,9 +309,32 @@ import UIKit
     @objc private func pinch(_ g: UIPinchGestureRecognizer) { apply(pivot: g.location(in: self), scale: g.scale, rotation: 0, move: .zero); g.scale = 1 }
     @objc private func rotate(_ g: UIRotationGestureRecognizer) { apply(pivot: g.location(in: self), scale: 1, rotation: g.rotation, move: .zero); g.rotation = 0 }
     @objc private func pan(_ g: UIPanGestureRecognizer) { let t = g.translation(in: self); apply(pivot: .zero, scale: 1, rotation: 0, move: t); g.setTranslation(.zero, in: self) }
-    @objc private func tap(_ g: UITapGestureRecognizer) {
-        if model.shapeHeld { model.perfectShape(); return }
-        model.run(action: model.gestures["tap\(g.numberOfTouches)"] ?? "None")
+    // MARK: finger taps, counted (his app.js rule)
+
+    private var tapLive: [ObjectIdentifier: CGPoint] = [:]
+    private var tapStart: TimeInterval = 0
+    private var tapMost = 0
+    private var tapMoved = false
+
+    private func noteDown(_ touches: Set<UITouch>) {
+        for t in touches where t.type != .pencil {
+            if tapLive.isEmpty { tapStart = t.timestamp; tapMost = 0; tapMoved = false }
+            tapLive[ObjectIdentifier(t)] = t.location(in: self)
+            tapMost = max(tapMost, tapLive.count)
+        }
+    }
+    private func noteMoved(_ touches: Set<UITouch>) {
+        for t in touches { if let o = tapLive[ObjectIdentifier(t)] { let p = t.location(in: self); if hypot(p.x - o.x, p.y - o.y) > 12 { tapMoved = true } } }
+    }
+    /// The last finger up: two, three or four fingers that came and went within 320 ms without moving are a tap.
+    private func noteUp(_ touches: Set<UITouch>, cancelled: Bool) {
+        var last: TimeInterval = 0
+        for t in touches where tapLive.removeValue(forKey: ObjectIdentifier(t)) != nil { last = max(last, t.timestamp) }
+        guard tapLive.isEmpty, last > 0 else { return }
+        let n = tapMost; tapMost = 0
+        guard !cancelled, !tapMoved, (2...4).contains(n), last - tapStart < 0.32, let m = model else { return }
+        if m.shapeHeld { m.perfectShape(); return }
+        m.run(action: m.gestures["tap\(n)"] ?? "None")
     }
     @objc private func hold(_ g: UILongPressGestureRecognizer) {
         let name = model.gestures["hold\(g.numberOfTouches)"] ?? "None"
@@ -532,6 +553,7 @@ extension CanvasStage: UIGestureRecognizerDelegate, UIPencilInteractionDelegate 
     required init?(coder: NSCoder) { fatalError() }
 
     override func touchesBegan(_ touches: Set<UITouch>, with event: UIEvent?) {
+        noteDown(touches)
         guard let m = model else { return }
         let count = event?.touches(for: self)?.count ?? 1
         if let live = tracked, count > 1, live.type != .pencil {
@@ -546,6 +568,7 @@ extension CanvasStage: UIGestureRecognizerDelegate, UIPencilInteractionDelegate 
     }
 
     override func touchesMoved(_ touches: Set<UITouch>, with event: UIEvent?) {
+        noteMoved(touches)
         guard let m = model, let t = tracked, touches.contains(t) else { return }
         if t.type != .pencil, (event?.touches(for: self)?.count ?? 0) > 1 { m.touchCancelled(); tracked = nil; return }
         let all = event?.coalescedTouches(for: t) ?? [t]   // every sample the pen produced, not one per frame
@@ -554,11 +577,13 @@ extension CanvasStage: UIGestureRecognizerDelegate, UIPencilInteractionDelegate 
     }
 
     override func touchesEnded(_ touches: Set<UITouch>, with event: UIEvent?) {
+        noteUp(touches, cancelled: false)
         guard let m = model, let t = tracked, touches.contains(t) else { return }
         tracked = nil; m.touchEnded(t.preciseLocation(in: self))
     }
 
     override func touchesCancelled(_ touches: Set<UITouch>, with event: UIEvent?) {
+        noteUp(touches, cancelled: true)
         guard let m = model, let t = tracked, touches.contains(t) else { return }
         tracked = nil; m.touchCancelled()
     }
