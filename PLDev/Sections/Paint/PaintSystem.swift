@@ -54,7 +54,7 @@ struct PaintRoomQuery: EntityStringQuery {
 
 struct OpenPaintRoomIntent: OpenIntent {
     static let title: LocalizedStringResource = "Open a PL Paint Room"
-    @Parameter(title: "Room") var target: PaintRoomEntity
+    @AppIntents.Parameter(title: "Room") var target: PaintRoomEntity
     init() {}
     init(target: PaintRoomEntity) { self.target = target }
     @MainActor func perform() async throws -> some IntentResult {
