@@ -64,6 +64,7 @@ struct PaintHome: View {
     @State private var deleting: PaintModel.Work?
     @State private var shareURL: URL?
     @State private var photo: PhotosPickerItem?
+    @State private var photoSheet = false
     @State private var files = false
     @State private var line: String?
     @State private var busy: String?
@@ -102,7 +103,7 @@ struct PaintHome: View {
         .toolbar {
             ToolbarItemGroup(placement: .topBarTrailing) {
                 Menu {
-                    PhotosPicker(selection: $photo, matching: .images) { Label("A photo, as a new work", systemImage: "photo.on.rectangle") }
+                    Button { photoSheet = true } label: { Label("A photo, as a new work", systemImage: "photo.on.rectangle") }
                     Button { files = true } label: { Label("A file: PSD, a picture, a work, brushes", systemImage: "folder") }
                 } label: { Image(systemName: "square.and.arrow.down") }.accessibilityLabel("Import").accessibilityIdentifier("gallery.import")
                 Button { newSheet = true } label: { Image(systemName: "plus") }.accessibilityLabel("New canvas").accessibilityIdentifier("gallery.new")
@@ -114,6 +115,7 @@ struct PaintHome: View {
         .sheet(isPresented: $handbook) { NativeHandbookView() }
         .sheet(isPresented: $newSheet) { NativeNewCanvasSheet { spec in state.request = PaintCanvasRequest(work: nil, setup: { $0.make(spec) }) } }
         .sheet(item: Binding(get: { shareURL.map { ShareItem(url: $0) } }, set: { if $0 == nil { shareURL = nil } })) { ShareSheet(items: [$0.url]) }
+        .photosPicker(isPresented: $photoSheet, selection: $photo, matching: .images)
         .onChange(of: photo) { _, it in
             guard let it else { return }
             photo = nil
@@ -173,8 +175,8 @@ struct PaintHome: View {
                     Button { openStack = s.name } label: {
                         VStack(alignment: .leading, spacing: 6) {
                             ZStack {
-                                NativeChecker().opacity(0.25)
-                                if let t = s.works.first?.thumb { Image(uiImage: t).resizable().scaledToFit().padding(10) }
+                                Color.white.opacity(0.04)
+                                if let t = s.works.first?.thumb { Image(uiImage: t).resizable().scaledToFit().background(NativeChecker().opacity(0.35)).padding(10) }
                                 Image(systemName: "square.stack.3d.up.fill").padding(6).background(.ultraThinMaterial, in: Circle()).frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .topTrailing).padding(6)
                             }
                             .frame(height: 112).clipShape(RoundedRectangle(cornerRadius: 12, style: .continuous))
@@ -193,8 +195,8 @@ struct PaintHome: View {
         Button { open(w) } label: {
             VStack(alignment: .leading, spacing: 6) {
                 ZStack {
-                    NativeChecker().opacity(0.35)
-                    if let t = w.thumb { Image(uiImage: t).resizable().scaledToFit() }
+                    Color.white.opacity(0.04)
+                    if let t = w.thumb { Image(uiImage: t).resizable().scaledToFit().background(NativeChecker().opacity(0.35)) }
                     if !w.here { Image(systemName: "icloud.and.arrow.down").padding(6).background(.ultraThinMaterial, in: Circle()).frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .bottomTrailing).padding(6) }
                 }
                 .frame(height: 112).clipShape(RoundedRectangle(cornerRadius: 12, style: .continuous))

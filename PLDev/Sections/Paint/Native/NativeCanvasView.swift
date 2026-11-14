@@ -106,7 +106,7 @@ struct NativeCanvasView: View {
         }
         .padding(.vertical, 10).padding(.horizontal, 5)
         .glassControl(in: RoundedRectangle(cornerRadius: 22, style: .continuous))
-        .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .leading).padding(.leading, 6).padding(.vertical, 120)
+        .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .leading).padding(.leading, 6).padding(.top, 90).padding(.bottom, 230)
     }
 
     private var moreMenu: some View {

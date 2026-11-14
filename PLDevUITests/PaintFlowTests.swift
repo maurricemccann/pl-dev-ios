@@ -70,7 +70,7 @@ final class PaintFlowTests: XCTestCase {
     func test01_GalleryFirst() {
         XCTAssertTrue(el("gallery.newcard").exists, "the + New canvas card is in the grid")
         XCTAssertTrue(el("gallery.import").exists)
-        XCTAssertTrue(app.staticTexts["The Daily Mark"].exists)
+        XCTAssertTrue(app.staticTexts.matching(NSPredicate(format: "label ==[c] %@", "The Daily Mark")).firstMatch.exists)
         shot("gallery-first")
     }
 
@@ -114,20 +114,29 @@ final class PaintFlowTests: XCTestCase {
         shot("undo-button")
         XCTAssertTrue(app.buttons["Redo"].firstMatch.isEnabled, "undo makes a redo step")
         app.buttons["Redo"].firstMatch.tap(); sleepFor(0.5)
-        // gestures: two fingers tap = undo, three fingers tap = redo
-        app.coordinate(withNormalizedOffset: CGVector(dx: 0.6, dy: 0.45)).tap()   // focus, no mark when fingers move the picture? (finger paints is on: this makes a dot)
+    }
+
+    // MARK: 03b gestures: two fingers undo, three fingers redo, pinch, rotate (fingers are gestures when Finger paints is off)
+
+    func test03b_Gestures() {
+        makeCanvas()
+        tap("Finger paints")
+        stroke((0.4, 0.4), (0.85, 0.5)); stroke((0.4, 0.55), (0.8, 0.62))
+        sleepFor(1)
+        tap("Finger paints")   // off again
         sleepFor(0.5)
-        let canvas = app.windows.firstMatch
-        canvas.twoFingerTap(); sleepFor(0.7)
+        XCTAssertTrue(app.buttons["Undo"].firstMatch.isEnabled)
+        shot("gestures-start")
+        let surface = app.otherElements.firstMatch
+        surface.twoFingerTap(); sleepFor(0.8)
+        XCTAssertTrue(app.buttons["Redo"].firstMatch.isEnabled, "a two-finger tap undoes a step")
         shot("two-finger-undo")
-        canvas.tap(withNumberOfTaps: 1, numberOfTouches: 3); sleepFor(0.7)
+        surface.tap(withNumberOfTaps: 1, numberOfTouches: 3); sleepFor(0.8)
+        XCTAssertFalse(app.buttons["Redo"].firstMatch.isEnabled, "a three-finger tap redoes it")
         shot("three-finger-redo")
-        // pinch and rotate
-        canvas.pinch(withScale: 1.6, velocity: 1); sleepFor(0.5)
-        shot("pinched-in")
-        canvas.rotate(.pi / 4, withVelocity: 1); sleepFor(0.5)
-        shot("rotated")
-        canvas.pinch(withScale: 0.6, velocity: -1); sleepFor(0.5)
+        surface.pinch(withScale: 1.6, velocity: 1); sleepFor(0.5); shot("pinched-in")
+        surface.rotate(.pi / 4, withVelocity: 1); sleepFor(0.5); shot("rotated")
+        surface.pinch(withScale: 0.6, velocity: -1); sleepFor(0.5)
     }
 
     // MARK: 04 the brush library with his packs
@@ -178,7 +187,10 @@ final class PaintFlowTests: XCTestCase {
         sleepFor(0.5)
         tap("Pick a colour", wait: 8); sleepFor(0.5); shot("eyedropper-bar")
         tapButton("Done", wait: 8)
-        tapButton("More"); tapButton("More tools: facet, echo, nodes, lights, seams", wait: 8); sleepFor(1.5); shot("more-tools")
+        tapButton("More")
+        let mt = app.buttons.matching(NSPredicate(format: "label BEGINSWITH 'More tools'")).firstMatch
+        if !mt.waitForExistence(timeout: 3) { app.swipeUp(); app.swipeUp() }
+        XCTAssertTrue(mt.waitForExistence(timeout: 8), "More tools is in the menu"); mt.tap(); sleepFor(1.5); shot("more-tools")
         closeSheet()
     }
 
@@ -212,7 +224,7 @@ final class PaintFlowTests: XCTestCase {
         tapButton("Rename", wait: 8)
         let field = app.textFields.firstMatch
         XCTAssertTrue(field.waitForExistence(timeout: 8))
-        field.tap(); field.press(forDuration: 1.0); if app.menuItems["Select All"].waitForExistence(timeout: 2) { app.menuItems["Select All"].tap() }
+        field.typeText(String(repeating: XCUIKeyboardKey.delete.rawValue, count: 40))
         field.typeText("Renamed piece")
         shot("rename-alert")
         app.alerts.buttons["Rename"].tap(); sleepFor(1)
@@ -254,6 +266,7 @@ final class PaintFlowTests: XCTestCase {
         sleepFor(3); shot("photos-picker")
         let pic = app.scrollViews.images.firstMatch
         if pic.waitForExistence(timeout: 20) { pic.tap() } else { let any = app.images.firstMatch; XCTAssertTrue(any.waitForExistence(timeout: 10), "a seeded photo is in the picker"); any.tap() }
+        sleepFor(1.5); shot("photo-picked")
         let addBtn = app.buttons["Add"].firstMatch; if addBtn.waitForExistence(timeout: 3) { addBtn.tap() }
         XCTAssertTrue(app.buttons["canvas.gallery"].waitForExistence(timeout: 40), "the photo opens as a new work")
         sleepFor(1.5); shot("photo-as-a-work")
