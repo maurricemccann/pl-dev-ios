@@ -42,7 +42,10 @@ final class PaintFlowTests: XCTestCase {
     /// The ••• opens Actions (a sheet in tabs, 11-14); pick the tab, then the row.
     private func actions(_ tab: String) {
         tapButton("Actions"); sleepFor(1)
-        tapButton(tab, wait: 8); sleepFor(0.6)
+        // the selected segment is not reported as a button, so a tab already showing is fine as it is
+        let seg = app.buttons[tab].firstMatch
+        if seg.waitForExistence(timeout: 4) { seg.tap() }
+        sleepFor(0.6)
     }
     private func works() -> XCUIElementQuery { app.buttons.matching(identifier: "gallery.work") }
 
@@ -225,6 +228,8 @@ final class PaintFlowTests: XCTestCase {
     func test08_Export() {
         makeCanvas()
         stroke((0.35, 0.4), (0.85, 0.5))
+        actions("Picture"); tapButton("Timelapse", wait: 8); sleepFor(1.5); shot("timelapse")   // first: a share sheet left open would cover it
+        closeSheet(); sleepFor(0.8)
         actions("Picture"); tapButton("Save or share the picture", wait: 8); sleepFor(1.5); shot("export-sheet")
         for fmt in ["PDF", "JPEG", "PNG"] {
             let row = app.buttons.matching(NSPredicate(format: "label BEGINSWITH %@", fmt)).firstMatch
@@ -234,8 +239,6 @@ final class PaintFlowTests: XCTestCase {
             if close.exists { close.tap() } else { app.swipeDown(velocity: .fast) }
             sleepFor(0.8)
         }
-        closeSheet(); sleepFor(0.5)
-        actions("Picture"); tapButton("Timelapse", wait: 8); sleepFor(1.5); shot("timelapse")
         closeSheet()
     }
 
