@@ -194,22 +194,17 @@ struct PracticeView: View {
                 get: { PracticeModel.Tab.allCases.firstIndex(of: state.tab) ?? 0 },
                 set: { state.tab = PracticeModel.Tab.allCases[$0] }))
         }
-        .background {
-            ZStack(alignment: .topLeading) {
-                CandleGround()
-                if state.entryDone { BuddyCurve() }
-            }
-        }
+        .background { CandleGround() }
         .preferredColorScheme(.dark)
         .navigationTitle("Practice")
         .navigationBarTitleDisplayMode(.inline)
         .toolbar {
             ToolbarItem(placement: .topBarTrailing) {
                 // a real Button: a bar item's plain tap gesture never fired on his phone (11-15, "Tap didn't play anything")
-                Button { buddy.playNext() } label: { BuddyView(model: buddy).frame(width: 44, height: 44).contentShape(Rectangle()) }
+                Button { buddy.playNext() } label: { BuddyRope(buddy: buddy) }
                     .buttonStyle(.plain)
                     .simultaneousGesture(LongPressGesture(minimumDuration: 0.5).onEnded { _ in buddy.swapFace() })
-                    .accessibilityHint("Tap for his next move, hold to swap faces")
+                    .accessibilityHint("Tap for his next move, hold to swap faces, drag to swing him")
                     .onAppear { buddy.react(.open) }
                     .task {
                         // his ruling 11-15 "now and then": at rest, every 20-40 s Buddy plays his next move from the shuffled deck
@@ -282,20 +277,94 @@ struct PracticeKpis: View {
     }
 }
 
-/// Buddy's curve (his mock-up 11-15): a band of his brown that sweeps in from the top edge behind the title and ends at Buddy's spot,
-/// so Buddy rides the tip of a curve as in his drawn figures. Sits behind everything, never takes a touch.
-private struct BuddyCurve: View {
-    var body: some View {
-        GeometryReader { geo in
-            let w = geo.size.width
-            Path { p in
-                p.move(to: CGPoint(x: w * 0.40, y: -20))
-                p.addCurve(to: CGPoint(x: w + 24, y: 66), control1: CGPoint(x: w * 0.60, y: 52), control2: CGPoint(x: w * 0.84, y: 74))
-            }
-            .stroke(Color(red: 143 / 255, green: 101 / 255, blue: 40 / 255), style: StrokeStyle(lineWidth: 30, lineCap: .butt))
+/// Buddy on his own curve (his mock-up 11-15: "the orange curve then you can play with him like the curve below"): an orange rope from
+/// above the top edge sweeps down to Buddy, who rides its tip. The hero curve's rope physics (FieldRig's spring, damping, spread, the
+/// slow breathing drift): dragging Buddy pulls the tip and the rope follows; let go and it swings home. The rope is drawn past the
+/// item's 56x44 frame (the bar does not clip it); only the item takes touches.
+@MainActor final class BuddyRopeRig {
+    static let n = 16
+    static let anchor = CGPoint(x: 90, y: 30), tipHome = CGPoint(x: 292, y: 138), bend = CGPoint(x: 205, y: 140)   // canvas points
+    var hx: [Double] = [], hy: [Double] = [], px: [Double] = [], py: [Double] = [], ox: [Double] = [], oy: [Double] = []
+    var grab: CGPoint?
+    var t = 0.0
+    private var acc = 0.0, last: Date?
+
+    init() {
+        for k in 0..<Self.n {
+            let u = Double(k) / Double(Self.n - 1), a = Self.anchor, c = Self.bend, b = Self.tipHome
+            let x = (1 - u) * (1 - u) * a.x + 2 * (1 - u) * u * c.x + u * u * b.x, y = (1 - u) * (1 - u) * a.y + 2 * (1 - u) * u * c.y + u * u * b.y
+            hx.append(x); hy.append(y)
         }
-        .ignoresSafeArea()
-        .allowsHitTesting(false)
-        .accessibilityHidden(true)
+        px = hx; py = hy; ox = hx; oy = hy
+    }
+
+    func advance(_ now: Date, still: Bool) {
+        defer { last = now }
+        guard !still, let last else { return }
+        acc += min(0.1, now.timeIntervalSince(last)) * 60
+        var g = 0
+        while acc >= 1, g < 4 { step(); acc -= 1; g += 1 }
+    }
+
+    func step() {
+        let N = Self.n
+        for k in 1..<N {   // the anchor (k = 0) stays above the top edge
+            let u = Double(k) / Double(N - 1), s = t * 0.008, amp = 6 * sin(.pi * u * 0.9)
+            let tx = hx[k] + sin(s * 1.1 + u * 3) * amp, ty = hy[k] + cos(s * 0.9 + u * 2.4) * amp
+            let vx = (px[k] - ox[k]) * FieldRig.damp, vy = (py[k] - oy[k]) * FieldRig.damp
+            ox[k] = px[k]; oy[k] = py[k]
+            px[k] += vx + (tx - px[k]) * FieldRig.spring; py[k] += vy + (ty - py[k]) * FieldRig.spring
+        }
+        if let g = grab { px[N - 1] = g.x; py[N - 1] = g.y }   // the finger holds Buddy; the rope follows
+        for k in 1..<(N - 1) {
+            let dx = (px[k - 1] - hx[k - 1] + px[k + 1] - hx[k + 1]) * 0.5 - (px[k] - hx[k])
+            let dy = (py[k - 1] - hy[k - 1] + py[k + 1] - hy[k + 1]) * 0.5 - (py[k] - hy[k])
+            px[k] += dx * FieldRig.spread; py[k] += dy * FieldRig.spread
+        }
+        t += 1
+    }
+
+    var tip: CGPoint { CGPoint(x: px[Self.n - 1], y: py[Self.n - 1]) }
+
+    func path() -> Path {
+        var p = Path(); let N = Self.n
+        p.move(to: CGPoint(x: px[0], y: py[0]))
+        for k in 1..<(N - 1) { p.addQuadCurve(to: CGPoint(x: (px[k] + px[k + 1]) / 2, y: (py[k] + py[k + 1]) / 2), control: CGPoint(x: px[k], y: py[k])) }
+        p.addLine(to: tip)
+        // the band runs on past Buddy to the right edge, in the direction it arrived
+        let d = CGPoint(x: px[N - 1] - px[N - 3], y: py[N - 1] - py[N - 3]), l = max(1, hypot(d.x, d.y))
+        p.addLine(to: CGPoint(x: tip.x + d.x / l * 70, y: tip.y + d.y / l * 70))
+        return p
+    }
+}
+
+struct BuddyRope: View {
+    let buddy: BuddyModel
+    @State private var rig = BuddyRopeRig()
+    @Environment(\.accessibilityReduceMotion) private var reduceMotion
+    private static let canvas = CGSize(width: 320, height: 160)
+    private static let orange = Color(red: 143 / 255, green: 101 / 255, blue: 40 / 255)   // sampled from his mock-up
+
+    var body: some View {
+        TimelineView(.animation(minimumInterval: 1 / 60, paused: reduceMotion && rig.grab == nil)) { tl in
+            let _ = rig.advance(tl.date, still: reduceMotion && rig.grab == nil)
+            let tip = rig.tip
+            ZStack(alignment: .topLeading) {
+                Canvas { ctx, _ in ctx.stroke(rig.path(), with: .color(Self.orange), style: StrokeStyle(lineWidth: 26, lineCap: .butt, lineJoin: .round)) }
+                    .frame(width: Self.canvas.width, height: Self.canvas.height)
+                BuddyView(model: buddy).frame(width: 44, height: 44).position(tip)
+            }
+            .frame(width: Self.canvas.width, height: Self.canvas.height)
+        }
+        // the item is 56x44 at Buddy's home; the drawing hangs up and to the left of it
+        .frame(width: 56, height: 44, alignment: .bottomTrailing)
+        .offset(x: 0, y: 0)
+        .contentShape(Rectangle())
+        .simultaneousGesture(DragGesture(minimumDistance: 6, coordinateSpace: .local)
+            .onChanged { v in
+                // item-local -> canvas: Buddy's home (28, 22) in the item is tipHome in the canvas
+                rig.grab = CGPoint(x: BuddyRopeRig.tipHome.x + (v.location.x - 28), y: BuddyRopeRig.tipHome.y + (v.location.y - 22))
+            }
+            .onEnded { _ in rig.grab = nil })
     }
 }
