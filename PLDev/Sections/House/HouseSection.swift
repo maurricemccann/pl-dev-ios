@@ -233,7 +233,6 @@ struct FounderTab: View {
     @Bindable var state: HouseModel
     @Environment(\.colorScheme) private var scheme
 
-    private var callBase: String? { model.config?.origins["call"]?.base }
 
     var body: some View {
         ScrollView {
@@ -348,18 +347,7 @@ struct FounderTab: View {
                 } label: { Text("System") }.buttonStyle(OSPill())
                 Button { state.room = .site } label: { Text("Site controls") }.buttonStyle(OSPill())
             }
-            if let base = callBase {
-                HStack(spacing: 8) {
-                    callLink("Call", base)
-                    callLink("Replay", base + "?replay")
-                    callLink("Approve", base + "?approve")
-                }
-            }
         }
-    }
-
-    private func callLink(_ title: String, _ s: String) -> some View {
-        Group { if let u = URL(string: s) { Link(destination: u) { Text(title) }.buttonStyle(OSPill()) } }
     }
 
     // MARK: Do next + KPI row
