@@ -1,5 +1,6 @@
 import ARKit
 import AVFoundation
+import Combine
 import Metal
 import RealityKit
 import ReplayKit
@@ -104,7 +105,7 @@ private func labTrackingText(_ s: ARCamera.TrackingState) -> String {
         return .init(d)
     }()
 
-    private final class Plane { let model = ModelEntity(); var info: LabPlaneInfo; init(_ i: LabPlaneInfo) { info = i } }
+    @MainActor private final class Plane { let model = ModelEntity(); var info: LabPlaneInfo; init(_ i: LabPlaneInfo) { info = i } }
     private var planes: [UUID: Plane] = [:]
     private let planeRoot = AnchorEntity(world: SIMD3<Float>(0, 0, 0))
     private let placedRoot = AnchorEntity(world: SIMD3<Float>(0, 0, 0))
@@ -112,11 +113,13 @@ private func labTrackingText(_ s: ARCamera.TrackingState) -> String {
 
     // the debugger's counters
     private var running = false
-    private var frames = 0, renders = 0
+    private var frames = 0
+    private var renders = 0
     private var meshAnchors = 0
     private var peakMs: [String: Double] = [:]
     private var inFlight: Set<String> = []
-    private var lastStat = Date(), lastSend = Date()
+    private var lastStat = Date()
+    private var lastSend = Date()
     private var updates: Cancellable?
 
     // the curve being drawn in the air, in chunks so no mesh grows long
