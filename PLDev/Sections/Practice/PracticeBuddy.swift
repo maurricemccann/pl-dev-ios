@@ -120,6 +120,8 @@ final class BuddyRig: @unchecked Sendable {
         }()
         let step = min(0.1, max(0, now.timeIntervalSince(mouthAt))) * 0.6   // 0.2 of the range (10 of his frames) per 1/3 s
         mouthAt = now
+        // lip sync (his ruling 11-15): while one of his recorded lines plays, the mouth follows the loudness of his own voice
+        if let v = PracticeClips.shared.voiceLevel { mouthLevel = v; return Int((v * 50).rounded()) }
         mouthLevel = move == "talking" ? target : mouthLevel + max(-step, min(step, target - mouthLevel))   // speech follows the rig frame by frame
         return Int((mouthLevel * 50).rounded())
     }

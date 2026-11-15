@@ -162,6 +162,7 @@ struct PracticeBoardImages: Decodable, Sendable {
             try PLAudio.speaking()
             let p = try AVAudioPlayer(data: data)
             p.delegate = self
+            p.isMeteringEnabled = true   // Buddy's lip sync reads the level
             guard p.play() else { return "The clip would not play." }
             player = p; playing = key; playStart = .now
             return nil
@@ -176,6 +177,14 @@ struct PracticeBoardImages: Decodable, Sendable {
         playStart = nil
         let end = Date.now
         if end.timeIntervalSince(s) >= 20 { Task { await PLHealth.logMindful(start: s, end: end) } }
+    }
+
+    /// How loud his voice is right now, 0 to 1 (nil when nothing plays): Buddy's mouth follows it (lip sync, his ruling 11-15).
+    /// -45 dB and below reads as closed, -8 dB and above as his full grin.
+    var voiceLevel: Double? {
+        guard let p = player, p.isPlaying else { return nil }
+        p.updateMeters()
+        return min(1, max(0, (Double(p.averagePower(forChannel: 0)) + 45) / 37))
     }
 
     /// The player bar reads these on a timeline; nothing here is observed per frame.
