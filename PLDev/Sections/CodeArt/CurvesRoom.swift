@@ -232,6 +232,7 @@ struct PieceStage: View {
     let entries: [PieceEntry]
     @State var current: PieceEntry
     let close: () -> Void
+    @State private var shareItem: CodeArtShareItem?
     @State private var likes = CodeArtLikes.shared
     @State private var bars = true
     @State private var drag: CGFloat = 0
@@ -269,12 +270,16 @@ struct PieceStage: View {
                 }
                 ToolbarItem(placement: .secondaryAction) { NavigationLink("The code") { SourceView(model: model, id: current.id) } }
                 ToolbarItem(placement: .secondaryAction) {
-                    if let u = URL(string: LibraryData.shared.base(model) + "/pieces/embed?id=" + current.id) { ShareLink("Share the link", item: u) }
+                    // a Button, not a ShareLink: a ShareLink in this overflow menu presents a popover anchored to the closed menu and iOS aborts (crash 11-15)
+                    if let u = URL(string: LibraryData.shared.base(model) + "/pieces/embed?id=" + current.id) {
+                        Button("Share the link", systemImage: "square.and.arrow.up") { shareItem = CodeArtShareItem(items: [u]) }
+                    }
                 }
                 ToolbarItem(placement: .bottomBar) { CodeArtSoundMenu(model: model) }
                 ToolbarItem(placement: .bottomBar) { Text("\(index + 1) of \(entries.count)").font(.caption).monospacedDigit() }
             }
             .toolbarBackground(.visible, for: .bottomBar)
+            .sheet(item: $shareItem) { CodeArtShareSheet(items: $0.items).presentationDetents([.medium, .large]) }
             .sensoryFeedback(.selection, trigger: current.id)
             .sensoryFeedback(PLHaptic.select, trigger: likes.liked.contains(current.id))
         }
