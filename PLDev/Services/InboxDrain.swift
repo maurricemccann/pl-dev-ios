@@ -23,6 +23,13 @@ import Foundation
         // 1. take in what the extensions saved
         let target = model.config?.capture?.defaultTarget ?? ""
         for item in SharedInbox.all() {
+            if item.route == "tile" {   // smart capture: "Make a tile" adds a Backend tile on this phone; nothing is sent
+                if let address = item.url, let t = BackendTemplates.template(for: address, title: item.title) {
+                    model.debug.note("inbox", "backend tile: " + BackendStore.shared.add(t))
+                }
+                SharedInbox.remove(item.id)
+                continue
+            }
             let file = SharedInbox.data(for: item)
             if let file, !store(file, id: item.id) { continue }   // could not keep the file: leave it in the shared inbox for next time
             let words = [item.title, item.note].compactMap { $0 }.filter { !$0.isEmpty }

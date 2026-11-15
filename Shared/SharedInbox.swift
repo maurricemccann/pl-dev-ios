@@ -14,6 +14,7 @@ enum SharedInbox {
         var fileName: String?
         var note: String?
         var target: String? = nil   // "cron" | "board"; nil = the config's default
+        var route: String? = nil    // smart capture (11-14): "tile" = the app adds a Backend tile instead of sending; other routes are carried by kind and target
     }
 
     enum InboxError: Error, LocalizedError {

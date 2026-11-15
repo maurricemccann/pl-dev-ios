@@ -23,6 +23,7 @@ struct SharePayload: Sendable {
 
     var phase: Phase = .loading
     var note = ""
+    var route: CaptureRoute = .board   // smart capture: where it goes; suggested from what was shared, his tap changes it
 }
 
 /// The share sheet's entry point. It reads the shared item, shows it with a note field, and on Save writes
@@ -43,7 +44,13 @@ final class ShareViewController: UIViewController {
         host.view.autoresizingMask = [.flexibleWidth, .flexibleHeight]
         view.addSubview(host.view)
         host.didMove(toParent: self)
-        Task { model.phase = await load() }
+        Task {
+            let phase = await load()
+            if case .ready(let payload) = phase {
+                model.route = SmartCapture.suggest(kind: payload.kind, text: payload.text ?? payload.title, url: payload.url)
+            }
+            model.phase = phase
+        }
     }
 
     // MARK: Reading the shared item
@@ -105,16 +112,31 @@ final class ShareViewController: UIViewController {
     private func save() {
         guard case .ready(let payload) = model.phase else { return }
         let note = model.note.trimmingCharacters(in: .whitespacesAndNewlines)
+        // smart capture: his chosen destination decides kind, target and text. The extension never sends; the app does, as before.
+        let route = SmartCapture.available(kind: payload.kind, url: payload.url).contains(model.route) ? model.route : .board
+        var kind = payload.kind
+        var text = payload.text
+        var target: String? = nil
+        var itemRoute: String? = nil
+        switch route {
+        case .board: target = "board"
+        case .seed: target = "board"; text = SmartCapture.seedText(payload.text ?? payload.title ?? "")
+        case .quote: kind = "quote"; target = "cron"
+        case .art: break
+        case .tile: itemRoute = "tile"
+        }
         let item = SharedInbox.Item(
             id: UUID().uuidString,
             createdAt: Date(),
             source: "share",
-            kind: payload.kind,
-            text: payload.text,
+            kind: kind,
+            text: text,
             url: payload.url,
             title: payload.title,
             fileName: payload.image == nil ? nil : "image.jpg",
-            note: note.isEmpty ? nil : note
+            note: note.isEmpty ? nil : note,
+            target: target,
+            route: itemRoute
         )
         do {
             try SharedInbox.add(item, file: payload.image)
@@ -192,6 +214,17 @@ struct ShareSheet: View {
             Form {
                 Section("Saving") {
                     preview(payload)
+                }
+                if SmartCapture.available(kind: payload.kind, url: payload.url).count > 1 {
+                    Section("Send to") {
+                        Picker("Send to", selection: $model.route) {
+                            ForEach(SmartCapture.available(kind: payload.kind, url: payload.url)) { r in
+                                Label(r.title, systemImage: r.symbol).tag(r)
+                            }
+                        }
+                        .pickerStyle(.inline)
+                        .labelsHidden()
+                    }
                 }
                 Section("Note") {
                     TextField("Add a note", text: $model.note, axis: .vertical)
