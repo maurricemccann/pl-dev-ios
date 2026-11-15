@@ -82,6 +82,22 @@ struct StatusView: View {
                     NoteLine(symbol: "wifi.slash", tint: PLTone.warn, text: "Nothing answered. This iPhone may be offline. Pull down to try again.")
                 }
             }
+            if !origins.isEmpty, state.checkedAt != nil {
+                // the whole stack in one look (his ask 11-14): how many addresses answer, how many keys are set
+                Section {
+                    let up = origins.count - state.downCount
+                    let set = keyNames.filter { model.config?.key($0) != nil }.count
+                    HStack(alignment: .top) {
+                        PLRing(value: Double(up) / Double(max(origins.count, 1)), center: "\(up)/\(origins.count)", label: "Answering",
+                               tint: state.downCount == 0 ? PLTone.good : PLTone.bad).frame(maxWidth: .infinity)
+                        if !keyNames.isEmpty {
+                            PLRing(value: Double(set) / Double(keyNames.count), center: "\(set)/\(keyNames.count)", label: "Keys set",
+                                   tint: set == keyNames.count ? PLTone.good : PLTone.warn).frame(maxWidth: .infinity)
+                        }
+                    }
+                    .padding(.vertical, PLSpace.tight)
+                }
+            }
             Section {
                 if origins.isEmpty {
                     EmptyNote(symbol: "network.slash", title: "No addresses", detail: "Your config names no address yet.")

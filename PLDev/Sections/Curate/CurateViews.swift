@@ -113,6 +113,35 @@ struct CurateView: View {
             }
             .accessibilityLabel("Deck: \(state.mode.title). Choose another")
             Text(counts).gEyebrow(10).foregroundStyle(state.notSaved > 0 ? PLG.red : PLG.dim(scheme)).contentTransition(.numericText())
+            // how far through the deck, and how this session's marks split (his ask 11-14)
+            if state.queue.count > 0 {
+                let done = Double(min(state.index, state.queue.count)) / Double(state.queue.count)
+                let marks = state.kept + state.maybes + state.cuts
+                VStack(spacing: 3) {
+                    GeometryReader { geo in
+                        ZStack(alignment: .leading) {
+                            Capsule().fill(PLG.dim(scheme).opacity(0.18))
+                            Capsule().fill(PLG.gold).frame(width: max(3, geo.size.width * done))
+                        }
+                    }
+                    .frame(height: 3)
+                    if marks > 0 {
+                        GeometryReader { geo in
+                            HStack(spacing: 1) {
+                                Rectangle().fill(PLC.keep).frame(width: geo.size.width * CGFloat(state.kept) / CGFloat(marks))
+                                Rectangle().fill(PLC.maybe).frame(width: geo.size.width * CGFloat(state.maybes) / CGFloat(marks))
+                                Rectangle().fill(PLC.cut).frame(width: geo.size.width * CGFloat(state.cuts) / CGFloat(marks))
+                            }
+                            .clipShape(Capsule())
+                        }
+                        .frame(height: 3)
+                    }
+                }
+                .frame(width: 160)
+                .animation(.snappy, value: state.index)
+                .accessibilityElement(children: .ignore)
+                .accessibilityLabel("\(Int(done * 100)) percent through. This session: \(state.kept) kept, \(state.maybes) maybe, \(state.cuts) cut")
+            }
             if state.locked {
                 Text("This device is locked · load the vault key in Settings before marking").gEyebrow(10).foregroundStyle(PLG.red).multilineTextAlignment(.center)
                     .accessibilityAddTraits(.updatesFrequently)
@@ -400,8 +429,9 @@ struct CurateEmpty: View {
             VStack(spacing: 14) {
                 Text("Queue clear").gEyebrow(12).foregroundStyle(PLG.gold)
                 Text("Nothing left to decide").gTitle(26).foregroundStyle(PLG.ink(scheme))
-                Text("\(state.mode.short.lowercased()) · this session: +\(state.kept) keep · ~\(state.maybes) maybe · x\(state.cuts) cut.")
-                    .font(.system(size: 11, design: .monospaced)).foregroundStyle(PLG.dim(scheme)).multilineTextAlignment(.center)
+                Text("\(state.mode.short.lowercased()) · this session").font(.system(size: 11, design: .monospaced)).foregroundStyle(PLG.dim(scheme))
+                PLStageBar(stages: [.init(name: "Keep", count: state.kept, tint: PLC.keep), .init(name: "Maybe", count: state.maybes, tint: PLC.maybe), .init(name: "Cut", count: state.cuts, tint: PLC.cut)],
+                           text: PLG.ink(scheme), dim: PLG.dim(scheme)).padding(.horizontal, 24)
                 FlowLayout {
                     ForEach(Array([("seed", "curate seed phrases"), ("still", "curate stills"), ("cinematic", "curate shorts + videos"), ("code-piece", "curate code pieces"),
                                    ("archive-work", "curate archive works"), ("", "curate everything")].enumerated()), id: \.offset) { _, d in

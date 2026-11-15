@@ -428,6 +428,21 @@ struct CaptureTrailRoom: View {
         .captureRow()
         if let n = state.trailNote { ResultLine(text: n).captureRow() }
 
+        // what was captured, by kind, as one bar; and today's sends against the daily cap (his ask 11-14)
+        if !state.trail.isEmpty {
+            let by = Dictionary(grouping: state.trail, by: { ($0.type ?? "other").isEmpty ? "other" : ($0.type ?? "other") })
+            let tones: [Color] = [PLOS.gold, PLOS.ok, PLOS.philosophy, PLOS.warn, PLOS.muted]
+            HStack(alignment: .center, spacing: 14) {
+                PLStageBar(stages: by.keys.sorted().enumerated().map { .init(name: $0.element, count: by[$0.element]?.count ?? 0, tint: tones[$0.offset % tones.count]) },
+                           text: PLOS.text(scheme), dim: PLOS.dim(scheme))
+                if let used = state.usedToday, let cap = state.cap, cap > 0 {
+                    PLRing(value: Double(used) / Double(cap), center: "\(used)/\(cap)", label: "Today", tint: used >= cap ? PLOS.warn : PLOS.gold,
+                           text: PLOS.text(scheme), dim: PLOS.dim(scheme), size: 62)
+                }
+            }
+            .osCard(padding: 12).captureRow()
+        }
+
         let ghosts = state.ghosts
         if !ghosts.isEmpty {
             ForEach(ghosts) { g in

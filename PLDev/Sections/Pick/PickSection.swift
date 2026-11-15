@@ -200,6 +200,24 @@ struct PickView: View {
                     Text(state.showResults ? "\(state.totalVotes) \(state.totalVotes == 1 ? "pick" : "picks"), most first."
                                            : "One tap. The most picked becomes the next piece.").plHand(15, relativeTo: .subheadline).foregroundStyle(PLG.goldDim(scheme))
                     if !state.showResults { TipView(PickLookTip()) }
+                    if state.showResults, state.totalVotes > 0 {
+                        // the standings at a glance (his ask 11-14): the bar is the votes, the dots are the colourway's own colours
+                        let top = Double(state.ranked.first.map { state.votes($0) } ?? 1)
+                        VStack(spacing: 6) {
+                            ForEach(state.ranked.prefix(8)) { p in
+                                HStack(spacing: 8) {
+                                    HStack(spacing: 2) { ForEach([p.ground, p.key, p.accent], id: \.self) { hex in Circle().fill(Color(hex: hex) ?? .gray).frame(width: 11, height: 11) } }
+                                    Text(p.name).font(.footnote).foregroundStyle(PLG.ink(scheme)).lineLimit(1)
+                                    Spacer(minLength: 6)
+                                    Text("\(state.votes(p))").font(.system(.footnote, design: .monospaced)).monospacedDigit().foregroundStyle(PLG.ink(scheme))
+                                }
+                                .padding(.horizontal, 8).padding(.vertical, 7)
+                                .plBar(Double(state.votes(p)), of: top, tint: PLG.gold)
+                                .accessibilityElement(children: .ignore)
+                                .accessibilityLabel("\(p.name), \(state.votes(p)) picks")
+                            }
+                        }
+                    }
                     LazyVGrid(columns: cols, spacing: 14) {
                         ForEach(state.showResults ? state.ranked : state.palettes) { p in
                             Button {

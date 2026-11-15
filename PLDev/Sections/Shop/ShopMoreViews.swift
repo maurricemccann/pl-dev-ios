@@ -100,8 +100,13 @@ struct SiteStatusView: View {
                     if let u = c.updated { LabeledContent("Changed") { Ago(text: u) } }
                 }
                 Section("The shop") {
-                    LabeledContent("Pieces listed", value: "\(store.pieces.count)")
-                    LabeledContent("In stock", value: "\(store.pieces.filter(\.inStock).count) of \(store.pieces.count)")
+                    let inStock = store.pieces.filter(\.inStock).count
+                    HStack(spacing: 16) {
+                        PLRing(value: Double(inStock) / Double(max(store.pieces.count, 1)), center: "\(inStock)/\(store.pieces.count)", label: "In stock",
+                               tint: inStock == store.pieces.count ? PLTone.good : PLTone.warn, size: 72)
+                        PLBigTile(number: "\(store.pieces.count)", label: "Pieces listed")
+                    }
+                    .padding(.vertical, 4)
                     if let at = store.loadedAt { LabeledContent("List read") { Text(at, format: .relative(presentation: .named)) } }
                 }
                 Section {

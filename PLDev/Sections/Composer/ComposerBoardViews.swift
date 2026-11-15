@@ -19,6 +19,14 @@ struct BoardRoom: View {
         List {
             Section { header.listRowBackground(Color.clear).listRowInsets(EdgeInsets(top: 8, leading: 16, bottom: 4, trailing: 16)) }
             if let r = result { Section { ResultLine(text: r).foregroundStyle(CMP.dim).listRowBackground(Color.clear) } }
+            if !state.cards.isEmpty {
+                // where every card sits, lane by lane, at a glance (his ask 11-14)
+                Section {
+                    PLStageBar(stages: ComposerModel.order.map { l in .init(name: ComposerModel.label(l), count: state.cards.filter { $0.lane == l }.count, tint: CMP.lane(l)) }.filter { $0.count > 0 },
+                               text: CMP.text, dim: CMP.dim, height: 10)
+                        .cmpCard(padding: 12, warn: false).listRowBackground(Color.clear).listRowSeparator(.hidden).listRowInsets(EdgeInsets(top: 4, leading: 16, bottom: 4, trailing: 16))
+                }
+            }
             if !outbox.waiting.isEmpty {
                 Section {
                     ForEach(outbox.waiting) { w in
