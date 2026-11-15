@@ -741,7 +741,7 @@ struct PinterestView: View {
                             if let t = s.account?.account_type { PLChip(word: t, tint: PLOS.dim(scheme)) }
                         }
                     } else {
-                        Text("Connecting Pinterest happens in pl-os on the laptop: Pinterest's sign-in returns to that page.").font(.footnote).foregroundStyle(.secondary)
+                        Text("Pinterest refused the house's sign-in. Connect it again in pl-os on the laptop: Pinterest's sign-in returns to that page.").font(.footnote).foregroundStyle(.secondary)
                     }
                     if let e = s.error { Label(e, systemImage: "exclamationmark.triangle").font(.footnote).foregroundStyle(PLOS.warn) }
                 }.listRowBackground(OSRowBackground())
@@ -754,11 +754,12 @@ struct PinterestView: View {
                                     .frame(width: 52, height: 52).clipShape(RoundedRectangle(cornerRadius: 8, style: .continuous))
                                 Text(r.caption ?? "").font(.callout).lineLimit(3)
                                 Spacer(minLength: 0)
-                                ConfirmButton(title: busy == r.id ? "Creating…" : "Create pin", question: "Publish this Pin to the board now?", confirm: "Create the pin") { await create(r.id) }
-                                    .buttonStyle(.bordered).disabled(busy != nil)
+                                // a Pin is published by approving its draft (his tap), through the real publisher with its title, link and board
+                                Link("Approve", destination: URL(string: "pldev://section/house/approvals")!)
+                                    .buttonStyle(.bordered).tint(PLOS.gold)
                             }
                         }
-                    } header: { Text("Drafts") } footer: { Text("Each Pin waits for your tap, as Pinterest's rules require.") }.listRowBackground(OSRowBackground())
+                    } header: { Text("Drafts") } footer: { Text("Each Pin waits for your tap, as Pinterest's rules require: approve it in Approvals and it goes out with its title, link and board.") }.listRowBackground(OSRowBackground())
                     if !(s.pins ?? []).isEmpty {
                         Section("Pins on the board") {
                             LazyVGrid(columns: [GridItem(.adaptive(minimum: 84), spacing: 8)], spacing: 8) {
@@ -784,14 +785,5 @@ struct PinterestView: View {
     private func load() async {
         do { s = try await Console.get("run/pinterest-sandbox", Sandbox.self, model: model); failed = nil }
         catch { failed = plainSentence(error) }
-    }
-
-    private func create(_ id: String) async {
-        busy = id; defer { busy = nil }
-        do {
-            let d = try await Console.post("run/pinterest-sandbox/pin", ["row_id": id], model: model, timeout: 30)
-            let r = try? JSONDecoder().decode(Sandbox.self, from: d)
-            if r?.status == "error" { note = "Pinterest said no (\(r?.step ?? "error"))." } else { if let r { s = r }; note = "Pin created on the board." }
-        } catch { note = "Not created. \(plainSentence(error))" }
     }
 }
