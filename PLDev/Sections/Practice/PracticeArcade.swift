@@ -481,7 +481,7 @@ struct RestoreGame: View {
         loading = true; defer { loading = false }
         scramble()
         image = nil
-        guard let url = URL(string: "https://pub-4420dc4349624d6bbed7eb9555f42661.r2.dev/manifest.json"),
+        guard let url = URL(string: "https://assets.psychedluxuries.com/manifest.json"),
               let (data, _) = try? await URLSession.shared.data(from: url),
               let m = try? JSONDecoder().decode(Manifest.self, from: data),
               let p = m.pieces.filter({ $0.thumb != nil || $0.url != nil }).randomElement(),

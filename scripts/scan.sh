@@ -21,7 +21,7 @@ check() { # label, pattern, then any extra paths to leave out
 ALLOW='@example\.(com|org|net)|your@email\.com' check "email address"            '[A-Za-z0-9._%+-]+@[A-Za-z0-9.-]+\.[A-Za-z]{2,}' ':!*OFL.txt' ':!*LICENSE*'
 check "tailnet hostname"         '\.ts\.net'
 check "tailscale address"        '(^|[^0-9])100\.(6[4-9]|[7-9][0-9]|1[01][0-9]|12[0-7])\.[0-9]+\.[0-9]+'
-check "long hex (key or token)"  '[0-9a-fA-F]{32,}'
+ALLOW='pub-4420dc4349624d6bbed7eb9555f42661\.r2\.dev' check "long hex (key or token)"  '[0-9a-fA-F]{32,}'   # the public archive bucket, his ruling 11-15
 check "token-looking string"     '(ghp_|github_pat_|(^|[^A-Za-z0-9])sk-[A-Za-z0-9_-]{16,}|xox[abp]-|AKIA[0-9A-Z]{12})'
 check "Apple ID wording"         '[Aa]pple ?ID'
 check "claude session link"      'claude\.ai/code/session_[A-Za-z0-9]{8,}'   # a real link has its id; naming the pattern is not a leak
