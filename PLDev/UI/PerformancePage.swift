@@ -102,11 +102,9 @@ struct PerformancePage: View {
                 landedCard
                 siteCard
                 audienceCard
-                weeklyCard
                 topCard
                 moneyCard
                 ordersCard
-                if (data?.months ?? []).count > 1 { monthsCard }   // one month of sales repeats Money
                 // the machine, moved off Today (his ruling 11-14)
                 HomeStatusStrip(model: model)
                 HomeDashboard(model: model, part: .machine)
@@ -229,6 +227,7 @@ struct PerformancePage: View {
                     }
                 }
             }
+            if (data?.months ?? []).count > 1 { Divider(); monthsCard }   // by month, inside Money (merged 11-14)
         }
     }
 
@@ -285,6 +284,8 @@ struct PerformancePage: View {
             } else {
                 Text(data == nil ? "Not read yet." : "No posts measured in the last 14 days.").font(.callout).foregroundStyle(.secondary)
             }
+            Divider()
+            weeklyCard   // the 13 weeks, inside What landed (merged 11-14)
         }
     }
 
@@ -676,7 +677,8 @@ struct PerformancePage: View {
 
     /// Revenue by month this year (the artifact's "revenue by month" block), a row and a bar per month.
     private var monthsCard: some View {
-        card("Revenue by month", glance: "\(data?.months?.count ?? 0) mo") {
+        VStack(alignment: .leading, spacing: 8) {
+            Text("By month").plLabel(10).foregroundStyle(.secondary)
             let rows = data?.months ?? []
             let top = max(rows.map(\.total).max() ?? 0, 1)
             if rows.isEmpty {
@@ -698,7 +700,8 @@ struct PerformancePage: View {
 
     /// Posts, reach and engagement per week for 13 weeks (the artifact's "posts by platform and week", all platforms together).
     private var weeklyCard: some View {
-        card("13 weeks", glance: count(data?.weekly?.last?.posts)) {
+        VStack(alignment: .leading, spacing: 10) {
+            Text("13 weeks").plLabel(10).foregroundStyle(.secondary)
             let rows = data?.weekly ?? []
             if rows.count >= 3 {
                 // reach against his own rhythm (his pick P11): each dot a week, more posts to the right, more reach higher
