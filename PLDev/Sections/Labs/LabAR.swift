@@ -410,7 +410,11 @@ private struct LabARRoomView: View {
             .onChange(of: drawMode) { _, d in say(d ? "Hold a finger down and move the phone to draw in the air." : "Tap a surface to place the art.") }
             .onDisappear {
                 box.stop()
-                if recording { RPScreenRecorder.shared().stopRecording(withOutput: FileManager.default.temporaryDirectory.appendingPathComponent("ar-discard.mov"), completionHandler: nil) }
+                if recording {
+                    let discard = FileManager.default.temporaryDirectory.appendingPathComponent("ar-discard.mov")
+                    try? FileManager.default.removeItem(at: discard)   // stopRecording fails if the file is already there
+                    RPScreenRecorder.shared().stopRecording(withOutput: discard, completionHandler: nil)
+                }
             }
     }
 
@@ -426,10 +430,11 @@ private struct LabARRoomView: View {
                 }
             }
             HStack(spacing: 8) {
+                // the two switches share what is left after the 44 pt buttons: fixed widths overflowed a 6.3-inch Pro (lead review)
                 Picker("Art", selection: $art) { Text("Tile").tag(LabARArt.tile); Text("Direction").tag(LabARArt.direction) }
-                    .pickerStyle(.segmented).frame(width: 150)
+                    .pickerStyle(.segmented).frame(maxWidth: .infinity)
                 Picker("Mode", selection: $drawMode) { Text("Place").tag(false); Text("Draw").tag(true) }
-                    .pickerStyle(.segmented).frame(width: 130)
+                    .pickerStyle(.segmented).frame(maxWidth: .infinity)
                 Button { toggleRecord() } label: { Image(systemName: recording ? "stop.circle.fill" : "record.circle").font(.system(size: 22)).foregroundStyle(recording ? .red : .white).frame(width: 44, height: 44) }
                     .glassEffect(.regular.interactive(), in: Circle()).accessibilityLabel(recording ? "Stop recording" : "Record")
                 Button { box.clear() } label: { Image(systemName: "trash").font(.system(size: 17)).foregroundStyle(.white).frame(width: 44, height: 44) }
