@@ -1,4 +1,3 @@
-import AudioToolbox
 import SwiftUI
 
 // One Teacher (S348·9a3e): the course. The practice is the course, the Academy is each unit's reading, the games and drills are its
@@ -313,9 +312,7 @@ struct LessonView: View {
             ExerciseBody(exercise: e, locked: answered != nil) { ok in
                 answered = ok
                 if ok { right += 1 } else { record.miss(e.item) }
-                // his ruling 11-15, small sounds for right and wrong: Apple's system tones (they follow the silent switch); the Design
-                // Kit holds no interface sounds yet, only music beds, so a kit sound replaces these the day one exists
-                AudioServicesPlaySystemSound(ok ? 1057 : 1104)
+                PracticeSound.play(ok ? .right : .wrong)   // his picks by ear 11-15
             }
             .id(e.id + "\(index)")
             if let answered {
@@ -346,6 +343,7 @@ struct LessonView: View {
         if run.isQuiz { if right >= max(1, run.exercises.count - 1) { record.passQuiz(run.unit.n) } }
         else if let l = run.lesson { record.finish(unit: run.unit.n, lesson: l.n) }
         finished = true
+        PracticeSound.play(.done)
     }
 
     private var done: some View {
