@@ -6,15 +6,21 @@ import SwiftUI
 // MARK: - A shuffled deck: no repeat until every line has been shown
 
 enum PracticeDeck {
-    /// Picks a key not shown yet; when all have been shown, the deck reshuffles. Kept on the phone.
-    static func next(of keys: [String]) -> String? {
+    /// Picks a key not shown yet; when all have been shown, the deck reshuffles and the key just shown never opens the new deck
+    /// (his rule 11-13: random means a shuffled deck). `deck` names the saved deck, so two places never share one. Kept on the phone.
+    static func next(of keys: [String], deck: String = "practice.deck.shown") -> String? {
         guard !keys.isEmpty else { return nil }
         let store = UserDefaults.standard
-        var shown = Set(store.stringArray(forKey: "practice.deck.shown") ?? []).intersection(keys)
-        if shown.count >= keys.count { shown = [] }
-        guard let pick = keys.filter({ !shown.contains($0) }).randomElement() else { return nil }
+        let last = store.string(forKey: deck + ".last")
+        var shown = Set(store.stringArray(forKey: deck) ?? []).intersection(keys)
+        let fresh = shown.count >= keys.count
+        if fresh { shown = [] }
+        // a fresh deck: the key just shown is barred only from opening it
+        let bar: Set<String> = fresh && keys.count > 1 ? Set([last].compactMap { $0 }) : []
+        guard let pick = keys.filter({ !shown.contains($0) && !bar.contains($0) }).randomElement() else { return nil }
         shown.insert(pick)
-        store.set(Array(shown), forKey: "practice.deck.shown")
+        store.set(Array(shown), forKey: deck)
+        store.set(pick, forKey: deck + ".last")
         return pick
     }
 

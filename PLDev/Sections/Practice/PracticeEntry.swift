@@ -43,11 +43,9 @@ struct PracticeEntry: View {
         let voiced = items.filter { $0.audio != nil }
         let pool = voiced.isEmpty ? items : voiced
         guard !pool.isEmpty else { return nil }
-        let last = UserDefaults.standard.string(forKey: "practice.entry.last")
-        let choices = pool.count > 1 ? pool.filter { $0.key != last } : pool
-        let a = choices.randomElement()
-        if let a { UserDefaults.standard.set(a.key, forKey: "practice.entry.last") }
-        return a
+        // a shuffled deck of the voiced lines, its own deck: no line repeats until every one has opened the practice (his rule 11-13)
+        guard let k = PracticeDeck.next(of: pool.map(\.key), deck: "practice.entry.deck") else { return nil }
+        return pool.first { $0.key == k }
     }
 
     private func speak() async {
