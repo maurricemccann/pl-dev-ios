@@ -45,6 +45,7 @@ struct CaptureLogEntry: Codable, Identifiable, Equatable {
     var sent: Bool
     var toBoard: Bool
     var thumb: Data?
+    var route: String? = nil   // smart capture: the destination he chose (board, quote, seed, art, tile)
 }
 
 enum CaptureLog {
@@ -340,12 +341,12 @@ struct LinkPreview: Equatable {
 
     /// Saves the capture into the shared inbox (the same door the share sheet uses) and drains it. True when the server took it.
     @discardableResult
-    func enqueue(kind itemKind: String, text: String?, note: String?, file: Data?, label: String, toBoard board: Bool, model: AppModel) async -> Bool {
+    func enqueue(kind itemKind: String, text: String?, note: String?, file: Data?, label: String, toBoard board: Bool, route: String? = nil, model: AppModel) async -> Bool {
         let id = UUID().uuidString
         let item = SharedInbox.Item(id: id, createdAt: Date(), source: "app", kind: itemKind, text: text, url: nil, title: nil,
                                     fileName: file != nil ? "photo.jpg" : nil, note: note, target: board && file == nil ? "board" : "cron")
         do { try SharedInbox.add(item, file: file) } catch { message = error.localizedDescription; return false }
-        addLog(CaptureLogEntry(id: id, kind: itemKind, label: label, at: Date(), sent: false, toBoard: board && file == nil, thumb: file.flatMap { CaptureModel.thumb($0) }))
+        addLog(CaptureLogEntry(id: id, kind: itemKind, label: label, at: Date(), sent: false, toBoard: board && file == nil, thumb: file.flatMap { CaptureModel.thumb($0) }, route: route))
         CaptureSection.install(model: model)
         await model.drainInbox()
         log = CaptureLog.read()

@@ -8,13 +8,15 @@ import UIKit
 struct CaptureView: View {
     let model: AppModel
     @Bindable var state: CaptureModel
+    @Environment(\.colorScheme) private var scheme
 
     var body: some View {
         List {
             OSHeader().captureRow()
-            CaptureRoomBar(room: $state.room, badges: [.trail: state.deck.count, .waiting: model.inboxCount]).captureRow()
             switch state.room {
             case .add:
+                CaptureDropBox(model: model, state: state).captureRow()   // the smart drop box: drop anything, a sheet asks where it goes
+                Text("Or fill in the detailed form").osEyebrow(10).foregroundStyle(PLOS.dim(scheme)).captureRow()
                 CaptureAddCard(model: model, state: state).captureRow()
                 CaptureTrailCard(state: state).captureRow()
             case .trail:
@@ -24,6 +26,10 @@ struct CaptureView: View {
             }
         }
         .listStyle(.plain)
+        .safeAreaInset(edge: .bottom, spacing: 0) {   // his layout 11-14: the three rooms as a sticky bar at the bottom
+            CaptureRoomBar(room: $state.room, badges: [.trail: state.deck.count, .waiting: model.inboxCount])
+                .padding(.horizontal, 20).padding(.top, 6).padding(.bottom, 4)
+        }
         .scrollDismissesKeyboard(.interactively)
         .osScreen()
         .toolbar(.hidden, for: .navigationBar)
@@ -613,6 +619,7 @@ private struct CaptureDetailBody: View {
                 }
                 Text(detail.label).font(.body).foregroundStyle(PLOS.text(scheme)).textSelection(.enabled)
                 Text(detail.stateDetail).font(.subheadline).foregroundStyle(PLOS.dim(scheme))
+                CaptureFlow(detail: detail)   // the flow of this intake, as a diagram
                 if !detail.meta.isEmpty { Text(detail.meta).osEyebrow(10).foregroundStyle(PLOS.dim(scheme)) }
                 HStack(spacing: 8) {
                     Button { UIPasteboard.general.string = detail.payload } label: { Label("Copy", systemImage: "doc.on.doc") }.buttonStyle(OSPill())
