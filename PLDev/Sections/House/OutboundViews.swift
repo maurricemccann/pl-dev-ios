@@ -336,9 +336,9 @@ struct TempoView: View {
                 Section("Week \(w.week_key ?? "")") {
                     HStack(alignment: .center, spacing: 16) {
                         if let r = w.performance?.top_rate {
-                            // the ring is full at 10%: a strong week for an account this size, so a 2% week reads as a fifth of the way
-                            PLRing(value: r / 10, center: String(format: "%.1f%%", r), label: "Engaged", tint: r >= 3 ? PLOS.ok : (r >= 1 ? PLOS.gold : PLOS.warn),
-                                   text: PLOS.text(scheme), dim: PLOS.dim(scheme))
+                            // pl-cron's engagement_rate is raw likes + comments per post, not a percent (it read "2.0%" before 11-14)
+                            PLBigTile(number: String(format: "%.1f", r), label: "Responses per post", tint: PLOS.gold, text: PLOS.text(scheme), dim: PLOS.dim(scheme))
+                                .frame(width: 120)
                         }
                         VStack(alignment: .leading, spacing: 8) {
                             if let p = w.performance?.top_angle {
