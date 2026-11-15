@@ -167,6 +167,7 @@ struct PracticeView: View {
     let model: AppModel
     @Bindable var state: PracticeModel
     @State private var started = false
+    @State private var buddy = BuddyModel()   // Buddy lives top-right of Practice (his circle, 11-15), his drawn faces only
 
     var body: some View {
         ScrollViewReader { proxy in
@@ -197,6 +198,17 @@ struct PracticeView: View {
         .preferredColorScheme(.dark)
         .navigationTitle("Practice")
         .navigationBarTitleDisplayMode(.inline)
+        .toolbar {
+            ToolbarItem(placement: .topBarTrailing) {
+                BuddyView(model: buddy).frame(width: 44, height: 44)
+                    .contentShape(Rectangle())
+                    .onTapGesture { buddy.playNext() }
+                    .onLongPressGesture { buddy.swapFace() }
+                    .accessibilityAddTraits(.isButton).accessibilityHint("Tap for his next move, hold to swap faces")
+                    .onAppear { buddy.react(.open) }
+            }
+            .sharedBackgroundVisibility(.hidden)
+        }
         .toolbar(state.entryDone ? .automatic : .hidden, for: .navigationBar)
         .overlay { if !state.entryDone { PracticeEntry(model: model, state: state).transition(.opacity) } }
         .sensoryFeedback(PLHaptic.commit, trigger: state.tick)

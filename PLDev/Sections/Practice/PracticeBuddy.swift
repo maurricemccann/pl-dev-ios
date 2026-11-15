@@ -5,8 +5,9 @@ import SwiftUI
 // rig-default.json (bundled as buddy-rig.json: 43 numbers, 82 moves), the same file the R1 plays. This is the R1's RigTrack + ArtRig
 // + ArtFace, ported: each frame starts at zero, adds breathing and the current move as differences from rest, and moves and scales his
 // pieces from those numbers; nothing is redrawn. His ruling 11-15: "The phone plays the same 64 moves" (the export now holds 82).
-// When Buddy reacts is Gemini's table (vault Plans/RESEARCH - BUDDY IN LESSONS (GEMINI, S348).md). His two new grin mouths (11-15):
-// the open grin without the outer outline, and his closed mouth for rest, thinking and sleep.
+// When Buddy reacts is Gemini's table (vault Plans/RESEARCH - BUDDY IN LESSONS (GEMINI, S348).md). The grin's mouth is his rubber band
+// (crowned 11-15): his six drawn stages, closed to open, with HyperFrames in-betweens, 51 frames (buddy-grin-open-00..50, his drawings at
+// 0/10/20/30/40/50; source vault Generation Techniques/Blender/Buddy Face Rig/mouth-hyperframes). The rig's mouth_open picks the frame.
 
 /// The rig file: rest values and moves, sampled by elapsed time (RigTrack.java).
 final class BuddyRig: @unchecked Sendable {
@@ -74,6 +75,19 @@ final class BuddyRig: @unchecked Sendable {
         face = f; move = mv; moveAt = .now
     }
 
+    @ObservationIgnored private var deck: [String] = []
+
+    /// A tap on Buddy in the title bar plays his next move: every rig move once, in a shuffled order, then a fresh shuffle
+    /// (the house's "random = shuffled deck"). His ask 11-15: Buddy lives top-right so he can be seen tested.
+    func playNext() {
+        if deck.isEmpty { deck = (BuddyRig.shared?.moves.keys.filter { $0 != "breathing" } ?? []).shuffled() }
+        guard let mv = deck.popLast() else { return }
+        move = mv; moveAt = .now
+    }
+
+    /// A long press swaps his two drawn faces (grin, clench).
+    func swapFace() { face = face == "grin" ? "clench" : "grin" }
+
     /// The rig's numbers now: breathing plus the current move. When a one-shot move ends Buddy returns to the grin at rest.
     func numbers(_ now: Date) -> [String: Double] {
         var out: [String: Double] = [:]
@@ -85,13 +99,24 @@ final class BuddyRig: @unchecked Sendable {
         return out
     }
 
-    /// His closed mouth at rest, while thinking and asleep; while talking it opens past a third of the way (grin only).
-    func mouthClosed(_ n: [String: Double]) -> Bool {
-        switch move {
-        case nil, "thinking", "hmm", "sleepy", "fall_asleep", "tired": return true
-        case "talking": return (n["mouth_open"] ?? 0) < 0.15
-        default: return false
-        }
+    @ObservationIgnored private var mouthLevel = 0.0
+    @ObservationIgnored private var mouthAt = Date.distantPast
+
+    /// Which of his 51 mouth frames shows (0 = his closed drawing, 50 = his full grin). At rest, thinking and asleep the rig's mouth_open
+    /// drives it (talking opens and closes through his stages); any other move is the full grin. The level travels at most one section
+    /// (10 frames) per third of a second, so a change of move opens or closes through his drawings instead of jumping.
+    func mouthFrame(_ n: [String: Double], now: Date) -> Int {
+        let open = min(1, max(0, (BuddyRig.shared?.rest["mouth_open"] ?? 0) + (n["mouth_open"] ?? 0)))
+        let target: Double = {
+            switch move {
+            case nil, "thinking", "hmm", "sleepy", "fall_asleep", "tired", "talking": return open
+            default: return max(open, 1)
+            }
+        }()
+        let step = min(0.1, max(0, now.timeIntervalSince(mouthAt))) * 0.6   // 0.2 of the range (10 of his frames) per 1/3 s
+        mouthAt = now
+        mouthLevel = move == "talking" ? target : mouthLevel + max(-step, min(step, target - mouthLevel))   // speech follows the rig frame by frame
+        return Int((mouthLevel * 50).rounded())
     }
 }
 
@@ -101,6 +126,7 @@ struct BuddyFaceArt {
     let name: String
     let layout: Layout
     let images: [String: UIImage]
+    let mouthFrames: [UIImage]   // his rubber-band grin, closed to open (grin only; empty for clench)
 
     @MainActor static let grin = load("grin")
     @MainActor static let clench = load("clench")
@@ -109,10 +135,13 @@ struct BuddyFaceArt {
         guard let url = Bundle.main.url(forResource: "buddy-\(name)-face", withExtension: "json"),
               let data = try? Data(contentsOf: url), let layout = try? JSONDecoder().decode(Layout.self, from: data) else { return nil }
         var imgs: [String: UIImage] = [:]
-        for p in Array(layout.parts.keys) + ["mouthClosed"] {
+        for p in layout.parts.keys {
             if let u = Bundle.main.url(forResource: "buddy-\(name)-\(p)", withExtension: "png"), let i = UIImage(contentsOfFile: u.path) { imgs[p] = i }
         }
-        return imgs["mouth"] == nil ? nil : BuddyFaceArt(name: name, layout: layout, images: imgs)
+        let frames: [UIImage] = (0...50).compactMap { i in
+            Bundle.main.url(forResource: String(format: "buddy-\(name)-open-%02d", i), withExtension: "png").flatMap { UIImage(contentsOfFile: $0.path) }
+        }
+        return imgs["mouth"] == nil ? nil : BuddyFaceArt(name: name, layout: layout, images: imgs, mouthFrames: frames.count == 51 ? frames : [])
     }
 }
 
@@ -126,7 +155,7 @@ struct BuddyView: View {
             GeometryReader { geo in
                 if let art = model.face == "clench" ? BuddyFaceArt.clench : BuddyFaceArt.grin {
                     let n = reduceMotion ? [:] : model.numbers(tl.date)
-                    face(art, size: geo.size, n: n)
+                    face(art, size: geo.size, n: n, now: tl.date)
                 }
             }
         }
@@ -135,7 +164,7 @@ struct BuddyView: View {
 
     private static func cl(_ v: CGFloat, _ lo: CGFloat, _ hi: CGFloat) -> CGFloat { max(lo, min(hi, v)) }
 
-    private func face(_ a: BuddyFaceArt, size: CGSize, n: [String: Double]) -> some View {
+    private func face(_ a: BuddyFaceArt, size: CGSize, n: [String: Double], now: Date) -> some View {
         let r: (String) -> CGFloat = { CGFloat(n[$0] ?? 0) }   // one number type throughout: mixed Double/CGFloat stalls the type checker
         let k = min(size.width / a.layout.w, size.height / a.layout.h) * 0.92
         let ox = (size.width - a.layout.w * k) / 2, oy = (size.height - a.layout.h * k) / 2
@@ -144,7 +173,7 @@ struct BuddyView: View {
             return CGRect(x: ox + b.x * k, y: oy + b.y * k, width: b.w * k, height: b.h * k)
         }
         let eyeW = (a.layout.parts["eyeL"]?.w ?? 200) * k
-        let closed = model.mouthClosed(n) && a.images["mouthClosed"] != nil
+        let mf = a.mouthFrames.isEmpty ? nil : a.mouthFrames[model.mouthFrame(n, now: now)]
         // the whole face: a small drift, turn and stretch (the rig's face_* numbers)
         let fx = r("face_x") * size.width * 0.12, fy = r("face_y") * size.width * 0.12, frot = r("face_rot")
         let fsx = Self.cl(1 + r("face_sx"), 0.85, 1.08), fsy = Self.cl(1 + r("face_sy"), 0.85, 1.08)
@@ -170,11 +199,14 @@ struct BuddyView: View {
                     .offset(x: e.minX + r("eye\(s)_x") * e.width, y: e.minY + r("eye\(s)_y") * e.width + lidShift)
                 }
             }
-            if let m = rect("mouth"), let img = closed ? a.images["mouthClosed"] : a.images["mouth"] {
-                // ArtFace's mouth: width and open stretch it (capped), the curve lifts it, the rig moves it by eye widths
+            if let m = rect("mouth"), let img = mf ?? a.images["mouth"] {
+                // ArtFace's mouth: width stretches it (capped), the curve lifts it, the rig moves it by eye widths. His frames do the
+                // opening; each frame is his full 1132x560 canvas with the open grin (988x559) at its top-left, so it is drawn at the
+                // mouth box scaled by 1132/988 x 560/559, anchored top-left, and his full grin lands exactly on the old mouth piece.
                 let msx = Self.cl(1 + r("mouth_w") * 0.5, 0.88, 1.08)
-                let msy = Self.cl(1 + r("mouth_open") * 0.15 + r("mouth_curve") * 0.05, 0.9, 1.08)
-                Image(uiImage: img).resizable().aspectRatio(contentMode: .fit).frame(width: m.width, height: m.height)
+                let msy: CGFloat = mf == nil ? Self.cl(1 + r("mouth_open") * 0.15 + r("mouth_curve") * 0.05, 0.9, 1.08) : Self.cl(1 + r("mouth_curve") * 0.05, 0.9, 1.08)
+                let fw: CGFloat = mf == nil ? m.width : m.width * 1132 / 988, fh: CGFloat = mf == nil ? m.height : m.height * 560 / 559
+                Image(uiImage: img).resizable().aspectRatio(contentMode: .fit).frame(width: fw, height: fh, alignment: .topLeading)
                     .scaleEffect(x: msx, y: msy, anchor: .bottom)
                     .offset(x: m.minX + r("mouth_x") * eyeW, y: m.minY + r("mouth_y") * eyeW - r("mouth_curve") * 6 * k)
             }
