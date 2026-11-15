@@ -214,19 +214,19 @@ struct PerformancePage: View {
             let l = data?.landed
             if let rows = l?.channels, !rows.isEmpty {
                 HStack {
-                    Text("Channel").frame(maxWidth: .infinity, alignment: .leading)
-                    Text("Posts").frame(width: 40, alignment: .trailing)
-                    Text("Avg views").frame(width: 66, alignment: .trailing)
-                    Text("Likes").frame(width: 44, alignment: .trailing)
-                    Text("Comments").frame(width: 66, alignment: .trailing)
+                    Text("Channel").plLabel(9).frame(maxWidth: .infinity, alignment: .leading)
+                    head("square.stack", "Posts").frame(width: 40, alignment: .trailing)
+                    head("eye", "Average views").frame(width: 66, alignment: .trailing)
+                    head("heart", "Likes").frame(width: 44, alignment: .trailing)
+                    head("bubble.right", "Comments").frame(width: 66, alignment: .trailing)
                 }
-                .plLabel(9).foregroundStyle(.secondary)
+                .foregroundStyle(.secondary)
                 ForEach(rows) { r in
                     HStack {
                         HStack(spacing: 6) {
                             Circle().fill(level(r)).frame(width: 9, height: 9)
                             VStack(alignment: .leading, spacing: 1) {
-                                Text(r.channel.capitalized).font(.callout).lineLimit(1).minimumScaleFactor(0.7)
+                                Text(r.channel.capitalized).font(.callout.weight(.semibold)).foregroundStyle(PLOS.platform(r.channel)).lineLimit(1).minimumScaleFactor(0.7)
                                 if r.engagement < 10 { Text("not enough to compare").font(.caption2).foregroundStyle(.secondary) }
                             }
                         }
@@ -335,7 +335,7 @@ struct PerformancePage: View {
                         BarMark(x: .value("Day", String(d.date.suffix(5))), y: .value("Visitors", d.users))
                             .foregroundStyle(PLTone.accent.gradient)
                     }
-                    .chartXAxis { AxisMarks(values: .stride(by: 7)) { _ in AxisValueLabel() } }
+                    .chartXAxis { AxisMarks(values: [days.first, days[days.count / 2], days.last].compactMap { $0.map { String($0.date.suffix(5)) } }) { _ in AxisValueLabel() } }
                     .frame(height: 120)
                     .accessibilityLabel("Visitors each day for 28 days")
                 }
@@ -365,6 +365,11 @@ struct PerformancePage: View {
                 Text(data == nil ? "Not read yet." : "No site read yet: the PC board posts it each night.").font(.callout).foregroundStyle(.secondary)
             }
         }
+    }
+
+    /// A column head as an icon: never wraps, and says its word to VoiceOver.
+    private func head(_ symbol: String, _ name: String) -> some View {
+        Image(systemName: symbol).font(.system(size: 11, weight: .semibold)).accessibilityLabel(name)
     }
 
     // MARK: the screen is a practice (his idea 11-14; Codex and Gemini's build-first set, all four by his ruling)
@@ -570,12 +575,12 @@ struct PerformancePage: View {
                 Text(data == nil ? "Not read yet." : "No posts measured.").font(.callout).foregroundStyle(.secondary)
             } else {
                 HStack {
-                    Text("Week of").frame(maxWidth: .infinity, alignment: .leading)
-                    Text("Posts").frame(width: 48, alignment: .trailing)
-                    Text("Reach").frame(width: 60, alignment: .trailing)
-                    Text("Engaged").frame(width: 64, alignment: .trailing)
+                    Text("Week of").plLabel(10).frame(maxWidth: .infinity, alignment: .leading)
+                    head("square.stack", "Posts").frame(width: 48, alignment: .trailing)
+                    head("eye", "Reach").frame(width: 60, alignment: .trailing)
+                    head("heart", "Likes and comments").frame(width: 64, alignment: .trailing)
                 }
-                .plLabel(10).foregroundStyle(.secondary)
+                .foregroundStyle(.secondary)
             }
             ForEach(rows) { r in
                 VStack(spacing: 3) {
@@ -602,7 +607,15 @@ struct PerformancePage: View {
             }
             ForEach(rows) { r in
                 VStack(alignment: .leading, spacing: 2) {
-                    Text("\(r.channel.capitalized) · \(r.day) · \(r.engagement) engaged · reach \(count(r.reach))").plLabel(10).foregroundStyle(.secondary)
+                    HStack(spacing: 6) {
+                        Text(r.channel.capitalized).font(.caption.weight(.semibold)).foregroundStyle(PLOS.platform(r.channel))
+                        Text(String(r.day.suffix(5))).font(.system(.caption2, design: .monospaced)).foregroundStyle(.secondary)
+                        Spacer(minLength: 4)
+                        Label("\(r.engagement)", systemImage: "heart").font(.system(.caption, design: .monospaced))
+                        if (r.reach ?? 0) > 0 { Label(count(r.reach), systemImage: "eye").font(.system(.caption, design: .monospaced)) }
+                    }
+                    .foregroundStyle(.secondary)
+                    .accessibilityElement(children: .combine)
                     Text(r.caption).font(.footnote).lineLimit(3)
                 }
                 .padding(.vertical, 2)

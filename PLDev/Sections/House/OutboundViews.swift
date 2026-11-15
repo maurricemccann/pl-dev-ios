@@ -276,8 +276,7 @@ struct CalendarView: View {
                         }
                     } label: {
                         HStack {
-                            Circle().fill(PLOS.platform(p)).frame(width: 9, height: 9)
-                            Text(p == "pl_feed" ? "PL feed" : p.capitalized)
+                            Text(p == "pl_feed" ? "PL feed" : p.capitalized).fontWeight(.semibold).foregroundStyle(PLOS.platform(p))
                             Spacer()
                             if cell?.paused == true { Text("paused").font(.caption).foregroundStyle(.secondary) }
                             else {
@@ -518,9 +517,8 @@ struct DripView: View {
                 }
                 ForEach(rows) { r in
                     HStack(alignment: .top, spacing: 10) {
-                        Circle().fill(PLOS.platform(r.platform)).frame(width: 9, height: 9).padding(.top, 5)
                         VStack(alignment: .leading, spacing: 2) {
-                            HStack { Text((r.platform ?? "").capitalized).font(.caption.bold()); Spacer(); Ago(text: r.publish_at).font(.caption) }.foregroundStyle(.secondary)
+                            HStack { Text((r.platform ?? "").capitalized).font(.caption.bold()).foregroundStyle(PLOS.platform(r.platform)); Spacer(); Ago(text: r.publish_at).font(.caption) }.foregroundStyle(.secondary)
                             Text(r.caption ?? "").lineLimit(3)
                         }
                     }
@@ -552,7 +550,7 @@ struct VaultView: View {
                 }
                 ForEach(rows) { r in
                     VStack(alignment: .leading, spacing: 6) {
-                        HStack(spacing: 6) { Circle().fill(PLOS.platform(r.platform)).frame(width: 9, height: 9); Text((r.platform ?? "").capitalized).font(.caption.bold()).foregroundStyle(.secondary) }
+                        Text((r.platform ?? "").capitalized).font(.caption.bold()).foregroundStyle(PLOS.platform(r.platform))
                         Text(r.caption ?? "").lineLimit(5)
                         if let rw = r.rewrite_caption { Text("Rewrite: ").bold() + Text(rw) }
                         if let v = r.violations, !v.isEmpty { HStack(spacing: 5) { ForEach(v.prefix(3), id: \.self) { PLChip(word: $0, tint: PLOS.warn) } } }
@@ -592,7 +590,7 @@ struct ReachView: View {
                 } header: { Text("Last \(rows.count) posts") }.listRowBackground(OSRowBackground())
                 ForEach(rows) { r in
                     VStack(alignment: .leading, spacing: 4) {
-                        HStack(spacing: 6) { Circle().fill(PLOS.platform(r.channel)).frame(width: 9, height: 9); Text((r.channel ?? "").capitalized).font(.caption.bold()); Spacer(); Ago(text: r.sent_at).font(.caption) }.foregroundStyle(.secondary)
+                        HStack(spacing: 6) { Text((r.channel ?? "").capitalized).font(.caption.bold()).foregroundStyle(PLOS.platform(r.channel)); Spacer(); Ago(text: r.sent_at).font(.caption) }.foregroundStyle(.secondary)
                         Text(r.caption_excerpt ?? "").lineLimit(2)
                         HStack(spacing: 14) { Label("\(r.reach ?? 0)", systemImage: "eye"); Label("\(r.likes ?? 0)", systemImage: "heart"); Label("\(r.comments ?? 0)", systemImage: "bubble.right") }
                             .font(.caption.monospacedDigit())
