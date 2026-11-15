@@ -106,6 +106,7 @@ struct CandleTabs: View {
             row(label: false)
             ScrollView(.horizontal, showsIndicators: false) { row(label: false) }
         }
+        .frame(maxWidth: .infinity)   // the band spans the screen whichever layout fits
         .padding(.horizontal, 20).padding(.vertical, 10)
         .background(Candle.bg.opacity(0.92))
         .overlay(alignment: .bottom) { Rectangle().fill(Candle.rule).frame(height: 1) }
