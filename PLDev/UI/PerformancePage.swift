@@ -17,7 +17,11 @@ struct PerformancePage: View {
         struct Landed: Decodable { let days: Int?; let channels: [Channel]?; let best: Post?; let weakest: Post? }
         struct Job: Decodable, Identifiable { let job: String; let calls: Int; var id: String { job } }
         struct Cost: Decodable { let calls_7d: Int?; let calls_today: Int?; let cap_per_day: Int?; let jobs: [Job]? }
+        struct Month: Decodable, Identifiable { let month: String; let total: Double; let orders: Int; var id: String { month } }
+        struct Week: Decodable, Identifiable { let start: String; let posts: Int; let reach: Int; let engagement: Int; var id: String { start } }
+        struct Top: Decodable, Identifiable { let channel: String; let day: String; let reach: Int?; let engagement: Int; let caption: String; var id: String { channel + day + caption } }
         let money: Money?; let audience: Audience?; let landed: Landed?; let cost: Cost?
+        let months: [Month]?; let weekly: [Week]?; let top_posts: [Top]?
     }
 
     var body: some View {
@@ -28,8 +32,11 @@ struct PerformancePage: View {
                     .plFont(.footnote).foregroundStyle(.white.opacity(0.75))
             }
             moneyCard
+            monthsCard
             audienceCard
             landedCard
+            weeklyCard
+            topCard
             costCard
         }
         .padding(.horizontal, PLSpace.margin).padding(.top, PLSpace.gap).padding(.bottom, 120)
@@ -161,6 +168,77 @@ struct PerformancePage: View {
             Text(caption).font(.footnote).lineLimit(3)
         }
         .padding(.top, 4)
+    }
+
+    /// Revenue by month this year (the artifact's "revenue by month" block), a row and a bar per month.
+    private var monthsCard: some View {
+        card("Revenue by month") {
+            let rows = data?.months ?? []
+            let top = max(rows.map(\.total).max() ?? 0, 1)
+            if rows.isEmpty {
+                Text(data == nil ? "Not read yet." : "No orders this year.").font(.callout).foregroundStyle(.secondary)
+            }
+            ForEach(rows) { r in
+                VStack(alignment: .leading, spacing: 3) {
+                    HStack {
+                        Text(r.month).font(.system(.footnote, design: .monospaced))
+                        Spacer()
+                        Text("\(dollars(r.total)) · \(r.orders) order\(r.orders == 1 ? "" : "s")").font(.system(.footnote, design: .monospaced)).monospacedDigit().foregroundStyle(.secondary)
+                    }
+                    ProgressView(value: min(r.total / top, 1)).tint(PLTone.accent)
+                }
+                .accessibilityElement(children: .combine)
+            }
+        }
+    }
+
+    /// Posts, reach and engagement per week for 13 weeks (the artifact's "posts by platform and week", all platforms together).
+    private var weeklyCard: some View {
+        card("13 weeks") {
+            let rows = data?.weekly ?? []
+            let top = Double(max(rows.map(\.engagement).max() ?? 0, 1))
+            if rows.isEmpty {
+                Text(data == nil ? "Not read yet." : "No posts measured.").font(.callout).foregroundStyle(.secondary)
+            } else {
+                HStack {
+                    Text("Week of").frame(maxWidth: .infinity, alignment: .leading)
+                    Text("Posts").frame(width: 48, alignment: .trailing)
+                    Text("Reach").frame(width: 60, alignment: .trailing)
+                    Text("Engaged").frame(width: 64, alignment: .trailing)
+                }
+                .plLabel(10).foregroundStyle(.secondary)
+            }
+            ForEach(rows) { r in
+                VStack(spacing: 3) {
+                    HStack {
+                        Text(String(r.start.suffix(5))).frame(maxWidth: .infinity, alignment: .leading)
+                        Text("\(r.posts)").frame(width: 48, alignment: .trailing)
+                        Text("\(r.reach)").frame(width: 60, alignment: .trailing)
+                        Text("\(r.engagement)").frame(width: 64, alignment: .trailing)
+                    }
+                    .font(.system(.footnote, design: .monospaced)).monospacedDigit()
+                    ProgressView(value: min(Double(r.engagement) / top, 1)).tint(PLTone.accent)
+                }
+                .accessibilityElement(children: .combine)
+            }
+        }
+    }
+
+    /// The best posts of the last 30 days, with their captions (the artifact's "best posts").
+    private var topCard: some View {
+        card("Best posts, 30 days") {
+            let rows = data?.top_posts ?? []
+            if rows.isEmpty {
+                Text(data == nil ? "Not read yet." : "No posts measured.").font(.callout).foregroundStyle(.secondary)
+            }
+            ForEach(rows) { r in
+                VStack(alignment: .leading, spacing: 2) {
+                    Text("\(r.channel.capitalized) · \(r.day) · \(r.engagement) engaged · reach \(count(r.reach))").plLabel(10).foregroundStyle(.secondary)
+                    Text(r.caption).font(.footnote).lineLimit(3)
+                }
+                .padding(.vertical, 2)
+            }
+        }
     }
 
     private var costCard: some View {
