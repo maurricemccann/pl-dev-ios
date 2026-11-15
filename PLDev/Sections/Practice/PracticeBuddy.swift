@@ -1,9 +1,99 @@
 import SwiftUI
 
-// Buddy in lessons (S348·9a3e). His ruling: "Only my drawn ones" -> his McCann pack (the R1 Buddy's `packs/mccann`: the grin and
-// the clench, his own eyes, pupils and mouths, bundled with his yes 11-15). Motion is the R1's `ArtFace.java` ported: only moves and
-// scales of his pieces, never a redraw. When and how Buddy reacts is Gemini's table (his "Ask Gemini";
-// vault Plans/RESEARCH - BUDDY IN LESSONS (GEMINI, S348).md): one reaction per event, a 3 s rest, scale never past 108 %.
+// Buddy in lessons (S348·9a3e). His drawn faces (his McCann pack: grin, clench; bundled with his yes 11-15), played by THE rig: the
+// Blender FaceRig built this session (vault Generation Techniques/Blender/Buddy Face Rig, source pl-r1-buddy/tools/rig), exported to
+// rig-default.json (bundled as buddy-rig.json: 43 numbers, 82 moves), the same file the R1 plays. This is the R1's RigTrack + ArtRig
+// + ArtFace, ported: each frame starts at zero, adds breathing and the current move as differences from rest, and moves and scales his
+// pieces from those numbers; nothing is redrawn. His ruling 11-15: "The phone plays the same 64 moves" (the export now holds 82).
+// When Buddy reacts is Gemini's table (vault Plans/RESEARCH - BUDDY IN LESSONS (GEMINI, S348).md). His two new grin mouths (11-15):
+// the open grin without the outer outline, and his closed mouth for rest, thinking and sleep.
+
+/// The rig file: rest values and moves, sampled by elapsed time (RigTrack.java).
+final class BuddyRig: @unchecked Sendable {
+    struct Move { let ms: Double; let loop: Bool; let v: [String: [Double]] }
+    let fps: Double
+    let rest: [String: Double]
+    let moves: [String: Move]
+
+    static let shared: BuddyRig? = {
+        guard let u = Bundle.main.url(forResource: "buddy-rig", withExtension: "json"), let d = try? Data(contentsOf: u),
+              let o = try? JSONSerialization.jsonObject(with: d) as? [String: Any],
+              let fps = (o["fps"] as? NSNumber)?.doubleValue, let rest = o["rest"] as? [String: NSNumber], let mv = o["moves"] as? [String: [String: Any]] else { return nil }
+        var moves: [String: Move] = [:]
+        for (name, m) in mv {
+            let vv = (m["v"] as? [String: [NSNumber]] ?? [:]).mapValues { $0.map(\.doubleValue) }
+            moves[name] = Move(ms: (m["ms"] as? NSNumber)?.doubleValue ?? 1000, loop: (m["loop"] as? Bool) ?? false, v: vv)
+        }
+        return BuddyRig(fps: fps, rest: rest.mapValues(\.doubleValue), moves: moves)
+    }()
+
+    init(fps: Double, rest: [String: Double], moves: [String: Move]) { self.fps = fps; self.rest = rest; self.moves = moves }
+
+    /// Adds (value - rest) of every number the move animates at `ms` into `out`; false once a one-shot move has ended.
+    @discardableResult func add(_ move: String, ms: Double, into out: inout [String: Double]) -> Bool {
+        guard let m = moves[move], ms >= 0 else { return false }
+        var t = ms
+        if t >= m.ms { guard m.loop else { return false }; t = t.truncatingRemainder(dividingBy: m.ms) }
+        let f = t * fps / 1000
+        for (k, a) in m.v where !a.isEmpty {
+            let i = min(Int(f), a.count - 1), j = min(i + 1, a.count - 1)
+            let v = a[i] + (a[j] - a[i]) * (f - Double(i))
+            out[k, default: 0] += v - (rest[k] ?? 0)
+        }
+        return true
+    }
+}
+
+/// What Buddy is doing: which face, and the move he is playing (nil = breathing only).
+@MainActor @Observable final class BuddyModel {
+    enum Moment { case open, reading, right, wrong, streak, finish, gold, returned, pack }
+    var face = "grin"
+    var move: String?
+    var moveAt = Date()
+    let born = Date()
+    private var lastReaction = Date.distantPast
+
+    /// Gemini's table, played as rig moves: one reaction per event, a 3 s rest for the small ones.
+    func react(_ m: Moment) {
+        let (f, mv): (String, String) = {
+            switch m {
+            case .open: return ("grin", "happy")
+            case .reading: return ("grin", "thinking")
+            case .right: return ("grin", "nod_yes")
+            case .wrong: return ("clench", "hmm")
+            case .streak: return ("grin", "laugh")
+            case .finish: return ("grin", "proud")
+            case .gold: return ("clench", "starstruck")
+            case .returned: return ("grin", "wake_stretch")
+            case .pack: return ("clench", "surprised")
+            }
+        }()
+        let big: Bool = { switch m { case .finish, .gold, .pack, .returned, .streak: return true; default: return false } }()
+        guard big || Date().timeIntervalSince(lastReaction) > 3 else { return }
+        lastReaction = .now
+        face = f; move = mv; moveAt = .now
+    }
+
+    /// The rig's numbers now: breathing plus the current move. When a one-shot move ends Buddy returns to the grin at rest.
+    func numbers(_ now: Date) -> [String: Double] {
+        var out: [String: Double] = [:]
+        guard let rig = BuddyRig.shared else { return out }
+        rig.add("breathing", ms: now.timeIntervalSince(born) * 1000, into: &out)
+        if let mv = move, !rig.add(mv, ms: now.timeIntervalSince(moveAt) * 1000, into: &out) {
+            Task { @MainActor in if self.move == mv { self.move = nil; self.face = "grin" } }
+        }
+        return out
+    }
+
+    /// His closed mouth at rest, while thinking and asleep; while talking it opens past a third of the way (grin only).
+    func mouthClosed(_ n: [String: Double]) -> Bool {
+        switch move {
+        case nil, "thinking", "hmm", "sleepy", "fall_asleep", "tired": return true
+        case "talking": return (n["mouth_open"] ?? 0) < 0.15
+        default: return false
+        }
+    }
+}
 
 struct BuddyFaceArt {
     struct Box: Decodable { let x: CGFloat; let y: CGFloat; let w: CGFloat; let h: CGFloat }
@@ -19,52 +109,14 @@ struct BuddyFaceArt {
         guard let url = Bundle.main.url(forResource: "buddy-\(name)-face", withExtension: "json"),
               let data = try? Data(contentsOf: url), let layout = try? JSONDecoder().decode(Layout.self, from: data) else { return nil }
         var imgs: [String: UIImage] = [:]
-        for p in layout.parts.keys {
+        for p in Array(layout.parts.keys) + ["mouthClosed"] {
             if let u = Bundle.main.url(forResource: "buddy-\(name)-\(p)", withExtension: "png"), let i = UIImage(contentsOfFile: u.path) { imgs[p] = i }
         }
         return imgs["mouth"] == nil ? nil : BuddyFaceArt(name: name, layout: layout, images: imgs)
     }
 }
 
-enum BuddyState: String { case idle, happy, laugh, talk, surprised, sleepy, think }
-
-/// Who Buddy is right now. `react` follows Gemini's table; a reaction inside the rest is dropped, never queued.
-@MainActor @Observable final class BuddyModel {
-    enum Moment { case open, reading, right, wrong, streak, finish, gold, returned, pack }
-    var face = "grin"
-    var state = BuddyState.idle
-    private var lastReaction = Date.distantPast
-    private var token = 0
-
-    func react(_ m: Moment) {
-        let (f, s, secs): (String, BuddyState, Double) = {
-            switch m {
-            case .open: return ("grin", .happy, 1.2)
-            case .reading: return ("grin", .think, 1.5)
-            case .right: return ("grin", .happy, 1.0)
-            case .wrong: return ("clench", .surprised, 0.8)
-            case .streak: return ("grin", .laugh, 1.5)
-            case .finish: return ("grin", .happy, 2.0)
-            case .gold: return ("clench", .laugh, 2.5)
-            case .returned: return ("grin", .sleepy, 2.0)
-            case .pack: return ("clench", .surprised, 1.2)
-            }
-        }()
-        // the big moments always play; the small ones respect a 3 s rest
-        let big: Bool = { switch m { case .finish, .gold, .pack, .returned, .streak: return true; default: return false } }()
-        guard big || Date().timeIntervalSince(lastReaction) > 3 else { return }
-        lastReaction = .now; token += 1
-        let t = token
-        face = f; state = s
-        Task { @MainActor in
-            try? await Task.sleep(for: .seconds(secs))
-            guard t == token else { return }
-            face = "grin"; state = .idle
-        }
-    }
-}
-
-/// His face, drawn from his pieces. `size` is the box it fits in.
+/// His face, moved by the rig's numbers (ArtRig.eye + ArtFace's mouth and pupils), in the box it is given.
 struct BuddyView: View {
     let model: BuddyModel
     @Environment(\.accessibilityReduceMotion) private var reduceMotion
@@ -73,63 +125,63 @@ struct BuddyView: View {
         TimelineView(.animation(minimumInterval: 1 / 30, paused: reduceMotion)) { tl in
             GeometryReader { geo in
                 if let art = model.face == "clench" ? BuddyFaceArt.clench : BuddyFaceArt.grin {
-                    face(art, size: geo.size, t: reduceMotion ? 0 : tl.date.timeIntervalSinceReferenceDate)
+                    let n = reduceMotion ? [:] : model.numbers(tl.date)
+                    face(art, size: geo.size, n: n)
                 }
             }
         }
-        .accessibilityLabel("Buddy, \(model.state.rawValue)")
+        .accessibilityLabel("Buddy" + (model.move.map { ", \($0.replacingOccurrences(of: "_", with: " "))" } ?? ""))
     }
 
-    private func face(_ a: BuddyFaceArt, size: CGSize, t: Double) -> some View {
-        let grin = a.images["pupilL"] != nil
-        let k = min(size.width / a.layout.w, size.height / a.layout.h)
+    private static func cl(_ v: CGFloat, _ lo: CGFloat, _ hi: CGFloat) -> CGFloat { max(lo, min(hi, v)) }
+
+    private func face(_ a: BuddyFaceArt, size: CGSize, n: [String: Double]) -> some View {
+        let r: (String) -> CGFloat = { CGFloat(n[$0] ?? 0) }   // one number type throughout: mixed Double/CGFloat stalls the type checker
+        let k = min(size.width / a.layout.w, size.height / a.layout.h) * 0.92
         let ox = (size.width - a.layout.w * k) / 2, oy = (size.height - a.layout.h * k) / 2
-        // ArtFace's state table (eye sx/sy, mouth sx/sy, mouth dy, mouth rot, pupil x/y, pupil scale), capped at 1.08 (Gemini)
-        var esx = 1.0, esy = 1.0, msx = 1.0, msy = 1.0, mdy = 0.0, mrot = 0.0, ppx = 0.0, ppy = 0.0, pps = 1.0
-        let wave = sin(t * 2 * .pi / (grin ? 3.2 : 2.8))
-        switch model.state {
-        case .happy: if grin { ppy = -0.07; mrot = -3 } else { esy = 0.85; mdy = -8 }
-        case .laugh:
-            let hi = Int(t * 1000 / (grin ? 120 : 100)) % 2 == 0
-            if grin { msx = 1.05; msy = hi ? 1.08 : 1.06; esy = 0.85 } else { mrot = hi ? 2 : -2; msy = hi ? 1.08 : 1; esy = 0.75 }
-        case .talk:
-            let u = abs(sin(t * .pi / (grin ? 0.135 : 0.12)))
-            if grin { msy = 1 + 0.08 * u; msx = 1 + 0.03 * u } else { mdy = (u - 0.5) * 8; msy = 1.05; msx = 0.98 }
-        case .surprised: esx = grin ? 1.08 : 1.05; esy = 1.08; msy = 1.08; msx = grin ? 0.9 : 1; pps = 0.85
-        case .sleepy: esy = grin ? 0.6 : 0.65; ppy = 0.12; mdy = grin ? 8 : 0; msy = 0.9
-        case .think: if grin { ppx = 0.13; ppy = -0.13; mrot = 4 } else { mrot = -3; msx = 0.95; msy = 0.95 }
-        case .idle:
-            if grin { mrot = sin(t * 2 * .pi / 4.5); ppx = sin(t * 0.7) * 0.08; ppy = cos(t * 0.5) * 0.06 } else { mdy = sin(t * 2 * .pi / 4) * 2 }
-        }
-        let eyeBreath = 1 + (grin ? 0.01 : 0.02) * wave, mouthBreath = 1 + 0.02 * wave
-        let blink = grin && (Int(t * 10) % 47 == 0) ? 0.08 : 1.0   // a short blink every ~4.7 s: the grin's whites squash to a slit
-        func rect(_ n: String) -> CGRect? {
-            guard let b = a.layout.parts[n] else { return nil }
+        func rect(_ p: String) -> CGRect? {
+            guard let b = a.layout.parts[p] else { return nil }
             return CGRect(x: ox + b.x * k, y: oy + b.y * k, width: b.w * k, height: b.h * k)
         }
+        let eyeW = (a.layout.parts["eyeL"]?.w ?? 200) * k
+        let closed = model.mouthClosed(n) && a.images["mouthClosed"] != nil
+        // the whole face: a small drift, turn and stretch (the rig's face_* numbers)
+        let fx = r("face_x") * size.width * 0.12, fy = r("face_y") * size.width * 0.12, frot = r("face_rot")
+        let fsx = Self.cl(1 + r("face_sx"), 0.85, 1.08), fsy = Self.cl(1 + r("face_sy"), 0.85, 1.08)
         return ZStack(alignment: .topLeading) {
-            ForEach(["L", "R"], id: \.self) { side in
-                if let e = rect("eye" + side), let img = a.images["eye" + side] {
+            ForEach(["L", "R"], id: \.self) { s in
+                if let e = rect("eye" + s), let img = a.images["eye" + s] {
+                    // ArtRig.eye: move by eye widths, the lids squash his eye between them (never a hard crop), a lid's slant leans it
+                    let uc = Self.cl(r("eye\(s)_lidU_y"), 0, 0.9), lc = Self.cl(r("eye\(s)_lidL_y"), 0, 0.9), keep = max(0.2, 1 - uc - lc)
+                    let lidShift = (uc * e.height + keep * e.height / 2) - e.height / 2
+                    let dir: CGFloat = s == "L" ? 1 : -1
                     ZStack(alignment: .topLeading) {
                         Image(uiImage: img).resizable().frame(width: e.width, height: e.height)
-                        if let p = rect("pupil" + side), let pi = a.images["pupil" + side] {
+                        if let p = rect("pupil" + s), let pi = a.images["pupil" + s] {
                             Image(uiImage: pi).resizable().frame(width: p.width, height: p.height)
-                                .scaleEffect(pps)
-                                .offset(x: p.minX - e.minX + e.width * ppx, y: p.minY - e.minY + e.height * ppy)
+                                .scaleEffect(max(0.5, 1 + r("pupil_size")))
+                                .offset(x: p.minX - e.minX + e.width * Self.cl(r("pupil_x"), -1, 1) * 0.10,
+                                        y: p.minY - e.minY + e.height * Self.cl(r("pupil_y"), -1, 1) * 0.10)
                         }
                     }
                     .frame(width: e.width, height: e.height, alignment: .topLeading)
-                    .scaleEffect(x: min(1.08, esx), y: min(1.08, esy * eyeBreath) * blink, anchor: .center)
-                    .offset(x: e.minX, y: e.minY)
+                    .scaleEffect(x: Self.cl(1 + r("eye\(s)_sx"), 0.6, 1.08), y: Self.cl(1 + r("eye\(s)_sy"), 0.5, 1.08) * keep, anchor: .center)
+                    .rotationEffect(.degrees(r("eye\(s)_rot") + Self.cl(r("eye\(s)_lidU_ang"), -35, 35) * dir * 0.4))
+                    .offset(x: e.minX + r("eye\(s)_x") * e.width, y: e.minY + r("eye\(s)_y") * e.width + lidShift)
                 }
             }
-            if let m = rect("mouth"), let img = a.images["mouth"] {
-                Image(uiImage: img).resizable().frame(width: m.width, height: m.height)
-                    .scaleEffect(x: min(1.08, msx), y: min(1.08, msy * mouthBreath), anchor: .bottom)
-                    .rotationEffect(.degrees(mrot), anchor: UnitPoint(x: 0.42, y: 0.5))
-                    .offset(x: m.minX, y: m.minY + mdy * k * 2)
+            if let m = rect("mouth"), let img = closed ? a.images["mouthClosed"] : a.images["mouth"] {
+                // ArtFace's mouth: width and open stretch it (capped), the curve lifts it, the rig moves it by eye widths
+                let msx = Self.cl(1 + r("mouth_w") * 0.5, 0.88, 1.08)
+                let msy = Self.cl(1 + r("mouth_open") * 0.15 + r("mouth_curve") * 0.05, 0.9, 1.08)
+                Image(uiImage: img).resizable().aspectRatio(contentMode: .fit).frame(width: m.width, height: m.height)
+                    .scaleEffect(x: msx, y: msy, anchor: .bottom)
+                    .offset(x: m.minX + r("mouth_x") * eyeW, y: m.minY + r("mouth_y") * eyeW - r("mouth_curve") * 6 * k)
             }
         }
         .frame(width: size.width, height: size.height, alignment: .topLeading)
+        .scaleEffect(x: fsx, y: fsy)
+        .rotationEffect(.degrees(frot))
+        .offset(x: fx, y: fy)
     }
 }
