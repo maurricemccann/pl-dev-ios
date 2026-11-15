@@ -30,7 +30,7 @@ public enum BackendTemplates {
     public static let builtIn: [BackendTemplate] = [
         BackendTemplate(id: "cloudflare", name: "Cloudflare", symbol: "cloud", startURL: "https://dash.cloudflare.com/", allowedHosts: ["cloudflare.com"]),
         BackendTemplate(id: "printful", name: "Printful", symbol: "shippingbox", startURL: "https://www.printful.com/dashboard", allowedHosts: ["printful.com"]),
-        BackendTemplate(id: "horizon", name: "Meta Horizon Creator Club", symbol: "visionpro", startURL: "", allowedHosts: ["meta.com", "facebook.com", "oculus.com"]),
+        BackendTemplate(id: "horizon", name: "Meta Horizon Creator Club", symbol: "visionpro", startURL: "", allowedHosts: ["meta.com", "facebook.com", "oculus.com", "fb.com", "fb.me", "instagram.com", "messenger.com"]),
     ]
 
     /// Sign-in providers a site may bounce through, allowed in every tile so a Google, Apple, Microsoft or GitHub sign-in does not leave the app.
@@ -64,6 +64,18 @@ public enum BackendTemplates {
         let clean = title?.trimmingCharacters(in: .whitespacesAndNewlines) ?? ""
         return BackendTemplate(id: "custom-" + base, name: clean.isEmpty ? base : String(clean.prefix(40)), symbol: "globe",
                                startURL: address.trimmingCharacters(in: .whitespacesAndNewlines), allowedHosts: [base])
+    }
+
+    /// A saved list read back after an update: each built-in tile takes the current name, symbol and allowed sites from the code
+    /// (keeping any extra site he allowed and any address he set); tiles he added are kept as they are.
+    public static func refreshed(_ saved: [BackendTemplate]) -> [BackendTemplate] {
+        saved.map { s in
+            guard let code = builtIn.first(where: { $0.id == s.id }) else { return s }
+            var t = code
+            t.startURL = s.isReady ? s.startURL : code.startURL
+            for h in s.allowedHosts where !t.allowedHosts.contains(h) { t.allowedHosts.append(h) }
+            return t
+        }
     }
 
     /// The template an address should become: its built-in one with that address as the start (when the built-in has none yet),

@@ -52,6 +52,18 @@ final class BackendTemplatesTests: XCTestCase {
         XCTAssertEqual(cf.allowing("").allowedHosts, cf.allowedHosts)
     }
 
+    func testRefreshedBringsOldSavedTilesUpToDate() {
+        var oldHorizon = BackendTemplates.builtIn[2]
+        oldHorizon.allowedHosts = ["meta.com", "my-extra.example"]   // as saved by an earlier build
+        oldHorizon.startURL = "https://www.meta.com/horizon/creators/"
+        let custom = BackendTemplates.custom(address: "https://example.org/x", title: "Ex")!
+        let out = BackendTemplates.refreshed([oldHorizon, custom])
+        XCTAssertTrue(out[0].allowedHosts.contains("fb.com"), "the code's current list reaches an old saved tile")
+        XCTAssertTrue(out[0].allowedHosts.contains("my-extra.example"), "a site he allowed is kept")
+        XCTAssertEqual(out[0].startURL, "https://www.meta.com/horizon/creators/", "the address he set is kept")
+        XCTAssertEqual(out[1], custom, "a tile he added is untouched")
+    }
+
     func testTemplateForFillsHorizonFromTheSharedAddress() {
         let t = BackendTemplates.template(for: "https://www.meta.com/horizon/creators/", title: "Creators")
         XCTAssertEqual(t?.id, "horizon")

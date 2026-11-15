@@ -14,7 +14,7 @@ import Observation
             ?? FileManager.default.temporaryDirectory
         file = dir.appendingPathComponent("backend-tiles.json")
         if let data = try? Data(contentsOf: file), let saved = try? JSONDecoder().decode([BackendTemplate].self, from: data) {
-            tiles = saved
+            tiles = BackendTemplates.refreshed(saved)
         } else {
             tiles = BackendTemplates.builtIn
         }
