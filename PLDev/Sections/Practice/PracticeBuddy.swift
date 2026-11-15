@@ -37,8 +37,10 @@ final class BuddyRig: @unchecked Sendable {
         if t >= m.ms { guard m.loop else { return false }; t = t.truncatingRemainder(dividingBy: m.ms) }
         let f = t * fps / 1000
         for (k, a) in m.v where !a.isEmpty {
-            let i = min(Int(f), a.count - 1), j = min(i + 1, a.count - 1)
-            let v = a[i] + (a[j] - a[i]) * (f - Double(i))
+            // his note 11-15 "eye movements are too slow": his eyes and pupils run 1.7x the move's clock (holding their last value)
+            let fe = (k.hasPrefix("eye") || k.hasPrefix("pupil")) ? min(f * 1.7, Double(a.count - 1)) : f
+            let i = min(Int(fe), a.count - 1), j = min(i + 1, a.count - 1)
+            let v = a[i] + (a[j] - a[i]) * (fe - Double(i))
             out[k, default: 0] += v - (rest[k] ?? 0)
         }
         return true
@@ -78,6 +80,18 @@ final class BuddyRig: @unchecked Sendable {
         guard big || Date().timeIntervalSince(lastReaction) > 3 else { return }
         lastReaction = .now
         move = mv; moveAt = .now
+        if m == .wrong { frownAt = .now }
+    }
+
+    /// The frown (his ruling 11-15): on a wrong answer his mouth closes and turns upside down, holds, and turns back.
+    /// 0 = his smile, 1 = fully flipped; a quarter second each way, held two seconds.
+    @ObservationIgnored var frownAt = Date.distantPast
+    func frown(_ now: Date) -> Double {
+        let t = now.timeIntervalSince(frownAt)
+        guard t >= 0, t < 2.6 else { return 0 }
+        let up = min(1, t / 0.25), down = min(1, max(0, (2.6 - t) / 0.35))
+        let x = min(up, down)
+        return x * x * (3 - 2 * x)
     }
 
     @ObservationIgnored private var deck: [String] = []
@@ -108,6 +122,7 @@ final class BuddyRig: @unchecked Sendable {
     /// drives it (talking opens and closes through his stages); any other move is the full grin. The level travels at most one section
     /// (10 frames) per third of a second, so a change of move opens or closes through his drawings instead of jumping.
     func mouthFrame(_ n: [String: Double], now: Date) -> Int {
+        if frown(now) > 0 { mouthLevel = 0; mouthAt = now; return 0 }   // a frown is his closed mouth, turned over
         let open = min(1, max(0, (BuddyRig.shared?.rest["mouth_open"] ?? 0) + (n["mouth_open"] ?? 0)))
         let target: Double = {
             switch move {
@@ -164,6 +179,7 @@ struct BuddyGlass {
 struct BuddyView: View {
     let model: BuddyModel
     var trail: [String: CGSize] = [:]   // per-piece lag on his rope (the ragdoll squish); empty everywhere else
+    var pinned = false                  // on his rope: no whole-face drift, so the face never leaves the rope's tip (his note 11-15)
     @State private var centre = CGPoint.zero   // his centre on screen (global), so his eyes know where the finger is
     @Environment(\.accessibilityReduceMotion) private var reduceMotion
 
@@ -191,10 +207,10 @@ struct BuddyView: View {
         guard age < 2.5 else { return n }
         let w = age < 2 ? 1.0 : (2.5 - age) / 0.5
         let dx = Double(p.x - centre.x), dy = Double(p.y - centre.y), d = max(1, (dx * dx + dy * dy).squareRoot())
-        let k = min(1, d / 160)
+        let k = min(1, d / 90)   // reaches the eye's edge sooner (his note 11-15, too slow)
         n["pupil_x"] = (n0["pupil_x"] ?? 0) * (1 - w) + dx / d * k * w
         n["pupil_y"] = (n0["pupil_y"] ?? 0) * (1 - w) + dy / d * k * w
-        n["look_reach"] = 0.10 + 0.08 * w
+        n["look_reach"] = 0.10 + 0.16 * w
         return n
     }
 
@@ -209,7 +225,7 @@ struct BuddyView: View {
         let eyeW = (a.layout.parts["eyeL"]?.w ?? 200) * k
         let mf = a.mouthFrames.isEmpty ? nil : a.mouthFrames[model.mouthFrame(n, now: now)]
         // the whole face: a small drift, turn and stretch (the rig's face_* numbers)
-        let fx = r("face_x") * size.width * 0.12, fy = r("face_y") * size.width * 0.12, frot = r("face_rot")
+        let fx = pinned ? 0 : r("face_x") * size.width * 0.12, fy = pinned ? 0 : r("face_y") * size.width * 0.12, frot = r("face_rot")
         let fsx = Self.cl(1 + r("face_sx"), 0.85, 1.08), fsy = Self.cl(1 + r("face_sy"), 0.85, 1.08)
         return ZStack(alignment: .topLeading) {
             ForEach(["L", "R"], id: \.self) { s in
@@ -238,10 +254,11 @@ struct BuddyView: View {
                 // opening; each frame is his full 1132x560 canvas with the open grin (988x559) at its top-left, so it is drawn at the
                 // mouth box scaled by 1132/988 x 560/559, anchored top-left, and his full grin lands exactly on the old mouth piece.
                 let msx = Self.cl(1 + r("mouth_w") * 0.5, 0.88, 1.08)
-                let msy: CGFloat = mf == nil ? Self.cl(1 + r("mouth_open") * 0.15 + r("mouth_curve") * 0.05, 0.9, 1.08) : Self.cl(1 + r("mouth_curve") * 0.05, 0.9, 1.08)
+                let flip = CGFloat(1 - 2 * model.frown(now))   // the frown turns his smile over
+                let msy: CGFloat = (mf == nil ? Self.cl(1 + r("mouth_open") * 0.15 + r("mouth_curve") * 0.05, 0.9, 1.08) : Self.cl(1 + r("mouth_curve") * 0.05, 0.9, 1.08)) * flip
                 let fw: CGFloat = mf == nil ? m.width : m.width * 1132 / 988, fh: CGFloat = mf == nil ? m.height : m.height * 560 / 559
                 BuddyGlassPiece(glass: img).frame(width: fw, height: fh, alignment: .topLeading)
-                    .scaleEffect(x: msx, y: msy, anchor: .bottom)
+                    .scaleEffect(x: msx, y: msy, anchor: .center)   // centre, so the frown turns his mouth over in place
                     .offset(x: m.minX + r("mouth_x") * eyeW + (trail["mouth"]?.width ?? 0), y: m.minY + r("mouth_y") * eyeW - r("mouth_curve") * 6 * k + (trail["mouth"]?.height ?? 0))
             }
         }

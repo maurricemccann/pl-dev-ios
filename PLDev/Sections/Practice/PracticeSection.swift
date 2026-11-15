@@ -375,7 +375,7 @@ struct BuddyRope: View {
             let _ = rig.advance(tl.date, still: reduceMotion && rig.grab == nil)
             ZStack(alignment: .topLeading) {
                 Canvas { ctx, _ in ctx.stroke(rig.path(), with: .color(Self.orange), style: StrokeStyle(lineWidth: 26, lineCap: .butt, lineJoin: .round)) }
-                BuddyView(model: buddy, trail: ["eyeL": rig.lagOffset(3), "eyeR": rig.lagOffset(5), "mouth": rig.lagOffset(8)])
+                BuddyView(model: buddy, trail: ["eyeL": rig.lagOffset(3), "eyeR": rig.lagOffset(5), "mouth": rig.lagOffset(8)], pinned: true)
                     .frame(width: 46, height: 46).position(rig.tip)
             }
         }
