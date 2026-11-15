@@ -159,12 +159,32 @@ struct HomeDashboard: View {
                         stat("Evening", icon: "moon.stars", g.evening ? "Done" : "Open", g.evening ? PLStatus.good : nil)
                     }
                     if let line = g.line { Text(line).plHand(16).foregroundStyle(.primary).lineLimit(3) }
+                    // the record (his ruling 11-14, both reviews): every day practised is a mark that stays; nothing here can go down
+                    if g.totalDays > 0 { practiceField(g.totalDays) }
                 }
                 .frame(maxWidth: .infinity, alignment: .leading)
                 .padding(14)
                 .plGlass(in: RoundedRectangle(cornerRadius: PLRadius.card, style: .continuous))
             }
         }
+    }
+
+    private func practiceField(_ days: Int) -> some View {
+        VStack(alignment: .leading, spacing: 4) {
+            Canvas { ctx, size in
+                let mark = ctx.resolve(Image("PLIcons/pl-mark").renderingMode(.template))
+                var m = mark; m.shading = .color(PLTone.accent.opacity(0.85))
+                let cell: CGFloat = 9, cols = max(1, Int(size.width / cell))
+                for i in 0..<min(days, 1200) {
+                    let r = CGRect(x: CGFloat(i % cols) * cell, y: CGFloat(i / cols) * cell, width: cell - 2, height: cell - 2)
+                    ctx.draw(m, in: r)
+                }
+            }
+            .frame(height: CGFloat((min(days, 1200) + 33) / 34) * 9)
+            Text("\(days) days practised, each one kept").font(.caption2).foregroundStyle(.secondary)
+        }
+        .accessibilityElement(children: .ignore)
+        .accessibilityLabel("\(days) days practised")
     }
 
     // MARK: ask (Bevel's "Ask anything" bar on Mobbin): one tap from the dashboard to the Oracle

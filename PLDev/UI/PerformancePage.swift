@@ -11,7 +11,8 @@ struct PerformancePage: View {
 
     struct Performance: Decodable {
         struct Line: Decodable { let amount: Double; let label: String }
-        struct Money: Decodable { let ytd: Double?; let month: Double?; let last7: Double?; let orders_ytd: Int?; let lines: [Line]?; let source: String? }
+        struct Patron: Decodable, Identifiable { let seat: Int; let day: String; let total: Double?; var id: Int { seat } }
+        struct Money: Decodable { let ytd: Double?; let month: Double?; let last7: Double?; let orders_ytd: Int?; let patrons: [Patron]?; let lines: [Line]?; let source: String? }
         struct Audience: Decodable { let ig_followers: Int?; let ig_7d: Int?; let ig_30d: Int?; let subscribers: Int?; let subscribers_30d: Int? }
         struct Channel: Decodable, Identifiable {
             let channel: String; let posts: Int; let reach: Int; let engagement: Int
@@ -66,10 +67,15 @@ struct PerformancePage: View {
     /// Which half to draw: `.action` leads Today (what needs him, what he can do); `.pulse` is the third Home page.
     enum Part { case action, pulse }
     var part: Part = .pulse
+    @State private var runway: ApprovalsModel.Runway?
+    /// His one decision per week (Codex's "truth review", his ruling 11-14), kept on this phone by ISO week: "2026-W46" -> text.
+    @AppStorage("pldev.weekDecisions") private var decisionsJSON = "{}"
+    @State private var decisionDraft = ""
 
     var body: some View {
         VStack(alignment: .leading, spacing: 14) {
             if part == .action {
+                tonightCard
                 attentionCard
                 suggestionsCard
                 tasksCard
@@ -79,6 +85,7 @@ struct PerformancePage: View {
                     Text(failed ? "Could not read the house. Pull down to try again." : (data == nil ? "Reading the house…" : "Reach first, then money, then the machine."))
                         .plFont(.footnote).foregroundStyle(.white.opacity(0.75))
                 }
+                weekCard
                 // reach first (both reviews 11-14: the constraint is reach, not production)
                 landedCard
                 siteCard
@@ -106,6 +113,7 @@ struct PerformancePage: View {
         do {
             data = try JSONDecoder().decode(Performance.self, from: try await http.send(RequestPlan(origin: "cron", path: "api/widget/performance"), timeout: 30))
             failed = false
+            if part == .action { runway = try? await Console.get("run/moderation-runway", ApprovalsModel.Runway.self, model: model) }
             await loadClaude()
             await judge()
         } catch {
@@ -158,6 +166,7 @@ struct PerformancePage: View {
                 Divider().frame(height: 34)
                 figure("Orders", count(m?.orders_ytd))
             }
+            patronsLedger(m?.patrons ?? [])
             // the goal lines and their words come from the house (private), never from this public code; one tap away (his ruling 11-14)
             if !(m?.lines ?? []).isEmpty {
                 Button { withAnimation(.snappy) { goalsOpen.toggle() } } label: {
@@ -356,6 +365,101 @@ struct PerformancePage: View {
                 Text(data == nil ? "Not read yet." : "No site read yet: the PC board posts it each night.").font(.callout).foregroundStyle(.secondary)
             }
         }
+    }
+
+    // MARK: the screen is a practice (his idea 11-14; Codex and Gemini's build-first set, all four by his ruling)
+
+    /// The one finishable thing for tonight, from real counts only (PLDevCore `TonightsMove`, tested there).
+    private var tonightCard: some View {
+        let lanes = (runway?.lane_runway_days ?? [:]).map { TonightsMove.Lane(platform: $0.key, days: $0.value) }
+        let waiting = (data?.attention ?? []).compactMap { a in a.count.map { TonightsMove.Waiting(label: a.label, count: $0, room: a.room ?? "") } }
+        let move = TonightsMove.pick(lanes: lanes, target: runway?.lane_runway_ceiling_days ?? 14, waiting: waiting,
+                                     firstTask: data?.tasks?.first?.title, postsThisWeek: data?.weekly?.last?.posts)
+        return Button {
+            if let u = URL(string: "pldev://section/house/" + move.room) { openURL(u) }
+        } label: {
+            VStack(alignment: .leading, spacing: 8) {
+                Text("Tonight").plHand(22)
+                Text(data == nil ? "Reading the house\u{2026}" : move.text).font(.title3.weight(.semibold)).foregroundStyle(.white).multilineTextAlignment(.leading)
+                HStack(spacing: 4) { Text("Do it").plLabel(10); Image(systemName: "arrow.right").font(.system(size: 10, weight: .bold)) }.foregroundStyle(PLTone.accent)
+            }
+            .frame(maxWidth: .infinity, alignment: .leading)
+            .padding(16)
+            .contentShape(Rectangle())
+        }
+        .buttonStyle(.plain)
+        .plGlass(tint: PLTone.accent.opacity(0.22), interactive: true, in: RoundedRectangle(cornerRadius: PLRadius.card, style: .continuous))
+        .disabled(data == nil)
+        .accessibilityLabel("Tonight: \(move.text)")
+    }
+
+    /// Gemini's "First 100 Patrons": a hundred numbered seats, each real paid order fills one (day and amount, no buyer detail).
+    private func patronsLedger(_ seats: [Performance.Patron]) -> some View {
+        VStack(alignment: .leading, spacing: 6) {
+            HStack {
+                Text("First 100 patrons").plLabel(10).foregroundStyle(.secondary)
+                Spacer()
+                Text(seats.count >= 100 ? "All 100 seats filled" : "Next: patron \(seats.count + 1)").font(.system(.caption, design: .monospaced)).foregroundStyle(PLTone.accent)
+            }
+            LazyVGrid(columns: Array(repeating: GridItem(.flexible(), spacing: 3), count: 10), spacing: 3) {
+                ForEach(1...100, id: \.self) { n in
+                    let filled = n <= seats.count, next = n == seats.count + 1
+                    RoundedRectangle(cornerRadius: 3, style: .continuous)
+                        .fill(filled ? PLTone.accent : Color.white.opacity(0.06))
+                        .overlay { RoundedRectangle(cornerRadius: 3, style: .continuous).strokeBorder(next ? PLTone.accent : Color.clear, lineWidth: 1.2) }
+                        .overlay { if filled || next { Text("\(n)").font(.system(size: 8, weight: .semibold, design: .monospaced)).foregroundStyle(filled ? Color.black : PLTone.accent) } }
+                        .aspectRatio(1, contentMode: .fit)
+                }
+            }
+            .accessibilityElement(children: .ignore)
+            .accessibilityLabel("\(seats.count) of the first 100 patron seats filled")
+            if let last = seats.last { Text("Latest: patron \(last.seat), \(last.day)").font(.caption2).foregroundStyle(.secondary) }
+        }
+        .padding(.top, 4)
+    }
+
+    /// Codex's weekly truth review: the real week against the one before, and one decision carried into next week.
+    private var weekCard: some View {
+        let cal = Calendar(identifier: .iso8601)
+        let key = { (d: Date) in String(format: "%04d-W%02d", cal.component(.yearForWeekOfYear, from: d), cal.component(.weekOfYear, from: d)) }
+        let thisWeek = key(.now), lastWeek = key(cal.date(byAdding: .day, value: -7, to: .now) ?? .now)
+        let decisions = (try? JSONDecoder().decode([String: String].self, from: Data(decisionsJSON.utf8))) ?? [:]
+        let days = data?.site?.days ?? []
+        let recent = days.suffix(7).map(\.users).reduce(0, +), before = days.dropLast(7).suffix(7).map(\.users).reduce(0, +)
+        let weeks = data?.weekly ?? []
+        return card("This week, honestly") {
+            HStack(alignment: .top) {
+                figure("Sales, 7 days", dollars(data?.money?.last7))
+                Divider().frame(height: 34)
+                figure("Visitors, 7 days", "\(recent)\(days.count >= 14 ? " (\(recent >= before ? "+" : "")\(recent - before))" : "")")
+                Divider().frame(height: 34)
+                figure("Posts", weeks.last.map { "\($0.posts)\(weeks.count > 1 ? " (\(weeks[weeks.count - 2].posts) before)" : "")" } ?? "\u{2014}")
+            }
+            if let d = decisions[lastWeek], !d.isEmpty {
+                VStack(alignment: .leading, spacing: 2) {
+                    Text("Last week you decided").plLabel(10).foregroundStyle(.secondary)
+                    Text(d).font(.callout)
+                }
+            }
+            VStack(alignment: .leading, spacing: 4) {
+                Text("One decision for this week").plLabel(10).foregroundStyle(.secondary)
+                TextField(decisions[thisWeek] ?? "What will you do differently?", text: $decisionDraft, axis: .vertical)
+                    .font(.callout).lineLimit(1...3)
+                    .onSubmit { saveDecision(thisWeek) }
+                if !decisionDraft.isEmpty {
+                    Button("Keep it") { saveDecision(thisWeek) }.font(.footnote.weight(.semibold)).tint(PLTone.accent)
+                }
+            }
+        }
+    }
+
+    private func saveDecision(_ week: String) {
+        var d = (try? JSONDecoder().decode([String: String].self, from: Data(decisionsJSON.utf8))) ?? [:]
+        let t = decisionDraft.trimmingCharacters(in: .whitespacesAndNewlines)
+        guard !t.isEmpty else { return }
+        d[week] = String(t.prefix(280))
+        if let s = try? JSONEncoder().encode(d), let j = String(data: s, encoding: .utf8) { decisionsJSON = j }
+        decisionDraft = ""
     }
 
     /// His open founder tasks, as the house lists them.
