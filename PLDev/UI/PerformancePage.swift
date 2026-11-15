@@ -593,6 +593,16 @@ struct PerformancePage: View {
     private var weeklyCard: some View {
         card("13 weeks") {
             let rows = data?.weekly ?? []
+            if rows.count >= 3 {
+                // reach against his own rhythm (his pick P11): each dot a week, more posts to the right, more reach higher
+                Chart(rows) { w in
+                    PointMark(x: .value("Posts", w.posts), y: .value("Reach", w.reach)).foregroundStyle(PLTone.accent).symbolSize(60)
+                }
+                .chartXAxisLabel("posts that week").chartYAxisLabel("reach")
+                .frame(height: 140)
+                .accessibilityLabel("Reach against posts, one dot per week")
+                Text("Each dot is a week. If the dots climb to the right, posting more moved reach.").font(.caption2).foregroundStyle(.secondary)
+            }
             let top = Double(max(rows.map(\.engagement).max() ?? 0, 1))
             if rows.isEmpty {
                 Text(data == nil ? "Not read yet." : "No posts measured.").font(.callout).foregroundStyle(.secondary)

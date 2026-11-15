@@ -198,6 +198,12 @@ struct CurateView: View {
                 if state.mode.isCategories { categories(it) } else {
                     if state.mode.maybeNeedsTag && it.class != "seed" { tagStrip(it) }
                     keysRow(it)
+                    // your last verdict and what you said about it, beside the next card (his pick N16)
+                    if let last = state.history.last {
+                        let said = state.carried(last.item).comment
+                        Text("Last: \(last.dir.uppercased()) · \(last.item.name ?? last.item.vault_id)\(said.isEmpty ? "" : ": \u{201C}\(said)\u{201D}")")
+                            .font(.system(size: 11, design: .monospaced)).foregroundStyle(PLG.dim(scheme)).lineLimit(2).multilineTextAlignment(.center)
+                    }
                     if it.class == "archive-work", (it.sub ?? "").contains("· edited") {
                         Button("Keep · use the original") { Task { await state.keepOriginal(model: model) } }
                             .font(.system(size: 10.5)).textCase(.uppercase).tracking(1.3).foregroundStyle(PLG.dim(scheme)).frame(minHeight: 44)

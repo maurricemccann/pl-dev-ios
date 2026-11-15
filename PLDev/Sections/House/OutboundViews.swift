@@ -202,12 +202,27 @@ struct CalendarView: View {
         }) { days, _ in
           VStack(spacing: 0) {
             // the fortnight at a glance: each day as strong as what is scheduled, ringed where it is short (his ask 11-14)
-            PLHeatGrid(cells: days.map { d in
-                let cells = (d.platforms ?? [:]).filter { $0.value.paused != true }.values
-                let short = cells.flatMap { ($0.short ?? [:]).values }.reduce(0, +)
-                return .init(id: d.date, label: String(d.date.suffix(5)), amount: Double(cells.map { $0.items?.count ?? 0 }.reduce(0, +)),
-                             mark: d.date == page ? PLOS.gold : (short > 0 ? PLOS.warn : nil))
-            }, tint: PLOS.ok, text: PLOS.text(scheme), dim: PLOS.dim(scheme))
+            // one row per platform (his pick P1): a short platform shows on its own row, not lost in a sum
+            let platforms = Array(Set(days.flatMap { ($0.platforms ?? [:]).keys })).sorted()
+            VStack(alignment: .leading, spacing: 3) {
+                ForEach(platforms, id: \.self) { p in
+                    HStack(spacing: 2) {
+                        Text(p == "pl_feed" ? "PL feed" : p.capitalized).font(.system(size: 9, weight: .semibold)).foregroundStyle(PLOS.platform(p))
+                            .frame(width: 58, alignment: .leading).lineLimit(1).minimumScaleFactor(0.7)
+                        ForEach(days) { d in
+                            let cell = d.platforms?[p]
+                            let have = cell?.items?.count ?? 0, want = (cell?.target ?? [:]).values.reduce(0, +), short = (cell?.short ?? [:]).values.reduce(0, +)
+                            RoundedRectangle(cornerRadius: 2, style: .continuous)
+                                .fill(cell?.paused == true ? PLOS.dim(scheme).opacity(0.08) : (have > 0 ? PLOS.platform(p).opacity(want > 0 ? 0.3 + 0.7 * min(1, Double(have) / Double(want)) : 0.8) : PLOS.dim(scheme).opacity(0.14)))
+                                .overlay { RoundedRectangle(cornerRadius: 2, style: .continuous).strokeBorder(d.date == page ? PLOS.gold : (short > 0 && cell?.paused != true ? PLOS.warn : .clear), lineWidth: 1.2) }
+                                .frame(height: 14)
+                                .onTapGesture { withAnimation(.snappy) { page = d.date } }
+                        }
+                    }
+                    .accessibilityElement(children: .ignore)
+                    .accessibilityLabel("\(p): \(days.map { $0.platforms?[p]?.items?.count ?? 0 }.reduce(0, +)) scheduled in \(days.count) days")
+                }
+            }
             .padding(.horizontal).padding(.top, 8)
             HStack(spacing: 12) {
                 HStack(spacing: 4) { RoundedRectangle(cornerRadius: 2).strokeBorder(PLOS.warn, lineWidth: 1.5).frame(width: 10, height: 10); Text("short") }

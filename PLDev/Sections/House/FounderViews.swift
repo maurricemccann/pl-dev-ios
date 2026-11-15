@@ -148,6 +148,7 @@ struct ApprovalsView: View {
     @State private var nowTarget: ApprovalsModel.Draft?
     @State private var pictureFor: ApprovalsModel.Draft?
     @State private var offlineFor: ApprovalsModel.Draft?   // apple lane: a caption drafted on the phone
+    @State private var only: String?   // the platform the drafts are filtered to (his pick N1, 11-14); nil = all
 
     var body: some View {
         List(selection: $state.selection) {
@@ -201,7 +202,19 @@ struct ApprovalsView: View {
                 if state.loaded && state.drafts.isEmpty {
                     ContentUnavailableView("Nothing waiting", systemImage: "checkmark.seal", description: Text("No drafts need you."))
                 }
-                ForEach(state.drafts) { d in
+                if state.drafts.count > 1 {
+                    let by = Dictionary(grouping: state.drafts, by: { $0.platform ?? "other" })
+                    ScrollView(.horizontal, showsIndicators: false) {
+                        HStack(spacing: 6) {
+                            Button { only = nil } label: { PLChip(word: "All \(state.drafts.count)", tint: only == nil ? PLOS.gold : .secondary) }.buttonStyle(.plain)
+                            ForEach(by.keys.sorted(), id: \.self) { p in
+                                Button { only = (only == p ? nil : p) } label: { PLChip(word: "\(p) \(by[p]?.count ?? 0)", tint: only == p ? PLOS.platform(p) : PLOS.platform(p).opacity(0.6)) }.buttonStyle(.plain)
+                            }
+                        }
+                    }
+                    .selectionDisabled()
+                }
+                ForEach(state.drafts.filter { only == nil || ($0.platform ?? "other") == only }) { d in
                     DraftRow(d: d)
                         .tag(d.id)
                         .listRowBackground(Color.clear)

@@ -26,6 +26,9 @@ struct HomeDashboard: View {
     enum Part { case today, machine }
     var part: Part = .today
     @State private var runway: ApprovalsModel.Runway?
+    struct DripPost: Decodable, Identifiable { let id: String; let platform: String?; let caption: String?; let publish_at: String?; let media_url: String? }
+    @State private var drip: [DripPost] = []
+    @State private var capture = CaptureSection.state
 
     var body: some View {
         VStack(spacing: 14) {
@@ -35,6 +38,7 @@ struct HomeDashboard: View {
                 nowLine
                 PerformancePage(model: model, part: .action)
                 runwayCard
+                captureCard
                 houseCard
                 practiceCard
                 townCard
@@ -72,6 +76,26 @@ struct HomeDashboard: View {
                 .accessibilityElement(children: .ignore)
                 .accessibilityLabel("\(l.p): \(String(format: "%.1f", l.d)) days of posts left")
             }
+            // the next 14 days, as a contact sheet of what goes out (Gemini, his pick N8)
+            let soon = drip.filter { p in (Date.pl(p.publish_at) ?? .distantFuture) < Date.now.addingTimeInterval(14 * 86400) }
+            if !soon.isEmpty {
+                ScrollView(.horizontal, showsIndicators: false) {
+                    HStack(spacing: 8) {
+                        ForEach(soon) { p in
+                            VStack(alignment: .leading, spacing: 3) {
+                                AsyncImage(url: p.media_url.flatMap(URL.init(string:))) { $0.resizable().scaledToFill() } placeholder: {
+                                    Text(p.caption ?? "").font(.system(size: 9)).foregroundStyle(.secondary).padding(4).frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .topLeading)
+                                }
+                                .frame(width: 64, height: 64).clipShape(RoundedRectangle(cornerRadius: 8, style: .continuous))
+                                .overlay { RoundedRectangle(cornerRadius: 8, style: .continuous).strokeBorder(PLOS.platform(p.platform), lineWidth: 1.5) }
+                                Text(Date.pl(p.publish_at)?.formatted(.dateTime.month(.abbreviated).day()) ?? "").font(.system(size: 9, design: .monospaced)).foregroundStyle(.secondary)
+                            }
+                            .accessibilityElement(children: .ignore)
+                            .accessibilityLabel("\(p.platform ?? "") post, \(Date.pl(p.publish_at)?.formatted(date: .abbreviated, time: .omitted) ?? "")")
+                        }
+                    }
+                }
+            }
             if !lanes.isEmpty {
                 door("house/approvals") {
                     HStack(spacing: 4) { Text("Days of posts left, target \(Int(target)). Fill it in Approvals").plLabel(10); Image(systemName: "arrow.right").font(.system(size: 10, weight: .bold)) }
@@ -82,7 +106,52 @@ struct HomeDashboard: View {
         .frame(maxWidth: .infinity, alignment: .leading)
         .padding(14)
         .plGlass(in: RoundedRectangle(cornerRadius: PLRadius.card, style: .continuous))
-        .task { if part == .today { runway = try? await Console.get("run/moderation-runway", ApprovalsModel.Runway.self, model: model) } }
+        .task {
+            guard part == .today else { return }
+            runway = try? await Console.get("run/moderation-runway", ApprovalsModel.Runway.self, model: model)
+            drip = (try? await Console.q("approvedqueue", [DripPost].self, model: model)) ?? []
+        }
+    }
+
+    // MARK: captures: tonight's raw captures, and one waiting capture brought back (Gemini's capture-to-canon, Codex's capture return;
+    // his picks N10 and N15, 11-14). Keep and release use the same call the moderation deck makes.
+
+    private var captureCard: some View {
+        let today = Date.now.formatted(.iso8601.year().month().day())
+        let fresh = capture.trail.filter { ($0.created_at ?? "").hasPrefix(today) }
+        let back = capture.deck.sorted { ($0.created_at ?? "") < ($1.created_at ?? "") }.first   // the oldest still waiting
+        return VStack(alignment: .leading, spacing: 10) {
+            Text("Captures").plHand(20)
+            if fresh.isEmpty {
+                Text("Nothing captured today yet.").font(.callout).foregroundStyle(.secondary)
+            } else {
+                Text("Today, \(fresh.count)").plLabel(10).foregroundStyle(.secondary)
+                ForEach(fresh.prefix(4)) { r in
+                    door("capture") {
+                        HStack {
+                            Text((r.type ?? "").capitalized).font(.caption.weight(.semibold)).foregroundStyle(PLTone.accent).frame(width: 44, alignment: .leading)
+                            Text(r.label).font(.footnote).lineLimit(1)
+                            Spacer(minLength: 4)
+                            Text(r.promoted_cr ?? r.state.label).font(.system(size: 10, design: .monospaced)).foregroundStyle(.secondary)
+                        }
+                    }
+                }
+            }
+            if let b = back {
+                Divider().overlay(.white.opacity(0.15))
+                Text("Still waiting since \(String((b.created_at ?? "").prefix(10)))").plLabel(10).foregroundStyle(.secondary)
+                Text(b.label).font(.callout).lineLimit(3)
+                HStack(spacing: 8) {
+                    Button("Keep") { Task { await capture.moderate(b, "approve", model: model) } }.buttonStyle(.bordered).tint(PLTone.good)
+                    door("capture") { Text("Develop").font(.callout.weight(.semibold)).padding(.horizontal, 12).padding(.vertical, 6).plGlass(in: Capsule()) }
+                    Button("Release") { Task { await capture.moderate(b, "reject", model: model) } }.buttonStyle(.bordered).tint(.secondary)
+                }
+            }
+        }
+        .frame(maxWidth: .infinity, alignment: .leading)
+        .padding(14)
+        .plGlass(in: RoundedRectangle(cornerRadius: PLRadius.card, style: .continuous))
+        .task { if part == .today && !capture.trailLoaded { await capture.loadTrail(model: model) } }
     }
 
     // MARK: now (WHOOP's insight line on Mobbin, 11-13): the one thing worth knowing, in a sentence, from the real numbers
@@ -97,7 +166,7 @@ struct HomeDashboard: View {
             if let h = house, h.approve > 0 { return ("\(h.approve) to approve.", PLTone.warn, "checkmark.seal.fill", "house/approvals") }
             if let p = pool, p >= 3 { return (String(format: "Kernel pool climbing: %.1f GB.", p), PLTone.warn, "square.stack.3d.down.right.fill", nil) }
             if house == nil && pc == nil { return pcFailed ? ("The house and the PC are out of reach: Tailscale may be off.", PLTone.warn, "wifi.exclamationmark", nil) : ("Reading the house and the PC.", Color.secondary, "ellipsis.circle", nil) }
-            return ("All clear.", PLTone.good, "checkmark.circle.fill", nil)
+            return ("Systems healthy.", PLTone.good, "checkmark.circle.fill", nil)   // Codex 11-14: never imply the business needs nothing
         }()
         let line = HStack(spacing: 10) {
             Image(systemName: symbol).foregroundStyle(tint)

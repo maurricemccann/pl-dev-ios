@@ -103,8 +103,10 @@ struct HomeView: View {
 
     private var pageDots: some View {
         HStack(spacing: 8) {
-            ForEach(0..<3, id: \.self) { i in
-                Circle().fill(.white.opacity(page == i ? 0.95 : 0.4)).frame(width: 7, height: 7)
+            ForEach(0..<3, id: \.self) { i in   // named, not dots (Codex 11-14, his pick N6)
+                Text(["Today", "Apps", "Pulse"][i]).font(.footnote.weight(page == i ? .bold : .regular))
+                    .foregroundStyle(.white.opacity(page == i ? 0.95 : 0.5))
+                    .frame(minHeight: 32).contentShape(Rectangle())
                     .onTapGesture { withAnimation(.snappy) { page = i } }
             }
         }

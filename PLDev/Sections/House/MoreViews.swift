@@ -496,11 +496,24 @@ struct CostView: View {
     let model: AppModel
     struct Line: Decodable, Identifiable { let label: String; let value: Double; var id: String { label } }
     struct Cost: Decodable { let recurringMonthly: [Line]?; let oneTimeTotal: Double?; let revenueAllTime: Double?; let revenue30d: Double?; let orderCountAllTime: Int?; let orderCount30d: Int?; let aovAllTime: Double?; let aov30d: Double? }
+    struct AI: Decodable { struct C: Decodable { let calls_today: Int?; let cap_per_day: Int?; let calls_7d: Int? }; let cost: C? }
+    @State private var ai: AI.C?
     @Environment(\.colorScheme) private var scheme
     var body: some View {
         Loaded(load: { try await Console.q("cost", Cost.self, model: model) }) { c, _ in
             List {
                 let monthly = (c.recurringMonthly ?? []).reduce(0) { $0 + $1.value }
+                if let a = ai, let cap = a.cap_per_day, cap > 0 {
+                    // AI calls today against the daily cap (his pick P4)
+                    Section("AI today") {
+                        HStack(spacing: 16) {
+                            PLRing(value: Double(a.calls_today ?? 0) / Double(cap), center: "\(a.calls_today ?? 0)/\(cap)", label: "Calls of the cap",
+                                   tint: (a.calls_today ?? 0) >= cap ? PLOS.danger : ((a.calls_today ?? 0) * 10 >= cap * 8 ? PLOS.warn : PLOS.ok), text: PLOS.text(scheme), dim: PLOS.dim(scheme))
+                            PLBigTile(number: "\(a.calls_7d ?? 0)", label: "Calls, 7 days", text: PLOS.text(scheme), dim: PLOS.dim(scheme))
+                        }
+                        .padding(.vertical, 4)
+                    }.listRowBackground(OSRowBackground())
+                }
                 Section("Revenue") {
                     HStack(spacing: 16) {
                         // the ring: the last 30 days of sales against one month of running costs
@@ -531,6 +544,7 @@ struct CostView: View {
             }
         }
         .navigationTitle("Costs")
+        .task { ai = (try? await Console.get("api/performance", AI.self, model: model))?.cost }
     }
 }
 
