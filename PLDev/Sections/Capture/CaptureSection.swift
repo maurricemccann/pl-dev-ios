@@ -67,9 +67,17 @@ import UserNotifications
                 let day = DateFormatter()
                 day.dateFormat = "yyyy-MM-dd"
                 day.locale = Locale(identifier: "en_US_POSIX")
+                // his rules 11-14: the year comes from the photo itself when it says (else the day captured); his signature goes into the
+                // image's metadata; a medium travels only when one was given (a camera capture of a physical piece)
+                let made = CaptureMeta.madeDate(of: file) ?? day.string(from: item.createdAt)
+                let title = String((item.note ?? "").prefix(120))
+                let medium = String((item.text ?? "").prefix(80))
+                let signedJPEG = CaptureMeta.signed(jpeg, artist: config.capture?.signature ?? "Psyched Luxuries", made: made, title: title)
+                var query = ["title": title, "made": made]
+                if !medium.isEmpty { query["medium"] = medium }
                 let data = try await http.send(RequestPlan(origin: "cron", method: "POST", path: "api/widget/art",
-                                                           query: ["title": String(words.prefix(120)), "made": day.string(from: item.createdAt)],
-                                                           headers: ["content-type": "image/jpeg"], body: jpeg),
+                                                           query: query,
+                                                           headers: ["content-type": "image/jpeg"], body: signedJPEG),
                                                idempotent: false, extraHeaders: ["Authorization": "Bearer " + write], timeout: 60)
                 state.noteCap(from: data)
                 state.markSent(item.id)

@@ -73,6 +73,61 @@ import FoundationModels
         return await ask(instructions: rules, prompt: "The record:\n\n\(record)\n\nThe question: \(question)")
     }
 
+    /// What the on-device model makes of something dropped into Capture: where it likely goes, one question worth asking, and for a
+    /// picture of art a name and a medium. Apple's docs (11-14): iOS 27 lets the model see an image (`Attachment`); before that only the
+    /// text is read. Nothing leaves the phone. Nil when Apple Intelligence is off or gives nothing usable; the rules stay the floor.
+    struct CaptureRead: Sendable, Equatable {
+        var route: String?
+        var ask: String?
+        var name: String?
+        var medium: String?
+    }
+
+    static func captureRead(text: String, image: Data?) async -> CaptureRead? {
+        #if canImport(FoundationModels)
+        guard isReady else { return nil }
+        let rules = """
+        You sort things an artist drops into a capture box. Reply with exactly these four lines and nothing else:
+        ROUTE: one of board, quote, seed, art, tile
+        ASK: one short question to ask the artist about it, at most eight words
+        NAME: a title of two to four words if it is an artwork, otherwise none
+        MEDIUM: the medium if it is a photo of a physical artwork (for example oil pastel on paper), otherwise none
+        Meanings: art is a picture of artwork. quote is words another person said. seed is a short original line of the artist's own. tile is the web address of a service dashboard. board is anything else.
+        """
+        let session = LanguageModelSession(instructions: rules)
+        let typed = text.trimmingCharacters(in: .whitespacesAndNewlines)
+        var reply: String?
+        if let image, #available(iOS 27.0, *), let upright = CaptureModel.jpeg(image), let picture = UIImage(data: upright)?.cgImage {
+            let lead = typed.isEmpty ? "Sort this picture." : "Sort this picture. The artist wrote: \(String(typed.prefix(400)))"
+            reply = try? await session.respond {
+                lead
+                Attachment(picture)
+            }.content
+        } else if !typed.isEmpty {
+            reply = try? await session.respond(to: "Sort this:\n" + String(typed.prefix(1200))).content
+        }
+        guard let reply else { return nil }
+        var read = CaptureRead()
+        for raw in reply.split(separator: "\n") {
+            let line = raw.trimmingCharacters(in: .whitespaces)
+            guard let colon = line.firstIndex(of: ":") else { continue }
+            let key = line[..<colon].uppercased()
+            let value = line[line.index(after: colon)...].trimmingCharacters(in: .whitespaces)
+            if value.isEmpty || value.lowercased() == "none" { continue }
+            switch key {
+            case "ROUTE": read.route = value.lowercased()
+            case "ASK": read.ask = String(value.prefix(80))
+            case "NAME": read.name = String(value.prefix(60))
+            case "MEDIUM": read.medium = String(value.prefix(60))
+            default: break
+            }
+        }
+        return read == CaptureRead() ? nil : read
+        #else
+        return nil
+        #endif
+    }
+
     private static let banned = ["excited", "honored", "blessed", "check out", "amazing", "unique", "limited", "exclusive", "manifest"]
 
     /// A first draft of a caption from a seed (a title, a line, an existing caption). The house voice is in the instructions and

@@ -40,7 +40,8 @@ public struct PLDevConfig: Codable, Sendable, Equatable {
 
     public struct Capture: Codable, Sendable, Equatable {
         public var defaultTarget: String?
-        public init(defaultTarget: String? = nil) { self.defaultTarget = defaultTarget }
+        public var signature: String?   // the artist name written into a photo's metadata; from his config, never in the repo
+        public init(defaultTarget: String? = nil, signature: String? = nil) { self.defaultTarget = defaultTarget; self.signature = signature }
     }
 
     public struct Slash: Codable, Sendable, Equatable {

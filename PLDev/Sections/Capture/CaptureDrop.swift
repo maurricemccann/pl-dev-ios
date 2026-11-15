@@ -13,6 +13,9 @@ struct DropPending: Identifiable {
     let url: String?
     let photo: Data?
     var preferred: CaptureRoute? = nil   // the "Where" pill: a destination he picked before sending (nil = Auto)
+    var fromCamera = false               // a camera capture of a physical piece: the sheet asks its medium
+    var name: String? = nil              // the on-device model's suggested title
+    var medium: String? = nil            // the on-device model's suggested medium
 
     var options: [CaptureRoute] { SmartCapture.available(kind: kind, url: url) }
     var suggested: CaptureRoute {
@@ -33,6 +36,10 @@ struct CaptureDropBox: View {
     @State private var hintIndex = 0
     @State private var shooting = false
     @State private var whereRoute: CaptureRoute?
+    @State private var fromCamera = false
+    @State private var original: Data?        // the camera capture as taken
+    @State private var straight: Data?        // the same, corners found and pulled square (nil = none found)
+    @State private var read: PLIntelligence.CaptureRead?
     @FocusState private var focused: Bool
 
     private let hints = [
@@ -51,6 +58,7 @@ struct CaptureDropBox: View {
     /// The hint follows what is in the box, as Image Playground's does (rules first; the on-device model comes later): a photo asks for its
     /// name and date, a link asks who it is from, a line asks who said it.
     private var hint: String {
+        if let ask = read?.ask { return ask }   // the on-device model's question about what is in the box
         if photo != nil { return ["Name this piece", "When did you make it?", "Add a line about it, then send"][hintIndex % 3] }
         if trimmed.isEmpty { return hints[hintIndex % hints.count] }
         let u = URL(string: trimmed)
@@ -118,6 +126,10 @@ struct CaptureDropBox: View {
                     PhotosPicker(selection: $pickerItem, matching: .images) { Label("Choose Photo", systemImage: "photo") }
                 } label: { iconCircle("photo") }
                 .accessibilityLabel("Photo")
+                if straight != nil, let original {
+                    Button { photo = (photo == straight) ? original : straight } label: { iconCircle(photo == straight ? "crop" : "crop.rotate") }
+                        .accessibilityLabel(photo == straight ? "Use the photo as taken" : "Crop and straighten")
+                }
                 Button { importing = true } label: { iconCircle("doc.text") }.accessibilityLabel("Add a file")
                 Button { if let s = UIPasteboard.general.string { text = s } } label: { iconCircle("doc.on.clipboard") }.accessibilityLabel("Paste")
                 Spacer(minLength: 0)
@@ -133,10 +145,31 @@ struct CaptureDropBox: View {
         .background(RoundedRectangle(cornerRadius: 20, style: .continuous).fill(PLOS.surface2(scheme).opacity(0.5)))
         .overlay(RoundedRectangle(cornerRadius: 20, style: .continuous).strokeBorder(PLOS.line(scheme), lineWidth: 0.8))
         .onReceive(tick) { _ in withAnimation { hintIndex = (hintIndex + 1) % 60 } }
-        .fullScreenCover(isPresented: $shooting) { CaptureCamera { photo = $0 }.ignoresSafeArea() }
+        .fullScreenCover(isPresented: $shooting) {
+            CaptureCamera { shot in
+                fromCamera = true
+                original = shot
+                photo = shot
+                straight = nil
+                Task {
+                    let flat = await Task.detached(priority: .userInitiated) { CaptureMeta.straightened(shot) }.value
+                    if original == shot { straight = flat; if let flat { photo = flat } }   // straightened by default; one tap goes back
+                }
+            }
+            .ignoresSafeArea()
+        }
+        .task(id: String(trimmed.prefix(200)) + "|" + String(photo?.count ?? 0)) {
+            // the on-device model reads what is in the box, after he stops typing; nothing leaves the phone
+            read = nil
+            guard photo != nil || trimmed.count >= 8 else { return }
+            try? await Task.sleep(for: .milliseconds(1200))
+            guard !Task.isCancelled else { return }
+            let got = await PLIntelligence.captureRead(text: trimmed, image: photo)
+            if !Task.isCancelled { read = got }
+        }
         .onChange(of: pickerItem) { _, item in
             Task {
-                if let item, let data = try? await item.loadTransferable(type: Data.self) { photo = data }
+                if let item, let data = try? await item.loadTransferable(type: Data.self) { photo = data; fromCamera = false; original = nil; straight = nil }
                 pickerItem = nil
             }
         }
@@ -148,7 +181,7 @@ struct CaptureDropBox: View {
         }
         .sheet(item: $pending) { p in
             CaptureWhereSheet(pending: p, state: state, model: model) { sent in
-                if sent { text = ""; photo = nil; state.room = .trail }
+                if sent { text = ""; photo = nil; original = nil; straight = nil; fromCamera = false; read = nil; state.room = .trail }
             }
         }
     }
@@ -156,10 +189,15 @@ struct CaptureDropBox: View {
     private func send() {
         focused = false
         let t = trimmed
-        if let photo { pending = DropPending(kind: "image", text: t, url: nil, photo: photo, preferred: whereRoute); return }
+        let modelRoute = read?.route.flatMap { CaptureRoute(rawValue: $0) }
+        if let photo {
+            pending = DropPending(kind: "image", text: t, url: nil, photo: photo, preferred: whereRoute ?? modelRoute,
+                                  fromCamera: fromCamera, name: read?.name, medium: read?.medium)
+            return
+        }
         let u = URL(string: t)
         let isLink = !t.contains(where: { $0.isWhitespace }) && (u?.scheme == "http" || u?.scheme == "https") && u?.host != nil
-        pending = DropPending(kind: isLink ? "url" : "text", text: t, url: isLink ? t : nil, photo: nil, preferred: whereRoute)
+        pending = DropPending(kind: isLink ? "url" : "text", text: t, url: isLink ? t : nil, photo: nil, preferred: whereRoute ?? modelRoute)
     }
 }
 
@@ -172,6 +210,7 @@ struct CaptureWhereSheet: View {
     @Environment(\.dismiss) private var dismiss
     @State private var route: CaptureRoute
     @State private var extra = ""
+    @State private var medium = ""
     @State private var working = false
 
     init(pending: DropPending, state: CaptureModel, model: AppModel, done: @escaping (Bool) -> Void) {
@@ -180,6 +219,8 @@ struct CaptureWhereSheet: View {
         self.model = model
         self.done = done
         _route = State(initialValue: pending.suggested)
+        _extra = State(initialValue: pending.kind == "image" ? (pending.text.isEmpty ? (pending.name ?? "") : pending.text) : "")
+        _medium = State(initialValue: pending.medium ?? "")
     }
 
     var body: some View {
@@ -204,7 +245,14 @@ struct CaptureWhereSheet: View {
                     }
                 } header: { Text("Where does it go?") }
                 if route == .art {
-                    Section("Name this piece") { TextField("Optional, your words", text: $extra) }
+                    Section {
+                        TextField("Optional, your words", text: $extra)
+                    } header: { Text("Name this piece") } footer: {
+                        Text("The year and your signature are added to the photo for you.")
+                    }
+                    if pending.fromCamera {
+                        Section("Medium") { TextField("Oil pastel on paper", text: $medium) }
+                    }
                 } else if route == .quote {
                     Section("Who said it?") { TextField("Optional", text: $extra) }
                 }
@@ -218,7 +266,7 @@ struct CaptureWhereSheet: View {
                     Button(working ? "Sending" : "Send") {
                         working = true
                         Task {
-                            await state.dropSend(route: route, pending: pending, extra: extra, model: model)
+                            await state.dropSend(route: route, pending: pending, extra: extra, medium: pending.fromCamera ? medium : "", model: model)
                             working = false
                             let ok = state.message == nil
                             done(ok)
@@ -245,14 +293,15 @@ struct CaptureWhereSheet: View {
 
 extension CaptureModel {
     /// Sends what was dropped by the route he picked, through the same inbox and drain as every other capture.
-    func dropSend(route: CaptureRoute, pending p: DropPending, extra: String, model: AppModel) async {
+    func dropSend(route: CaptureRoute, pending p: DropPending, extra: String, medium: String = "", model: AppModel) async {
         message = nil
         let more = extra.trimmingCharacters(in: .whitespacesAndNewlines)
         let board = model.config?.origin("board") != nil
         switch route {
         case .art:
             guard let photo = p.photo else { message = "Art needs a photo."; return }
-            _ = await enqueue(kind: "image", text: nil, note: more.isEmpty ? "Untitled piece" : more, file: photo, label: more.isEmpty ? "Artwork" : more,
+            let m = medium.trimmingCharacters(in: .whitespacesAndNewlines)
+            _ = await enqueue(kind: "image", text: m.isEmpty ? nil : m, note: more.isEmpty ? "Untitled piece" : more, file: photo, label: more.isEmpty ? "Artwork" : more,
                               toBoard: false, route: route.rawValue, model: model)
         case .quote:
             let full = more.isEmpty ? p.text : p.text + "\n— " + more
