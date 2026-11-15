@@ -373,7 +373,7 @@ enum CaptureSweeps { static let text = "05:30 · 11:30 · 17:30 · 22:30" }
 
 func detailOf(_ r: CaptureModel.TrailRow) -> CaptureModel.TrailDetail {
     CaptureModel.TrailDetail(id: r.id, label: r.label, payload: r.payload ?? "", stateLabel: r.state.label, stateDetail: r.state.detail, tone: r.state.tone,
-                             meta: [r.type, r.source].compactMap { $0 }.joined(separator: " · "), created: r.created_at)
+                             meta: [r.type, r.source].compactMap { $0 }.joined(separator: " · "), created: r.created_at, promoted: r.promoted_cr)
 }
 
 /// One line of the trail: its state in a box, what it was, what became of it.

@@ -165,6 +165,7 @@ struct LinkPreview: Equatable {
     struct TrailRow: Decodable, Identifiable, Equatable {
         let id: String
         let type: String?, payload: String?, status: String?, source: String?, created_at: String?, pool_key: String?
+        var promoted_cr: String? = nil   // the PL number once the intake stamped it (spec P2)
         var state: CaptureState { CaptureState(status: status, poolKey: pool_key) }
         var label: String { captureLabel(payload) }
     }
@@ -220,6 +221,7 @@ struct LinkPreview: Equatable {
         let tone: CaptureState.Tone
         let meta: String
         let created: String?
+        var promoted: String? = nil
     }
 
     var waitingLine: String? {

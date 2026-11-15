@@ -344,7 +344,8 @@ struct CaptureFlow: View {
         ]
         switch kind {
         case "art":
-            s += [("photo.on.rectangle", "Art inbox", "Waiting for \"intake it\": a session scans for duplicates, names it, stamps the PL number", false),
+            s += [detail.promoted.map { ("checkmark.seal", "Stamped \($0)", "Named, dated and numbered by the intake", true) }
+                     ?? ("photo.on.rectangle", "Art inbox", "Waiting for \"intake it\": a session scans for duplicates, names it, stamps the PL number", false),
                   ("hand.thumbsup", "Your verdict", "KEEP or CUT in the /curate archive deck", false),
                   ("globe", "Published", "On the site and available to generations", false)]
         case "quote":
