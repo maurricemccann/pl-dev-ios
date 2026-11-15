@@ -57,7 +57,7 @@ struct SeedsGame: View {
                 } else {
                     Text(words.prefix(placed).joined(separator: " ") + (placed < words.count ? " …" : ""))
                         .font(.system(size: 20, weight: .medium)).foregroundStyle(Candle.ink).multilineTextAlignment(.center).frame(minHeight: 60)
-                    FlowChips(chips: chips, flash: flash) { tap($0, left: left) }
+                    SeedChips(chips: chips, flash: flash) { tap($0, left: left) }
                     if let lastRound { Text("Last phrase: \(lastRound)").candleHint() }
                 }
             }
@@ -103,12 +103,12 @@ struct SeedsGame: View {
 struct SeedChip: Identifiable { let id: Int; let word: String }
 
 /// Word chips that wrap across lines; a wrong tap flashes and does not take.
-struct FlowChips: View {
+struct SeedChips: View {
     let chips: [SeedChip]
     let flash: Int?
     let tap: (Int) -> Void
     var body: some View {
-        WrapLayout(spacing: 8) {
+        SeedWrap(spacing: 8) {
                 ForEach(chips) { c in
                     Button { tap(c.id) } label: {
                         Text(c.word).font(.system(size: 16)).foregroundStyle(flash == c.id ? Color.red.opacity(0.9) : Candle.ink)
@@ -122,7 +122,7 @@ struct FlowChips: View {
 }
 
 /// Lays children left to right, wrapping to a new line when the row is full.
-struct WrapLayout: Layout {
+struct SeedWrap: Layout {
     var spacing: CGFloat = 8
     func sizeThatFits(proposal: ProposedViewSize, subviews: Subviews, cache: inout ()) -> CGSize {
         let w = proposal.width ?? 340
