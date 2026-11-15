@@ -211,6 +211,13 @@ struct PracticeView: View {
                     .onLongPressGesture { buddy.swapFace() }
                     .accessibilityAddTraits(.isButton).accessibilityHint("Tap for his next move, hold to swap faces")
                     .onAppear { buddy.react(.open) }
+                    .task {
+                        // his ruling 11-15 "now and then": at rest, every 20-40 s Buddy plays his next move from the shuffled deck
+                        while !Task.isCancelled {
+                            try? await Task.sleep(for: .seconds(Double.random(in: 20...40)))
+                            if !Task.isCancelled && buddy.move == nil { buddy.playNext() }
+                        }
+                    }
             }
             .sharedBackgroundVisibility(.hidden)
         }
