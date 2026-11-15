@@ -14,6 +14,15 @@ public struct BackendTemplate: Codable, Equatable, Identifiable, Sendable {
     }
 
     public var isReady: Bool { URL(string: startURL)?.scheme?.lowercased() == "https" }
+
+    /// The same tile with one more site allowed (his tap on "Allow here" when a sign-in bounced somewhere new).
+    public func allowing(_ host: String) -> BackendTemplate {
+        let h = host.lowercased()
+        guard !h.isEmpty, !allowedHosts.contains(h) else { return self }
+        var t = self
+        t.allowedHosts.append(h)
+        return t
+    }
 }
 
 public enum BackendTemplates {
@@ -24,8 +33,9 @@ public enum BackendTemplates {
         BackendTemplate(id: "horizon", name: "Meta Horizon Creator Club", symbol: "visionpro", startURL: "", allowedHosts: ["meta.com", "facebook.com", "oculus.com"]),
     ]
 
-    /// Sign-in providers a site may bounce through; allowed in every tile so a Google or Apple sign-in does not leave the app.
-    public static let signInHosts: [String] = ["accounts.google.com", "appleid.apple.com"]
+    /// Sign-in providers a site may bounce through, allowed in every tile so a Google, Apple, Microsoft or GitHub sign-in does not leave the app.
+    /// Google's sign-in hops across google.com and youtube.com (accounts.youtube.com sets the session), so both are listed (his Cloudflare-with-Google report 11-14).
+    public static let signInHosts: [String] = ["google.com", "youtube.com", "apple.com", "microsoftonline.com", "live.com", "github.com"]
 
     /// The lower-cased host of an https address, or nil for anything else (http, a file, no host).
     public static func host(of address: String) -> String? {

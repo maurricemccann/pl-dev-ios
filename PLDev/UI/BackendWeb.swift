@@ -7,8 +7,9 @@ import CryptoKit
 /// Rules: its own persistent data store per tile (the sign-in is kept, and one site never sees another's); no script bridge to the app,
 /// so no page can reach a key; navigation stays on the tile's own sites (`BackendTemplates.allows`), anything else opens in Safari.
 @MainActor final class BackendWebController: NSObject, ObservableObject, WKNavigationDelegate, WKUIDelegate {
-    let template: BackendTemplate
+    private(set) var template: BackendTemplate
     let webView: WKWebView
+    @Published var blocked: URL?   // a redirect or popup to a site this tile does not allow: shown with Allow here / Safari
     @Published var title = ""
     @Published var canGoBack = false
     @Published var isLoading = false
@@ -17,6 +18,8 @@ import CryptoKit
         self.template = template
         let config = WKWebViewConfiguration()
         config.websiteDataStore = WKWebsiteDataStore(forIdentifier: Self.storeID(template.id))
+        // Google refuses sign-in in a web view that does not identify as Safari ("disallowed_useragent"); this is the standard Safari-style suffix.
+        config.applicationNameForUserAgent = "Version/18.0 Mobile/15E148 Safari/604.1"
         webView = WKWebView(frame: .zero, configuration: config)
         super.init()
         webView.navigationDelegate = self
@@ -47,6 +50,20 @@ import CryptoKit
     func webView(_ webView: WKWebView, didFail navigation: WKNavigation!, withError error: Error) { sync(webView) }
     func webView(_ webView: WKWebView, didFailProvisionalNavigation navigation: WKNavigation!, withError error: Error) { sync(webView) }
 
+    /// His "Allow here": the site joins this tile for good, and the blocked page loads.
+    func allowBlocked() {
+        guard let url = blocked, let host = url.host else { return }
+        template = BackendStore.shared.allow(host: host, in: template.id) ?? template.allowing(host)
+        blocked = nil
+        webView.load(URLRequest(url: url))
+    }
+
+    func openBlockedInSafari() {
+        guard let url = blocked else { return }
+        blocked = nil
+        UIApplication.shared.open(url, options: [:], completionHandler: nil)
+    }
+
     func goBack() { webView.goBack() }
     func reload() { webView.reload() }
 
@@ -59,7 +76,11 @@ import CryptoKit
         guard scheme == "https" else { return .cancel }                                   // no http, no custom schemes, no javascript:
         if navigationAction.targetFrame?.isMainFrame == false { return .allow }           // a frame inside the page (a captcha, a payment form)
         if let host = url.host, BackendTemplates.allows(host, for: template) { return .allow }
-        UIApplication.shared.open(url, options: [:], completionHandler: nil)                // a page on another site opens in Safari
+        if navigationAction.navigationType == .linkActivated {
+            UIApplication.shared.open(url, options: [:], completionHandler: nil)            // a link he tapped to another site opens in Safari
+        } else {
+            blocked = url                                                                   // a redirect (a sign-in hop): ask, do not drop him out of the app
+        }
         return .cancel
     }
 
@@ -67,7 +88,7 @@ import CryptoKit
                  windowFeatures: WKWindowFeatures) -> WKWebView? {
         // target=_blank and window.open: stay in this view when it is the tile's own site, else Safari
         if let url = navigationAction.request.url, url.scheme?.lowercased() == "https", let host = url.host {
-            if BackendTemplates.allows(host, for: template) { webView.load(navigationAction.request) } else { UIApplication.shared.open(url, options: [:], completionHandler: nil) }
+            if BackendTemplates.allows(host, for: template) { webView.load(navigationAction.request) } else { blocked = url }
         }
         return nil
     }
@@ -106,6 +127,17 @@ struct BackendWebScreen: View {
             }
             .padding(.horizontal, 16).padding(.vertical, 10)
             .background(.bar)
+            if let url = web.blocked {
+                HStack(spacing: 10) {
+                    Text("Blocked a redirect to \(url.host ?? "another site").").font(.footnote).lineLimit(2).frame(maxWidth: .infinity, alignment: .leading)
+                    Button("Allow here") { web.allowBlocked() }.buttonStyle(.borderedProminent)
+                    Button("Safari") { web.openBlockedInSafari() }.buttonStyle(.bordered)
+                    Button { web.blocked = nil } label: { Image(systemName: "xmark") }.accessibilityLabel("Dismiss")
+                }
+                .controlSize(.small)
+                .padding(.horizontal, 16).padding(.vertical, 8)
+                .background(.thinMaterial)
+            }
             BackendWebView(controller: web)
         }
         .task { web.loadStart() }

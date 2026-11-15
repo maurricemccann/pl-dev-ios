@@ -35,6 +35,14 @@ import Observation
         return "\(t.name) added."
     }
 
+    /// His "Allow here": one more site for one tile, kept. Returns the updated tile.
+    func allow(host: String, in id: String) -> BackendTemplate? {
+        guard let i = tiles.firstIndex(where: { $0.id == id }) else { return nil }
+        tiles[i] = tiles[i].allowing(host)
+        save()
+        return tiles[i]
+    }
+
     func remove(_ id: String) {
         tiles.removeAll { $0.id == id }
         save()

@@ -26,6 +26,11 @@ final class BackendTemplatesTests: XCTestCase {
         XCTAssertFalse(BackendTemplates.allows("cloudflare.com.evil.org", for: cf))
         XCTAssertFalse(BackendTemplates.allows("example.org", for: cf))
         XCTAssertTrue(BackendTemplates.allows("accounts.google.com", for: cf), "a Google sign-in stays in the tile")
+        XCTAssertTrue(BackendTemplates.allows("accounts.youtube.com", for: cf), "Google's session hop stays in the tile")
+        XCTAssertTrue(BackendTemplates.allows("www.google.com", for: cf))
+        XCTAssertTrue(BackendTemplates.allows("idmsa.apple.com", for: cf))
+        XCTAssertFalse(BackendTemplates.allows("evil-google.com", for: cf))
+        XCTAssertFalse(BackendTemplates.allows("google.com.evil.org", for: cf))
     }
 
     func testCustomTilesAreNamedAndLimitedToTheirHost() {
@@ -36,6 +41,15 @@ final class BackendTemplatesTests: XCTestCase {
         XCTAssertEqual(BackendTemplates.custom(address: "https://example.org", title: nil)?.name, "example.org")
         XCTAssertNil(BackendTemplates.custom(address: "http://example.org", title: "x"))
         XCTAssertNil(BackendTemplates.custom(address: "javascript:alert(1)", title: "x"))
+    }
+
+    func testAllowingAddsOneHostOnce() {
+        let cf = BackendTemplates.builtIn[0]
+        let more = cf.allowing("Auth.Example.org")
+        XCTAssertTrue(BackendTemplates.allows("auth.example.org", for: more))
+        XCTAssertFalse(BackendTemplates.allows("auth.example.org", for: cf))
+        XCTAssertEqual(more.allowing("auth.example.org").allowedHosts, more.allowedHosts, "no duplicate")
+        XCTAssertEqual(cf.allowing("").allowedHosts, cf.allowedHosts)
     }
 
     func testTemplateForFillsHorizonFromTheSharedAddress() {
