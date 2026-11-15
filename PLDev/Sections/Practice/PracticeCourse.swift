@@ -135,6 +135,7 @@ struct PathScreen: View {
             if record.minutes == 0 { goalCard }
             if let course = state.course {
                 summary(course)
+                PracticeMap(course: course) { u in open(u, course) }
                 ForEach(course.units) { u in unitCard(u, course) }
             } else if state.message == nil {
                 ProgressView().tint(Candle.gold).frame(maxWidth: .infinity).padding(.top, 40)
@@ -234,6 +235,12 @@ struct PathScreen: View {
                 .accessibilityLabel("Lesson \(l.n), \(done ? "done" : (isNext ? "next" : "closed"))")
             }
         }
+    }
+
+    /// An island tapped: the unit's next lesson, or its quiz once every lesson is played.
+    private func open(_ u: CourseUnit, _ course: Course) {
+        if let l = u.playableLessons.first(where: { !record.isDone(u.n, $0.n) }) { start(u, l, course) }
+        else if !u.quiz.filter(\.isPlayable).isEmpty { playing = LessonRun(unit: u, lesson: nil, exercises: u.quiz.filter(\.isPlayable), isQuiz: true) }
     }
 
     private func start(_ u: CourseUnit, _ l: CourseLesson, _ course: Course) {
