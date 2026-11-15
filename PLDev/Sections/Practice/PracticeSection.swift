@@ -205,17 +205,17 @@ struct PracticeView: View {
         .navigationBarTitleDisplayMode(.inline)
         .toolbar {
             ToolbarItem(placement: .topBarTrailing) {
-                BuddyView(model: buddy).frame(width: 44, height: 44)
-                    .contentShape(Rectangle())
-                    .onTapGesture { buddy.playNext() }
-                    .onLongPressGesture { buddy.swapFace() }
-                    .accessibilityAddTraits(.isButton).accessibilityHint("Tap for his next move, hold to swap faces")
+                // a real Button: a bar item's plain tap gesture never fired on his phone (11-15, "Tap didn't play anything")
+                Button { buddy.playNext() } label: { BuddyView(model: buddy).frame(width: 44, height: 44).contentShape(Rectangle()) }
+                    .buttonStyle(.plain)
+                    .simultaneousGesture(LongPressGesture(minimumDuration: 0.5).onEnded { _ in buddy.swapFace() })
+                    .accessibilityHint("Tap for his next move, hold to swap faces")
                     .onAppear { buddy.react(.open) }
                     .task {
                         // his ruling 11-15 "now and then": at rest, every 20-40 s Buddy plays his next move from the shuffled deck
                         while !Task.isCancelled {
                             try? await Task.sleep(for: .seconds(Double.random(in: 20...40)))
-                            if !Task.isCancelled && buddy.move == nil { buddy.playNext() }
+                            if !Task.isCancelled && buddy.move == nil && !UIAccessibility.isReduceMotionEnabled { buddy.playNext() }
                         }
                     }
             }

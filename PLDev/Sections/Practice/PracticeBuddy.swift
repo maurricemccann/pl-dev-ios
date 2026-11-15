@@ -151,10 +151,10 @@ struct BuddyView: View {
     @Environment(\.accessibilityReduceMotion) private var reduceMotion
 
     var body: some View {
-        TimelineView(.animation(minimumInterval: 1 / 30, paused: reduceMotion)) { tl in
+        TimelineView(.animation(minimumInterval: 1 / 30, paused: reduceMotion && model.move == nil)) { tl in   // a move asked for always plays; Reduce Motion only stills the idle breathing
             GeometryReader { geo in
                 if let art = model.face == "clench" ? BuddyFaceArt.clench : BuddyFaceArt.grin {
-                    let n = reduceMotion ? [:] : model.numbers(tl.date)
+                    let n = reduceMotion && model.move == nil ? [:] : model.numbers(tl.date)
                     face(art, size: geo.size, n: n, now: tl.date)
                 }
             }
