@@ -149,7 +149,7 @@ struct BuddyFaceArt {
     struct Layout: Decodable { let w: CGFloat; let h: CGFloat; let parts: [String: Box] }
     let layout: Layout
     let pieces: [String: BuddyGlass]
-    let mouthFrames: [BuddyGlass]   // his rubber-band grin, closed to open, 51 frames
+    let mouthFrames: [BuddyGlass]   // his grin, closed to open: his own animation (his GIF 11-15, replaced the 51 in-betweens)
     let redFrames: [BuddyGlass]     // his red-lip mouth, closed to open, 12 frames (his GIF's opening half)
     let redFrown: [BuddyGlass]      // his red mouth from smile to frown, 16 frames (his second GIF, 11-15)
 
@@ -169,10 +169,11 @@ struct BuddyFaceArt {
         }
         var pieces: [String: BuddyGlass] = [:]
         for p in layout.parts.keys { if let g = glass("buddy-grin-\(p)") { pieces[p] = g } }
-        let frames = (0...50).compactMap { glass(String(format: "buddy-grin-open-%02d", $0)) }
+        var frames: [BuddyGlass] = []   // as many as he drew, read until the next is missing
+        while let f = glass(String(format: "buddy-grin-open-%02d", frames.count)) { frames.append(f) }
         let red = (0...11).compactMap { glass(String(format: "buddy-red-open-%02d", $0)) }
         let frown = (0...15).compactMap { glass(String(format: "buddy-red-frown-%02d", $0)) }
-        return pieces["mouth"] == nil ? nil : BuddyFaceArt(layout: layout, pieces: pieces, mouthFrames: frames.count == 51 ? frames : [],
+        return pieces["mouth"] == nil ? nil : BuddyFaceArt(layout: layout, pieces: pieces, mouthFrames: frames.count > 1 ? frames : [],
                                                           redFrames: red.count == 12 ? red : [], redFrown: frown.count == 16 ? frown : [])
     }
 }
@@ -238,7 +239,8 @@ struct BuddyView: View {
         // the red mouth frowns through his own sixteen drawings (smile to frown and back); the grin turns over instead
         let frownNow = model.frown(now), redFrown = red && a.redFrown.count == 16 && frownNow > 0
         let mf = redFrown ? a.redFrown[min(15, Int((frownNow * 15).rounded()))]
-            : (red ? a.redFrames[min(11, Int((Double(level) / 50 * 11).rounded()))] : (a.mouthFrames.isEmpty ? nil : a.mouthFrames[level]))
+            : (red ? a.redFrames[min(11, Int((Double(level) / 50 * 11).rounded()))]
+               : (a.mouthFrames.isEmpty ? nil : a.mouthFrames[min(a.mouthFrames.count - 1, Int((Double(level) / 50 * Double(a.mouthFrames.count - 1)).rounded()))]))
         // the whole face: a small drift, turn and stretch (the rig's face_* numbers)
         let fx = pinned ? 0 : r("face_x") * size.width * 0.12, fy = pinned ? 0 : r("face_y") * size.width * 0.12, frot = r("face_rot")
         let fsx = Self.cl(1 + r("face_sx"), 0.85, 1.08), fsy = Self.cl(1 + r("face_sy"), 0.85, 1.08)
@@ -271,10 +273,12 @@ struct BuddyView: View {
                 let msx = Self.cl(1 + r("mouth_w") * 0.5, 0.88, 1.08)
                 let flip = redFrown ? 1 : CGFloat(1 - 2 * frownNow)   // the grin's frown turns his smile over; the red mouth draws its own
                 let msy: CGFloat = (mf == nil ? Self.cl(1 + r("mouth_open") * 0.15 + r("mouth_curve") * 0.05, 0.9, 1.08) : Self.cl(1 + r("mouth_curve") * 0.05, 0.9, 1.08)) * flip
-                // his red mouth's frames are 354x266: drawn the mouth box's width, centred on the box's height
-                let fw: CGFloat = red ? m.width : (mf == nil ? m.width : m.width * 1132 / 988)
-                let fh: CGFloat = red ? m.width * 266 / 354 : (mf == nil ? m.height : m.height * 560 / 559)
-                let fy: CGFloat = red ? (m.height - fh) / 2 : 0
+                // his frames are drawn the mouth box's width at their own proportions, centred on the box's height (red 354x266,
+                // his yellow grin cropped to one shared box for all its frames)
+                let ar: CGFloat = img.lines.size.width > 0 ? img.lines.size.height / img.lines.size.width : m.height / m.width
+                let fw: CGFloat = m.width
+                let fh: CGFloat = mf == nil ? m.height : m.width * ar
+                let fy: CGFloat = mf == nil ? 0 : (m.height - fh) / 2
                 BuddyGlassPiece(glass: img).frame(width: fw, height: fh, alignment: .topLeading)
                     .scaleEffect(x: msx, y: msy, anchor: .center)   // centre, so the frown turns his mouth over in place
                     .offset(x: m.minX + r("mouth_x") * eyeW + (trail["mouth"]?.width ?? 0), y: m.minY + fy + r("mouth_y") * eyeW - r("mouth_curve") * 6 * k + (trail["mouth"]?.height ?? 0))
