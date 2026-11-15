@@ -1,3 +1,4 @@
+import AudioToolbox
 import SwiftUI
 
 // One Teacher (S348·9a3e): the course. The practice is the course, the Academy is each unit's reading, the games and drills are its
@@ -63,7 +64,6 @@ struct Course: Decodable, Sendable { let version: Int; let units: [CourseUnit] }
     private(set) var quizPassed: Set<Int>
     private(set) var misses: [String: Int]
     private(set) var days: Set<String>
-    var minutes: Int { didSet { UserDefaults.standard.set(minutes, forKey: "course.minutes") } }
     private let store = UserDefaults.standard
 
     private init() {
@@ -71,7 +71,6 @@ struct Course: Decodable, Sendable { let version: Int; let units: [CourseUnit] }
         quizPassed = Set((store.array(forKey: "course.quiz") as? [Int]) ?? [])
         misses = (store.dictionary(forKey: "course.misses") as? [String: Int]) ?? [:]
         days = Set(store.stringArray(forKey: "course.days") ?? [])
-        minutes = store.integer(forKey: "course.minutes")
     }
 
     private func today() -> String { let f = DateFormatter(); f.dateFormat = "yyyy-MM-dd"; return f.string(from: .now) }
@@ -128,12 +127,17 @@ struct PathScreen: View {
     @State private var state = CourseModel()
     @State private var playing: LessonRun?
     @State private var goldPack: GoldPack?
+    /// His daily minutes (asked once here, changeable in Settings): a lesson is about three minutes.
+    @AppStorage("course.minutes") private var minutes = 0
+    /// Bumped each time the Path comes back into view, so pages read in the Academy reader count at once.
+    @State private var seen = 0
     private let record = CourseRecord.shared
 
     var body: some View {
+        let _ = seen
         VStack(spacing: 16) {
             if let m = state.message { Text(m).candleHint().frame(maxWidth: .infinity, alignment: .leading) }
-            if record.minutes == 0 { goalCard }
+            if minutes == 0 { goalCard }
             if let course = state.course {
                 summary(course)
                 PracticeMap(course: course) { u in open(u, course) }
@@ -142,6 +146,7 @@ struct PathScreen: View {
                 ProgressView().tint(Candle.gold).frame(maxWidth: .infinity).padding(.top, 40)
             }
         }
+        .onAppear { seen += 1 }
         .task { await state.load(model: model) }
         .fullScreenCover(item: $playing) { run in LessonView(model: model, run: run) { playing = nil } }
         .background { Color.clear.fullScreenCover(item: $goldPack) { g in PackScreen(model: model, key: "gold-\(g.unit)") { goldPack = nil } } }
@@ -152,7 +157,7 @@ struct PathScreen: View {
         PCard(title: "How long each day?", hint: "It sets how many lessons a day are suggested. Change it any time in Settings.") {
             HStack(spacing: 8) {
                 ForEach([5, 10, 15], id: \.self) { m in
-                    Button("\(m) min") { record.minutes = m }.buttonStyle(CandleGhost())
+                    Button("\(m) min") { minutes = m }.buttonStyle(CandleGhost())
                 }
             }
         }
@@ -163,6 +168,7 @@ struct PathScreen: View {
         return VStack(alignment: .leading, spacing: 6) {
             Text("\(record.days.count) \(record.days.count == 1 ? "day" : "days") of lessons").font(.system(size: 22, weight: .semibold)).foregroundStyle(Candle.goldHi)
             Text("\(gold) of \(course.units.count) units gold").candleHint()
+            if minutes > 0 { Text("About \(max(1, minutes / 3)) \(minutes / 3 > 1 ? "lessons" : "lesson") a day for your \(minutes) minutes.").candleHint() }
             if let (u, l) = record.next(in: course) {
                 Button("Next lesson: \(u.title), \(l.n)") { start(u, l, course) }.buttonStyle(CandleButton()).padding(.top, 6)
             }
@@ -307,6 +313,9 @@ struct LessonView: View {
             ExerciseBody(exercise: e, locked: answered != nil) { ok in
                 answered = ok
                 if ok { right += 1 } else { record.miss(e.item) }
+                // his ruling 11-15, small sounds for right and wrong: Apple's system tones (they follow the silent switch); the Design
+                // Kit holds no interface sounds yet, only music beds, so a kit sound replaces these the day one exists
+                AudioServicesPlaySystemSound(ok ? 1057 : 1104)
             }
             .id(e.id + "\(index)")
             if let answered {

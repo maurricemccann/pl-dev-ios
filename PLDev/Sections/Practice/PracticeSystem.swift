@@ -44,6 +44,27 @@ import UserNotifications
         var at = Calendar.current.date(bySettingHour: hour, minute: 0, second: 0, of: .now) ?? .now
         if at <= .now || state.eveningDone { at = Calendar.current.date(byAdding: .day, value: 1, to: at) ?? at }
         await schedule(at: at)
+        await scheduleLesson()
+    }
+
+    /// His ruling 11-15, "Two: lesson by day, line at night": a lesson nudge at `practice.lessonHour` (default 4 PM, about an hour
+    /// after he wakes), skipped on a day a lesson is already done. Same switch as the evening line.
+    static let lessonID = "practice.lesson"
+    static var lessonHour: Int { UserDefaults.standard.object(forKey: "practice.lessonHour") as? Int ?? 16 }
+    private static func scheduleLesson() async {
+        let center = UNUserNotificationCenter.current()
+        center.removePendingNotificationRequests(withIdentifiers: [lessonID])
+        let f = DateFormatter(); f.dateFormat = "yyyy-MM-dd"
+        var at = Calendar.current.date(bySettingHour: lessonHour, minute: 0, second: 0, of: .now) ?? .now
+        if at <= .now || CourseRecord.shared.days.contains(f.string(from: .now)) { at = Calendar.current.date(byAdding: .day, value: 1, to: at) ?? at }
+        let c = UNMutableNotificationContent()
+        c.title = "Today's lesson"
+        c.body = "Your next lesson is on the Path. A few minutes."
+        c.sound = .default
+        c.threadIdentifier = "practice"
+        c.userInfo = [NotificationHub.linkKey: DeepLink.section(id: "practice", path: ["path"], query: [:]).url.absoluteString]
+        let parts = Calendar.current.dateComponents([.year, .month, .day, .hour, .minute, .second], from: at)
+        try? await center.add(UNNotificationRequest(identifier: lessonID, content: c, trigger: UNCalendarNotificationTrigger(dateMatching: parts, repeats: false)))
     }
 
     private static func schedule(after seconds: TimeInterval) async { await schedule(at: .now.addingTimeInterval(seconds), id: "practice.line") }
@@ -72,16 +93,21 @@ import UserNotifications
 struct PracticeSettingsRows: View {
     @AppStorage("practice.remind") private var on = true
     @AppStorage("practice.hour") private var hour = 21
+    @AppStorage("practice.lessonHour") private var lessonHour = 16
+    @AppStorage("course.minutes") private var minutes = 0
 
     var body: some View {
         Group {
             Toggle(isOn: $on) { SettingsLabel("Evening line", "moon.stars", IOS27.SystemColors.indigo) }
             if on {
                 Picker(selection: $hour) { ForEach(17...23, id: \.self) { Text(Date.pl(hour: $0)).tag($0) } } label: { SettingsLabel("Evening line at", "clock", Color(uiColor: .systemGray)) }
+                Picker(selection: $lessonHour) { ForEach(12...20, id: \.self) { Text(Date.pl(hour: $0)).tag($0) } } label: { SettingsLabel("Lesson nudge at", "book", Color(uiColor: .systemGray)) }
             }
+            Picker(selection: $minutes) { Text("Not set").tag(0); ForEach([5, 10, 15], id: \.self) { Text("\($0) min").tag($0) } } label: { SettingsLabel("Course minutes a day", "timer", Color(uiColor: .systemGray)) }
         }
         .onChange(of: on) { _, _ in Task { await PracticeNotice.reschedule(model: AppModel.shared) } }
         .onChange(of: hour) { _, _ in Task { await PracticeNotice.reschedule(model: AppModel.shared) } }
+        .onChange(of: lessonHour) { _, _ in Task { await PracticeNotice.reschedule(model: AppModel.shared) } }
     }
 }
 
