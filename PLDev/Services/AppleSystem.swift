@@ -57,6 +57,13 @@ import FoundationModels
         #endif
     }
 
+    /// Apostle Layer (practice games, wave 3): one sentence of reflection from which games he played and their scores only; a draft he
+    /// accepts or lets go, never canon. Nil without Apple Intelligence.
+    static func apostle(facts: [String]) async -> String? {
+        await ask(instructions: "You write one sentence of reflection for a person about their own practice, in a declarative, spare, weighted register. Use only the facts given. Never use the words excited, honored, blessed, amazing, unique, limited, exclusive or manifest. No questions. No praise. Under 30 words.",
+                  prompt: "Games played and best scores:\n" + facts.joined(separator: "\n") + "\nThe three truths: Prepared for luxury. You are in control of your reality. What persists in the mind becomes your reality.\nWrite the one sentence.")
+    }
+
     /// GlyphBot offline: an answer written only from what the phone already holds (past Oracle answers and their passages).
     /// Nil when the phone has no Apple Intelligence or holds nothing relevant, so the caller keeps its own fallback.
     static func glyphAnswer(question: String, turns: [GlyphTurn]) async -> String? {

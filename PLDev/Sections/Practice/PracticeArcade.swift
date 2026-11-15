@@ -11,6 +11,8 @@ enum ArcadeID: String, CaseIterable, Identifiable {
     case seeds = "the-seeds", curve = "the-curve", architect = "reality-architect", oracle = "oracle-game"
     // wave 2 (spec vault Plans/SPEC - GAMES, WAVE 2 (S348).md)
     case signal = "the-signal", room = "three-laws-room", moment = "watch-this-moment"
+    // wave 3 (spec vault Plans/SPEC - GAMES, WAVE 3 (S348).md)
+    case field = "curve-field", apostle = "apostle-layer"
     var id: String { rawValue }
     var title: String {
         switch self {
@@ -27,6 +29,8 @@ enum ArcadeID: String, CaseIterable, Identifiable {
         case .signal: return "The Signal"
         case .room: return "Three Laws Room"
         case .moment: return "Watch This Moment"
+        case .field: return "Curve Field"
+        case .apostle: return "Apostle Layer"
         }
     }
     var line: String {
@@ -44,6 +48,8 @@ enum ArcadeID: String, CaseIterable, Identifiable {
         case .signal: return "Catch the house's words as they fall. Let the noise pass."
         case .room: return "Walk the three rooms of the Truths, in order."
         case .moment: return "Draw the Curve. Watch this."
+        case .field: return "Move through his curves; find three of your seeds hidden in them."
+        case .apostle: return "After three games, one reflection proposed on this iPhone, kept if you accept it."
         }
     }
     var symbol: String {
@@ -61,6 +67,8 @@ enum ArcadeID: String, CaseIterable, Identifiable {
         case .signal: return "antenna.radiowaves.left.and.right"
         case .room: return "door.left.hand.open"
         case .moment: return "hand.draw"
+        case .field: return "water.waves"
+        case .apostle: return "text.quote"
         }
     }
 }
@@ -100,6 +108,8 @@ struct ArcadeGlyph: View {
     case .signal: SignalGame(seeds: seeds)
     case .room: ThreeLawsRoom(units: units)
     case .moment: WatchThisMoment()
+    case .field: CurveFieldGame(seeds: seeds)
+    case .apostle: ApostleLayer()
     }
 }
 
