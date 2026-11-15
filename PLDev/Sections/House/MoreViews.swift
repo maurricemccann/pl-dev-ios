@@ -183,6 +183,7 @@ struct MerchView: View {
     @State private var candidates: [Candidate] = []
     @State private var asks: [Ask] = []
     @State private var result: String?
+    @Environment(\.colorScheme) private var scheme
     private let seasons = [("fw", "Fall / Winter"), ("ss", "Spring / Summer"), ("always", "Always"), ("rest", "Resting")]
     /// fw = Sep 1 to the end of Feb, ss = Mar 1 to Aug 31 (pl-headless isOutOfSeason).
     private var nowSeason: String { let m = Calendar.current.component(.month, from: .now); return (m >= 9 || m <= 2) ? "fw" : "ss" }
@@ -198,8 +199,16 @@ struct MerchView: View {
         List {
             if let r = result { ResultLine(text: r) }
             Section {
-                LabeledContent("Now", value: nowSeason == "fw" ? "Fall / Winter" : "Spring / Summer")
-                LabeledContent("Next switch", value: nowSeason == "fw" ? "Mar 1" : "Sep 1")
+                HStack {
+                    PLStateDot(word: nowSeason == "fw" ? "Fall / Winter" : "Spring / Summer", tint: PLOS.gold, text: PLOS.text(scheme))
+                    Spacer()
+                    PLChip(word: "switches " + (nowSeason == "fw" ? "Mar 1" : "Sep 1"), tint: PLOS.dim(scheme))
+                }
+                if !rows.isEmpty {
+                    PLStageBar(stages: [.init(name: "On the grid", count: rows.filter { onGrid($0.season) }.count, tint: PLOS.ok),
+                                        .init(name: "Resting", count: rows.filter { !onGrid($0.season) }.count, tint: PLOS.muted)],
+                               text: PLOS.text(scheme), dim: PLOS.dim(scheme)).padding(.vertical, 4)
+                }
             } footer: { Text("Black and white bases are always live. A resting colourway leaves the grid but stays buyable by its own link.") }.listRowBackground(OSRowBackground())
             Section("Colourways") {
                 ForEach($rows) { $r in
@@ -212,7 +221,7 @@ struct MerchView: View {
                               .frame(width: 52, height: 52)
                           VStack(alignment: .leading, spacing: 2) {
                             Text(r.product_name)
-                            Text(onGrid(r.season) ? "ON THE GRID" : "RESTING").font(.caption2.weight(.bold)).tracking(1).foregroundStyle(onGrid(r.season) ? Color.green : Color.secondary)
+                            PLChip(word: onGrid(r.season) ? "on the grid" : "resting", tint: onGrid(r.season) ? PLOS.ok : PLOS.muted)
                           }
                         }
                     }
@@ -234,7 +243,12 @@ struct MerchView: View {
             }
             if !asks.isEmpty {
                 Section("The Ask on /shop") {
-                    ForEach(asks) { a in LabeledContent("\(a.question_id) · \(a.answer_id)", value: "\(a.n)") }
+                    let top = Double(asks.map(\.n).max() ?? 1)
+                    ForEach(asks.sorted { $0.n > $1.n }) { a in
+                        HStack { Text(a.answer_id).font(.callout); Text(a.question_id).font(.caption2).foregroundStyle(PLOS.dim(scheme)); Spacer(); Text("\(a.n)").font(.system(.callout, design: .monospaced)) }
+                            .padding(.horizontal, 8).padding(.vertical, 6)
+                            .plBar(Double(a.n), of: top, tint: PLOS.gold)
+                    }
                 }.listRowBackground(OSRowBackground())
             }
         }
@@ -264,12 +278,17 @@ struct CatalogQueueView: View {
     @State private var building: Row?
     @State private var syncId = ""
     @State private var result: String?
+    @Environment(\.colorScheme) private var scheme
 
     var body: some View {
         Loaded(load: { try await Console.get("api/catalog-build-queue", Out.self, model: model).rows ?? [] }) { rows, reload in
             List {
                 if let r = result { ResultLine(text: r) }
                 let waiting = rows.filter { $0.built_at == nil }
+                Section {
+                    PLStageBar(stages: [.init(name: "Waiting to build", count: waiting.count, tint: PLOS.warn), .init(name: "Built", count: rows.count - waiting.count, tint: PLOS.ok)],
+                               text: PLOS.text(scheme), dim: PLOS.dim(scheme)).padding(.vertical, 4)
+                }.listRowBackground(OSRowBackground())
                 Section("Waiting to build · \(waiting.count)") {
                     ForEach(waiting) { r in row(r).swipeActions { Button("Built") { building = r }.tint(.green) } }
                 }.listRowBackground(OSRowBackground())
@@ -287,7 +306,11 @@ struct CatalogQueueView: View {
     private func row(_ r: Row) -> some View {
         VStack(alignment: .leading, spacing: 2) {
             Text("\(r.design ?? "") · \(r.colorway ?? "")").font(.headline)
-            Text([r.blank, r.technique, r.tier_price.map { "$\($0)" }].compactMap { $0 }.joined(separator: " · ")).font(.caption).foregroundStyle(.secondary)
+            HStack(spacing: 5) {
+                if let b = r.blank { PLChip(word: b, tint: PLOS.dim(scheme)) }
+                if let t = r.technique { PLChip(word: t, tint: PLOS.philosophy) }
+                if let p = r.tier_price { PLChip(word: "$\(p)", tint: PLOS.gold) }
+            }
             if let n = r.note, !n.isEmpty { Text(n).font(.caption) }
         }
     }
@@ -345,12 +368,24 @@ struct CrewView: View {
     let model: AppModel
     struct Member: Decodable, Identifiable { let agent: String; let n: Int?; let last: String?; let last_job: String?; var id: String { agent } }
     struct Out: Decodable { let crew: [Member]? }
+    @Environment(\.colorScheme) private var scheme
     var body: some View {
         Loaded(load: { try await Console.get("api/crew", Out.self, model: model).crew ?? [] }) { crew, _ in
-            List(crew) { m in
-                VStack(alignment: .leading, spacing: 2) {
-                    HStack { Text(m.agent).font(.headline); Spacer(); Text("\(m.n ?? 0) runs").font(.caption).monospacedDigit() }
-                    HStack { Text(m.last_job ?? ""); Spacer(); Ago(text: m.last) }.font(.caption).foregroundStyle(.secondary)
+            let top = Double(crew.map { $0.n ?? 0 }.max() ?? 1)
+            List {
+                Section {
+                    HStack(spacing: 12) {
+                        PLBigTile(number: "\(crew.count)", label: "Crew", text: PLOS.text(scheme), dim: PLOS.dim(scheme))
+                        PLBigTile(number: "\(crew.map { $0.n ?? 0 }.reduce(0, +))", label: "Runs logged", text: PLOS.text(scheme), dim: PLOS.dim(scheme))
+                    }
+                }.listRowBackground(OSRowBackground())
+                ForEach(crew) { m in
+                    VStack(alignment: .leading, spacing: 2) {
+                        HStack { Text(m.agent).font(.headline); Spacer(); Text("\(m.n ?? 0) runs").font(.caption).monospacedDigit() }
+                        HStack { Text(m.last_job ?? ""); Spacer(); Ago(text: m.last) }.font(.caption).foregroundStyle(.secondary)
+                    }
+                    .padding(.horizontal, 6).padding(.vertical, 4)
+                    .plBar(Double(m.n ?? 0), of: top, tint: PLOS.gold)
                 }
             }
         }
@@ -371,19 +406,31 @@ struct StackHealthView: View {
     @State private var history: [HRun] = []
     @State private var result: String?
     @State private var busy = false
+    @Environment(\.colorScheme) private var scheme
 
     var body: some View {
         List {
             if let r = result { ResultLine(text: r) }
             if let l = latest {
                 Section {
-                    Label(l.all_pass == true ? "Every check passed" : "Something failed", systemImage: l.all_pass == true ? "checkmark.seal.fill" : "xmark.octagon.fill")
-                        .foregroundStyle(l.all_pass == true ? .green : .red)
+                    let all = (l.results ?? [:]).count, ok = (l.results ?? [:]).values.filter(\.pass).count
+                    HStack(spacing: 16) {
+                        PLRing(value: all > 0 ? Double(ok) / Double(all) : 0, center: "\(ok)/\(all)", label: "Passing", tint: ok == all ? PLOS.ok : PLOS.danger,
+                               text: PLOS.text(scheme), dim: PLOS.dim(scheme))
+                        VStack(alignment: .leading, spacing: 6) {
+                            PLStateDot(word: l.all_pass == true ? "Every check passed" : "Something failed", tint: l.all_pass == true ? PLOS.ok : PLOS.danger, text: PLOS.text(scheme))
+                            HStack(spacing: 4) { Text("Ran").foregroundStyle(.secondary); Ago(text: l.ran_at).foregroundStyle(.secondary) }.font(.caption)
+                        }
+                    }
+                    .padding(.vertical, 4)
                     if let s = l.summary { Text(s).font(.callout) }
-                    HStack { Text("Ran"); Spacer(); Ago(text: l.ran_at) }.foregroundStyle(.secondary)
                 }.listRowBackground(OSRowBackground())
                 Section("Checks") {
-                    ForEach((l.results ?? [:]).keys.sorted(), id: \.self) { k in
+                    // what failed comes first, then the rest by name
+                    ForEach((l.results ?? [:]).keys.sorted { a, b in
+                        let pa = l.results?[a]?.pass == true, pb = l.results?[b]?.pass == true
+                        return pa == pb ? a < b : !pa
+                    }, id: \.self) { k in
                         let r = l.results?[k]
                         HStack {
                             Image(systemName: r?.pass == true ? "checkmark.circle.fill" : "xmark.circle.fill").foregroundStyle(r?.pass == true ? .green : .red)
@@ -449,18 +496,36 @@ struct CostView: View {
     let model: AppModel
     struct Line: Decodable, Identifiable { let label: String; let value: Double; var id: String { label } }
     struct Cost: Decodable { let recurringMonthly: [Line]?; let oneTimeTotal: Double?; let revenueAllTime: Double?; let revenue30d: Double?; let orderCountAllTime: Int?; let orderCount30d: Int?; let aovAllTime: Double?; let aov30d: Double? }
+    @Environment(\.colorScheme) private var scheme
     var body: some View {
         Loaded(load: { try await Console.q("cost", Cost.self, model: model) }) { c, _ in
             List {
+                let monthly = (c.recurringMonthly ?? []).reduce(0) { $0 + $1.value }
                 Section("Revenue") {
-                    LabeledContent("Last 30 days", value: (c.revenue30d ?? 0).formatted(.currency(code: "USD")))
-                    LabeledContent("All time", value: (c.revenueAllTime ?? 0).formatted(.currency(code: "USD")))
-                    LabeledContent("Orders", value: "\(c.orderCount30d ?? 0) in 30 days · \(c.orderCountAllTime ?? 0) all time")
-                    LabeledContent("Average order", value: (c.aovAllTime ?? 0).formatted(.currency(code: "USD")))
+                    HStack(spacing: 16) {
+                        // the ring: the last 30 days of sales against one month of running costs
+                        PLRing(value: monthly > 0 ? (c.revenue30d ?? 0) / monthly : 0, center: monthly > 0 ? "\(Int(((c.revenue30d ?? 0) / monthly * 100).rounded()))%" : "\u{2014}",
+                               label: "Of costs covered", tint: (c.revenue30d ?? 0) >= monthly && monthly > 0 ? PLOS.ok : PLOS.warn, text: PLOS.text(scheme), dim: PLOS.dim(scheme))
+                        VStack(alignment: .leading, spacing: 8) {
+                            PLBigTile(number: (c.revenue30d ?? 0).formatted(.currency(code: "USD")), label: "Last 30 days", text: PLOS.text(scheme), dim: PLOS.dim(scheme))
+                            Text("\((c.revenueAllTime ?? 0).formatted(.currency(code: "USD"))) all time").font(.system(size: 11, design: .monospaced)).foregroundStyle(PLOS.dim(scheme))
+                        }
+                    }
+                    .padding(.vertical, 4)
+                    HStack(spacing: 12) {
+                        PLBigTile(number: "\(c.orderCount30d ?? 0)", label: "Orders, 30 days", text: PLOS.text(scheme), dim: PLOS.dim(scheme))
+                        PLBigTile(number: "\(c.orderCountAllTime ?? 0)", label: "Orders, all time", text: PLOS.text(scheme), dim: PLOS.dim(scheme))
+                        PLBigTile(number: (c.aovAllTime ?? 0).formatted(.currency(code: "USD")), label: "Average order", text: PLOS.text(scheme), dim: PLOS.dim(scheme))
+                    }
                 }.listRowBackground(OSRowBackground())
                 Section {
-                    ForEach(c.recurringMonthly ?? []) { LabeledContent($0.label, value: $0.value.formatted(.currency(code: "USD"))) }
-                    LabeledContent("Monthly total", value: (c.recurringMonthly ?? []).reduce(0) { $0 + $1.value }.formatted(.currency(code: "USD")))
+                    let top = (c.recurringMonthly ?? []).map(\.value).max() ?? 1
+                    ForEach((c.recurringMonthly ?? []).sorted { $0.value > $1.value }) { l in
+                        HStack { Text(l.label); Spacer(); Text(l.value.formatted(.currency(code: "USD"))).font(.system(.callout, design: .monospaced)) }
+                            .padding(.horizontal, 8).padding(.vertical, 6)
+                            .plBar(l.value, of: top, tint: PLOS.warn)
+                    }
+                    LabeledContent("Monthly total", value: monthly.formatted(.currency(code: "USD")))
                     LabeledContent("Spent once", value: (c.oneTimeTotal ?? 0).formatted(.currency(code: "USD")))
                 } header: { Text("Costs") } footer: { Text("The recurring costs are kept by hand, as in pl-os; there is no billing feed.") }.listRowBackground(OSRowBackground())
             }

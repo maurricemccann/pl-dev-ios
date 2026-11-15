@@ -309,17 +309,25 @@ struct SupportView: View {
     @State private var rows: [Message] = []
     @State private var loaded = false
     @State private var result: String?
+    @Environment(\.colorScheme) private var scheme
 
     var body: some View {
         List {
             if let r = result { ResultLine(text: r) }
             if loaded && rows.isEmpty { ContentUnavailableView("No messages", systemImage: "lifepreserver", description: Text("The contact form is quiet.")) }
+            if !rows.isEmpty {
+                Section {
+                    PLStageBar(stages: [.init(name: "New", count: rows.filter { $0.status != "resolved" }.count, tint: PLOS.warn),
+                                        .init(name: "Resolved", count: rows.filter { $0.status == "resolved" }.count, tint: PLOS.ok)],
+                               text: PLOS.text(scheme), dim: PLOS.dim(scheme)).padding(.vertical, 4)
+                }.listRowBackground(OSRowBackground())
+            }
             ForEach(rows) { m in
                 VStack(alignment: .leading, spacing: 4) {
                     HStack {
                         Text(m.name ?? m.email ?? "").font(.headline)
                         Spacer()
-                        Text(m.status == "resolved" ? "Resolved" : "New").font(.caption.bold()).foregroundStyle(m.status == "resolved" ? Color.secondary : PLTone.house)
+                        PLChip(word: m.status == "resolved" ? "resolved" : "new", tint: m.status == "resolved" ? PLOS.ok : PLOS.warn)
                     }
                     Text(m.message ?? "")
                     HStack {
@@ -363,11 +371,16 @@ struct SeedRegistrationsView: View {
         Loaded(load: { try await Console.get("run/seed-registration/pending", Out.self, model: model).items ?? [] }) { items, reload in
             List {
                 if items.isEmpty { ContentUnavailableView("None waiting", systemImage: "seal", description: Text("When a holder registers a seed, it waits here for you to authenticate.")) }
+                if !items.isEmpty {
+                    Section { PLBigTile(number: "\(items.count)", label: "Waiting for you to authenticate", tint: PLOS.warn) { Image(systemName: "seal").font(.title).foregroundStyle(PLOS.gold) } }
+                        .listRowBackground(OSRowBackground())
+                }
                 ForEach(items) { it in
                     NavigationLink { SeedAuthView(model: model, item: it, done: reload) } label: {
-                        VStack(alignment: .leading) {
-                            Text(it.holder_name ?? "").font(.headline)
+                        VStack(alignment: .leading, spacing: 3) {
+                            HStack { Text(it.holder_name ?? "").font(.headline); Spacer(); if (it.unsent ?? 0) > 0 { PLChip(word: "certificate not sent", tint: PLOS.warn) } }
                             Text(it.holder_email ?? "").font(.caption).foregroundStyle(.secondary)
+                            if let s = it.submitted_at { Ago(text: s).font(.caption2).foregroundStyle(.secondary) }
                         }
                     }
                 }
@@ -436,17 +449,23 @@ struct RecordView: View {
     let model: AppModel
     struct Person: Decodable, Identifiable { let email: String; let name: String?; let founding: Int?; let stage: String?; let provenance: String?; let joined_at: String?; let is_member: Int?; let is_subscriber: Int?; var id: String { email } }
     @State private var search = ""
+    @Environment(\.colorScheme) private var scheme
 
     var body: some View {
         Loaded(load: { try await Console.q("record", [Person].self, model: model) }) { people, _ in
             let shown = search.isEmpty ? people : people.filter { $0.email.localizedCaseInsensitiveContains(search) || ($0.name ?? "").localizedCaseInsensitiveContains(search) }
             List {
                 Section {
-                    LabeledContent("People", value: "\(people.count)")
-                    LabeledContent("Members", value: "\(people.filter { $0.is_member == 1 }.count)")
-                    LabeledContent("On the signal", value: "\(people.filter { $0.is_subscriber == 1 }.count)")
-                    LabeledContent("Founding", value: "\(people.filter { ($0.founding ?? 0) > 0 }.count)")
-                }.listRowBackground(OSRowBackground())
+                    let n = max(people.count, 1)
+                    let members = people.filter { $0.is_member == 1 }.count, signal = people.filter { $0.is_subscriber == 1 }.count, founding = people.filter { ($0.founding ?? 0) > 0 }.count
+                    PLBigTile(number: "\(people.count)", label: "People on the record", text: PLOS.text(scheme), dim: PLOS.dim(scheme))
+                    HStack(alignment: .top) {
+                        PLRing(value: Double(members) / Double(n), center: "\(members)", label: "Members", tint: PLOS.gold, text: PLOS.text(scheme), dim: PLOS.dim(scheme), size: 72).frame(maxWidth: .infinity)
+                        PLRing(value: Double(signal) / Double(n), center: "\(signal)", label: "On the signal", tint: PLOS.ok, text: PLOS.text(scheme), dim: PLOS.dim(scheme), size: 72).frame(maxWidth: .infinity)
+                        PLRing(value: Double(founding) / Double(n), center: "\(founding)", label: "Founding", tint: PLOS.philosophy, text: PLOS.text(scheme), dim: PLOS.dim(scheme), size: 72).frame(maxWidth: .infinity)
+                    }
+                    .padding(.vertical, 4)
+                } footer: { Text("Each ring is that group's share of everyone on the record.") }.listRowBackground(OSRowBackground())
                 Section {
                     ForEach(shown) { p in
                         VStack(alignment: .leading, spacing: 2) {
@@ -454,7 +473,11 @@ struct RecordView: View {
                                 Text(p.name ?? p.email).font(.headline)
                                 if (p.founding ?? 0) > 0 { Image(systemName: "star.fill").foregroundStyle(PLTone.house).accessibilityLabel("Founding") }
                             }
-                            Text([p.stage, p.provenance, p.joined_at.map { String($0.prefix(10)) }].compactMap { $0 }.joined(separator: " · ")).font(.caption).foregroundStyle(.secondary)
+                            HStack(spacing: 5) {
+                                if let s = p.stage, !s.isEmpty { PLChip(word: s, tint: PLOS.gold) }
+                                if let v = p.provenance, !v.isEmpty { PLChip(word: v, tint: PLOS.dim(scheme)) }
+                                if let j = p.joined_at { Text(String(j.prefix(10))).font(.caption2.monospaced()).foregroundStyle(.secondary) }
+                            }
                         }
                     }
                 }.listRowBackground(OSRowBackground())
@@ -469,15 +492,28 @@ struct LeadsView: View {
     let model: AppModel
     struct Lead: Decodable, Identifiable { let email: String; let name: String?; let intent: String?; let stage: String?; let provenance: String?; let last_touched: String?; var id: String { email } }
     struct Out: Decodable { let leads: [Lead]? }
+    @Environment(\.colorScheme) private var scheme
 
     var body: some View {
         Loaded(load: { try await Console.get("api/leads", Out.self, model: model).leads ?? [] }) { leads, _ in
             List {
                 if leads.isEmpty { ContentUnavailableView("No leads", systemImage: "person.crop.circle.badge.questionmark") }
+                else {
+                    Section("Leads · \(leads.count)") {
+                        let by = Dictionary(grouping: leads, by: { $0.stage ?? "new" })
+                        let tones: [Color] = [PLOS.muted, PLOS.gold, PLOS.ok, PLOS.philosophy, PLOS.warn]
+                        PLStageBar(stages: by.keys.sorted().enumerated().map { .init(name: $0.element, count: by[$0.element]?.count ?? 0, tint: tones[$0.offset % tones.count]) },
+                                   text: PLOS.text(scheme), dim: PLOS.dim(scheme)).padding(.vertical, 4)
+                    }.listRowBackground(OSRowBackground())
+                }
                 ForEach(leads) { l in
-                    VStack(alignment: .leading, spacing: 2) {
+                    VStack(alignment: .leading, spacing: 4) {
                         Text(l.name ?? l.email).font(.headline)
-                        Text([l.intent, l.stage, l.provenance].compactMap { $0 }.joined(separator: " · ")).font(.caption).foregroundStyle(.secondary)
+                        HStack(spacing: 5) {
+                            if let s = l.stage { PLChip(word: s, tint: PLOS.gold) }
+                            if let i = l.intent { PLChip(word: i, tint: PLOS.philosophy) }
+                            if let v = l.provenance { PLChip(word: v, tint: PLOS.dim(scheme)) }
+                        }
                     }
                 }
             }
@@ -495,6 +531,7 @@ struct TallyView: View {
     @State private var result: String?
     @State private var choosing: Piece?
     @State private var url = ""
+    @Environment(\.colorScheme) private var scheme
     @State private var month = Self.months.first ?? ""
     /// This month and the eleven before it, as the tally's month param (YYYY-MM).
     static let months: [String] = (0..<12).compactMap { Calendar.current.date(byAdding: .month, value: -$0, to: .now) }.map {
@@ -507,26 +544,36 @@ struct TallyView: View {
                 if let r = result { ResultLine(text: r) }
                 Section {
                     Picker("Month", selection: $month) { ForEach(Self.months, id: \.self) { Text($0).tag($0) } }
-                    LabeledContent("Founders sealed", value: "\(t.founders_sealed ?? 0)")
-                    LabeledContent("Chosen this month", value: "\(t.chosen_count ?? 0)")
+                    HStack(spacing: 12) {
+                        PLBigTile(number: "\(t.founders_sealed ?? 0)", label: "Founders sealed", text: PLOS.text(scheme), dim: PLOS.dim(scheme))
+                        PLBigTile(number: "\(t.chosen_count ?? 0)", label: "Chosen this month", text: PLOS.text(scheme), dim: PLOS.dim(scheme))
+                        PLBigTile(number: "\((t.ranked ?? []).map { $0.votes ?? 0 }.reduce(0, +))", label: "Votes", text: PLOS.text(scheme), dim: PLOS.dim(scheme))
+                    }
                 }.listRowBackground(OSRowBackground())
                 if let q = t.founder_queue, !q.isEmpty {
                     Section("Founder requests waiting") {
                         ForEach(q) { a in
                             VStack(alignment: .leading) {
                                 Text("\(a.cr ?? "") · \(a.product ?? "")").font(.headline)
-                                Text("\(a.email ?? "") · \(Int(a.promise_hours_left ?? 0)) h left on the promise").font(.caption).foregroundStyle((a.promise_hours_left ?? 99) < 0 ? PLOS.danger : (a.promise_hours_left ?? 99) < 24 ? PLOS.warn : .secondary)
+                                HStack(spacing: 6) {
+                                    let h = a.promise_hours_left ?? 99
+                                    PLChip(word: h < 0 ? "promise overdue \(Int(-h)) h" : "\(Int(h)) h left", tint: h < 0 ? PLOS.danger : (h < 24 ? PLOS.warn : PLOS.ok))
+                                    Text(a.email ?? "").font(.caption).foregroundStyle(.secondary).lineLimit(1)
+                                }
                             }
                         }
                     }.listRowBackground(OSRowBackground())
                 }
                 Section("Ranked") {
                     if (t.ranked ?? []).isEmpty { Text("No votes yet this month.").foregroundStyle(.secondary) }
+                    let topPoints = Double((t.ranked ?? []).map { $0.points ?? 0 }.max() ?? 1)
                     ForEach(t.ranked ?? []) { p in
-                        VStack(alignment: .leading, spacing: 2) {
+                        VStack(alignment: .leading, spacing: 4) {
                             HStack { Text(p.cr).font(.headline); Spacer(); Text("\(p.points ?? 0) pts").monospacedDigit() }
-                            Text((p.products ?? []).map { "\($0.product) \($0.points ?? 0)" }.joined(separator: " · ")).font(.caption).foregroundStyle(.secondary)
+                            HStack(spacing: 5) { ForEach((p.products ?? []).prefix(4)) { PLChip(word: "\($0.product) \($0.points ?? 0)", tint: PLOS.dim(scheme)) } }
                         }
+                        .padding(.horizontal, 6).padding(.vertical, 4)
+                        .plBar(Double(p.points ?? 0), of: topPoints, tint: PLOS.gold)
                         .swipeActions { Button("Choose") { choosing = p }.tint(PLTone.house) }
                     }
                 }.listRowBackground(OSRowBackground())

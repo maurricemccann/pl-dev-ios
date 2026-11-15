@@ -192,6 +192,7 @@ struct CalendarView: View {
     struct Out: Decodable { let days: [Day]?; let fill: Fill? }
     @State private var page: String?
     @State private var fill: Fill?
+    @Environment(\.colorScheme) private var scheme
 
     var body: some View {
         Loaded(load: { () async throws -> [Day] in
@@ -200,6 +201,20 @@ struct CalendarView: View {
             return o.days ?? []
         }) { days, _ in
           VStack(spacing: 0) {
+            // the fortnight at a glance: each day as strong as what is scheduled, ringed where it is short (his ask 11-14)
+            PLHeatGrid(cells: days.map { d in
+                let cells = (d.platforms ?? [:]).filter { $0.value.paused != true }.values
+                let short = cells.flatMap { ($0.short ?? [:]).values }.reduce(0, +)
+                return .init(id: d.date, label: String(d.date.suffix(5)), amount: Double(cells.map { $0.items?.count ?? 0 }.reduce(0, +)),
+                             mark: d.date == page ? PLOS.gold : (short > 0 ? PLOS.warn : nil))
+            }, tint: PLOS.ok, text: PLOS.text(scheme), dim: PLOS.dim(scheme))
+            .padding(.horizontal).padding(.top, 8)
+            HStack(spacing: 12) {
+                HStack(spacing: 4) { RoundedRectangle(cornerRadius: 2).strokeBorder(PLOS.warn, lineWidth: 1.5).frame(width: 10, height: 10); Text("short") }
+                HStack(spacing: 4) { RoundedRectangle(cornerRadius: 2).strokeBorder(PLOS.gold, lineWidth: 1.5).frame(width: 10, height: 10); Text("showing") }
+                Spacer()
+            }
+            .font(.system(size: 9, design: .monospaced)).foregroundStyle(PLOS.dim(scheme)).padding(.horizontal).padding(.top, 4)
             fillLine.padding(.horizontal).padding(.vertical, 6)
             // pl-os's day pager: one day a page, swiped sideways, opening at today
             ScrollView(.horizontal) {
@@ -267,7 +282,15 @@ struct CalendarView: View {
                             if cell?.paused == true { Text("paused").font(.caption).foregroundStyle(.secondary) }
                             else {
                                 let target = (cell?.target ?? [:]).map { "\($0.value) \($0.key == "any" ? "" : $0.key)".trimmingCharacters(in: .whitespaces) }.sorted().joined(separator: " + ")
-                                Text("\(cell?.items?.count ?? 0)\(target.isEmpty ? "" : " of " + target)").font(.callout.monospacedDigit())
+                                let want = (cell?.target ?? [:]).values.reduce(0, +), have = cell?.items?.count ?? 0
+                                if want > 0 {
+                                    ZStack {
+                                        Circle().stroke(PLOS.dim(scheme).opacity(0.2), lineWidth: 3)
+                                        Circle().trim(from: 0, to: min(1, Double(have) / Double(want))).stroke(have >= want ? PLOS.ok : PLOS.warn, style: StrokeStyle(lineWidth: 3, lineCap: .round)).rotationEffect(.degrees(-90))
+                                    }
+                                    .frame(width: 18, height: 18).accessibilityHidden(true)
+                                }
+                                Text("\(have)\(target.isEmpty ? "" : " of " + target)").font(.callout.monospacedDigit())
                                 if short > 0 { Text("\(short) short").font(.caption.bold()).foregroundStyle(PLOS.warn) }
                             }
                         }
@@ -303,32 +326,60 @@ struct TempoView: View {
     @State private var reel: Reel?
     @State private var result: String?
     @State private var busy = false
+    @Environment(\.colorScheme) private var scheme
 
     var body: some View {
         List {
             if let r = result { ResultLine(text: r) }
             if let w = week {
+                // last week at a glance: the rate as a ring, what won as chips, the drafts as a bar (his ask 11-14)
                 Section("Week \(w.week_key ?? "")") {
-                    if let p = w.performance?.top_angle { LabeledContent("Top angle last week", value: p) }
-                    if let g = w.performance?.top_glyph { LabeledContent("Top glyph", value: g) }
-                    if let r = w.performance?.top_rate { LabeledContent("Engagement rate", value: String(format: "%.1f%%", r)) }
-                    LabeledContent("Drafts waiting", value: "\(w.drafts?.pending ?? 0) · \(w.drafts?.held ?? 0) held")
+                    HStack(alignment: .center, spacing: 16) {
+                        if let r = w.performance?.top_rate {
+                            // the ring is full at 10%: a strong week for an account this size, so a 2% week reads as a fifth of the way
+                            PLRing(value: r / 10, center: String(format: "%.1f%%", r), label: "Engaged", tint: r >= 3 ? PLOS.ok : (r >= 1 ? PLOS.gold : PLOS.warn),
+                                   text: PLOS.text(scheme), dim: PLOS.dim(scheme))
+                        }
+                        VStack(alignment: .leading, spacing: 8) {
+                            if let p = w.performance?.top_angle {
+                                VStack(alignment: .leading, spacing: 3) { Text("Top angle last week").osEyebrow().foregroundStyle(PLOS.dim(scheme)); PLChip(word: p, tint: PLOS.gold) }
+                            }
+                            if let g = w.performance?.top_glyph {
+                                VStack(alignment: .leading, spacing: 3) { Text("Top glyph").osEyebrow().foregroundStyle(PLOS.dim(scheme)); PLChip(word: g, tint: PLOS.philosophy) }
+                            }
+                        }
+                        .frame(maxWidth: .infinity, alignment: .leading)
+                    }
+                    .padding(.vertical, 4)
+                    PLStageBar(stages: [.init(name: "Drafts waiting", count: w.drafts?.pending ?? 0, tint: PLOS.gold), .init(name: "Held", count: w.drafts?.held ?? 0, tint: PLOS.warn)],
+                               text: PLOS.text(scheme), dim: PLOS.dim(scheme), height: 10)
+                        .padding(.vertical, 4)
                 }.listRowBackground(OSRowBackground())
                 Section {
                     ForEach((w.strategy?.angles ?? []).sorted { ($0.priority ?? 9) < ($1.priority ?? 9) }) { a in
-                        VStack(alignment: .leading, spacing: 3) {
-                            HStack { Text("P\(a.priority ?? 0)").font(.caption.bold().monospacedDigit()).foregroundStyle(Wallpaper.line); if let g = a.glyph { Text(g).font(.caption).foregroundStyle(.secondary) } }
-                            Text(a.angle ?? "").font(.headline)
-                            if let pr = a.persona { Text(pr).font(.callout) }
-                            if let h = a.hook { Text("“\(h)”").plHand(20, relativeTo: .callout) }
-                            if let c = a.doctrine_cluster { Text(c.replacingOccurrences(of: "-", with: " ").uppercased()).font(.caption2.weight(.semibold)).tracking(1).foregroundStyle(.secondary) }
+                        HStack(alignment: .top, spacing: 12) {
+                            // the priority as a filled badge: P1 is the brightest
+                            Text("\(a.priority ?? 0)").font(.system(.headline, design: .monospaced)).foregroundStyle(PLOS.bg(scheme))
+                                .frame(width: 30, height: 30)
+                                .background(PLOS.gold.opacity(max(0.3, 1.0 - Double((a.priority ?? 1) - 1) * 0.14)), in: Circle())
+                                .accessibilityLabel("Priority \(a.priority ?? 0)")
+                            VStack(alignment: .leading, spacing: 5) {
+                                Text(a.angle ?? "").font(.headline)
+                                if let h = a.hook { Text("“\(h)”").plHand(20, relativeTo: .callout) }
+                                if let pr = a.persona { Text(pr).font(.footnote).foregroundStyle(PLOS.dim(scheme)) }
+                                HStack(spacing: 6) {
+                                    if let g = a.glyph { PLChip(word: g, tint: PLOS.gold) }
+                                    if let c = a.doctrine_cluster { PLChip(word: c.replacingOccurrences(of: "-", with: " "), tint: PLOS.philosophy) }
+                                }
+                            }
                         }
+                        .padding(.vertical, 2)
                     }
                 } header: { Text("This week's angles\(w.strategy?.used_by_wave.map { " · \($0) waves used" } ?? "")") }.listRowBackground(OSRowBackground())
                 if let e = w.email {
                     Section {
                         Text(e.subject ?? "").font(.headline)
-                        LabeledContent("Status", value: (e.status ?? "").capitalized)
+                        PLStateDot(word: (e.status ?? "").capitalized, tint: e.status == "sent" ? PLOS.ok : (e.status == "approved" ? PLOS.gold : PLOS.warn), text: PLOS.text(scheme))
                         if let p = preview?.body_text { Text(p).font(.callout).plReading().lineLimit(12) }
                         HStack {
                             ConfirmButton(title: "Approve", question: "Approve this email to go out to the list?") { await act { try await Console.post("api/email/moderate", ["email_id": e.id, "action": "approve"], model: model); return "Approved." } }
@@ -343,6 +394,9 @@ struct TempoView: View {
             }
             if let n = reel?.next {
                 Section {
+                    PLBigTile(number: "\(reel?.remaining ?? 0)", label: "Reels left", tint: PLOS.gold, text: PLOS.text(scheme), dim: PLOS.dim(scheme)) {
+                        Image(systemName: "film.stack").font(.title).foregroundStyle(PLOS.goldDim(scheme))
+                    }
                     LabeledContent("Next reel", value: n.file ?? "")
                     if let c = n.collection { LabeledContent("From", value: c) }
                     if let u = n.url.flatMap(URL.init(string:)) { Link("Watch it", destination: u) }
@@ -449,15 +503,26 @@ struct FeedView: View {
 
 struct DripView: View {
     let model: AppModel
+    @Environment(\.colorScheme) private var scheme
     struct Row: Decodable, Identifiable { let id: String; let platform: String?; let caption: String?; let publish_at: String? }
     var body: some View {
         Loaded(load: { try await Console.q("approvedqueue", [Row].self, model: model) }) { rows, _ in
             List {
                 if rows.isEmpty { ContentUnavailableView("The drip is empty", systemImage: "drop", description: Text("Approve drafts to fill it.")) }
+                else {
+                    Section("Waiting to post · \(rows.count)") {
+                        let by = Dictionary(grouping: rows, by: { $0.platform ?? "" })
+                        PLStageBar(stages: by.keys.sorted().map { .init(name: $0.isEmpty ? "other" : $0, count: by[$0]?.count ?? 0, tint: PLOS.platform($0)) },
+                                   text: PLOS.text(scheme), dim: PLOS.dim(scheme)).padding(.vertical, 4)
+                    }.listRowBackground(OSRowBackground())
+                }
                 ForEach(rows) { r in
-                    VStack(alignment: .leading, spacing: 2) {
-                        HStack { Text((r.platform ?? "").capitalized).font(.caption.bold()); Spacer(); Ago(text: r.publish_at).font(.caption) }.foregroundStyle(.secondary)
-                        Text(r.caption ?? "").lineLimit(3)
+                    HStack(alignment: .top, spacing: 10) {
+                        Circle().fill(PLOS.platform(r.platform)).frame(width: 9, height: 9).padding(.top, 5)
+                        VStack(alignment: .leading, spacing: 2) {
+                            HStack { Text((r.platform ?? "").capitalized).font(.caption.bold()); Spacer(); Ago(text: r.publish_at).font(.caption) }.foregroundStyle(.secondary)
+                            Text(r.caption ?? "").lineLimit(3)
+                        }
                     }
                 }
             }
@@ -471,18 +536,26 @@ struct VaultView: View {
     struct Row: Decodable, Identifiable { let id: String; let platform: String?; let caption: String?; let rewrite_caption: String?; let created_at: String?; let violations: [String]? }
     struct Out: Decodable { let rows: [Row]? }
     @State private var result: String?
+    @Environment(\.colorScheme) private var scheme
 
     var body: some View {
         Loaded(load: { try await Console.get("api/vaulted", Out.self, model: model).rows ?? [] }) { rows, reload in
             List {
                 if let r = result { ResultLine(text: r) }
                 if rows.isEmpty { ContentUnavailableView("The vault is empty", systemImage: "archivebox") }
+                else {
+                    Section {
+                        PLBigTile(number: "\(rows.count)", label: "Held back", tint: PLOS.warn, text: PLOS.text(scheme), dim: PLOS.dim(scheme)) {
+                            Text("\(rows.filter { $0.rewrite_caption != nil }.count) with a rewrite").font(.system(size: 11, design: .monospaced)).foregroundStyle(PLOS.dim(scheme))
+                        }
+                    }.listRowBackground(OSRowBackground())
+                }
                 ForEach(rows) { r in
                     VStack(alignment: .leading, spacing: 6) {
-                        Text((r.platform ?? "").capitalized).font(.caption.bold()).foregroundStyle(.secondary)
+                        HStack(spacing: 6) { Circle().fill(PLOS.platform(r.platform)).frame(width: 9, height: 9); Text((r.platform ?? "").capitalized).font(.caption.bold()).foregroundStyle(.secondary) }
                         Text(r.caption ?? "").lineLimit(5)
                         if let rw = r.rewrite_caption { Text("Rewrite: ").bold() + Text(rw) }
-                        if let v = r.violations, !v.isEmpty { Text(v.joined(separator: " · ")).font(.caption).foregroundStyle(PLTone.house) }
+                        if let v = r.violations, !v.isEmpty { HStack(spacing: 5) { ForEach(v.prefix(3), id: \.self) { PLChip(word: $0, tint: PLOS.warn) } } }
                     }
                     .swipeActions {
                         Button("Restore") { Task { await restore(r, "original", reload) } }.tint(.blue)
@@ -502,15 +575,30 @@ struct VaultView: View {
 
 struct ReachView: View {
     let model: AppModel
+    @Environment(\.colorScheme) private var scheme
     struct Row: Decodable, Identifiable { let sent_at: String?; let channel: String?; let reach: Int?; let likes: Int?; let comments: Int?; let caption_excerpt: String?; var id: String { (sent_at ?? "") + (channel ?? "") } }
     var body: some View {
         Loaded(load: { try await Console.q("postreach", [Row].self, model: model) }) { rows, _ in
-            List(rows) { r in
-                VStack(alignment: .leading, spacing: 4) {
-                    HStack { Text((r.channel ?? "").capitalized).font(.caption.bold()); Spacer(); Ago(text: r.sent_at).font(.caption) }.foregroundStyle(.secondary)
-                    Text(r.caption_excerpt ?? "").lineLimit(2)
-                    HStack(spacing: 14) { Label("\(r.reach ?? 0)", systemImage: "eye"); Label("\(r.likes ?? 0)", systemImage: "heart"); Label("\(r.comments ?? 0)", systemImage: "bubble.right") }
-                        .font(.caption.monospacedDigit())
+            let top = Double(rows.map { ($0.reach ?? 0) + ($0.likes ?? 0) + ($0.comments ?? 0) }.max() ?? 0)
+            List {
+                Section {
+                    HStack(spacing: 12) {
+                        PLBigTile(number: "\(rows.map { $0.reach ?? 0 }.reduce(0, +))", label: "Reach", text: PLOS.text(scheme), dim: PLOS.dim(scheme))
+                        PLBigTile(number: "\(rows.map { $0.likes ?? 0 }.reduce(0, +))", label: "Likes", text: PLOS.text(scheme), dim: PLOS.dim(scheme))
+                        PLBigTile(number: "\(rows.map { $0.comments ?? 0 }.reduce(0, +))", label: "Comments", text: PLOS.text(scheme), dim: PLOS.dim(scheme))
+                    }
+                    // newest on the right, the latest post lit: is the response rising or falling
+                    PLSpark(values: rows.prefix(24).reversed().map { Double(($0.reach ?? 0) + ($0.likes ?? 0) + ($0.comments ?? 0)) }, tint: PLOS.gold, dim: PLOS.dim(scheme), height: 34)
+                } header: { Text("Last \(rows.count) posts") }.listRowBackground(OSRowBackground())
+                ForEach(rows) { r in
+                    VStack(alignment: .leading, spacing: 4) {
+                        HStack(spacing: 6) { Circle().fill(PLOS.platform(r.channel)).frame(width: 9, height: 9); Text((r.channel ?? "").capitalized).font(.caption.bold()); Spacer(); Ago(text: r.sent_at).font(.caption) }.foregroundStyle(.secondary)
+                        Text(r.caption_excerpt ?? "").lineLimit(2)
+                        HStack(spacing: 14) { Label("\(r.reach ?? 0)", systemImage: "eye"); Label("\(r.likes ?? 0)", systemImage: "heart"); Label("\(r.comments ?? 0)", systemImage: "bubble.right") }
+                            .font(.caption.monospacedDigit())
+                    }
+                    .padding(.horizontal, 6).padding(.vertical, 4)
+                    .plBar(Double((r.reach ?? 0) + (r.likes ?? 0) + (r.comments ?? 0)), of: top, tint: PLOS.platform(r.channel))
                 }
             }
         }
@@ -525,19 +613,41 @@ struct OpportunityView: View {
     struct Lead: Decodable, Identifiable { let id: Int; let name: String?; let why_fits: String?; let what_it_takes: String?; let confidence: String?; let deadline: String?; let source_url: String?; let ruled_out: Int?; let status: String? }
     struct Out: Decodable { let leads: [Lead]? }
     @State private var result: String?
+    @Environment(\.colorScheme) private var scheme
+
+    private func statusTone(_ s: String) -> Color { s == "pursued" ? PLOS.ok : (s == "reviewed" ? PLOS.gold : PLOS.muted) }
+    /// The scout's confidence as a colour: its text begins "high", "medium" or "low".
+    private func confidenceTone(_ c: String?) -> Color {
+        let c = (c ?? "").lowercased()
+        return c.hasPrefix("high") ? PLOS.ok : (c.hasPrefix("med") ? PLOS.gold : PLOS.muted)
+    }
 
     var body: some View {
         Loaded(load: { try await Console.get("api/opportunity-leads", Out.self, model: model).leads ?? [] }) { leads, reload in
             List {
                 if let r = result { ResultLine(text: r) }
-                ForEach(leads.filter { ($0.ruled_out ?? 0) == 0 && $0.status != "dead" }) { l in
-                    VStack(alignment: .leading, spacing: 4) {
-                        HStack { Text(l.name ?? "").font(.headline); Spacer(); Text((l.status ?? "new").capitalized).font(.caption).foregroundStyle(.secondary) }
+                let open = leads.filter { ($0.ruled_out ?? 0) == 0 && $0.status != "dead" }
+                if !open.isEmpty {
+                    Section("Open leads · \(open.count)") {
+                        let by = Dictionary(grouping: open, by: { $0.status ?? "new" })
+                        PLStageBar(stages: ["new", "reviewed", "pursued"].map { .init(name: $0, count: by[$0]?.count ?? 0, tint: statusTone($0)) }
+                                   + by.keys.filter { !["new", "reviewed", "pursued"].contains($0) }.sorted().map { .init(name: $0, count: by[$0]?.count ?? 0, tint: PLOS.muted) },
+                                   text: PLOS.text(scheme), dim: PLOS.dim(scheme)).padding(.vertical, 4)
+                    }.listRowBackground(OSRowBackground())
+                }
+                ForEach(open) { l in
+                    VStack(alignment: .leading, spacing: 5) {
+                        HStack(alignment: .firstTextBaseline, spacing: 8) {
+                            Circle().fill(confidenceTone(l.confidence)).frame(width: 9, height: 9)
+                            Text(l.name ?? "").font(.headline)
+                            Spacer()
+                            PLChip(word: l.status ?? "new", tint: statusTone(l.status ?? "new"))
+                        }
                         if let w = l.why_fits { Text(w).font(.callout) }
                         if let t = l.what_it_takes { Text("Takes: \(t)").font(.caption).foregroundStyle(.secondary) }
-                        HStack {
-                            if let c = l.confidence { Text(c.capitalized) }
-                            if let d = l.deadline { Text("Due \(d)") }
+                        HStack(spacing: 6) {
+                            if let c = l.confidence { PLChip(word: String(c.prefix(18)), tint: confidenceTone(c)) }
+                            if let d = l.deadline, !d.isEmpty { PLChip(word: "due " + d, tint: PLOS.warn) }
                             if let s = l.source_url.flatMap(URL.init(string:)) { Link("Source", destination: s) }
                         }
                         .font(.caption)
@@ -563,15 +673,30 @@ struct OutboundLeadsView: View {
     let model: AppModel
     struct Lead: Decodable, Identifiable { let id: Int; let name: String?; let niche: String?; let location: String?; let website: String?; let stage: String?; let email: String?; let opener: String? }
     struct Out: Decodable { let leads: [Lead]? }
+    @Environment(\.colorScheme) private var scheme
     var body: some View {
         Loaded(load: { try await Console.get("api/outbound/leads", Out.self, model: model).leads ?? [] }) { leads, _ in
-            List(leads) { l in
-                VStack(alignment: .leading, spacing: 2) {
+            List {
+              if !leads.isEmpty {
+                Section("Leads · \(leads.count)") {
+                    let by = Dictionary(grouping: leads, by: { $0.stage ?? "new" })
+                    let tones: [Color] = [PLOS.muted, PLOS.gold, PLOS.ok, PLOS.philosophy, PLOS.warn]
+                    PLStageBar(stages: by.keys.sorted().enumerated().map { .init(name: $0.element, count: by[$0.element]?.count ?? 0, tint: tones[$0.offset % tones.count]) },
+                               text: PLOS.text(scheme), dim: PLOS.dim(scheme)).padding(.vertical, 4)
+                }.listRowBackground(OSRowBackground())
+              }
+              ForEach(leads) { l in
+                VStack(alignment: .leading, spacing: 4) {
                     Text(l.name ?? "").font(.headline)
-                    Text([l.niche, l.location, l.stage].compactMap { $0 }.joined(separator: " · ")).font(.caption).foregroundStyle(.secondary)
+                    HStack(spacing: 5) {
+                        if let s = l.stage { PLChip(word: s, tint: PLOS.gold) }
+                        if let n = l.niche { PLChip(word: n, tint: PLOS.dim(scheme)) }
+                        if let p = l.location { PLChip(word: p, tint: PLOS.dim(scheme)) }
+                    }
                     if let w = l.website, let u = URL(string: w.hasPrefix("http") ? w : "https://\(w)") { Link(w, destination: u).font(.caption) }
                     if let o = l.opener { Text(o).font(.caption) }
                 }
+              }
             }
         }
         .navigationTitle("Outbound leads")
@@ -592,6 +717,7 @@ struct PinterestView: View {
     @State private var failed: String?
     @State private var busy: String?
     @State private var note: String?
+    @Environment(\.colorScheme) private var scheme
 
     var body: some View {
         List {
@@ -599,14 +725,25 @@ struct PinterestView: View {
             if s == nil && failed == nil { PLLoader() }
             if let s {
                 Section {
-                    LabeledContent("Account", value: s.connected == true ? "@\(s.account?.username ?? "")" : "Not connected")
+                    // the state first, as a colour: green and breathing when connected, red when Pinterest refuses the house (his ask 11-14)
+                    HStack {
+                        PLStateDot(word: s.connected == true ? "Connected" : "Not connected", tint: s.connected == true ? PLOS.ok : PLOS.danger, text: PLOS.text(scheme))
+                        Spacer()
+                        if s.connected == true, let u = s.account?.username { PLChip(word: "@" + u, tint: PLOS.gold) }
+                    }
                     if s.connected == true {
-                        LabeledContent("Board", value: s.board?.name ?? "made with the first pin")
-                        LabeledContent("Account type", value: s.account?.account_type ?? "·")
+                        HStack(spacing: 12) {
+                            PLBigTile(number: "\((s.queue ?? []).count)", label: "Drafts waiting", tint: PLOS.gold, text: PLOS.text(scheme), dim: PLOS.dim(scheme))
+                            PLBigTile(number: "\((s.pins ?? []).count)", label: "Pins on the board", tint: PLOS.gold, text: PLOS.text(scheme), dim: PLOS.dim(scheme))
+                        }
+                        HStack(spacing: 6) {
+                            PLChip(word: s.board?.name ?? "board made with the first pin", tint: PLOS.dim(scheme))
+                            if let t = s.account?.account_type { PLChip(word: t, tint: PLOS.dim(scheme)) }
+                        }
                     } else {
                         Text("Connecting Pinterest happens in pl-os on the laptop: Pinterest's sign-in returns to that page.").font(.footnote).foregroundStyle(.secondary)
                     }
-                    if let e = s.error { Text(e).font(.footnote).foregroundStyle(.secondary) }
+                    if let e = s.error { Label(e, systemImage: "exclamationmark.triangle").font(.footnote).foregroundStyle(PLOS.warn) }
                 }.listRowBackground(OSRowBackground())
                 if s.connected == true {
                     Section {

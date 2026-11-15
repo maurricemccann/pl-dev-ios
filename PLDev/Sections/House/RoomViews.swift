@@ -364,19 +364,37 @@ struct NotionView: View {
     struct Row: Decodable, Identifiable { let name: String; let meta: String?; let url: String?; let pageId: String?; var id: String { pageId ?? name } }
     struct NState: Decodable { let connected: Bool; let pipeline: [String: Int]; let pipelineTotal: Int; let pipelineRows: [Row]; let content: [Row]; let latestBriefing: String? }
     @State private var result: String?
+    @Environment(\.colorScheme) private var scheme
+
+    /// The stages in the order a piece moves through them; a stage Notion adds later falls in after these, by name.
+    private static let order = ["Candidates", "Development", "Scheduled", "Published"]
+    private func stages(_ p: [String: Int]) -> [String] {
+        Self.order.filter { p[$0] != nil } + p.keys.filter { !Self.order.contains($0) }.sorted()
+    }
+    private func tone(_ stage: String, in all: [String]) -> Color {
+        let tones: [Color] = [PLOS.muted, PLOS.gold, PLOS.ok, PLOS.philosophy, PLOS.warn]
+        return tones[(all.firstIndex(of: stage) ?? 0) % tones.count]
+    }
 
     var body: some View {
         Loaded(load: { try await OS.get("notion", NState.self, model: model) }) { s, reload in
+            let all = stages(s.pipeline)
             List {
-                if !s.connected { Text("pl-os is not connected to Notion.").foregroundStyle(.secondary) }
+                if !s.connected { PLStateDot(word: "pl-os is not connected to Notion", tint: PLOS.danger, text: PLOS.text(scheme)) }
                 if let r = result { ResultLine(text: r) }
-                if let b = s.latestBriefing { Section("Latest briefing") { Text(b) }.listRowBackground(OSRowBackground()) }
+                // the stages as one bar: where the pieces sit, at a glance (his ask 11-14)
                 Section("Pipeline · \(s.pipelineTotal)") {
-                    ForEach(s.pipeline.keys.sorted(), id: \.self) { k in LabeledContent(k, value: "\(s.pipeline[k] ?? 0)") }
+                    PLStageBar(stages: all.map { .init(name: $0, count: s.pipeline[$0] ?? 0, tint: tone($0, in: all)) }, text: PLOS.text(scheme), dim: PLOS.dim(scheme))
+                        .padding(.vertical, 4)
                 }.listRowBackground(OSRowBackground())
+                if let b = s.latestBriefing, !b.isEmpty { Section("Latest briefing") { Text(b).plReading() }.listRowBackground(OSRowBackground()) }
                 Section {
                     ForEach(s.pipelineRows) { r in
-                        VStack(alignment: .leading) { Text(r.name); Text(r.meta ?? "").font(.caption).foregroundStyle(.secondary) }
+                        HStack(alignment: .firstTextBaseline, spacing: 10) {
+                            Circle().fill(tone(r.meta ?? "", in: all)).frame(width: 9, height: 9)
+                            Text(r.name).frame(maxWidth: .infinity, alignment: .leading)
+                            if let m = r.meta, !m.isEmpty { PLChip(word: m, tint: tone(m, in: all)) }
+                        }
                             .swipeActions { if let id = r.pageId { Button("Advance") { Task { await advance(id, reload) } }.tint(.blue) } }
                     }
                 } header: { Text("In the pipeline") } footer: { Text("Swipe to move a piece to its next stage.") }.listRowBackground(OSRowBackground())
