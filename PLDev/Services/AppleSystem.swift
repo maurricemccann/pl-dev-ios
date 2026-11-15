@@ -83,6 +83,14 @@ import FoundationModels
         var medium: String?
     }
 
+    /// Loads the model ahead of the first question (Apple's `prewarm`), so the drop box's first read is not the slow one.
+    static func warm() {
+        #if canImport(FoundationModels)
+        guard isReady else { return }
+        LanguageModelSession().prewarm()
+        #endif
+    }
+
     static func captureRead(text: String, image: Data?) async -> CaptureRead? {
         #if canImport(FoundationModels)
         guard isReady else { return nil }

@@ -38,6 +38,16 @@ enum CaptureMeta {
         return CGImageDestinationFinalize(dest) ? out as Data : jpeg
     }
 
+    /// Apple's on-device aesthetics score for a photo (Vision, iOS 18): a plain warning when the picture looks soft or dark, or looks
+    /// like a screenshot or document, else nil. A hint only; nothing is blocked.
+    static func qualityNote(_ data: Data) async -> String? {
+        guard let upright = CaptureModel.jpeg(data), let cg = UIImage(data: upright)?.cgImage,
+              let seen = try? await CalculateImageAestheticsScoresRequest().perform(on: cg) else { return nil }
+        if seen.isUtility { return "This looks like a screenshot or a document, not a photo of a piece." }
+        if seen.overallScore < -0.3 { return "This photo looks soft or dark. Retake it in better light?" }
+        return nil
+    }
+
     /// A camera capture with the artwork's four corners found and pulled square (crop and straighten). Nil when no clear rectangle fills
     /// enough of the picture; the original is never changed, this is a second copy he can choose.
     nonisolated static func straightened(_ data: Data) -> Data? {

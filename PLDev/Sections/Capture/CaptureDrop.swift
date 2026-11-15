@@ -41,6 +41,7 @@ struct CaptureDropBox: View {
     @State private var original: Data?        // the camera capture as taken
     @State private var straight: Data?        // the same, corners found and pulled square (nil = none found)
     @State private var read: PLIntelligence.CaptureRead?
+    @State private var quality: String?
     @FocusState private var focused: Bool
 
     private let hints = [
@@ -110,6 +111,9 @@ struct CaptureDropBox: View {
             if !text.isEmpty {
                 Label(hint, systemImage: "sparkles").font(.footnote).foregroundStyle(PLOS.dim(scheme))
             }
+            if photo != nil, let quality {
+                Label(quality, systemImage: "exclamationmark.triangle").font(.footnote).foregroundStyle(PLOS.warn)
+            }
             if let photo, let img = UIImage(data: photo) {
                 ZStack(alignment: .topTrailing) {
                     Image(uiImage: img).resizable().scaledToFit().frame(maxHeight: 200)
@@ -146,6 +150,7 @@ struct CaptureDropBox: View {
         .background(RoundedRectangle(cornerRadius: 20, style: .continuous).fill(PLOS.surface2(scheme).opacity(0.5)))
         .overlay(RoundedRectangle(cornerRadius: 20, style: .continuous).strokeBorder(PLOS.line(scheme), lineWidth: 0.8))
         .onReceive(tick) { _ in withAnimation { hintIndex = (hintIndex + 1) % 60 } }
+        .onAppear { PLIntelligence.warm() }
         .fullScreenCover(isPresented: $shooting) {
             CaptureCamera { shot in
                 fromCamera = true
@@ -162,6 +167,8 @@ struct CaptureDropBox: View {
         .task(id: String(trimmed.prefix(200)) + "|" + String(photo?.count ?? 0)) {
             // the on-device model reads what is in the box, after he stops typing; nothing leaves the phone
             read = nil
+            quality = nil
+            if let photo { quality = await CaptureMeta.qualityNote(photo) }
             guard photo != nil || trimmed.count >= 8 else { return }
             try? await Task.sleep(for: .milliseconds(1200))
             guard !Task.isCancelled else { return }
