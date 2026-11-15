@@ -459,20 +459,44 @@ struct NativeNewCanvasSheet: View {
 
     init(make: @escaping (NewCanvasSpec) -> Void) { self.make = make }
 
+    private var phoneW: Int { Int(UIScreen.main.nativeBounds.width) }
+    private var phoneH: Int { Int(UIScreen.main.nativeBounds.height) }
+
     var body: some View {
         NavigationStack {
             Form {
+                // 11-14 his report (screen recording): the size you pick changed steppers far below the list and nothing marked the pick.
+                // The live size now sits at the top, and the chosen preset carries a check and a tint.
+                Section("This canvas") {
+                    HStack(spacing: 14) {
+                        RoundedRectangle(cornerRadius: 3)
+                            .stroke(Color.accentColor, lineWidth: 2)
+                            .aspectRatio(CGFloat(max(w, 1)) / CGFloat(max(h, 1)), contentMode: .fit)
+                            .frame(width: 52, height: 52)
+                        VStack(alignment: .leading, spacing: 2) {
+                            Text("\(w) × \(h)").font(.headline).monospacedDigit()
+                            if w * h > 16_777_216 { Text("Too large: the most this phone holds is 16.7 million pixels.").font(.caption).foregroundStyle(Color.red) }
+                            else { Text("\(String(format: "%.1f", Double(w * h) / 1_000_000)) million pixels").font(.caption).foregroundStyle(Color.secondary) }
+                        }
+                    }
+                }
                 Section("Sizes") {
-                    Button("Phone screen · \(Int(UIScreen.main.nativeBounds.width)) × \(Int(UIScreen.main.nativeBounds.height))") { w = Int(UIScreen.main.nativeBounds.width); h = Int(UIScreen.main.nativeBounds.height) }
+                    Button { w = phoneW; h = phoneH } label: {
+                        HStack { Text("Phone screen"); Spacer(minLength: 0); Text("\(phoneW) × \(phoneH)").foregroundStyle(.secondary).font(.caption)
+                            if w == phoneW && h == phoneH { Image(systemName: "checkmark").foregroundStyle(Color.accentColor) } }
+                    }
+                    .listRowBackground(w == phoneW && h == phoneH ? Color.accentColor.opacity(0.18) : Color.clear)
                     ForEach(NativeToolkit.canvases, id: \.name) { c in
-                        Button { w = c.w; h = c.h } label: { HStack { Text(c.name); Spacer(minLength: 0); Text("\(c.w) × \(c.h)").foregroundStyle(.secondary).font(.caption) } }
+                        Button { w = c.w; h = c.h } label: {
+                            HStack { Text(c.name); Spacer(minLength: 0); Text("\(c.w) × \(c.h)").foregroundStyle(.secondary).font(.caption)
+                                if w == c.w && h == c.h { Image(systemName: "checkmark").foregroundStyle(Color.accentColor) } }
+                        }
+                        .listRowBackground(w == c.w && h == c.h ? Color.accentColor.opacity(0.18) : Color.clear)
                     }
                 }
                 Section("Size in pixels") {
                     Stepper("Width \(w)", value: $w, in: 64...8192, step: 64)
                     Stepper("Height \(h)", value: $h, in: 64...8192, step: 64)
-                    if w * h > 16_777_216 { Text("The largest this phone holds is 16.7 million pixels.").foregroundStyle(.red).font(.caption) }
-                    else { Text("\(String(format: "%.1f", Double(w * h) / 1_000_000)) million pixels.").font(.caption).foregroundStyle(.secondary) }
                 }
                 Section {
                     Button { make(NewCanvasSpec(w: 3150, h: 2400, transparent: false, paper: paper, hoodie717: true)); dismiss() } label: {
