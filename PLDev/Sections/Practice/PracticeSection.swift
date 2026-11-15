@@ -194,7 +194,12 @@ struct PracticeView: View {
                 get: { PracticeModel.Tab.allCases.firstIndex(of: state.tab) ?? 0 },
                 set: { state.tab = PracticeModel.Tab.allCases[$0] }))
         }
-        .background { CandleGround() }
+        .background {
+            ZStack(alignment: .topLeading) {
+                CandleGround()
+                if state.entryDone { BuddyCurve() }
+            }
+        }
         .preferredColorScheme(.dark)
         .navigationTitle("Practice")
         .navigationBarTitleDisplayMode(.inline)
@@ -267,5 +272,23 @@ struct PracticeKpis: View {
             HStack(spacing: PLSpace.margin) { ForEach(items.indices, id: \.self) { Kpi(title: items[$0].0, value: items[$0].1) } }
             VStack(alignment: .leading, spacing: PLSpace.gap) { ForEach(items.indices, id: \.self) { Kpi(title: items[$0].0, value: items[$0].1) } }
         }
+    }
+}
+
+/// Buddy's curve (his mock-up 11-15): a band of his brown that sweeps in from the top edge behind the title and ends at Buddy's spot,
+/// so Buddy rides the tip of a curve as in his drawn figures. Sits behind everything, never takes a touch.
+private struct BuddyCurve: View {
+    var body: some View {
+        GeometryReader { geo in
+            let w = geo.size.width
+            Path { p in
+                p.move(to: CGPoint(x: w * 0.40, y: -20))
+                p.addCurve(to: CGPoint(x: w + 24, y: 66), control1: CGPoint(x: w * 0.60, y: 52), control2: CGPoint(x: w * 0.84, y: 74))
+            }
+            .stroke(Color(red: 143 / 255, green: 101 / 255, blue: 40 / 255), style: StrokeStyle(lineWidth: 30, lineCap: .butt))
+        }
+        .ignoresSafeArea()
+        .allowsHitTesting(false)
+        .accessibilityHidden(true)
     }
 }
