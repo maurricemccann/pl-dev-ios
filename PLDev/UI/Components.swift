@@ -178,7 +178,7 @@ private struct TileGlass<S: Shape>: ViewModifier {
 
     func body(content: Content) -> some View {
         if on {
-            content.glassEffect(.regular.tint(Wallpaper.line.opacity(0.45)), in: shape)
+            content.plGlass(tint: Wallpaper.line.opacity(0.45), in: shape)
         } else {
             content.background(Wallpaper.line.gradient, in: shape)
         }

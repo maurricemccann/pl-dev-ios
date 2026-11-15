@@ -55,7 +55,7 @@ struct CMPCard: ViewModifier {
                     shape.fill(CMP.surface.opacity(0.42))
                     LinearGradient(colors: [.white.opacity(0.07), .clear], startPoint: .top, endPoint: .bottom).frame(maxHeight: .infinity, alignment: .top).mask(shape).allowsHitTesting(false)
                 }
-                .glassEffect(.regular, in: shape)
+                .plGlass(in: shape)
             }
             .overlay { shape.strokeBorder(selected ? CMP.gold : (warn ? CMP.danger.opacity(0.7) : CMP.line), lineWidth: selected ? 1.4 : 0.8) }
     }

@@ -110,7 +110,7 @@ struct PerformancePage: View {
         }
         .frame(maxWidth: .infinity, alignment: .leading)
         .padding(14)
-        .glassEffect(.regular, in: RoundedRectangle(cornerRadius: PLRadius.card, style: .continuous))
+        .plGlass(in: RoundedRectangle(cornerRadius: PLRadius.card, style: .continuous))
     }
 
     private func dollars(_ v: Double?) -> String {
@@ -255,7 +255,7 @@ struct PerformancePage: View {
         }
         .frame(maxWidth: .infinity, alignment: .leading)
         .padding(14)
-        .glassEffect(.regular.tint((total > 0 ? PLTone.warn : PLTone.good).opacity(0.18)), in: RoundedRectangle(cornerRadius: PLRadius.card, style: .continuous))
+        .plGlass(tint: (total > 0 ? PLTone.warn : PLTone.good).opacity(0.18), in: RoundedRectangle(cornerRadius: PLRadius.card, style: .continuous))
     }
 
     /// The latest orders: day, number, amount and state. No customer detail is sent to the phone for this.

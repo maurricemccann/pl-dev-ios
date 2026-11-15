@@ -376,7 +376,7 @@ private struct DraftRow: View {
             if d.similar_to != nil { Label("Close to an earlier post", systemImage: "square.on.square").font(.caption).foregroundStyle(PLOS.warn) }
         }
         .padding(12)
-        .background { RoundedRectangle(cornerRadius: PLOS.radius, style: .continuous).fill(PLOS.platform(d.platform).opacity(0.08)).glassEffect(.regular, in: RoundedRectangle(cornerRadius: PLOS.radius, style: .continuous)) }
+        .background { RoundedRectangle(cornerRadius: PLOS.radius, style: .continuous).fill(PLOS.platform(d.platform).opacity(0.08)).plGlass(in: RoundedRectangle(cornerRadius: PLOS.radius, style: .continuous)) }
         .overlay { RoundedRectangle(cornerRadius: PLOS.radius, style: .continuous).strokeBorder(PLOS.platform(d.platform), lineWidth: 1.5) }
         .padding(.vertical, 6)
     }

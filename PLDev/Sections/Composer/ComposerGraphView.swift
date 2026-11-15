@@ -169,7 +169,7 @@ struct ComposerGraphView: View {
     }
 
     private func zoomButton(_ symbol: String, _ label: String, _ action: @escaping () -> Void) -> some View {
-        Button(action: action) { Image(systemName: symbol).font(.system(size: 13, weight: .semibold)).foregroundStyle(CMP.dim).frame(width: 40, height: 40).glassEffect(.regular.interactive(), in: Circle()) }
+        Button(action: action) { Image(systemName: symbol).font(.system(size: 13, weight: .semibold)).foregroundStyle(CMP.dim).frame(width: 40, height: 40).plGlass(interactive: true, in: Circle()) }
             .buttonStyle(.plain).accessibilityLabel(label)
     }
 

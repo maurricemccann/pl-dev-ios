@@ -89,7 +89,7 @@ struct HomeView: View {
                     Image(systemName: "chevron.right").font(.caption.weight(.bold)).foregroundStyle(.secondary)
                 }
                 .padding(14)
-                .glassEffect(.regular, in: RoundedRectangle(cornerRadius: PLRadius.card, style: .continuous))
+                .plGlass(in: RoundedRectangle(cornerRadius: PLRadius.card, style: .continuous))
             }
             .buttonStyle(.plain)
             .sheet(isPresented: $showWidgetHelp) { WidgetHowTo() }
@@ -233,7 +233,7 @@ struct HomeView: View {
             }
             .padding(.horizontal, 14)
             .frame(height: 60)
-            .glassEffect(.regular.tint(IOS27.Glass.dock.tint), in: RoundedRectangle(cornerRadius: 30, style: .continuous))
+            .plGlass(tint: IOS27.Glass.dock.tint, in: RoundedRectangle(cornerRadius: 30, style: .continuous))
         }
         .padding(.horizontal, 10)
         .padding(.bottom, -14)   // nearer the home indicator, as the dock sits

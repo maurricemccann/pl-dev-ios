@@ -63,7 +63,7 @@ struct OSCard: ViewModifier {
                     LinearGradient(colors: [.white.opacity(scheme == .dark ? 0.08 : 0.16), .white.opacity(0.02), .clear], startPoint: .top, endPoint: .bottom)
                         .frame(maxHeight: .infinity, alignment: .top).mask(shape).allowsHitTesting(false)
                 }
-                .glassEffect(.regular, in: shape)
+                .plGlass(in: shape)
             }
             .overlay { shape.strokeBorder(owed ? PLOS.danger.opacity(0.7) : PLOS.line(scheme), lineWidth: owed ? 1.2 : 0.8) }
     }
@@ -193,7 +193,7 @@ struct OSTabBar: View {
                 item(.more, "ellipsis", "More")
             }
             .padding(6)
-            .glassEffect(.regular, in: Capsule())
+            .plGlass(in: Capsule())
         }
         .padding(.horizontal, 16).padding(.bottom, 4)
     }

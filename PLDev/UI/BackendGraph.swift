@@ -63,7 +63,7 @@ struct BackendGraph: View {
             }
             .frame(height: 420)
             .clipShape(shape)
-            .glassEffect(.regular, in: shape)
+            .plGlass(in: shape)
             .accessibilityElement(children: .ignore)
             .accessibilityLabel(graph.map { "Graph of \($0.nodes.count) notes and their links" } ?? "Graph of the notes")
         }

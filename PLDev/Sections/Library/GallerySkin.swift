@@ -48,7 +48,7 @@ struct GalleryCard: ViewModifier {
                     LinearGradient(colors: [.white.opacity(scheme == .dark ? 0.08 : 0.2), .clear], startPoint: .top, endPoint: .bottom)
                         .frame(maxHeight: .infinity, alignment: .top).mask(shape).allowsHitTesting(false)
                 }
-                .glassEffect(.regular, in: shape)
+                .plGlass(in: shape)
             }
             .overlay { shape.strokeBorder(active ? PLG.gold.opacity(0.72) : PLG.line(scheme), lineWidth: active ? 1.2 : 0.8) }
     }

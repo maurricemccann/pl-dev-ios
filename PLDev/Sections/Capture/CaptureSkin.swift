@@ -15,7 +15,7 @@ struct CaptureRoomBar: View {
                 ForEach(CaptureRoom.allCases) { r in item(r) }
             }
             .padding(6)
-            .glassEffect(.regular, in: Capsule())
+            .plGlass(in: Capsule())
         }
     }
 

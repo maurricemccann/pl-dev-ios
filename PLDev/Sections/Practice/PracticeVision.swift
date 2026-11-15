@@ -103,7 +103,7 @@ struct VisionPreviewView: View {
                     .accessibilityAddTraits(on ? .isSelected : [])
                 }
             }
-            .padding(6).glassEffect(.regular, in: Capsule())
+            .padding(6).plGlass(in: Capsule())
         }
         .padding(.horizontal, 16).padding(.bottom, 4)
     }

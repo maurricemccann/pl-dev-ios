@@ -142,6 +142,31 @@ private struct GlassControl<S: Shape>: ViewModifier {
     }
 }
 
+/// Every glass surface (cards, tiles, bars, pills) reads the two Settings switches, the same as controls do: glass off = a plain solid
+/// surface, see-through on = Apple's clear glass instead of the regular one.
+private struct PLGlass<S: Shape>: ViewModifier {
+    let tint: Color?
+    let interactive: Bool
+    let shape: S
+    @AppStorage("pldev.glassBlur") private var glass = true
+    @AppStorage("pldev.glassClear") private var clear = false
+
+    func body(content: Content) -> some View {
+        if glass {
+            content.glassEffect((clear ? Glass.clear : Glass.regular).tint(tint).interactive(interactive), in: shape)
+        } else {
+            content.background(tint ?? PLTone.plate, in: shape)
+        }
+    }
+}
+
+extension View {
+    /// A glass surface that follows Settings (see-through, glass on or off). Use this, never `.glassEffect(.regular...)` directly.
+    func plGlass<S: Shape>(tint: Color? = nil, interactive: Bool = false, in shape: S) -> some View {
+        modifier(PLGlass(tint: tint, interactive: interactive, shape: shape))
+    }
+}
+
 extension View {
     /// The text face for a text style: the system font, or Jost when Settings says so.
     func plFont(_ text: PLText, emphasized: Bool = false) -> some View {

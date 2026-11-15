@@ -86,7 +86,7 @@ struct OfflineLine: View {
             }
             .font(.caption.weight(.semibold))
             .padding(.horizontal, 12).padding(.vertical, 6)
-            .glassEffect(.regular, in: Capsule())
+            .plGlass(in: Capsule())
             .padding(.top, 4)
             .transition(.move(edge: .top).combined(with: .opacity))
             .accessibilityElement(children: .combine)

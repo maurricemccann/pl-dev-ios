@@ -58,7 +58,7 @@ struct HomeDashboard: View {
             if target != nil { Image(systemName: "chevron.right").font(.caption.weight(.bold)).foregroundStyle(.secondary) }
         }
         .padding(14)
-        .glassEffect(.regular.tint(tint.opacity(0.18)), in: RoundedRectangle(cornerRadius: PLRadius.card, style: .continuous))
+        .plGlass(tint: tint.opacity(0.18), in: RoundedRectangle(cornerRadius: PLRadius.card, style: .continuous))
         .accessibilityElement(children: .combine)
         return Group {
             if let target { door(target) { line }.accessibilityHint("Opens the list") } else { line }
@@ -91,7 +91,7 @@ struct HomeDashboard: View {
             }
             .frame(maxWidth: .infinity, alignment: .leading)
             .padding(14)
-            .glassEffect(.regular, in: RoundedRectangle(cornerRadius: PLRadius.card, style: .continuous))
+            .plGlass(in: RoundedRectangle(cornerRadius: PLRadius.card, style: .continuous))
         }
     }
 
@@ -114,7 +114,7 @@ struct HomeDashboard: View {
                 }
                 .frame(maxWidth: .infinity, alignment: .leading)
                 .padding(14)
-                .glassEffect(.regular, in: RoundedRectangle(cornerRadius: PLRadius.card, style: .continuous))
+                .plGlass(in: RoundedRectangle(cornerRadius: PLRadius.card, style: .continuous))
             }
         }
     }
@@ -130,7 +130,7 @@ struct HomeDashboard: View {
                 Image(systemName: "arrow.up.circle.fill").font(.title3).foregroundStyle(.white)
             }
             .padding(.horizontal, 16).padding(.vertical, 12)
-            .glassEffect(.regular.interactive(), in: Capsule())
+            .plGlass(interactive: true, in: Capsule())
         }
     }
 
@@ -179,7 +179,7 @@ struct HomeDashboard: View {
         }
         .frame(maxWidth: .infinity, alignment: .leading)   // full width whatever the text (11-13: a short line shrank the card)
         .padding(14)
-        .glassEffect(.regular, in: RoundedRectangle(cornerRadius: PLRadius.card, style: .continuous))
+        .plGlass(in: RoundedRectangle(cornerRadius: PLRadius.card, style: .continuous))
     }
 
     // MARK: the house
@@ -205,7 +205,7 @@ struct HomeDashboard: View {
         }
         .frame(maxWidth: .infinity, alignment: .leading)   // full width whatever the text (11-13: a short line shrank the card)
         .padding(14)
-        .glassEffect(.regular, in: RoundedRectangle(cornerRadius: PLRadius.card, style: .continuous))
+        .plGlass(in: RoundedRectangle(cornerRadius: PLRadius.card, style: .continuous))
     }
 
     @Environment(\.openURL) private var openURL
@@ -315,7 +315,7 @@ struct HomeStatusStrip: View {
                 }
             }
             .padding(14)
-            .glassEffect(.regular.tint(stripTone.map { $0.opacity(0.14) }), in: RoundedRectangle(cornerRadius: PLRadius.card, style: .continuous))
+            .plGlass(tint: stripTone.map { $0.opacity(0.14) }, in: RoundedRectangle(cornerRadius: PLRadius.card, style: .continuous))
         }
         .buttonStyle(.plain)
         .task { if state.checkedAt == nil { await state.check(model: model) } }

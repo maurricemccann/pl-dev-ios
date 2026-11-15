@@ -591,7 +591,7 @@ struct AtlasMap: View {
                         .padding(6 * k)
                         .frame(width: r.width, height: r.height, alignment: .topLeading)
                         .background(PLOS.surface(scheme).opacity(0.45), in: shape)
-                        .glassEffect(.regular, in: shape)
+                        .plGlass(in: shape)
                         .overlay { shape.strokeBorder(Self.zoneColor(n.zone), lineWidth: 1.2) }
                     }
                     .buttonStyle(.plain)
