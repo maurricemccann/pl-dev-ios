@@ -99,14 +99,23 @@ struct CandleTabs: View {
     let titles: [String]
     @Binding var index: Int
     var body: some View {
-        HStack(spacing: 8) {
-            Text("the practice").font(.system(size: 17.6)).tracking(0.7).foregroundStyle(Candle.goldHi)
-            Spacer(minLength: 8)
-            ForEach(titles.indices, id: \.self) { i in CandleChip(title: titles[i], on: index == i) { withAnimation(.snappy) { index = i } } }
+        // four tabs (Path, Today, Games, Trends) broke words mid-pill at phone width (sweep 11-15): the first layout that fits wins,
+        // and a pill never wraps
+        ViewThatFits(in: .horizontal) {
+            row(label: true)
+            row(label: false)
+            ScrollView(.horizontal, showsIndicators: false) { row(label: false) }
         }
         .padding(.horizontal, 20).padding(.vertical, 10)
         .background(Candle.bg.opacity(0.92))
         .overlay(alignment: .bottom) { Rectangle().fill(Candle.rule).frame(height: 1) }
+    }
+
+    private func row(label: Bool) -> some View {
+        HStack(spacing: 8) {
+            if label { Text("the practice").font(.system(size: 17.6)).tracking(0.7).foregroundStyle(Candle.goldHi).lineLimit(1).fixedSize(); Spacer(minLength: 8) }
+            ForEach(titles.indices, id: \.self) { i in CandleChip(title: titles[i], on: index == i) { withAnimation(.snappy) { index = i } }.fixedSize() }
+        }
     }
 }
 

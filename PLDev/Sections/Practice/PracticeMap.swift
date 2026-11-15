@@ -91,7 +91,9 @@ struct PracticeMap: View {
         let open = record.isOpen(u, in: course), gold = record.isGold(u)
         let isNext = open && !gold && record.next(in: course)?.0.n == u.n
         let side: CGFloat = 64
-        return Button { start(u) } label: {
+        // not `.disabled`: that fades the whole island and the stroke showed through its disc (sweep 11-15); a closed unit ignores the tap
+        let playable = open && !u.playableLessons.isEmpty
+        return Button { if playable { start(u) } } label: {
             ZStack {
                 Circle().fill(Candle.bg).overlay { Circle().strokeBorder(gold ? Candle.gold : (isNext ? Candle.goldHi : Candle.pillLine), lineWidth: isNext ? 3 : 1.5) }
                 PracticeMapGeometry.glyph(glyph, side: side * 0.56, centre: CGPoint(x: side / 2, y: side / 2))
@@ -106,7 +108,7 @@ struct PracticeMap: View {
             .contentShape(Circle())
         }
         .buttonStyle(.plain)
-        .disabled(!open || u.playableLessons.isEmpty)
+        .accessibilityAddTraits(playable ? [] : .isStaticText)
         .position(c)
         .accessibilityLabel("Unit \(u.n), \(u.title), \(gold ? "gold" : (open ? (isNext ? "next" : "open") : "not open yet")). Glyph: \(glyph.name).")
     }
