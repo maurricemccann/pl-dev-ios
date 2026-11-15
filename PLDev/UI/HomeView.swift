@@ -83,6 +83,10 @@ struct HomeView: View {
                 Text(Date.now, format: .dateTime.month(.wide).day()).plTitle(.largeTitle).accessibilityAddTraits(.isHeader)
             }
             .padding(.top, PLSpace.roomy)
+            .frame(maxWidth: .infinity, alignment: .leading)
+            .background(alignment: .top) {   // his own kept pieces behind the date (his pick N13, 11-14)
+                EarnedBackdrop(model: model).frame(height: 170).padding(.horizontal, -PLSpace.margin).padding(.top, -60)
+            }
             HomeDashboard(model: model)
             // Moonlitt's flow on Mobbin (11-13): the widget page ends by showing how to put them on your phone
             Button { showWidgetHelp = true } label: {

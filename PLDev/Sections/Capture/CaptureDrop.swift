@@ -36,6 +36,8 @@ struct CaptureDropBox: View {
     @State private var hintIndex = 0
     @State private var shooting = false
     @State private var picking = false
+    @State private var pickingVideo = false
+    @State private var videoItem: PhotosPickerItem?
     @State private var whereRoute: CaptureRoute?
     @State private var fromCamera = false
     @State private var original: Data?        // the camera capture as taken
@@ -129,6 +131,7 @@ struct CaptureDropBox: View {
                 Menu {
                     if CaptureCamera.available { Button("Take Photo", systemImage: "camera") { shooting = true } }
                     Button("Choose Photo", systemImage: "photo") { picking = true }   // a PhotosPicker inside a Menu never opens; the screen presents it
+                    Button("Choose Video", systemImage: "video") { pickingVideo = true }
                 } label: { iconCircle("photo") }
                 .accessibilityLabel("Photo")
                 if straight != nil, let original {
@@ -182,6 +185,18 @@ struct CaptureDropBox: View {
             }
         }
         .photosPicker(isPresented: $picking, selection: $pickerItem, matching: .images)
+        .photosPicker(isPresented: $pickingVideo, selection: $videoItem, matching: .videos)
+        .onChange(of: videoItem) { _, item in
+            Task {
+                defer { videoItem = nil }
+                guard let item, let data = try? await item.loadTransferable(type: Data.self) else { return }
+                guard data.count <= 100 * 1024 * 1024 else { state.message = "That video is over 100 MB. Trim it, then try again."; return }
+                let name = trimmed.isEmpty ? "Video" : String(trimmed.prefix(120))
+                if await state.enqueue(kind: "video", text: nil, note: name, file: data, label: name, toBoard: false, route: "video", model: model) {
+                    text = ""; state.room = .trail
+                }
+            }
+        }
         .fileImporter(isPresented: $importing, allowedContentTypes: [.plainText, .text, UTType(filenameExtension: "md") ?? .plainText]) { result in
             guard case .success(let url) = result else { return }
             let scoped = url.startAccessingSecurityScopedResource()

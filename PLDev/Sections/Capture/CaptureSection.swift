@@ -83,6 +83,21 @@ import UserNotifications
                 state.markSent(item.id)
                 return true
             }
+            if item.kind == "video" {   // his pick N22, 11-14: up to 100 MB, into Captures for keep or release
+                guard let file, file.count <= 100 * 1024 * 1024 else {
+                    model.debug.note("capture", "a video over 100 MB or unreadable; dropped")
+                    state.markSent(item.id)
+                    return true
+                }
+                let isMov = String(decoding: file.prefix(12).suffix(8), as: UTF8.self).contains("qt")
+                let data = try await http.send(RequestPlan(origin: "cron", method: "POST", path: "api/widget/video",
+                                                           query: ["title": String((item.note ?? "").prefix(120))],
+                                                           headers: ["content-type": isMov ? "video/quicktime" : "video/mp4"], body: file),
+                                               idempotent: false, extraHeaders: ["Authorization": "Bearer " + write], timeout: 300)
+                state.noteCap(from: data)
+                state.markSent(item.id)
+                return true
+            }
             guard !words.isEmpty else { return true }   // nothing to send
             if item.origin == "board", config.origin("board") != nil {
                 let body = try JSONSerialization.data(withJSONObject: ["text": words, "context": "PL DEV capture"])
