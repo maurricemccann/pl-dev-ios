@@ -91,12 +91,13 @@ enum PracticeRoom: String, CaseIterable, Identifiable, Hashable {
 
 @MainActor @Observable final class PracticeModel {
     enum Tab: String, CaseIterable, Identifiable {
-        case today, trends
+        case path, today, trends
         var id: String { rawValue }
         var title: String { rawValue.capitalized }
     }
 
-    var tab: Tab = .today
+    /// His ruling 11-15: tap to hear your line, then the path.
+    var tab: Tab = .path
     /// The vision preview (his private, made-up Mastermind Board) is pushed on this.
     var preview = false
     /// The card a link, Siri or a notification wants in view; the screen scrolls to it and clears this.
@@ -173,6 +174,7 @@ struct PracticeView: View {
                 VStack(spacing: 16) {
                     if let m = state.message { Text(m).candleHint().frame(maxWidth: .infinity, alignment: .leading) }
                     switch state.tab {
+                    case .path: PathScreen(model: model)
                     case .today: TodayScreen(model: model, state: state)
                     case .trends: TrendsScreen(model: model, state: state)
                     }
