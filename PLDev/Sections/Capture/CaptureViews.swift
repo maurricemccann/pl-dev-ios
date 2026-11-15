@@ -15,10 +15,7 @@ struct CaptureView: View {
             OSHeader().captureRow()
             switch state.room {
             case .add:
-                CaptureDropBox(model: model, state: state).captureRow()   // the smart drop box: drop anything, a sheet asks where it goes
-                Text("Or fill in the detailed form").osEyebrow(10).foregroundStyle(PLOS.dim(scheme)).captureRow()
-                CaptureAddCard(model: model, state: state).captureRow()
-                CaptureTrailCard(state: state).captureRow()
+                CaptureDropBox(model: model, state: state).captureRow()   // the one panel (his ruling 11-14): drop anything, a sheet asks where it goes
             case .trail:
                 CaptureTrailRoom(model: model, state: state)
             case .waiting:

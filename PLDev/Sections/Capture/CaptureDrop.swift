@@ -60,6 +60,11 @@ struct CaptureDropBox: View {
         return ["Add who said it", "Make it a seed", "Send it to the board"][hintIndex % 3]
     }
 
+    private func iconCircle(_ name: String) -> some View {
+        Image(systemName: name).font(.system(size: 17, weight: .medium)).foregroundStyle(PLOS.text(scheme))
+            .frame(width: 44, height: 44).background(PLOS.surface2(scheme).opacity(0.8), in: Circle())
+    }
+
     private var whereMenu: some View {
         Menu {
             Button("Auto", systemImage: "wand.and.stars") { whereRoute = nil }
@@ -111,10 +116,10 @@ struct CaptureDropBox: View {
                 Menu {
                     if CaptureCamera.available { Button("Take Photo", systemImage: "camera") { shooting = true } }
                     PhotosPicker(selection: $pickerItem, matching: .images) { Label("Choose Photo", systemImage: "photo") }
-                } label: { Label("Photo", systemImage: "photo") }
-                .buttonStyle(OSPill())
-                Button { importing = true } label: { Label("File", systemImage: "doc.text") }.buttonStyle(OSPill())
-                Button { if let s = UIPasteboard.general.string { text = s } } label: { Label("Paste", systemImage: "doc.on.clipboard") }.buttonStyle(OSPill())
+                } label: { iconCircle("photo") }
+                .accessibilityLabel("Photo")
+                Button { importing = true } label: { iconCircle("doc.text") }.accessibilityLabel("Add a file")
+                Button { if let s = UIPasteboard.general.string { text = s } } label: { iconCircle("doc.on.clipboard") }.accessibilityLabel("Paste")
                 Spacer(minLength: 0)
                 Button { send() } label: {
                     Image(systemName: "arrow.up").font(.system(size: 17, weight: .bold)).foregroundStyle(.black)
