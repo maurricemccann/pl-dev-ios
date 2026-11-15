@@ -63,6 +63,8 @@ struct PerformancePage: View {
     @State private var judged: [Int: (can: Bool, step: String)] = [:]
     @State private var judging = false
     @State private var goalsOpen = false
+    @State private var opened: Set<String> = []
+    @Environment(\.accessibilityReduceMotion) private var reduceMotion
 
     /// Which half to draw: `.action` leads Today (what needs him, what he can do); `.pulse` is the third Home page.
     enum Part { case action, pulse }
@@ -133,14 +135,41 @@ struct PerformancePage: View {
 
     // MARK: cards
 
-    private func card<V: View>(_ title: String, @ViewBuilder _ content: () -> V) -> some View {
-        VStack(alignment: .leading, spacing: 10) {
-            Text(title).plHand(20)
-            content()
+    /// A card. With a `glance` it folds (his ruling 11-14, from the Cosmos card he sent): closed it is one line, the title and one
+    /// number at a glance; a tap opens it with a small tilt, and the detail grows in. Without a glance it is always open.
+    private func card<V: View>(_ title: String, glance: String? = nil, @ViewBuilder _ content: () -> V) -> some View {
+        let foldable = glance != nil, isOpen = !foldable || opened.contains(title)
+        return VStack(alignment: .leading, spacing: 10) {
+            if let glance {
+                Button {
+                    withAnimation(reduceMotion ? .easeInOut(duration: 0.2) : .spring(duration: 0.5, bounce: 0.28)) {
+                        if isOpen { opened.remove(title) } else { opened.insert(title) }
+                    }
+                } label: {
+                    HStack(alignment: .firstTextBaseline, spacing: 8) {
+                        Text(title).plHand(20)
+                        Spacer(minLength: 6)
+                        Text(glance).font(.system(.title3, design: .monospaced).weight(.semibold)).monospacedDigit()
+                            .foregroundStyle(PLTone.accent).lineLimit(1).minimumScaleFactor(0.6).contentTransition(.numericText())
+                        Image(systemName: "chevron.down").font(.caption.weight(.bold)).foregroundStyle(.secondary)
+                            .rotationEffect(.degrees(isOpen ? 180 : 0))
+                    }
+                    .contentShape(Rectangle())
+                }
+                .buttonStyle(.plain)
+                .accessibilityLabel("\(title), \(glance)")
+                .accessibilityHint(isOpen ? "Folds the card" : "Opens the card")
+                if isOpen { content().transition(.opacity.combined(with: .scale(scale: 0.97, anchor: .top))) }
+            } else {
+                Text(title).plHand(20)
+                content()
+            }
         }
         .frame(maxWidth: .infinity, alignment: .leading)
         .padding(14)
         .plGlass(in: RoundedRectangle(cornerRadius: PLRadius.card, style: .continuous))
+        // the Cosmos card's motion: a closed card leans back a little and comes flat as it opens
+        .rotation3DEffect(.degrees(foldable && !isOpen && !reduceMotion ? 7 : 0), axis: (x: 1, y: 0, z: 0), anchor: .top, perspective: 0.5)
     }
 
     private func dollars(_ v: Double?) -> String {
@@ -165,7 +194,7 @@ struct PerformancePage: View {
     }
 
     private var moneyCard: some View {
-        card("Money") {
+        card("Money", glance: dollars(data?.money?.ytd)) {
             let m = data?.money
             HStack(alignment: .top) {
                 figure("This year", dollars(m?.ytd))
@@ -204,7 +233,7 @@ struct PerformancePage: View {
     }
 
     private var audienceCard: some View {
-        card("Audience") {
+        card("Audience", glance: count(data?.audience?.ig_followers)) {
             let a = data?.audience
             HStack(alignment: .top) {
                 figure("IG followers", count(a?.ig_followers))
@@ -220,7 +249,7 @@ struct PerformancePage: View {
     }
 
     private var landedCard: some View {
-        card("What landed, 14 days") {
+        card("What landed, 14 days", glance: "\((data?.landed?.channels ?? []).map(\.engagement).reduce(0, +))") {
             let l = data?.landed
             if let rows = l?.channels, !rows.isEmpty {
                 HStack {
@@ -302,7 +331,7 @@ struct PerformancePage: View {
 
     /// The latest orders: day, number, amount and state. No customer detail is sent to the phone for this.
     private var ordersCard: some View {
-        card("Orders") {
+        card("Orders", glance: count(data?.orders?.count)) {
             let rows = data?.orders ?? []
             if rows.isEmpty {
                 Text(data == nil ? "Not read yet." : "No orders yet.").font(.callout).foregroundStyle(.secondary)
@@ -331,7 +360,7 @@ struct PerformancePage: View {
 
     /// Site visits from Google Analytics: 28-day totals, visits by day, the pages people open and where they came from.
     private var siteCard: some View {
-        card("Site visits") {
+        card("Site visits", glance: count(data?.site?.totals?.users_28d)) {
             if let s = data?.site {
                 HStack(alignment: .top) {
                     figure("Visitors", count(s.totals?.users_28d))
@@ -456,7 +485,7 @@ struct PerformancePage: View {
         let days = data?.site?.days ?? []
         let recent = days.suffix(7).map(\.users).reduce(0, +), before = days.dropLast(7).suffix(7).map(\.users).reduce(0, +)
         let weeks = data?.weekly ?? []
-        return card("This week, honestly") {
+        return card("This week, honestly", glance: dollars(data?.money?.last7)) {
             HStack(alignment: .top) {
                 figure("Sales, 7 days", dollars(data?.money?.last7))
                 Divider().frame(height: 34)
@@ -647,7 +676,7 @@ struct PerformancePage: View {
 
     /// Revenue by month this year (the artifact's "revenue by month" block), a row and a bar per month.
     private var monthsCard: some View {
-        card("Revenue by month") {
+        card("Revenue by month", glance: "\(data?.months?.count ?? 0) mo") {
             let rows = data?.months ?? []
             let top = max(rows.map(\.total).max() ?? 0, 1)
             if rows.isEmpty {
@@ -669,7 +698,7 @@ struct PerformancePage: View {
 
     /// Posts, reach and engagement per week for 13 weeks (the artifact's "posts by platform and week", all platforms together).
     private var weeklyCard: some View {
-        card("13 weeks") {
+        card("13 weeks", glance: count(data?.weekly?.last?.posts)) {
             let rows = data?.weekly ?? []
             if rows.count >= 3 {
                 // reach against his own rhythm (his pick P11): each dot a week, more posts to the right, more reach higher
@@ -711,7 +740,7 @@ struct PerformancePage: View {
 
     /// The best posts of the last 30 days, with their captions (the artifact's "best posts").
     private var topCard: some View {
-        card("Best posts, 30 days") {
+        card("Best posts, 30 days", glance: count(data?.top_posts?.first?.engagement)) {
             let rows = data?.top_posts ?? []
             if rows.isEmpty {
                 Text(data == nil ? "Not read yet." : "No posts measured.").font(.callout).foregroundStyle(.secondary)
@@ -735,7 +764,7 @@ struct PerformancePage: View {
     }
 
     private var costCard: some View {
-        card("AI cost") {
+        card("AI cost", glance: "\(count(data?.cost?.calls_today))/\(count(data?.cost?.cap_per_day))") {
             let c = data?.cost
             HStack(alignment: .top) {
                 figure("Calls, 7 days", count(c?.calls_7d))
