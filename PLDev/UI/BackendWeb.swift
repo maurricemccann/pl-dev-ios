@@ -17,7 +17,9 @@ import CryptoKit
     init(template: BackendTemplate) {
         self.template = template
         let config = WKWebViewConfiguration()
-        config.websiteDataStore = WKWebsiteDataStore(forIdentifier: Self.storeID(template.id))
+        // ONE shared store for every tile (his ask 11-14: "a one time Google login for all accounts"): sign in to Google once and each site's
+        // "Continue with Google" is one tap. Cookies stay scoped to their own site, so tiles still cannot read each other's sign-in.
+        config.websiteDataStore = WKWebsiteDataStore(forIdentifier: Self.storeID("shared"))
         // Google refuses sign-in in a web view that does not identify as Safari ("disallowed_useragent"); this is the standard Safari-style suffix.
         config.applicationNameForUserAgent = "Version/18.0 Mobile/15E148 Safari/604.1"
         webView = WKWebView(frame: .zero, configuration: config)
@@ -27,7 +29,7 @@ import CryptoKit
         webView.allowsBackForwardNavigationGestures = true
     }
 
-    /// A fixed id per tile, so the same tile always gets the same saved sign-in.
+    /// A fixed id for a store name, so it always gets the same saved sign-in.
     static func storeID(_ tileID: String) -> UUID {
         let d = Array(SHA256.hash(data: Data(("pldev.backend." + tileID).utf8)))
         return UUID(uuid: (d[0], d[1], d[2], d[3], d[4], d[5], d[6], d[7], d[8], d[9], d[10], d[11], d[12], d[13], d[14], d[15]))

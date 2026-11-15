@@ -11,6 +11,7 @@ struct BackendPage: View {
     @State private var adding: BackendTemplate?
     @State private var showAdd = false
     @State private var notice: String?
+    @State private var safariPage: WebPage?
 
     var body: some View {
         VStack(alignment: .leading, spacing: PLSpace.roomy) {
@@ -26,6 +27,7 @@ struct BackendPage: View {
         }
         .padding(.horizontal, PLSpace.margin).padding(.top, PLSpace.gap).padding(.bottom, 120)
         .fullScreenCover(item: $open) { t in BackendWebScreen(template: t) }
+        .sheet(item: $safariPage) { page in SafariSheet(url: page.url).ignoresSafeArea() }   // Apple's browser sheet: passkeys and security keys work here
         .sheet(isPresented: $showAdd) {
             BackendAddSheet(store: store, preset: adding) { line in notice = line }
                 .presentationDetents([.medium, .large])
@@ -40,6 +42,9 @@ struct BackendPage: View {
         }
         .buttonStyle(PressableStyle(reduce: reduce))
         .contextMenu {
+            if t.isReady, let url = URL(string: t.startURL) {
+                Button("Open in Safari view (passkeys work)", systemImage: "safari") { safariPage = WebPage(url) }
+            }
             Button("Remove", systemImage: "trash", role: .destructive) { store.remove(t.id) }
             Button("Bring back the built-in tiles", systemImage: "arrow.counterclockwise") { store.reset() }
         }
