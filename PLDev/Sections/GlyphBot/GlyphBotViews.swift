@@ -284,6 +284,7 @@ struct SitTab: View {
 
     private var setup: some View {
         Form {
+            Section { GlyphUsageRow(model: model) }
             Section {
                 Picker("Mode", selection: $sitting.mode) { ForEach(SittingModel.Mode.allCases) { Text($0.title).tag($0) } }.pickerStyle(.segmented)
             } footer: {
@@ -474,5 +475,27 @@ struct GlyphRecordTab: View {
         .glyphList()
         .refreshable { await state.loadState(model: model) }
         .task { await state.loadState(model: model) }
+    }
+}
+
+/// This month's interview spend against the cap, at the top of the Sit tab (pl-cron's R1 door, `usage`). Says so when it cannot read it.
+struct GlyphUsageRow: View {
+    let model: AppModel
+    @State private var text = "Reading this month's spend…"
+
+    var body: some View {
+        HStack {
+            Text("This month").osEyebrow(10)
+            Spacer()
+            Text(text).font(.footnote).monospacedDigit().foregroundStyle(.secondary)
+        }
+        .task {
+            do {
+                let u = try await GlyphBot.usage(model: model)
+                text = "$" + String(format: "%.2f", u.spent_usd ?? 0) + " of $" + String(format: "%.0f", u.cap_usd ?? 0) + " · " + (u.tier ?? "full") + " · \(u.turns ?? 0) turns"
+            } catch {
+                text = "Could not read the spend"
+            }
+        }
     }
 }

@@ -71,6 +71,14 @@ import SwiftUI
         return r
     }
 
+    /// The month's spend against the cap (pl-cron's R1 door, totals only; added 11-14 for the Sit tab's header).
+    struct UsageReply: Decodable, Sendable { let spent_usd: Double?; let cap_usd: Double?; let tier: String?; let turns: Int? }
+
+    static func usage(model: AppModel) async throws -> UsageReply {
+        let data = try await client(model).send(RequestPlan(origin: "interview", path: "api/r1/interview/usage"), timeout: 30)
+        return try JSONDecoder().decode(UsageReply.self, from: data)
+    }
+
     static func state(model: AppModel) async throws -> StateReply {
         let data = try await client(model).send(RequestPlan(origin: "interview", path: "api/r1/interview/state"), timeout: 30)
         UserDefaults.standard.set(data, forKey: "glyphbot.state")
