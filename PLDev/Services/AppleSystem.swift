@@ -83,6 +83,25 @@ import FoundationModels
         var medium: String?
     }
 
+    /// Whether he can do a suggestion on his own terms (the rules come from the house, never from this code), and the first step if so.
+    /// Nil when the model is off or unclear, and the caller then shows the suggestion unjudged.
+    static func doable(_ what: String, rules: String) async -> (can: Bool, step: String)? {
+        let instructions = rules + "\nReply with exactly two lines and nothing else:\nCAN: yes or no\nSTEP: the first small step, at most twelve words, or none"
+        guard let reply = await ask(instructions: instructions, prompt: "The suggestion:\n" + String(what.prefix(700))) else { return nil }
+        var can: Bool?
+        var step = ""
+        for raw in reply.split(separator: "\n") {
+            let line = raw.trimmingCharacters(in: .whitespaces)
+            guard let colon = line.firstIndex(of: ":") else { continue }
+            let key = line[..<colon].uppercased()
+            let value = line[line.index(after: colon)...].trimmingCharacters(in: .whitespaces)
+            if key == "CAN" { can = value.lowercased().hasPrefix("y") ? true : (value.lowercased().hasPrefix("n") ? false : nil) }
+            if key == "STEP", value.lowercased() != "none" { step = String(value.prefix(120)) }
+        }
+        guard let can else { return nil }
+        return (can, step)
+    }
+
     /// Loads the model ahead of the first question (Apple's `prewarm`), so the drop box's first read is not the slow one.
     static func warm() {
         #if canImport(FoundationModels)
