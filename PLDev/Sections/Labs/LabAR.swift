@@ -211,7 +211,8 @@ struct LabARView: View {
         let slab = Entity()
         slab.components.set(CollisionComponent(shapes: [.generateBox(width: 6, height: 0.02, depth: 6)]))
         a.addChild(slab)
-        content.add(a)
+        // after the first build, add to the live scene itself; the saved content copy is only the fallback
+        if let scene = probes.first?.scene { scene.addAnchor(a) } else { content.add(a) }
         probes.append(a); aligns[ObjectIdentifier(a)] = alignment
     }
 
@@ -263,6 +264,7 @@ private struct LabARRoomView: View {
     let tile: UIImage?
     let say: (String) -> Void
     let failed: (String) -> Void
+    @Environment(\.accessibilityReduceMotion) private var reduceMotion
     @State private var box = LabRoomBox()
     @State private var found = false
     @State private var pulse = false
@@ -277,7 +279,7 @@ private struct LabARRoomView: View {
                         .font(.system(size: 12, weight: .medium)).foregroundStyle(.white).padding(.horizontal, 14).frame(minHeight: 44)
                         .glassEffect(.regular, in: Capsule())
                         .opacity(pulse ? 1 : 0.6).padding(.top, 64)
-                        .onAppear { withAnimation(.easeInOut(duration: 1).repeatForever()) { pulse = true } }
+                        .onAppear { if reduceMotion { pulse = true } else { withAnimation(.easeInOut(duration: 1).repeatForever()) { pulse = true } } }
                         .accessibilityLabel("Finding a surface. Move the phone slowly.")
                 }
             }
