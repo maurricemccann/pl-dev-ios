@@ -258,6 +258,7 @@ struct PracticeField: View {
 
     private func draw(_ ctx: inout GraphicsContext, size: CGSize, now: Date) {
         let w = min(size.width, size.height) * PracticeMapArt.strokeWidth
+        constellation(&ctx, size: size)
         for i in chapter.lessons.indices where i < rig.ropes.count {
             let path = rig.path(i)
             if done[i] {
@@ -273,5 +274,41 @@ struct PracticeField: View {
                 ctx.stroke(path, with: .color(Candle.ink.opacity(0.22)), style: StrokeStyle(lineWidth: max(3, w * 0.18), lineCap: .round, dash: [2, 9]))
             }
         }
+        // glyph stops (his ruling 11-15 "On the curves, as stops"): each drawn lesson's curve, and the next one's trace, ends at one of
+        // his glyphs; a tap on the stop lands on its rope, so it plays that lesson like a tap on the curve
+        for i in chapter.lessons.indices where i < rig.ropes.count && (done[i] || i == nextIndex) {
+            let c = PracticeMapGeometry.point(on: rig.path(i), at: 0.84), r: CGFloat = 15
+            let ring = Path(ellipseIn: CGRect(x: c.x - r, y: c.y - r, width: r * 2, height: r * 2))
+            ctx.fill(ring, with: .color(Candle.bg))
+            ctx.stroke(ring, with: .color(done[i] ? Candle.gold : Candle.goldHi.opacity(0.7)), lineWidth: done[i] ? 2 : 1.5)
+            let g = PracticeMapArt.glyphs[(unit.n * 6 + i) % PracticeMapArt.glyphs.count]
+            ctx.fill(PracticeMapGeometry.glyph(g, side: r * 1.1, centre: c), with: .color(done[i] ? Candle.gold : Candle.ink.opacity(0.7)), style: FillStyle(eoFill: true))
+        }
+    }
+
+    /// The constellation (his ruling 11-15: "each lesson is a star, each star is a glyph, the total is the amount completed"): every lesson
+    /// he has finished in the whole course is one small glyph of his, lit behind the curves at a place fixed by its lesson, joined in the
+    /// order of the course; the count of lit stars is the number finished. Nothing shows for lessons not yet done.
+    private func constellation(_ ctx: inout GraphicsContext, size: CGSize) {
+        let keys = record.lessonsDone.sorted { a, b in
+            let x = a.split(separator: "-").compactMap { Int($0) }, y = b.split(separator: "-").compactMap { Int($0) }
+            return x.lexicographicallyPrecedes(y)
+        }
+        guard !keys.isEmpty else { return }
+        func spot(_ k: String) -> CGPoint {
+            var h: UInt64 = 1469598103934665603
+            for u in k.utf8 { h = (h ^ UInt64(u)) &* 1099511628211 }
+            let fx = CGFloat(h & 0xFFFF) / 65535, fy = CGFloat((h >> 16) & 0xFFFF) / 65535
+            return CGPoint(x: (0.06 + 0.88 * fx) * size.width, y: (0.06 + 0.88 * fy) * size.height)
+        }
+        let pts = keys.map(spot)
+        var line = Path(); line.move(to: pts[0]); pts.dropFirst().forEach { line.addLine(to: $0) }
+        ctx.stroke(line, with: .color(Candle.gold.opacity(0.14)), lineWidth: 1)
+        for (j, p) in pts.enumerated() {
+            let g = PracticeMapArt.glyphs[j % PracticeMapArt.glyphs.count]
+            ctx.fill(PracticeMapGeometry.glyph(g, side: 11, centre: p), with: .color(Candle.goldHi.opacity(0.45)), style: FillStyle(eoFill: true))
+        }
+        ctx.draw(Text("\(keys.count) lit").font(.system(size: 11).monospacedDigit()).foregroundStyle(Candle.goldHi.opacity(0.6)),
+                 at: CGPoint(x: size.width - 10, y: size.height - 10), anchor: .bottomTrailing)
     }
 }
