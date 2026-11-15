@@ -56,6 +56,8 @@ struct GamesScreen: View {
     let model: AppModel
     @State private var state = CourseModel()
     @State private var playing: GameID?
+    @State private var playingArcade: ArcadeID?
+    @State private var unlocked: Set<String> = []
 
     var body: some View {
         VStack(spacing: 12) {
@@ -67,11 +69,27 @@ struct GamesScreen: View {
                 rowBody(title: "The three drills", line: "The Purge, the Sequence and the Rewrite, from the Academy.", symbol: "checklist", score: nil)
             }
             .buttonStyle(.plain)
-            Text("More games appear here as each one is rebuilt.").candleHint().frame(maxWidth: .infinity, alignment: .leading).padding(.top, 4)
+            Text("The arcade").font(.system(size: 11)).textCase(.uppercase).tracking(1).foregroundStyle(Candle.gold).frame(maxWidth: .infinity, alignment: .leading).padding(.top, 8)
+            ForEach(ArcadeID.allCases) { g in
+                let open = unlocked.contains(g.rawValue)
+                Button { if open { playingArcade = g } } label: {
+                    rowBody(title: g.title, line: open ? g.line : "Unlocks from a game card in a pack.", symbol: open ? g.symbol : "lock",
+                            score: open && ArcadeScores.best(g) > 0 ? "best \(ArcadeScores.best(g))" : nil)
+                        .opacity(open ? 1 : 0.6)
+                }
+                .buttonStyle(.plain)
+                .accessibilityHint(open ? "" : "Locked until a pack deals its card")
+            }
         }
         .padding(12)
         .background { GlyphField(strength: 0.14).clipShape(RoundedRectangle(cornerRadius: Candle.radius, style: .continuous)) }
-        .task { await state.load(model: model) }
+        .task {
+            await state.load(model: model)
+            if let c = await PracticeCards.load(model: model) { unlocked = Set(c.games ?? []) }
+        }
+        .fullScreenCover(item: $playingArcade) { g in
+            GameShell(title: g.title) { playingArcade = nil } content: { arcadeGame(g, seeds: state.course.map(Self.seeds) ?? []) }
+        }
         .fullScreenCover(item: $playing) { g in
             GameShell(title: g.title) { playing = nil } content: {
                 if let course = state.course { game(g, course) }

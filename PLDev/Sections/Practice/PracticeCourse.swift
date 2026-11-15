@@ -33,8 +33,9 @@ struct CourseExercise: Decodable, Sendable, Identifiable, Equatable {
     let glyph: String?
     var id: String { kind + "|" + item + "|" + prompt }
     /// The kinds this build can play. The rest (rewrite, draw-it) are in the file and wait for their views.
-    static let playable: Set<String> = ["complete-phrase", "match-glyph", "choose", "which-truth", "order-truths", "rebuild-phrase", "recall-phrase", "find-banned-word", "reflect"]
-    var isPlayable: Bool { Self.playable.contains(kind) }
+    static let playable: Set<String> = ["complete-phrase", "match-glyph", "choose", "which-truth", "order-truths", "rebuild-phrase", "recall-phrase", "find-banned-word", "reflect", "rewrite", "say-it", "draw-it"]
+    /// draw-it needs his drawn mark for that glyph (5 of the 10 have one); the rest wait for theirs.
+    var isPlayable: Bool { Self.playable.contains(kind) && (kind != "draw-it" || DrawItExercise.art(glyph ?? "") != nil) }
 }
 
 struct CourseLesson: Decodable, Sendable, Identifiable { let n: Int; let exercises: [CourseExercise]; let review_slots: Int?; var id: Int { n } }
@@ -128,6 +129,7 @@ struct PathScreen: View {
     @State private var goldPack: GoldPack?
     /// His daily minutes (asked once here, changeable in Settings): a lesson is about three minutes.
     @AppStorage("course.minutes") private var minutes = 0
+    @State private var pathBuddy = BuddyModel()
     /// Bumped each time the Path comes back into view, so pages read in the Academy reader count at once.
     @State private var seen = 0
     private let record = CourseRecord.shared
@@ -167,9 +169,22 @@ struct PathScreen: View {
         }
     }
 
+    private var daysAway: Int {
+        let f = DateFormatter(); f.dateFormat = "yyyy-MM-dd"
+        guard let last = record.days.compactMap({ f.date(from: $0) }).max() else { return 0 }
+        return Calendar.current.dateComponents([.day], from: last, to: Calendar.current.startOfDay(for: .now)).day ?? 0
+    }
+
     private func summary(_ course: Course) -> some View {
         let gold = course.units.filter { record.isGold($0) }.count
         return VStack(alignment: .leading, spacing: 6) {
+            if daysAway >= 3 {
+                HStack(spacing: 10) {
+                    BuddyView(model: pathBuddy).frame(width: 52, height: 52)
+                    Text("Welcome back.").candleH2()
+                }
+                .onAppear { pathBuddy.react(.returned) }
+            }
             Text("\(record.days.count) \(record.days.count == 1 ? "day" : "days") of lessons").font(.system(size: 22, weight: .semibold)).foregroundStyle(Candle.goldHi)
             Text("\(gold) of \(course.units.count) units gold").candleHint()
             if minutes > 0 { Text("About \(max(1, minutes / 3)) \(minutes / 3 > 1 ? "lessons" : "lesson") a day for your \(minutes) minutes.").candleHint() }
@@ -256,6 +271,10 @@ struct LessonView: View {
     @State private var finished = false
     @State private var pack: PracticePack?
     @State private var packNote: String?
+    @State private var buddy = BuddyModel()
+    @State private var streak = 0
+    @State private var arcade: [ArcadeID] = []
+    @State private var playingArcade: ArcadeID?
     private let record = CourseRecord.shared
 
     var body: some View {
@@ -267,6 +286,7 @@ struct LessonView: View {
                         .accessibilityLabel("Close the lesson")
                     ProgressView(value: Double(index), total: Double(max(1, run.exercises.count))).tint(Candle.gold)
                     Text("\(min(index + 1, run.exercises.count)) / \(run.exercises.count)").font(.system(size: 12).monospacedDigit()).foregroundStyle(Candle.ink.opacity(0.6))
+                    BuddyView(model: buddy).frame(width: 46, height: 46)   // Gemini: a fixed header slot, never over the exercise
                 }
                 if finished { done } else if index < run.exercises.count { exercise(run.exercises[index]) }
                 Spacer(minLength: 0)
@@ -276,11 +296,22 @@ struct LessonView: View {
         .preferredColorScheme(.dark)
         .sensoryFeedback(PLHaptic.success, trigger: right)
         .sensoryFeedback(PLHaptic.warning, trigger: answered == false)
+        .onAppear { buddy.react(.open) }
+        .task(id: index) {
+            // Gemini: "think" once, after a reading pause of 8-12 s, never looped
+            try? await Task.sleep(for: .seconds(10))
+            if answered == nil, !finished { buddy.react(.reading) }
+        }
         .task(id: finished) {
             // a finished lesson earns one card of his art; the Worker keeps one per lesson, so a replay shows the same card
             guard finished, !run.isQuiz, let l = run.lesson, pack == nil else { return }
             do { pack = try await Packs.open("lesson-\(run.unit.n)-\(l.n)", model: model) }
             catch { packNote = "Could not reach the practice, so no card was dealt. Play the lesson again when you are online and it will be." }
+            // his ruling: an unlocked arcade game is offered as a break after the lesson
+            if let c = await PracticeCards.load(model: model) { arcade = (c.games ?? []).compactMap(ArcadeID.init(rawValue:)) }
+        }
+        .fullScreenCover(item: $playingArcade) { g in
+            GameShell(title: g.title) { playingArcade = nil } content: { arcadeGame(g, seeds: []) }
         }
     }
 
@@ -289,7 +320,7 @@ struct LessonView: View {
             Text(e.prompt).font(.system(size: 13)).textCase(.uppercase).tracking(1).foregroundStyle(Candle.gold)
             ExerciseBody(exercise: e, locked: answered != nil) { ok in
                 answered = ok
-                if ok { right += 1 } else { record.miss(e.item) }
+                if ok { right += 1; streak += 1; buddy.react(streak % 3 == 0 ? .streak : .right) } else { record.miss(e.item); streak = 0; buddy.react(.wrong) }
                 PracticeSound.play(ok ? .right : .wrong)   // his picks by ear 11-15
             }
             .id(e.id + "\(index)")
@@ -322,6 +353,7 @@ struct LessonView: View {
         else if let l = run.lesson { record.finish(unit: run.unit.n, lesson: l.n) }
         finished = true
         PracticeSound.play(.done)
+        buddy.react(.finish)
     }
 
     private var done: some View {
@@ -332,6 +364,7 @@ struct LessonView: View {
             Text("\(right) of \(run.exercises.count) right").candleHint()
             if let pack { PackOpening(model: model, cards: pack.cards, animate: pack.new).frame(height: 380) }
             else if let packNote { Text(packNote).candleHint().multilineTextAlignment(.center) }
+            if let g = arcade.randomElement() { Button("Take a break: \(g.title)") { playingArcade = g }.buttonStyle(CandleGhost()) }
             Button("Back to the path") { close() }.buttonStyle(CandleButton())
         }
         .frame(maxWidth: .infinity).padding(.top, 20)
@@ -361,6 +394,12 @@ struct ExerciseBody: View {
             TileExercise(shownFirst: exercise.answer?.string, target: (exercise.answer?.string ?? "").split(separator: " ").map(String.init), separator: " ", locked: locked, answer: answer)
         case "find-banned-word":
             BannedWordExercise(text: exercise.text ?? "", banned: exercise.answer?.strings ?? [], locked: locked, answer: answer)
+        case "rewrite":
+            RewriteExercise(original: exercise.text ?? "", locked: locked, answer: answer)
+        case "say-it":
+            SayItExercise(target: exercise.answer?.string ?? exercise.text ?? "", locked: locked, answer: answer)
+        case "draw-it":
+            DrawItExercise(glyphName: exercise.glyph ?? "", locked: locked, answer: answer)
         default:
             ReflectExercise(text: exercise.text ?? "", locked: locked, answer: answer)
         }

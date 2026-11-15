@@ -15,6 +15,7 @@ struct PracticeCollection: Decodable, Sendable {
     let count: Int
     let deck_size: Int
     let cards: [PracticeEarned]
+    let games: [String]?   // arcade games his packs have unlocked
 }
 
 enum PracticeCards {

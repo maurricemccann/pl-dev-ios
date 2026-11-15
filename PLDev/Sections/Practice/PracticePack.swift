@@ -210,6 +210,7 @@ struct PackScreen: View {
     let close: () -> Void
     @State private var pack: PracticePack?
     @State private var failure: String?
+    @State private var buddy = BuddyModel()
 
     var body: some View {
         ZStack {
@@ -220,6 +221,7 @@ struct PackScreen: View {
                     Button { close() } label: { Image(systemName: "xmark").font(.system(size: 15, weight: .medium)).foregroundStyle(Candle.ink).frame(width: 44, height: 44) }
                         .accessibilityLabel("Close")
                     Spacer()
+                    BuddyView(model: buddy).frame(width: 46, height: 46)
                 }
                 if let pack {
                     PackOpening(model: model, cards: pack.cards, animate: pack.new)
@@ -240,7 +242,7 @@ struct PackScreen: View {
 
     private func load() async {
         failure = nil
-        do { pack = try await Packs.open(key, model: model) }
+        do { pack = try await Packs.open(key, model: model); buddy.react(key.hasPrefix("gold-") ? .gold : .pack) }
         catch { failure = "Could not reach the practice. Your pack is kept; open it when you are back online." }
     }
 }
