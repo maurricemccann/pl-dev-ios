@@ -93,4 +93,8 @@ Build the app in full, then test it in full, then give it the premium pass (sect
 
 ## 8. Shared pieces to reuse (never re-make)
 
+**Shown, not listed (11-14):** `UI/VisualParts.swift`: `PLStageBar`, `PLRing`, `PLStateDot`, `.plBar(count, of:)`, `PLSpark`, `PLHeatGrid`, `PLBigTile`, `PLChip`; each takes the screen's own colours. `.plGlass(tint:interactive:in:)` for every glass surface (follows Settings: see-through, glass off). `PLOS.platform(name)` colours a platform's name. `TonightsMove.pick` (PLDevCore, tested) picks Today's one move. Every screen passes the Three Truths ship test (vault `.claude/ui-ux-rules.md`).
+
+**Home (11-14):** three pages: Today (Tonight, needs you, suggestions, tasks, the drip, the house, practice), Apps (three columns, Services row), Pulse (reach, money with the patrons ledger, the week, Status, the PC, AI cost) on his money glyph field.
+
 `Console` / `OS` (calls), `Loaded`, `ResultLine`, `Ago`, `Kpi`, `DataWrap`, `Date.pl`, `SectionTile`, `Wallpaper`, `PicturePicker`, the room-enum pattern (`HouseRoom`), `ShiftLive` as the Live Activity pattern, `HouseGlance` as the widget-data pattern, and `NotificationHub.actions` for notification buttons.
