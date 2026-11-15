@@ -185,7 +185,7 @@ struct BuddyView: View {
                     let lidShift = (uc * e.height + keep * e.height / 2) - e.height / 2
                     let dir: CGFloat = s == "L" ? 1 : -1
                     ZStack(alignment: .topLeading) {
-                        Image(uiImage: img).resizable().frame(width: e.width, height: e.height)
+                        BuddyGlassPiece(img: img).frame(width: e.width, height: e.height)
                         if let p = rect("pupil" + s), let pi = a.images["pupil" + s] {
                             Image(uiImage: pi).resizable().frame(width: p.width, height: p.height)
                                 .scaleEffect(max(0.5, 1 + r("pupil_size")))
@@ -206,7 +206,7 @@ struct BuddyView: View {
                 let msx = Self.cl(1 + r("mouth_w") * 0.5, 0.88, 1.08)
                 let msy: CGFloat = mf == nil ? Self.cl(1 + r("mouth_open") * 0.15 + r("mouth_curve") * 0.05, 0.9, 1.08) : Self.cl(1 + r("mouth_curve") * 0.05, 0.9, 1.08)
                 let fw: CGFloat = mf == nil ? m.width : m.width * 1132 / 988, fh: CGFloat = mf == nil ? m.height : m.height * 560 / 559
-                Image(uiImage: img).resizable().aspectRatio(contentMode: .fit).frame(width: fw, height: fh, alignment: .topLeading)
+                BuddyGlassPiece(img: img).frame(width: fw, height: fh, alignment: .topLeading)
                     .scaleEffect(x: msx, y: msy, anchor: .bottom)
                     .offset(x: m.minX + r("mouth_x") * eyeW, y: m.minY + r("mouth_y") * eyeW - r("mouth_curve") * 6 * k)
             }
@@ -215,5 +215,22 @@ struct BuddyView: View {
         .scaleEffect(x: fsx, y: fsy)
         .rotationEffect(.degrees(frot))
         .offset(x: fx, y: fy)
+    }
+}
+
+/// One of his pieces with a Liquid Glass look (his ruling 11-15, "Glass face pieces"): his drawing, Apple's clear glass laid over it in
+/// the piece's own shape (masked by its alpha), and a soft sheen from the top-left. His marks stay visible; only the surface turns glass.
+struct BuddyGlassPiece: View {
+    let img: UIImage
+
+    var body: some View {
+        let shape = Image(uiImage: img).resizable().aspectRatio(contentMode: .fit)
+        ZStack {
+            shape
+            Color.clear.glassEffect(.clear, in: .rect).mask(shape)
+            LinearGradient(colors: [.white.opacity(0.5), .white.opacity(0)], startPoint: .topLeading, endPoint: .center)
+                .mask(shape).blendMode(.plusLighter)
+        }
+        .compositingGroup()
     }
 }

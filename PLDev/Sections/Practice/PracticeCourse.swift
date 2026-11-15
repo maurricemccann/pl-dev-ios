@@ -286,10 +286,16 @@ struct LessonView: View {
                         .accessibilityLabel("Close the lesson")
                     ProgressView(value: Double(index), total: Double(max(1, run.exercises.count))).tint(Candle.gold)
                     Text("\(min(index + 1, run.exercises.count)) / \(run.exercises.count)").font(.system(size: 12).monospacedDigit()).foregroundStyle(Candle.ink.opacity(0.6))
-                    BuddyView(model: buddy).frame(width: 46, height: 46)   // Gemini: a fixed header slot, never over the exercise
                 }
                 if finished { done } else if index < run.exercises.count { exercise(run.exercises[index]) }
                 Spacer(minLength: 0)
+                // his ruling 11-15: Buddy lives down in the empty space under the exercise (never over it), as large as the room left
+                // allows; a tap plays his next move
+                Button { buddy.playNext() } label: { BuddyView(model: buddy).aspectRatio(590 / 663, contentMode: .fit).frame(maxWidth: 220, maxHeight: 240) }
+                    .buttonStyle(.plain)
+                    .frame(maxWidth: .infinity)
+                    .layoutPriority(-1)
+                    .accessibilityHint("Tap for his next move")
             }
             .padding(20).frame(maxWidth: 640)
         }
