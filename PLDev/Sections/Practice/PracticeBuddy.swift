@@ -242,21 +242,14 @@ struct BuddyView: View {
     }
 }
 
-/// One of his pieces with a Liquid Glass look (his ruling 11-15, "Glass face pieces"): his drawing in its own colours, a soft sheen from
-/// the top-left and a bright rim along the top edge, both in the piece's own shape. (Apple's glass material laid over it turned his whites
-/// and his orange grey on the simulator, 11-15, so it is not used; the look is the light on the surface, not a tint.)
+/// One of his pieces with its Liquid Glass look (his ruling 11-15, "Glass face pieces", crowned from Gemini's example): the glass is
+/// baked into the bundled pieces by `.claude/scripts/pl-buddy-glass.py` (height from his own shapes, top-left light, clear whites, amber
+/// lips; his originals kept in the vault rig folder). Here only a soft shadow lifts him off the page, as the glass sits on a surface.
 struct BuddyGlassPiece: View {
     let img: UIImage
 
     var body: some View {
-        let shape = Image(uiImage: img).resizable().aspectRatio(contentMode: .fit)
-        ZStack {
-            shape
-            LinearGradient(colors: [.white.opacity(0.55), .white.opacity(0)], startPoint: .topLeading, endPoint: .center)
-                .mask(shape).blendMode(.plusLighter)
-            shape.colorMultiply(.clear).overlay(LinearGradient(colors: [.white.opacity(0.9), .clear], startPoint: .top, endPoint: .init(x: 0.5, y: 0.18)).mask(shape))
-                .offset(y: 1).blendMode(.plusLighter).opacity(0.6)
-        }
-        .compositingGroup()
+        Image(uiImage: img).resizable().aspectRatio(contentMode: .fit)
+            .shadow(color: .black.opacity(0.35), radius: 3, x: 0, y: 2)
     }
 }
