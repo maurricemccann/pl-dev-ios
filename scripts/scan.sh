@@ -26,7 +26,8 @@ check "token-looking string"     '(ghp_|github_pat_|(^|[^A-Za-z0-9])sk-[A-Za-z0-
 check "Apple ID wording"         '[Aa]pple ?ID'
 check "claude session link"      'claude\.ai/code/session_[A-Za-z0-9]{8,}'   # a real link has its id; naming the pattern is not a leak
 # his hand font's own file and face names and the repo owner's GitHub handle are public by design (the font is his published asset)
-ALLOW='MaurriceMccannPsychedHandw|maurricemccann' check "personal detail"          '([Gg]irlfriend|[Bb]oyfriend|[Ww]ife|[Hh]usband|[Mm]aurrice|psychedleo|[Hh]esperia)'
+# his ruling 11-15: one historical line (commit 016cf18, the beta Oracle story carried word for word) is allowed; the code no longer holds it
+ALLOW='MaurriceMccannPsychedHandw|maurricemccann|Maurrice persists' check "personal detail"          '([Gg]irlfriend|[Bb]oyfriend|[Ww]ife|[Hh]usband|[Mm]aurrice|psychedleo|[Hh]esperia)'
 # a real config file holds keys and addresses: it must never be tracked, now or in the past
 tracked=$( { git ls-files -- 'pldev-config*.json' '*.pldev' ':(glob)**/pldev-config*.json'; git log --all --format= --name-only -- 'pldev-config*.json' '*.pldev' ':(glob)**/pldev-config*.json'; } 2>/dev/null | sort -u | grep -v '^$')
 if [ -n "$tracked" ]; then echo "FAIL: a config file is tracked or was committed:"; echo "$tracked"; fail=1; fi
