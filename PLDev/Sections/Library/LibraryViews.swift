@@ -217,10 +217,26 @@ struct LibraryView: View {
     }
 
     private func verdictStrip(_ counts: [Verdict: Int]) -> some View {
-        ScrollView(.horizontal, showsIndicators: false) {
-            HStack(spacing: 6) {
-                ForEach(Verdict.allCases) { v in
-                    Button { verdict = v } label: { GalleryChip(title: v.rawValue, count: counts[v] ?? 0, on: verdict == v, tint: v.tint) }.buttonStyle(.plain)
+        VStack(alignment: .leading, spacing: 6) {
+            // how the whole scope splits by his verdicts, one bar (his ask 11-14: shown, not listed); the chips below still filter
+            let parts = Verdict.allCases.filter { $0 != .all }.map { (v: $0, n: counts[$0] ?? 0) }.filter { $0.n > 0 }
+            let total = max(parts.map(\.n).reduce(0, +), 1)
+            if parts.count > 1 {
+                GeometryReader { geo in
+                    HStack(spacing: 1.5) {
+                        ForEach(parts, id: \.v) { p in Rectangle().fill(p.v.tint ?? PLG.dim(scheme)).frame(width: max(2, (geo.size.width - CGFloat(parts.count) * 1.5) * CGFloat(p.n) / CGFloat(total))) }
+                    }
+                    .clipShape(Capsule())
+                }
+                .frame(height: 6)
+                .accessibilityElement(children: .ignore)
+                .accessibilityLabel(parts.map { "\($0.v.rawValue) \($0.n)" }.joined(separator: ", "))
+            }
+            ScrollView(.horizontal, showsIndicators: false) {
+                HStack(spacing: 6) {
+                    ForEach(Verdict.allCases) { v in
+                        Button { verdict = v } label: { GalleryChip(title: v.rawValue, count: counts[v] ?? 0, on: verdict == v, tint: v.tint) }.buttonStyle(.plain)
+                    }
                 }
             }
         }

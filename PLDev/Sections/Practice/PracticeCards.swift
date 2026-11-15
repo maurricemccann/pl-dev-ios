@@ -42,9 +42,12 @@ struct StreakCard: View {
     let state: PracticeModel
     var body: some View {
         let n = state.streak?.practisedThisMonth ?? 0
-        VStack(spacing: 2) {
-            Text("\(n)").font(.system(size: 38, weight: .light)).foregroundStyle(Candle.goldHi).monospacedDigit().contentTransition(.numericText())
-            Text("\(n == 1 ? "day" : "days") practised this month \u{00B7} \(state.streak?.practisedTotal ?? 0) in all")
+        let today = Calendar.current.component(.day, from: .now)
+        VStack(spacing: 8) {
+            // the month as a ring: days practised out of the days gone by (his ask 11-14, shown not listed)
+            PLRing(value: Double(n) / Double(max(today, 1)), center: "\(n)", label: "of \(today) days this month", tint: Candle.goldHi,
+                   text: Candle.goldHi, dim: Candle.ink.opacity(0.6), size: 96)
+            Text("\(state.streak?.practisedTotal ?? 0) in all")
                 .font(.system(size: 12.8)).foregroundStyle(Candle.ink.opacity(0.6))
         }
         .frame(maxWidth: .infinity).padding(.vertical, 22)
