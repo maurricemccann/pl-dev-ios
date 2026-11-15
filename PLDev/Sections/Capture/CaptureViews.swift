@@ -531,13 +531,13 @@ struct CaptureWaitingRoom: View {
             if w == nil { Text("Pull down to read.").foregroundStyle(PLOS.dim(scheme)) }
             else if state.owed == 0 { Text("Nothing waiting on you.").foregroundStyle(PLOS.dim(scheme)) }
             line("Drafts", w?.drafts, "Review them in Approvals", house: "approvals")
-            line("Pins", w?.pins, "Each Pin waits for your tap", house: "approvals")
+            line("Pins", w?.pins, "Each Pin waits for your tap", house: "pinterest")
             line("Manual posts", w?.manual, "Copy ready, to post by hand", house: "approvals")
             line("Ads", w?.ads, "To approve", house: "approvals")
             line("Emails", w?.emails, "Drafts in Tempo", house: "tempo")
-            line("Tasks", w?.tasks, "Open on the founder's list", house: "")
+            line("Tasks", w?.tasks, "Open on the founder's list", house: "founder")
             line("New captures", w?.captures, "In your moderation deck", house: nil)
-            line("Shift items open", w?.shift_open, "On today's shift", house: "")
+            line("Shift items open", w?.shift_open, "On today's shift", house: "founder")
         }
         .captureRow()
 
@@ -610,10 +610,6 @@ private struct CaptureDetailBody: View {
                     Spacer()
                     if let c = detail.created { Ago(text: c).font(.system(size: 12, design: .monospaced)).foregroundStyle(PLOS.dim(scheme)) }
                 }
-                if let img = captureTrailImage(detail.payload) {
-                    AsyncImage(url: img) { i in i.resizable().scaledToFit() } placeholder: { PLLoader().frame(maxWidth: .infinity, minHeight: 120) }
-                        .frame(maxWidth: .infinity).clipShape(RoundedRectangle(cornerRadius: 14, style: .continuous))
-                }
                 Text(detail.label).font(.body).foregroundStyle(PLOS.text(scheme)).textSelection(.enabled)
                 Text(detail.stateDetail).font(.subheadline).foregroundStyle(PLOS.dim(scheme))
                 CaptureFlow(detail: detail)   // the flow of this intake, as a diagram
@@ -625,6 +621,7 @@ private struct CaptureDetailBody: View {
                     }
                     ShareLink(item: detail.label) { Label("Share", systemImage: "square.and.arrow.up").osEyebrow(11).foregroundStyle(PLOS.goldDim(scheme)).padding(.horizontal, 16).frame(minHeight: 44).frame(maxWidth: .infinity).glassEffect(.clear.interactive(), in: Capsule()).overlay { Capsule().strokeBorder(PLOS.line(scheme), lineWidth: 0.8) } }
                 }
+                CaptureRender(detail: detail)   // the capture itself: its picture and what it says
             }
             .padding(18)
         }

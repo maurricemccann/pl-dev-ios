@@ -35,6 +35,7 @@ struct CaptureDropBox: View {
     @State private var pending: DropPending?
     @State private var hintIndex = 0
     @State private var shooting = false
+    @State private var picking = false
     @State private var whereRoute: CaptureRoute?
     @State private var fromCamera = false
     @State private var original: Data?        // the camera capture as taken
@@ -123,7 +124,7 @@ struct CaptureDropBox: View {
             HStack(spacing: 10) {
                 Menu {
                     if CaptureCamera.available { Button("Take Photo", systemImage: "camera") { shooting = true } }
-                    PhotosPicker(selection: $pickerItem, matching: .images) { Label("Choose Photo", systemImage: "photo") }
+                    Button("Choose Photo", systemImage: "photo") { picking = true }   // a PhotosPicker inside a Menu never opens; the screen presents it
                 } label: { iconCircle("photo") }
                 .accessibilityLabel("Photo")
                 if straight != nil, let original {
@@ -173,6 +174,7 @@ struct CaptureDropBox: View {
                 pickerItem = nil
             }
         }
+        .photosPicker(isPresented: $picking, selection: $pickerItem, matching: .images)
         .fileImporter(isPresented: $importing, allowedContentTypes: [.plainText, .text, UTType(filenameExtension: "md") ?? .plainText]) { result in
             guard case .success(let url) = result else { return }
             let scoped = url.startAccessingSecurityScopedResource()
@@ -372,5 +374,61 @@ struct CaptureFlow: View {
         }
         .accessibilityElement(children: .contain)
         .accessibilityLabel("Flow of this intake")
+    }
+}
+
+/// The capture itself, drawn in its detail sheet: the picture when it has one, then what it says. An art capture's picture lives in
+/// the house's public asset store under its own id; other captures carry their picture's address in the text.
+struct CaptureRender: View {
+    let detail: CaptureModel.TrailDetail
+    @Environment(\.colorScheme) private var scheme
+    @State private var index = 0
+
+    private var isArt: Bool { detail.meta.lowercased().hasPrefix("art") }
+
+    private var pictures: [URL] {
+        var out: [URL] = []
+        if let u = captureTrailImage(detail.payload) { out.append(u) }
+        if isArt {
+            for ext in ["jpg", "png"] {
+                if let u = URL(string: "https://assets.psychedluxuries.com/art-inbox/\(detail.id).\(ext)") { out.append(u) }
+            }
+        }
+        return out
+    }
+
+    /// A stored record reads as lines (Title, Made, Medium); anything else is shown as written.
+    private var words: String {
+        guard let data = detail.payload.data(using: .utf8), let o = try? JSONSerialization.jsonObject(with: data) as? [String: Any] else { return detail.payload }
+        let order = ["title", "made", "medium", "via"]
+        let lines = order.compactMap { k -> String? in
+            guard let v = o[k], !"\(v)".isEmpty else { return nil }
+            return k.capitalized + ": \(v)"
+        }
+        return lines.isEmpty ? detail.payload : lines.joined(separator: "\n")
+    }
+
+    var body: some View {
+        VStack(alignment: .leading, spacing: 10) {
+            Text("The capture").osEyebrow(10).foregroundStyle(PLOS.dim(scheme))
+            if index < pictures.count {
+                AsyncImage(url: pictures[index]) { phase in
+                    switch phase {
+                    case .success(let image):
+                        image.resizable().scaledToFit().frame(maxWidth: .infinity)
+                            .clipShape(RoundedRectangle(cornerRadius: 14, style: .continuous))
+                    case .failure:
+                        Color.clear.frame(height: 1).onAppear { index += 1 }   // try the next address, then none
+                    default:
+                        PLLoader().frame(maxWidth: .infinity, minHeight: 120)
+                    }
+                }
+                .id(index)
+            } else if isArt {
+                Text("The picture is not in the store any more.").font(.footnote).foregroundStyle(PLOS.dim(scheme))
+            }
+            Text(words).font(.callout).foregroundStyle(PLOS.text(scheme)).textSelection(.enabled)
+        }
+        .padding(.top, 6)
     }
 }

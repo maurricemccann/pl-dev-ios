@@ -303,7 +303,9 @@ struct HomeView: View {
                 return
             }
             _ = SectionRegistry.section(id)?.handle(link: link, model: model)
-            path = [entry.id]
+            // a link followed from inside another section stacks on it, so Back returns there (his note 11-14: Waiting's rows
+            // opened House and Back went Home, not to Capture); never deeper than two
+            if let here = path.last, here != entry.id { path = [here, entry.id] } else { path = [entry.id] }
         }
     }
 }
