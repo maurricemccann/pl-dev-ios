@@ -126,6 +126,7 @@ struct PathScreen: View {
     let model: AppModel
     @State private var state = CourseModel()
     @State private var playing: LessonRun?
+    @State private var goldPack: GoldPack?
     private let record = CourseRecord.shared
 
     var body: some View {
@@ -140,7 +141,8 @@ struct PathScreen: View {
             }
         }
         .task { await state.load(model: model) }
-        .fullScreenCover(item: $playing) { run in LessonView(run: run) { playing = nil } }
+        .fullScreenCover(item: $playing) { run in LessonView(model: model, run: run) { playing = nil } }
+        .background { Color.clear.fullScreenCover(item: $goldPack) { g in PackScreen(model: model, key: "gold-\(g.unit)") { goldPack = nil } } }
     }
 
     /// First open: his daily goal in minutes sizes what Today suggests.
@@ -184,6 +186,7 @@ struct PathScreen: View {
                         playing = LessonRun(unit: u, lesson: nil, exercises: u.quiz.filter(\.isPlayable), isQuiz: true)
                     }.buttonStyle(CandleGhost())
                 }
+                if gold { Button("Open your pack") { goldPack = GoldPack(unit: u.n) }.buttonStyle(CandleButton()) }
                 if record.lessonsLeft(u) == 0 && record.quizPassed.contains(u.n) && record.pagesLeft(u) > 0 {
                     Text("\(record.pagesLeft(u)) \(record.pagesLeft(u) == 1 ? "page" : "pages") left to read for gold.").candleHint()
                 }
@@ -242,6 +245,8 @@ struct PathScreen: View {
 
 // MARK: - a lesson
 
+struct GoldPack: Identifiable { let unit: Int; var id: Int { unit } }
+
 struct LessonRun: Identifiable {
     let unit: CourseUnit
     let lesson: CourseLesson?
@@ -251,12 +256,15 @@ struct LessonRun: Identifiable {
 }
 
 struct LessonView: View {
+    let model: AppModel
     let run: LessonRun
     let close: () -> Void
     @State private var index = 0
     @State private var right = 0
     @State private var answered: Bool?
     @State private var finished = false
+    @State private var pack: PracticePack?
+    @State private var packNote: String?
     private let record = CourseRecord.shared
 
     var body: some View {
@@ -277,6 +285,12 @@ struct LessonView: View {
         .preferredColorScheme(.dark)
         .sensoryFeedback(PLHaptic.success, trigger: right)
         .sensoryFeedback(PLHaptic.warning, trigger: answered == false)
+        .task(id: finished) {
+            // a finished lesson earns one card of his art; the Worker keeps one per lesson, so a replay shows the same card
+            guard finished, !run.isQuiz, let l = run.lesson, pack == nil else { return }
+            do { pack = try await Packs.open("lesson-\(run.unit.n)-\(l.n)", model: model) }
+            catch { packNote = "Could not reach the practice, so no card was dealt. Play the lesson again when you are online and it will be." }
+        }
     }
 
     @ViewBuilder private func exercise(_ e: CourseExercise) -> some View {
@@ -323,9 +337,11 @@ struct LessonView: View {
             Text(run.isQuiz ? (passed ? "Quiz passed." : "Not yet. Take it again when you like.") : "Lesson done.")
                 .plHand(26, relativeTo: .title).foregroundStyle(Candle.goldHi).multilineTextAlignment(.center)
             Text("\(right) of \(run.exercises.count) right").candleHint()
+            if let pack { PackOpening(model: model, cards: pack.cards, animate: pack.new).frame(height: 380) }
+            else if let packNote { Text(packNote).candleHint().multilineTextAlignment(.center) }
             Button("Back to the path") { close() }.buttonStyle(CandleButton())
         }
-        .frame(maxWidth: .infinity).padding(.top, 60)
+        .frame(maxWidth: .infinity).padding(.top, 20)
     }
 }
 
