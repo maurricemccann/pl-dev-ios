@@ -104,12 +104,15 @@ final class BuddyRig: @unchecked Sendable {
     @ObservationIgnored var frownAt = Date.distantPast
     @ObservationIgnored var expression: Int?
     @ObservationIgnored var expressionAt = Date.distantPast
-    func expression(_ now: Date) -> Int? { now.timeIntervalSince(expressionAt) < 2.4 ? expression : nil }
-
-    /// Which of his mouths Buddy wears: "grin" (his rubber-band grin) or "red" (his red-lip mouth, his GIF 11-15, "A second Buddy
-    /// mouth"). Kept on the phone; holding Buddy swaps it.
-    var mouthStyle: String = UserDefaults.standard.string(forKey: "buddy.mouth") ?? "grin"
-    func swapMouth() { mouthStyle = mouthStyle == "grin" ? "red" : "grin"; UserDefaults.standard.set(mouthStyle, forKey: "buddy.mouth") }
+    /// The emotion now and which of its 9 frames shows (his ruling 11-15: every emotion in-betweened from rest): it flows in over 0.3 s,
+    /// holds, and flows back out over 0.3 s, 2.4 s in all.
+    func emotion(_ now: Date) -> (Int, Int)? {
+        guard let e = expression else { return nil }
+        let t = now.timeIntervalSince(expressionAt)
+        guard t >= 0, t < 2.4 else { return nil }
+        let k = t < 0.3 ? t / 0.3 : (t > 2.1 ? (2.4 - t) / 0.3 : 1)
+        return (e, max(0, min(8, Int((k * 8).rounded()))))
+    }
     func frown(_ now: Date) -> Double {
         let t = now.timeIntervalSince(frownAt)
         guard t >= 0, t < 2.6 else { return 0 }
@@ -168,10 +171,8 @@ struct BuddyFaceArt {
     struct Layout: Decodable { let w: CGFloat; let h: CGFloat; let parts: [String: Box] }
     let layout: Layout
     let pieces: [String: BuddyGlass]
-    let mouthFrames: [BuddyGlass]   // his grin, closed to open: his own animation (his GIF 11-15, replaced the 51 in-betweens)
-    let redFrames: [BuddyGlass]     // his red-lip mouth, closed to open, 12 frames (his GIF's opening half)
-    let redFrown: [BuddyGlass]      // his red mouth from smile to frown, 16 frames (his second GIF, 11-15)
-    let expressions: [BuddyGlass]   // ChatGPT's 16 2D expressions (his ruling 11-15)
+    let mouthFrames: [BuddyGlass]   // the glass face's mouth, rest to its full grin (ChatGPT's art only, his ruling 11-15)
+    let emotions: [[BuddyGlass]]    // the 16 emotions in glass, each 9 frames from his rest mouth in (his ruling 11-15)
     let lessonMouth: [BuddyGlass]   // ChatGPT's 16 glossy 3D mouth frames, worn in lessons (his ruling 11-15)
 
     @MainActor static let grin = load()
@@ -192,8 +193,7 @@ struct BuddyFaceArt {
         for p in layout.parts.keys { if let g = glass("buddy-grin-\(p)") { pieces[p] = g } }
         var frames: [BuddyGlass] = []   // as many as he drew, read until the next is missing
         while let f = glass(String(format: "buddy-grin-open-%02d", frames.count)) { frames.append(f) }
-        let red = (0...11).compactMap { glass(String(format: "buddy-red-open-%02d", $0)) }
-        let frown = (0...15).compactMap { glass(String(format: "buddy-red-frown-%02d", $0)) }
+        let emotions: [[BuddyGlass]] = (0...15).map { e in (0...8).compactMap { glass(String(format: "buddy-emo-%02d-%02d", e, $0)) } }
         // whole pictures, drawn as they are (no glass split): ChatGPT's sets carry tongues, tears and sparkles in their own colours
         func plain(_ base: String) -> [BuddyGlass] {
             let s = (0...15).compactMap { i in Bundle.main.url(forResource: String(format: "\(base)-%02d", i), withExtension: "png")
@@ -201,8 +201,7 @@ struct BuddyFaceArt {
             return s.count == 16 ? s : []
         }
         return pieces["mouth"] == nil ? nil : BuddyFaceArt(layout: layout, pieces: pieces, mouthFrames: frames.count > 1 ? frames : [],
-                                                          redFrames: red.count == 12 ? red : [], redFrown: frown.count == 16 ? frown : [],
-                                                          expressions: plain("buddy-expr"), lessonMouth: plain("buddy-gl3d"))
+                                                          emotions: emotions.allSatisfy { $0.count == 9 } ? emotions : [], lessonMouth: plain("buddy-gl3d"))
     }
 }
 
@@ -264,17 +263,13 @@ struct BuddyView: View {
         }
         let eyeW = (a.layout.parts["eyeL"]?.w ?? 200) * k
         let level = model.mouthFrame(n, now: now)   // 0 closed ... 50 his full grin (read once: it moves the mouth's state)
-        let red = model.mouthStyle == "red" && !a.redFrames.isEmpty
-        // the red mouth frowns through his own sixteen drawings (smile to frown and back); the grin turns over instead
-        let frownNow = model.frown(now), redFrown = red && a.redFrown.count == 16 && frownNow > 0
+        let frownNow = model.frown(now)
         // in a lesson: ChatGPT's 3D mouth opens through its frames 0-4, a wrong answer shows its grimace (12);
-        // elsewhere a moment shows its expression for 2.4 s; otherwise his own mouth
+        // elsewhere a moment flows into its emotion and back (2.4 s); otherwise the glass face's mouth
         let lessonM = lesson && !a.lessonMouth.isEmpty
-        let expr = lessonM ? nil : model.expression(now).flatMap { a.expressions.isEmpty ? nil : a.expressions[$0] }
+        let expr = lessonM || a.emotions.isEmpty ? nil : model.emotion(now).map { a.emotions[$0.0][$0.1] }
         let mf = lessonM ? a.lessonMouth[frownNow > 0 ? 12 : min(4, Int((Double(level) / 50 * 4).rounded()))]
-            : expr ?? (redFrown ? a.redFrown[min(15, Int((frownNow * 15).rounded()))]
-            : (red ? a.redFrames[min(11, Int((Double(level) / 50 * 11).rounded()))]
-               : (a.mouthFrames.isEmpty ? nil : a.mouthFrames[min(a.mouthFrames.count - 1, Int((Double(level) / 50 * Double(a.mouthFrames.count - 1)).rounded()))])))
+            : expr ?? (a.mouthFrames.isEmpty ? nil : a.mouthFrames[min(a.mouthFrames.count - 1, Int((Double(level) / 50 * Double(a.mouthFrames.count - 1)).rounded()))])
         // the whole face: a small drift, turn and stretch (the rig's face_* numbers)
         let fx = pinned ? 0 : r("face_x") * size.width * 0.12, fy = pinned ? 0 : r("face_y") * size.width * 0.12, frot = r("face_rot")
         let fsx = Self.cl(1 + r("face_sx"), 0.85, 1.08), fsy = Self.cl(1 + r("face_sy"), 0.85, 1.08)
@@ -305,7 +300,7 @@ struct BuddyView: View {
                 // opening; each frame is his full 1132x560 canvas with the open grin (988x559) at its top-left, so it is drawn at the
                 // mouth box scaled by 1132/988 x 560/559, anchored top-left, and his full grin lands exactly on the old mouth piece.
                 let msx = Self.cl(1 + r("mouth_w") * 0.5, 0.88, 1.08)
-                let flip = (redFrown || lessonM || expr != nil) ? 1 : CGFloat(1 - 2 * frownNow)   // the grin's frown turns his smile over; the red mouth draws its own
+                let flip = (lessonM || expr != nil || !a.emotions.isEmpty) ? 1 : CGFloat(1 - 2 * frownNow)   // the emotions draw their own frown (sad, 6)
                 let msy: CGFloat = (mf == nil ? Self.cl(1 + r("mouth_open") * 0.15 + r("mouth_curve") * 0.05, 0.9, 1.08) : Self.cl(1 + r("mouth_curve") * 0.05, 0.9, 1.08)) * flip
                 // his frames are drawn the mouth box's width at their own proportions, centred on the box's height (red 354x266,
                 // his yellow grin cropped to one shared box for all its frames)

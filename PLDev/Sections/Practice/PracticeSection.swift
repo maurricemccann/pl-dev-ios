@@ -206,7 +206,6 @@ struct PracticeView: View {
                 // only the touch target; the rope and Buddy are drawn in an overlay under the glass bar, from this item's place on screen
                 Button { buddy.playNext() } label: { Color.clear.frame(width: 48, height: 44).contentShape(Rectangle()) }
                     .buttonStyle(.plain)
-                    .simultaneousGesture(LongPressGesture(minimumDuration: 0.5).onEnded { _ in buddy.swapMouth() })   // his two mouths
                     .onGeometryChange(for: CGRect.self) { $0.frame(in: .global) } action: { f in
                         let home = CGPoint(x: f.midX, y: f.midY)
                         if rope.map({ hypot($0.home.x - home.x, $0.home.y - home.y) > 2 }) ?? true { rope = BuddyRopeRig(home: home) }
@@ -214,7 +213,7 @@ struct PracticeView: View {
                     .simultaneousGesture(DragGesture(minimumDistance: 6, coordinateSpace: .global)
                         .onChanged { v in rope?.grab = v.location }
                         .onEnded { _ in rope?.grab = nil })
-                    .accessibilityHint("Tap for his next move, hold to swap his mouth, drag to swing him")
+                    .accessibilityHint("Tap for his next move, drag to swing him")
                     .onAppear { buddy.react(.open); BuddyIsland.start() }
                     .task {
                         // his ruling 11-15 "now and then": at rest, every 20-40 s Buddy plays his next move from the shuffled deck
