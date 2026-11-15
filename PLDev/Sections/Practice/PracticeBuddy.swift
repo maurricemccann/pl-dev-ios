@@ -86,6 +86,11 @@ final class BuddyRig: @unchecked Sendable {
     /// The frown (his ruling 11-15): on a wrong answer his mouth closes and turns upside down, holds, and turns back.
     /// 0 = his smile, 1 = fully flipped; a quarter second each way, held two seconds.
     @ObservationIgnored var frownAt = Date.distantPast
+
+    /// Which of his mouths Buddy wears: "grin" (his rubber-band grin) or "red" (his red-lip mouth, his GIF 11-15, "A second Buddy
+    /// mouth"). Kept on the phone; holding Buddy swaps it.
+    var mouthStyle: String = UserDefaults.standard.string(forKey: "buddy.mouth") ?? "grin"
+    func swapMouth() { mouthStyle = mouthStyle == "grin" ? "red" : "grin"; UserDefaults.standard.set(mouthStyle, forKey: "buddy.mouth") }
     func frown(_ now: Date) -> Double {
         let t = now.timeIntervalSince(frownAt)
         guard t >= 0, t < 2.6 else { return 0 }
@@ -145,6 +150,7 @@ struct BuddyFaceArt {
     let layout: Layout
     let pieces: [String: BuddyGlass]
     let mouthFrames: [BuddyGlass]   // his rubber-band grin, closed to open, 51 frames
+    let redFrames: [BuddyGlass]     // his red-lip mouth, closed to open, 12 frames (his GIF's opening half)
 
     @MainActor static let grin = load()
 
@@ -163,7 +169,9 @@ struct BuddyFaceArt {
         var pieces: [String: BuddyGlass] = [:]
         for p in layout.parts.keys { if let g = glass("buddy-grin-\(p)") { pieces[p] = g } }
         let frames = (0...50).compactMap { glass(String(format: "buddy-grin-open-%02d", $0)) }
-        return pieces["mouth"] == nil ? nil : BuddyFaceArt(layout: layout, pieces: pieces, mouthFrames: frames.count == 51 ? frames : [])
+        let red = (0...11).compactMap { glass(String(format: "buddy-red-open-%02d", $0)) }
+        return pieces["mouth"] == nil ? nil : BuddyFaceArt(layout: layout, pieces: pieces, mouthFrames: frames.count == 51 ? frames : [],
+                                                          redFrames: red.count == 12 ? red : [])
     }
 }
 
@@ -223,7 +231,9 @@ struct BuddyView: View {
             return CGRect(x: ox + b.x * k, y: oy + b.y * k, width: b.w * k, height: b.h * k)
         }
         let eyeW = (a.layout.parts["eyeL"]?.w ?? 200) * k
-        let mf = a.mouthFrames.isEmpty ? nil : a.mouthFrames[model.mouthFrame(n, now: now)]
+        let level = model.mouthFrame(n, now: now)   // 0 closed ... 50 his full grin (read once: it moves the mouth's state)
+        let red = model.mouthStyle == "red" && !a.redFrames.isEmpty
+        let mf = red ? a.redFrames[min(11, Int((Double(level) / 50 * 11).rounded()))] : (a.mouthFrames.isEmpty ? nil : a.mouthFrames[level])
         // the whole face: a small drift, turn and stretch (the rig's face_* numbers)
         let fx = pinned ? 0 : r("face_x") * size.width * 0.12, fy = pinned ? 0 : r("face_y") * size.width * 0.12, frot = r("face_rot")
         let fsx = Self.cl(1 + r("face_sx"), 0.85, 1.08), fsy = Self.cl(1 + r("face_sy"), 0.85, 1.08)
@@ -256,10 +266,13 @@ struct BuddyView: View {
                 let msx = Self.cl(1 + r("mouth_w") * 0.5, 0.88, 1.08)
                 let flip = CGFloat(1 - 2 * model.frown(now))   // the frown turns his smile over
                 let msy: CGFloat = (mf == nil ? Self.cl(1 + r("mouth_open") * 0.15 + r("mouth_curve") * 0.05, 0.9, 1.08) : Self.cl(1 + r("mouth_curve") * 0.05, 0.9, 1.08)) * flip
-                let fw: CGFloat = mf == nil ? m.width : m.width * 1132 / 988, fh: CGFloat = mf == nil ? m.height : m.height * 560 / 559
+                // his red mouth's frames are 354x266: drawn the mouth box's width, centred on the box's height
+                let fw: CGFloat = red ? m.width : (mf == nil ? m.width : m.width * 1132 / 988)
+                let fh: CGFloat = red ? m.width * 266 / 354 : (mf == nil ? m.height : m.height * 560 / 559)
+                let fy: CGFloat = red ? (m.height - fh) / 2 : 0
                 BuddyGlassPiece(glass: img).frame(width: fw, height: fh, alignment: .topLeading)
                     .scaleEffect(x: msx, y: msy, anchor: .center)   // centre, so the frown turns his mouth over in place
-                    .offset(x: m.minX + r("mouth_x") * eyeW + (trail["mouth"]?.width ?? 0), y: m.minY + r("mouth_y") * eyeW - r("mouth_curve") * 6 * k + (trail["mouth"]?.height ?? 0))
+                    .offset(x: m.minX + r("mouth_x") * eyeW + (trail["mouth"]?.width ?? 0), y: m.minY + fy + r("mouth_y") * eyeW - r("mouth_curve") * 6 * k + (trail["mouth"]?.height ?? 0))
             }
         }
         .frame(width: size.width, height: size.height, alignment: .topLeading)
