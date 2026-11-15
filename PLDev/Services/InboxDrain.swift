@@ -34,7 +34,7 @@ import Foundation
             if let file, !store(file, id: item.id) { continue }   // could not keep the file: leave it in the shared inbox for next time
             let words = [item.title, item.note].compactMap { $0 }.filter { !$0.isEmpty }
             let queued = QueuedItem(id: item.id, createdAt: item.createdAt, kind: item.kind, origin: item.target ?? target, path: "",
-                                    text: item.text ?? item.url, fileName: item.fileName,
+                                    text: combinedText(item), fileName: item.fileName,
                                     note: words.isEmpty ? nil : words.joined(separator: "\n"))
             if let dropped = queue.add(queued) {
                 removeFile(dropped.id)
@@ -62,6 +62,14 @@ import Foundation
 
         let count = waiting
         if model.inboxCount != count { model.inboxCount = count }
+    }
+
+    /// What the item says: the address and the text he highlighted, both kept (the address leads for a link). Before this a highlight
+    /// replaced the address, so a Safari capture with selected text lost its link.
+    private static func combinedText(_ item: SharedInbox.Item) -> String? {
+        let pieces = item.kind == "url" ? [item.url, item.text] : [item.text, item.url]
+        let joined = pieces.compactMap { $0 }.filter { !$0.isEmpty }.joined(separator: "\n")
+        return joined.isEmpty ? nil : joined
     }
 
     // MARK: on disk, inside the app's own container (never the shared one)

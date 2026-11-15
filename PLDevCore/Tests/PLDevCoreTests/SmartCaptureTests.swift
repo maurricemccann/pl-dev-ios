@@ -16,6 +16,13 @@ final class SmartCaptureTests: XCTestCase {
         XCTAssertEqual(SmartCapture.available(kind: "url", url: "http://example.org/post"), [.board], "no tile for plain http")
     }
 
+    func testALinkWithHighlightedTextOffersQuoteAndSeedAndLeadsWithTheText() {
+        XCTAssertEqual(SmartCapture.available(kind: "url", url: "https://example.org/a", hasText: true), [.board, .quote, .seed, .tile])
+        XCTAssertEqual(SmartCapture.suggest(kind: "url", text: "What persists in the mind becomes your reality.", url: "https://example.org/a"), .seed)
+        XCTAssertEqual(SmartCapture.suggest(kind: "url", text: nil, url: "https://dash.cloudflare.com/"), .tile)
+        XCTAssertEqual(SmartCapture.suggest(kind: "url", text: "   ", url: "https://example.org/a"), .board)
+    }
+
     func testAShortAttributedLineIsAQuote() {
         XCTAssertEqual(SmartCapture.suggest(kind: "text", text: "\u{201C}Do not go gentle into that good night.\u{201D} \u{2014} Dylan Thomas", url: nil), .quote)
         XCTAssertEqual(SmartCapture.suggest(kind: "text", text: "The mind that opens to a new idea never returns to its original size. ~ Oliver Holmes", url: nil), .quote)

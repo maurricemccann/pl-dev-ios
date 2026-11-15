@@ -47,7 +47,7 @@ final class ShareViewController: UIViewController {
         Task {
             let phase = await load()
             if case .ready(let payload) = phase {
-                model.route = SmartCapture.suggest(kind: payload.kind, text: payload.text ?? payload.title, url: payload.url)
+                model.route = SmartCapture.suggest(kind: payload.kind, text: payload.kind == "url" ? payload.text : (payload.text ?? payload.title), url: payload.url)
             }
             model.phase = phase
         }
@@ -71,7 +71,12 @@ final class ShareViewController: UIViewController {
         }
         if let provider = providers.first(where: { $0.hasItemConformingToTypeIdentifier(UTType.url.identifier) }),
            let url = await loadURL(provider), let scheme = url.scheme?.lowercased(), scheme == "http" || scheme == "https" {
-            return .ready(SharePayload(kind: "url", text: nil, url: url.absoluteString, title: title, image: nil))
+            // text he highlighted on the page rides along with the address (a plain-text item that is neither the address nor the page title)
+            var selected: String?
+            if let textProvider = providers.first(where: { $0.hasItemConformingToTypeIdentifier(UTType.plainText.identifier) }),
+               let t = await loadText(textProvider)?.trimmingCharacters(in: .whitespacesAndNewlines), !t.isEmpty,
+               t != url.absoluteString, t != title { selected = t }
+            return .ready(SharePayload(kind: "url", text: selected, url: url.absoluteString, title: title, image: nil))
         }
         if let provider = providers.first(where: { $0.hasItemConformingToTypeIdentifier(UTType.plainText.identifier) }),
            let text = await loadText(provider), !text.isEmpty {
@@ -113,7 +118,7 @@ final class ShareViewController: UIViewController {
         guard case .ready(let payload) = model.phase else { return }
         let note = model.note.trimmingCharacters(in: .whitespacesAndNewlines)
         // smart capture: his chosen destination decides kind, target and text. The extension never sends; the app does, as before.
-        let route = SmartCapture.available(kind: payload.kind, url: payload.url).contains(model.route) ? model.route : .board
+        let route = SmartCapture.available(kind: payload.kind, url: payload.url, hasText: payload.text != nil).contains(model.route) ? model.route : .board
         var kind = payload.kind
         var text = payload.text
         var target: String? = nil
@@ -215,10 +220,10 @@ struct ShareSheet: View {
                 Section("Saving") {
                     preview(payload)
                 }
-                if SmartCapture.available(kind: payload.kind, url: payload.url).count > 1 {
+                if SmartCapture.available(kind: payload.kind, url: payload.url, hasText: payload.text != nil).count > 1 {
                     Section("Send to") {
                         Picker("Send to", selection: $model.route) {
-                            ForEach(SmartCapture.available(kind: payload.kind, url: payload.url)) { r in
+                            ForEach(SmartCapture.available(kind: payload.kind, url: payload.url, hasText: payload.text != nil)) { r in
                                 Label(r.title, systemImage: r.symbol).tag(r)
                             }
                         }

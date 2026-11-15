@@ -33,11 +33,13 @@ public enum CaptureRoute: String, CaseIterable, Identifiable, Sendable {
 
 public enum SmartCapture {
     /// The choices that make sense for what was shared.
-    public static func available(kind: String, url: String?) -> [CaptureRoute] {
+    /// `hasText`: a link that also carries text he highlighted on the page, which can be a quote or a seed.
+    public static func available(kind: String, url: String?, hasText: Bool = false) -> [CaptureRoute] {
         switch kind {
         case "image": return [.art]   // an image always goes to the intake; "Board" would do the same thing
         case "url":
             var out: [CaptureRoute] = [.board]
+            if hasText { out += [.quote, .seed] }
             if let url, BackendTemplates.host(of: url) != nil { out.append(.tile) }   // a tile needs an https address
             return out
         default: return [.board, .quote, .seed]
@@ -50,6 +52,8 @@ public enum SmartCapture {
         switch kind {
         case "image": return .art
         case "url":
+            let t = (text ?? "").trimmingCharacters(in: .whitespacesAndNewlines)
+            if !t.isEmpty { return suggest(kind: "text", text: t, url: nil) }   // text highlighted on the page leads, as a quote, a seed or the board
             if let url, BackendTemplates.match(url) != nil { return .tile }
             return .board
         default:

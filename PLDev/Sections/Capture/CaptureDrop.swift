@@ -12,9 +12,13 @@ struct DropPending: Identifiable {
     let text: String
     let url: String?
     let photo: Data?
+    var preferred: CaptureRoute? = nil   // the "Where" pill: a destination he picked before sending (nil = Auto)
 
-    var suggested: CaptureRoute { SmartCapture.suggest(kind: kind, text: text, url: url) }
     var options: [CaptureRoute] { SmartCapture.available(kind: kind, url: url) }
+    var suggested: CaptureRoute {
+        if let preferred, options.contains(preferred) { return preferred }
+        return SmartCapture.suggest(kind: kind, text: text, url: url)
+    }
 }
 
 struct CaptureDropBox: View {
@@ -27,6 +31,8 @@ struct CaptureDropBox: View {
     @State private var importing = false
     @State private var pending: DropPending?
     @State private var hintIndex = 0
+    @State private var shooting = false
+    @State private var whereRoute: CaptureRoute?
     @FocusState private var focused: Bool
 
     private let hints = [
@@ -42,21 +48,53 @@ struct CaptureDropBox: View {
     private var trimmed: String { text.trimmingCharacters(in: .whitespacesAndNewlines) }
     private var canSend: Bool { photo != nil || !trimmed.isEmpty }
 
+    /// The hint follows what is in the box, as Image Playground's does (rules first; the on-device model comes later): a photo asks for its
+    /// name and date, a link asks who it is from, a line asks who said it.
+    private var hint: String {
+        if photo != nil { return ["Name this piece", "When did you make it?", "Add a line about it, then send"][hintIndex % 3] }
+        if trimmed.isEmpty { return hints[hintIndex % hints.count] }
+        let u = URL(string: trimmed)
+        if (u?.scheme == "http" || u?.scheme == "https"), !trimmed.contains(where: { $0.isWhitespace }) {
+            return ["Who is it from?", "Add why it matters", "Send it, or make it a tile"][hintIndex % 3]
+        }
+        return ["Add who said it", "Make it a seed", "Send it to the board"][hintIndex % 3]
+    }
+
+    private var whereMenu: some View {
+        Menu {
+            Button("Auto", systemImage: "wand.and.stars") { whereRoute = nil }
+            ForEach(CaptureRoute.allCases) { r in Button(r.title, systemImage: r.symbol) { whereRoute = r } }
+        } label: {
+            HStack(spacing: 4) {
+                Text(whereRoute.map { "Where: " + $0.title } ?? "Where: Auto")
+                Image(systemName: "chevron.up.chevron.down").font(.caption2)
+            }
+            .font(.footnote.weight(.medium)).foregroundStyle(PLOS.text(scheme))
+            .padding(.horizontal, 10).padding(.vertical, 6)
+            .background(PLOS.surface2(scheme).opacity(0.8), in: Capsule())
+        }
+        .accessibilityLabel("Where it goes")
+    }
+
     var body: some View {
         VStack(alignment: .leading, spacing: 12) {
+            HStack { Spacer(minLength: 0); whereMenu }
             ZStack(alignment: .topLeading) {
                 TextEditor(text: $text)
                     .focused($focused)
                     .scrollContentBackground(.hidden)
                     .frame(minHeight: 120)
                     .padding(6)
-                if text.isEmpty && photo == nil {
-                    Text(hints[hintIndex])
+                if text.isEmpty {
+                    Text(hint)
                         .foregroundStyle(PLOS.dim(scheme).opacity(0.7))
                         .padding(.horizontal, 12).padding(.vertical, 14)
                         .allowsHitTesting(false)
                         .transition(.opacity)
                 }
+            }
+            if !text.isEmpty {
+                Label(hint, systemImage: "sparkles").font(.footnote).foregroundStyle(PLOS.dim(scheme))
             }
             if let photo, let img = UIImage(data: photo) {
                 ZStack(alignment: .topTrailing) {
@@ -70,7 +108,11 @@ struct CaptureDropBox: View {
                 }
             }
             HStack(spacing: 10) {
-                PhotosPicker(selection: $pickerItem, matching: .images) { Label("Photo", systemImage: "photo") }.buttonStyle(OSPill())
+                Menu {
+                    if CaptureCamera.available { Button("Take Photo", systemImage: "camera") { shooting = true } }
+                    PhotosPicker(selection: $pickerItem, matching: .images) { Label("Choose Photo", systemImage: "photo") }
+                } label: { Label("Photo", systemImage: "photo") }
+                .buttonStyle(OSPill())
                 Button { importing = true } label: { Label("File", systemImage: "doc.text") }.buttonStyle(OSPill())
                 Button { if let s = UIPasteboard.general.string { text = s } } label: { Label("Paste", systemImage: "doc.on.clipboard") }.buttonStyle(OSPill())
                 Spacer(minLength: 0)
@@ -85,7 +127,8 @@ struct CaptureDropBox: View {
         .padding(12)
         .background(RoundedRectangle(cornerRadius: 20, style: .continuous).fill(PLOS.surface2(scheme).opacity(0.5)))
         .overlay(RoundedRectangle(cornerRadius: 20, style: .continuous).strokeBorder(PLOS.line(scheme), lineWidth: 0.8))
-        .onReceive(tick) { _ in withAnimation { hintIndex = (hintIndex + 1) % hints.count } }
+        .onReceive(tick) { _ in withAnimation { hintIndex = (hintIndex + 1) % 60 } }
+        .fullScreenCover(isPresented: $shooting) { CaptureCamera { photo = $0 }.ignoresSafeArea() }
         .onChange(of: pickerItem) { _, item in
             Task {
                 if let item, let data = try? await item.loadTransferable(type: Data.self) { photo = data }
@@ -108,10 +151,10 @@ struct CaptureDropBox: View {
     private func send() {
         focused = false
         let t = trimmed
-        if let photo { pending = DropPending(kind: "image", text: t, url: nil, photo: photo); return }
+        if let photo { pending = DropPending(kind: "image", text: t, url: nil, photo: photo, preferred: whereRoute); return }
         let u = URL(string: t)
         let isLink = !t.contains(where: { $0.isWhitespace }) && (u?.scheme == "http" || u?.scheme == "https") && u?.host != nil
-        pending = DropPending(kind: isLink ? "url" : "text", text: t, url: isLink ? t : nil, photo: nil)
+        pending = DropPending(kind: isLink ? "url" : "text", text: t, url: isLink ? t : nil, photo: nil, preferred: whereRoute)
     }
 }
 
