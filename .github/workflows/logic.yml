@@ -23,5 +23,7 @@ jobs:
         run: swift test --package-path PLDevCore
       - name: Check the project file
         run: python3 scripts/check_pbxproj.py
+      - name: Check the toolkit data shape
+        run: python3 scripts/check_toolkit.py
       - name: Hygiene scan
         run: bash scripts/scan.sh
