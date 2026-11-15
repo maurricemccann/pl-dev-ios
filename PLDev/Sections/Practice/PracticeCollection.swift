@@ -1,5 +1,4 @@
 import SwiftUI
-import PLDevCore
 
 // Phase 6 of the practice spec (S348·9a3e, his rulings 11-15): completing the evening earns one card a day, drawn from his
 // favourites (a /curate keep he starred), a shuffled deck with no repeat until it runs out. Nothing is ever taken away.
