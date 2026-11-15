@@ -26,12 +26,12 @@ public struct BackendTemplate: Codable, Equatable, Identifiable, Sendable {
 }
 
 public enum BackendTemplates {
-    /// The starting set (premise 1). Horizon's address is NOT guessed: it is set from the first page he shares (premise 4).
+    /// The starting set (premise 1). Horizon's address was never guessed: he gave it 11-15 (developers.meta.com).
     public static let builtIn: [BackendTemplate] = [
         BackendTemplate(id: "cloudflare", name: "Cloudflare", symbol: "cloud", startURL: "https://dash.cloudflare.com/", allowedHosts: ["cloudflare.com"]),
         BackendTemplate(id: "printful", name: "Printful", symbol: "shippingbox", startURL: "https://www.printful.com/dashboard", allowedHosts: ["printful.com"]),
         BackendTemplate(id: "pinterest", name: "Pinterest", symbol: "pin", startURL: "https://www.pinterest.com/business/hub/", allowedHosts: ["pinterest.com", "pinimg.com"]),   // his pick N23, 11-14
-        BackendTemplate(id: "horizon", name: "Meta Horizon Creator Club", symbol: "visionpro", startURL: "", allowedHosts: ["meta.com", "facebook.com", "oculus.com", "fb.com", "fb.me", "instagram.com", "messenger.com"]),
+        BackendTemplate(id: "horizon", name: "Meta Horizon Creator Club", symbol: "visionpro", startURL: "https://developers.meta.com/", allowedHosts: ["meta.com", "facebook.com", "oculus.com", "fb.com", "fb.me", "instagram.com", "messenger.com"]),
     ]
 
     /// Sign-in providers a site may bounce through, allowed in every tile so a Google, Apple, Microsoft or GitHub sign-in does not leave the app.

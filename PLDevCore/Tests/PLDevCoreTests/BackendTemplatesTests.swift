@@ -8,7 +8,7 @@ final class BackendTemplatesTests: XCTestCase {
         XCTAssertTrue(BackendTemplates.builtIn[0].isReady)
         XCTAssertTrue(BackendTemplates.builtIn[1].isReady)
         XCTAssertTrue(BackendTemplates.builtIn[2].isReady)
-        XCTAssertFalse(BackendTemplates.builtIn[3].isReady, "Horizon waits for his first share, its address is not guessed")
+        XCTAssertTrue(BackendTemplates.builtIn[3].isReady, "Horizon has the address he gave 11-15")
     }
 
     func testANewBuiltInAppearsOnceAndARemovedOneStaysGone() {
@@ -75,7 +75,7 @@ final class BackendTemplatesTests: XCTestCase {
     func testTemplateForFillsHorizonFromTheSharedAddress() {
         let t = BackendTemplates.template(for: "https://www.meta.com/horizon/creators/", title: "Creators")
         XCTAssertEqual(t?.id, "horizon")
-        XCTAssertEqual(t?.startURL, "https://www.meta.com/horizon/creators/")
+        XCTAssertEqual(t?.startURL, "https://developers.meta.com/", "the tile has its own address now, so a shared Meta page does not replace it")
         XCTAssertTrue(t?.isReady == true)
         XCTAssertEqual(BackendTemplates.template(for: "https://dash.cloudflare.com/", title: nil)?.startURL, "https://dash.cloudflare.com/")
         XCTAssertNil(BackendTemplates.template(for: "ftp://x", title: nil))
