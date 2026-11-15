@@ -61,8 +61,14 @@ import UserNotifications
                     state.markSent(item.id)
                     return true   // unreadable: retrying cannot help
                 }
-                let data = try await http.send(RequestPlan(origin: "cron", method: "POST", path: "api/widget/photo",
-                                                           query: ["caption": String(words.prefix(300)), "source": "pl-dev"],
+                // 11-14 his ruling (smart capture): a photo of a new piece goes into the ART inbox (the archive pipeline: duplicate scan, name,
+                // PL number, /curate verdict), the same inbox as the "New art" Shortcut, not the older caption-only photo lane. The title is
+                // his words; "made" is the day it was captured, on this phone's calendar.
+                let day = DateFormatter()
+                day.dateFormat = "yyyy-MM-dd"
+                day.locale = Locale(identifier: "en_US_POSIX")
+                let data = try await http.send(RequestPlan(origin: "cron", method: "POST", path: "api/widget/art",
+                                                           query: ["title": String(words.prefix(120)), "made": day.string(from: item.createdAt)],
                                                            headers: ["content-type": "image/jpeg"], body: jpeg),
                                                idempotent: false, extraHeaders: ["Authorization": "Bearer " + write], timeout: 60)
                 state.noteCap(from: data)
