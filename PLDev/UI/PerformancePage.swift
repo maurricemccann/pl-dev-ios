@@ -37,6 +37,17 @@ struct PerformancePage: View {
 
     @Environment(\.openURL) private var openURL
 
+    /// Claude usage as this PC records it (PL Call's `pcstats`, tailnet, keyed): the board's Console calls, Claude Code's 5-hour block,
+    /// and the weekly limit only when a session has read it off the account page. Nothing here is estimated.
+    struct ClaudeUse: Decodable {
+        struct Block: Decodable { let generated: String?; let active: Bool?; let block_end: String?; let minutes_left: Int?; let tokens: Double?; let requests: Int?; let pct_of_peak: Double? }
+        struct Week: Decodable { let pct: Double?; let read_at: String?; let resets: String? }
+        let board_day: String?; let board_calls: Int?; let board_cap: Int?; let block: Block?; let week: Week?
+    }
+    private struct PCReply: Decodable { let claude: ClaudeUse? }
+    @State private var claude: ClaudeUse?
+    @State private var claudeFailed = false
+
     /// The on-device model's word on one suggestion: nil = not judged yet.
     @State private var judged: [Int: (can: Bool, step: String)] = [:]
     @State private var judging = false
@@ -72,6 +83,7 @@ struct PerformancePage: View {
         do {
             data = try JSONDecoder().decode(Performance.self, from: try await http.send(RequestPlan(origin: "cron", path: "api/widget/performance"), timeout: 30))
             failed = false
+            await loadClaude()
             await judge()
         } catch {
             failed = data == nil
@@ -116,8 +128,11 @@ struct PerformancePage: View {
             let m = data?.money
             HStack(alignment: .top) {
                 figure("This year", dollars(m?.ytd))
+                Divider().frame(height: 34)
                 figure("This month", dollars(m?.month))
+                Divider().frame(height: 34)
                 figure("Last 7 days", dollars(m?.last7))
+                Divider().frame(height: 34)
                 figure("Orders", count(m?.orders_ytd))
             }
             // the goal lines and their words come from the house (private), never from this public code
@@ -247,7 +262,8 @@ struct PerformancePage: View {
                     }
                     Spacer(minLength: 8)
                     Text(dollars(o.total)).font(.system(.callout, design: .monospaced)).monospacedDigit()
-                    Text((o.status ?? "").capitalized).font(.caption2).foregroundStyle(orderTone(o.status)).frame(width: 78, alignment: .trailing)
+                    Text((o.status ?? "").replacingOccurrences(of: "_", with: " ").capitalized).font(.caption2).foregroundStyle(orderTone(o.status))
+                        .lineLimit(1).minimumScaleFactor(0.7).frame(width: 78, alignment: .trailing)
                 }
                 .accessibilityElement(children: .combine)
             }
@@ -308,6 +324,15 @@ struct PerformancePage: View {
             let hidden = leads.count - shown.count
             if hidden > 0 { Text("\(hidden) left out: not doable on your terms.").font(.caption2).foregroundStyle(.secondary) }
         }
+    }
+
+    private func loadClaude() async {
+        guard let http = model.http, let key = model.config?.key("call"), !key.isEmpty else { claudeFailed = true; return }
+        do {
+            let d = try await http.send(RequestPlan(origin: "call", path: "pcstats"), extraHeaders: ["X-Call-Key": key], timeout: 12, cache: false)
+            claude = try JSONDecoder().decode(PCReply.self, from: d).claude
+            claudeFailed = false
+        } catch { claudeFailed = claude == nil }
     }
 
     /// Asks the on-device model about each suggestion, one at a time. Nothing leaves the phone.
@@ -417,6 +442,28 @@ struct PerformancePage: View {
                     Spacer()
                     Text("\(j.calls)").font(.system(.footnote, design: .monospaced)).monospacedDigit().foregroundStyle(.secondary)
                 }
+            }
+            Divider()
+            Text("Claude").plLabel(10).foregroundStyle(.secondary)
+            if let u = claude {
+                HStack(alignment: .top) {
+                    figure("Board calls today", u.board_calls.map { "\($0) / \(u.board_cap ?? 200)" } ?? "\u{2014}")
+                    Divider().frame(height: 34)
+                    figure("5-hour block", u.block?.pct_of_peak.map { String(format: "%.0f%% of peak", $0) } ?? "\u{2014}")
+                    Divider().frame(height: 34)
+                    figure("Week limit", u.week?.pct.map { String(format: "%.0f%%", $0) } ?? "\u{2014}")
+                }
+                if let b = u.block, let left = b.minutes_left, b.active == true {
+                    Text("Block ends \(b.block_end ?? ""), \(left) min left. Read \(String((b.generated ?? "").prefix(16))).").font(.caption2).foregroundStyle(.secondary)
+                }
+                if let w = u.week, w.pct != nil {
+                    Text("Week limit read \(String((w.read_at ?? "").prefix(16)))\(w.resets.map { ", resets \($0)" } ?? "").").font(.caption2).foregroundStyle(.secondary)
+                } else {
+                    Text("The week limit is account state: it shows here once a session reads it from the account page. Console dollars need an admin key the house does not hold.")
+                        .font(.caption2).foregroundStyle(.secondary)
+                }
+            } else {
+                Text(claudeFailed ? "Could not reach the PC (Tailscale may be off)." : "Reading the PC\u{2026}").font(.caption2).foregroundStyle(.secondary)
             }
         }
     }
