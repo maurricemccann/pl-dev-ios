@@ -2,6 +2,7 @@ import ARKit
 import AVFoundation
 import CoreMotion
 import RealityKit
+import ReplayKit
 import SwiftUI
 
 // AR curves: "wrap the world in curves" (app/lab/ar/page.tsx, app/lab/ar-surface/page.tsx).
@@ -123,7 +124,7 @@ struct LabARView: View {
                 VStack { Spacer()
                     Text(ar.note).font(.system(size: 11)).tracking(0.9).foregroundStyle(PLG.gold.opacity(0.8)).multilineTextAlignment(.center)
                         .padding(.horizontal, 14).padding(.vertical, 8).background(RoundedRectangle(cornerRadius: 10).fill(Color(hex: 0x0e0c08).opacity(0.7)).overlay { RoundedRectangle(cornerRadius: 10).strokeBorder(PLG.gold.opacity(0.27), lineWidth: 1) })
-                        .padding(.bottom, 24).padding(.horizontal, 30) }
+                        .padding(.bottom, ar.mode == .room ? 130 : 24).padding(.horizontal, 30) }
                 .allowsHitTesting(false)
             }
             if ar.mode != .idle {
@@ -191,19 +192,83 @@ struct LabARView: View {
     }
 }
 
-// MARK: - the room: RealityView + SpatialTrackingSession, tap to anchor (floors and walls)
+// MARK: - the room: RealityView + SpatialTrackingSession (planes, LiDAR collision + occlusion), tap to place, hold to draw, record
 
-/// Holds the session and the scene for the room. A plane AnchorEntity binds to one real plane the system finds, so each alignment gets an invisible
-/// probe (a thin collision slab) on such an anchor; a tap is a ray through the screen, and the tile goes where the ray meets a probe.
+/// His art for the room. The tile is his gallery PNG; The Direction is rendered here from PracticeMapArt (his six strokes, his colour), transparent.
+enum LabARArt: Int { case tile, direction }
+
+enum LabARDirection {
+    static let colour = UIColor(red: 0x5b / 255.0, green: 0x54 / 255.0, blue: 0xe6 / 255.0, alpha: 1)
+    static func image(side: CGFloat = 1024) -> UIImage {
+        let f = UIGraphicsImageRendererFormat(); f.opaque = false; f.scale = 1
+        return UIGraphicsImageRenderer(size: CGSize(width: side, height: side), format: f).image { ctx in
+            let g = ctx.cgContext
+            g.setStrokeColor(colour.cgColor); g.setLineWidth(PracticeMapArt.strokeWidth * side); g.setLineCap(.round); g.setLineJoin(.round)
+            for s in PracticeMapArt.strokes where s.count > 1 {
+                let p = s.map { CGPoint(x: $0.x * side, y: $0.y * side) }
+                g.move(to: p[0])
+                for i in 0..<(p.count - 1) {   // Catmull-Rom through his points, as The Direction draws them
+                    let p0 = p[max(i - 1, 0)], p1 = p[i], p2 = p[i + 1], p3 = p[min(i + 2, p.count - 1)]
+                    g.addCurve(to: p2, control1: CGPoint(x: p1.x + (p2.x - p0.x) / 6, y: p1.y + (p2.y - p0.y) / 6), control2: CGPoint(x: p2.x - (p3.x - p1.x) / 6, y: p2.y - (p3.y - p1.y) / 6))
+                }
+                g.strokePath()
+            }
+        }
+    }
+}
+
+/// A round tube along sampled points (parallel-transport frames), both windings so it shows from any side.
+@MainActor private func labTubeMesh(_ pts: [SIMD3<Float>], radius: Float, sides: Int = 8) -> MeshResource? {
+    guard pts.count >= 2 else { return nil }
+    var pos: [SIMD3<Float>] = [], nor: [SIMD3<Float>] = [], idx: [UInt32] = []
+    var prev: SIMD3<Float>?
+    for i in pts.indices {
+        let t = simd_normalize(pts[min(i + 1, pts.count - 1)] - pts[max(i - 1, 0)])
+        var n = prev ?? (abs(t.y) < 0.9 ? SIMD3<Float>(0, 1, 0) : SIMD3<Float>(1, 0, 0))
+        n = n - t * simd_dot(n, t)
+        n = simd_length(n) < 1e-5 ? SIMD3<Float>(1, 0, 0) : simd_normalize(n)
+        prev = n
+        let b = simd_cross(t, n)
+        for s in 0..<sides {
+            let a = Float(s) / Float(sides) * 2 * .pi
+            let d = n * cos(a) + b * sin(a)
+            pos.append(pts[i] + d * radius); nor.append(d)
+        }
+    }
+    for i in 0..<(pts.count - 1) {
+        for s in 0..<sides {
+            let a = UInt32(i * sides + s), b = UInt32(i * sides + (s + 1) % sides), c = UInt32((i + 1) * sides + s), d = UInt32((i + 1) * sides + (s + 1) % sides)
+            idx += [a, c, b, b, c, d, a, b, c, b, d, c]
+        }
+    }
+    var desc = MeshDescriptor(name: "air-curve")
+    desc.positions = MeshBuffer(pos); desc.normals = MeshBuffer(nor); desc.primitives = .triangles(idx)
+    return try? MeshResource.generate(from: [desc])
+}
+
+/// Holds the session and the scene for the room. With LiDAR the session adds collision and occlusion meshes of the real room, so a tap ray lands on
+/// any real surface (a sofa arm, a table edge) and real things hide the curves. Without LiDAR a plane AnchorEntity probe (a thin collision slab) per
+/// alignment is the fallback, as before.
 @MainActor final class LabRoomBox {
     let session = SpatialTrackingSession()
     var content: RealityViewCameraContent?
     var tile: UIImage?
+    var direction: UIImage?
+    var art = LabARArt.tile
     var probes: [AnchorEntity] = []
     var aligns: [ObjectIdentifier: AnchoringComponent.Target.Alignment] = [:]
     var running = false
     var say: (String) -> Void = { _ in }
     var found: (Bool) -> Void = { _ in }
+    // placed things, for Clear
+    private var placed: [Entity] = []
+    // the camera, and the curve being drawn in the air
+    private let camera = AnchorEntity(.camera)
+    private let airRoot = AnchorEntity(world: SIMD3<Float>(0, 0, 0))
+    private var airPoints: [SIMD3<Float>] = []
+    private var airEntity: ModelEntity?
+    var drawing = false
+    private var sinceMesh = 0
 
     private func addProbe(_ alignment: AnchoringComponent.Target.Alignment) {
         guard let content else { return }
@@ -211,7 +276,6 @@ struct LabARView: View {
         let slab = Entity()
         slab.components.set(CollisionComponent(shapes: [.generateBox(width: 6, height: 0.02, depth: 6)]))
         a.addChild(slab)
-        // after the first build, add to the live scene itself; the saved content copy is only the fallback
         if let scene = probes.first?.scene { scene.addAnchor(a) } else { content.add(a) }
         probes.append(a); aligns[ObjectIdentifier(a)] = alignment
     }
@@ -219,45 +283,88 @@ struct LabARView: View {
     func build(_ c: inout RealityViewCameraContent) {
         c.camera = .spatialTracking
         content = c
+        c.add(camera); c.add(airRoot)
         addProbe(.horizontal); addProbe(.vertical)
         _ = c.subscribe(to: SceneEvents.Update.self) { [weak self] _ in
             guard let self else { return }
-            self.found(self.probes.contains { $0.isAnchored })
+            self.found(self.running && (self.lidar || self.probes.contains { $0.isAnchored }))
+            if self.drawing { self.sampleAir() }
         }
     }
 
-    /// Camera access first (a denial is a line and the preview, never a black screen), then the tracking session.
+    var lidar: Bool { ARWorldTrackingConfiguration.supportsSceneReconstruction(.mesh) }
+
+    /// Camera access first (a denial is a line and the preview, never a black screen), then the tracking session with scene understanding.
     func start() async -> String? {
         guard await AVCaptureDevice.requestAccess(for: .video) else { return "Camera access is off, so the room cannot be tracked. Showing the view overlay instead." }
-        let un = await session.run(.init(tracking: [.plane], camera: .back))
+        let un = await session.run(.init(tracking: [.camera, .plane], sceneUnderstanding: [.occlusion, .collision, .shadow], camera: .back))
         if let un {
             if un.missingCameraAuthorization == true { return "Camera access is off, so the room cannot be tracked. Showing the view overlay instead." }
             if un.anchor.contains(.plane) { return "This phone cannot track a room. Showing the view overlay instead." }
         }
         running = true
+        if !lidar { say("No LiDAR on this phone: flat floors and walls still work; real things will not hide the curves.") }
         return nil
     }
 
     func stop() { guard running else { return }; running = false; let s = session; Task { await s.stop() } }
 
+    private func artImage() -> UIImage? { art == .direction ? direction : tile }
+
+    /// A tap: the real room's mesh first (any surface, with its normal), else a detected plane.
     func tapped(_ p: CGPoint) async {
-        guard let content, let cg = tile?.cgImage else { say("The pattern is still loading. Try again in a moment."); return }
-        guard let ray = content.ray(through: p, in: .local, to: .scene), let scene = probes.first?.scene,
-              let hit = scene.raycast(origin: ray.origin, direction: ray.direction).first(where: { h in probes.contains { h.entity.parent === $0 } }),
-              let anchor = probes.first(where: { hit.entity.parent === $0 }) else { say("No surface there yet. Move the phone slowly over a floor, a table or a wall."); return }
+        guard let cg = artImage()?.cgImage else { say("The art is still loading. Try again in a moment."); return }
+        guard let content, let ray = content.ray(through: p, in: .local, to: .scene), let scene = camera.scene ?? probes.first?.scene else { return }
+        var pos: SIMD3<Float>?
+        var normal = SIMD3<Float>(0, 1, 0)
+        if let h = scene.raycast(origin: ray.origin, direction: ray.direction, length: 8, query: .nearest, mask: .sceneUnderstanding).first {
+            pos = h.position; normal = simd_normalize(h.normal)
+        } else if let h = scene.raycast(origin: ray.origin, direction: ray.direction).first(where: { h in probes.contains { h.entity.parent === $0 } }),
+                  let anchor = probes.first(where: { h.entity.parent === $0 }) {
+            pos = h.position
+            normal = simd_normalize(anchor.convert(direction: SIMD3<Float>(0, 1, 0), to: nil))
+            if let al = aligns[ObjectIdentifier(anchor)] { addProbe(al) }
+        }
+        guard let pos else { say("No surface there yet. Move the phone slowly over the room."); return }
         guard let tex = try? await TextureResource(image: cg, options: .init(semantic: .color)) else { return }
         var m = UnlitMaterial()
         m.color = .init(tint: .white, texture: .init(tex))
         m.blending = .transparent(opacity: 0.94)
-        // a plane anchor's local y is the surface normal, so the plane mesh lies flat on a floor and flat against a wall
-        let plane = ModelEntity(mesh: .generatePlane(width: 1.2, depth: 1.2), materials: [m])
-        plane.setPosition(anchor.convert(position: hit.position, from: nil), relativeTo: anchor)
-        plane.position.y += 0.002
-        anchor.addChild(plane)
-        // the anchor now holds a tile; a fresh probe of the same kind can bind to another surface
-        if let al = aligns[ObjectIdentifier(anchor)] { addProbe(al) }
-        say("Anchored. Tap again to add another.")
+        // the plane mesh's local y is its normal: turn y onto the hit surface's normal and it lies flat on whatever was hit
+        let q = simd_quatf(from: SIMD3<Float>(0, 1, 0), to: normal)
+        let anchor = AnchorEntity(world: Transform(rotation: q, translation: pos + normal * 0.003).matrix)
+        anchor.addChild(ModelEntity(mesh: .generatePlane(width: 1.0, depth: 1.0), materials: [m]))
+        scene.addAnchor(anchor)
+        placed.append(anchor)
+        say("Placed. Tap again to add another.")
     }
+
+    // MARK: draw in the air: the camera's position while a finger is held, 35 cm in front of the lens
+
+    func beginAir() {
+        guard running else { return }
+        airPoints = []; sinceMesh = 0
+        let e = ModelEntity(); airRoot.addChild(e); airEntity = e; placed.append(e)
+        drawing = true
+    }
+
+    func endAir() { drawing = false; rebuildAir(); airEntity = nil }
+
+    private func sampleAir() {
+        let m = camera.transformMatrix(relativeTo: nil)
+        let fwd = -SIMD3<Float>(m.columns.2.x, m.columns.2.y, m.columns.2.z)
+        let p = SIMD3<Float>(m.columns.3.x, m.columns.3.y, m.columns.3.z) + fwd * 0.35
+        if let l = airPoints.last, simd_distance(l, p) < 0.012 { return }
+        airPoints.append(p); sinceMesh += 1
+        if sinceMesh >= 3 { sinceMesh = 0; rebuildAir() }
+    }
+
+    private func rebuildAir() {
+        guard let e = airEntity, let mesh = labTubeMesh(airPoints, radius: 0.007) else { return }
+        e.model = ModelComponent(mesh: mesh, materials: [UnlitMaterial(color: LabARDirection.colour)])
+    }
+
+    func clear() { for e in placed { e.removeFromParent() }; placed = [] }
 }
 
 private struct LabARRoomView: View {
@@ -268,10 +375,20 @@ private struct LabARRoomView: View {
     @State private var box = LabRoomBox()
     @State private var found = false
     @State private var pulse = false
+    @State private var art = LabARArt.tile
+    @State private var drawMode = false
+    @State private var recording = false
+    @State private var movie: URL?
+    @State private var holding = false
 
     var body: some View {
         RealityView { content in box.build(&content) }
-            .gesture(SpatialTapGesture().onEnded { v in Task { await box.tapped(v.location) } })
+            .gesture(DragGesture(minimumDistance: 0)
+                .onChanged { _ in if drawMode && !holding { holding = true; box.beginAir() } }
+                .onEnded { v in
+                    if drawMode { holding = false; box.endAir() }
+                    else if abs(v.translation.width) < 12 && abs(v.translation.height) < 12 { Task { await box.tapped(v.location) } }
+                })
             .ignoresSafeArea()
             .overlay(alignment: .top) {
                 if !found {   // RealityView has no coaching overlay of its own (that one needs an ARSession), so the house draws the line
@@ -283,11 +400,71 @@ private struct LabARRoomView: View {
                         .accessibilityLabel("Finding a surface. Move the phone slowly.")
                 }
             }
+            .overlay(alignment: .bottom) { controls }
             .task {
-                box.tile = tile; box.say = say; box.found = { if $0 != found { found = $0 } }
+                box.tile = tile; box.direction = LabARDirection.image(); box.say = say; box.found = { if $0 != found { found = $0 } }
                 if let why = await box.start() { failed(why) }
             }
             .onChange(of: tile) { _, t in box.tile = t }
-            .onDisappear { box.stop() }
+            .onChange(of: art) { _, a in box.art = a }
+            .onChange(of: drawMode) { _, d in say(d ? "Hold a finger down and move the phone to draw in the air." : "Tap a surface to place the art.") }
+            .onDisappear {
+                box.stop()
+                if recording {
+                    let discard = FileManager.default.temporaryDirectory.appendingPathComponent("ar-discard.mov")
+                    try? FileManager.default.removeItem(at: discard)   // stopRecording fails if the file is already there
+                    RPScreenRecorder.shared().stopRecording(withOutput: discard, completionHandler: nil)
+                }
+            }
+    }
+
+    /// Art, Place or Draw, Record, Clear: one glass row, 44 pt targets, above the home indicator.
+    private var controls: some View {
+        VStack(spacing: 8) {
+            if let movie {
+                HStack(spacing: 10) {
+                    ShareLink(item: movie) { Label("Save or share the video", systemImage: "square.and.arrow.up").font(.system(size: 13, weight: .medium)).padding(.horizontal, 14).frame(minHeight: 44) }
+                        .glassEffect(.regular.interactive(), in: Capsule())
+                    Button { self.movie = nil } label: { Image(systemName: "xmark").frame(width: 44, height: 44) }
+                        .glassEffect(.regular.interactive(), in: Circle()).accessibilityLabel("Close")
+                }
+            }
+            HStack(spacing: 8) {
+                // the two switches share what is left after the 44 pt buttons: fixed widths overflowed a 6.3-inch Pro (lead review)
+                Picker("Art", selection: $art) { Text("Tile").tag(LabARArt.tile); Text("Direction").tag(LabARArt.direction) }
+                    .pickerStyle(.segmented).frame(maxWidth: .infinity)
+                Picker("Mode", selection: $drawMode) { Text("Place").tag(false); Text("Draw").tag(true) }
+                    .pickerStyle(.segmented).frame(maxWidth: .infinity)
+                Button { toggleRecord() } label: { Image(systemName: recording ? "stop.circle.fill" : "record.circle").font(.system(size: 22)).foregroundStyle(recording ? .red : .white).frame(width: 44, height: 44) }
+                    .glassEffect(.regular.interactive(), in: Circle()).accessibilityLabel(recording ? "Stop recording" : "Record")
+                Button { box.clear() } label: { Image(systemName: "trash").font(.system(size: 17)).foregroundStyle(.white).frame(width: 44, height: 44) }
+                    .glassEffect(.regular.interactive(), in: Circle()).accessibilityLabel("Clear everything placed")
+            }
+        }
+        .padding(.horizontal, 12).padding(.bottom, 14)
+    }
+
+    /// ReplayKit's screen recorder, no microphone, straight to a file; then the share sheet saves it to Photos.
+    /// (Deprecated in iOS 27 in favour of ScreenCaptureKit; still works, kept until the phone pass shows otherwise.)
+    private func toggleRecord() {
+        let rec = RPScreenRecorder.shared()
+        if recording {
+            let url = FileManager.default.temporaryDirectory.appendingPathComponent("pl-ar-\(Int(Date().timeIntervalSince1970)).mov")
+            try? FileManager.default.removeItem(at: url)
+            rec.stopRecording(withOutput: url) { err in
+                Task { @MainActor in
+                    recording = false
+                    if let err { say("Recording failed: \(err.localizedDescription)") } else { movie = url; say("Recorded. Save or share it below.") }
+                }
+            }
+        } else {
+            guard rec.isAvailable else { say("Screen recording is not available right now."); return }
+            rec.isMicrophoneEnabled = false
+            rec.startRecording { err in
+                Task { @MainActor in
+                    if let err { say("Could not start recording: \(err.localizedDescription)") } else { recording = true; movie = nil; say("Recording. Tap stop when done.") }
+                }
+            }
+        }
     }
 }
