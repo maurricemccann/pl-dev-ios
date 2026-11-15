@@ -88,7 +88,7 @@ struct GamesScreen: View {
             if let c = await PracticeCards.load(model: model) { unlocked = Set(c.games ?? []) }
         }
         .fullScreenCover(item: $playingArcade) { g in
-            GameShell(title: g.title) { playingArcade = nil } content: { arcadeGame(g, seeds: state.course.map(Self.seeds) ?? []) }
+            GameShell(title: g.title) { playingArcade = nil } content: { arcadeGame(g, seeds: state.course.map(Self.seeds) ?? [], units: state.course?.units ?? []) }
         }
         .fullScreenCover(item: $playing) { g in
             GameShell(title: g.title) { playing = nil } content: {

@@ -9,6 +9,8 @@ enum ArcadeID: String, CaseIterable, Identifiable {
     case preparation, theReturn = "the-return", practice = "the-practice", compound, restore = "restore-the-archive", resonance
     // wave 1 (spec vault Plans/SPEC - GAMES, WAVE 1 (S348).md)
     case seeds = "the-seeds", curve = "the-curve", architect = "reality-architect", oracle = "oracle-game"
+    // wave 2 (spec vault Plans/SPEC - GAMES, WAVE 2 (S348).md)
+    case signal = "the-signal", room = "three-laws-room", moment = "watch-this-moment"
     var id: String { rawValue }
     var title: String {
         switch self {
@@ -22,6 +24,9 @@ enum ArcadeID: String, CaseIterable, Identifiable {
         case .curve: return "The Curve"
         case .architect: return "Reality Architect"
         case .oracle: return "Oracle Paths"
+        case .signal: return "The Signal"
+        case .room: return "Three Laws Room"
+        case .moment: return "Watch This Moment"
         }
     }
     var line: String {
@@ -36,6 +41,9 @@ enum ArcadeID: String, CaseIterable, Identifiable {
         case .curve: return "Watch his stroke draw itself, then redraw it from memory."
         case .architect: return "State Self, Wealth and World. Clarity is scored by rules you can read."
         case .oracle: return "Five choices through his story to one of the Truths."
+        case .signal: return "Catch the house's words as they fall. Let the noise pass."
+        case .room: return "Walk the three rooms of the Truths, in order."
+        case .moment: return "Draw the Curve. Watch this."
         }
     }
     var symbol: String {
@@ -50,6 +58,9 @@ enum ArcadeID: String, CaseIterable, Identifiable {
         case .curve: return "scribble.variable"
         case .architect: return "building.columns"
         case .oracle: return "signpost.right.and.left"
+        case .signal: return "antenna.radiowaves.left.and.right"
+        case .room: return "door.left.hand.open"
+        case .moment: return "hand.draw"
         }
     }
 }
@@ -74,7 +85,7 @@ struct ArcadeGlyph: View {
     }
 }
 
-@ViewBuilder func arcadeGame(_ g: ArcadeID, seeds: [String]) -> some View {
+@ViewBuilder func arcadeGame(_ g: ArcadeID, seeds: [String], units: [CourseUnit] = []) -> some View {
     switch g {
     case .preparation: PreparationGame(principles: seeds)
     case .theReturn: ReturnGame()
@@ -86,6 +97,9 @@ struct ArcadeGlyph: View {
     case .curve: CurveGame()
     case .architect: ArchitectGame()
     case .oracle: OraclePathsGame()
+    case .signal: SignalGame(seeds: seeds)
+    case .room: ThreeLawsRoom(units: units)
+    case .moment: WatchThisMoment()
     }
 }
 
