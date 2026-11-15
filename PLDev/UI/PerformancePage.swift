@@ -70,6 +70,8 @@ struct PerformancePage: View {
     @State private var runway: ApprovalsModel.Runway?
     /// His one decision per week (Codex's "truth review", his ruling 11-14), kept on this phone by ISO week: "2026-W46" -> text.
     @AppStorage("pldev.weekDecisions") private var decisionsJSON = "{}"
+    /// Every "Tonight" tap, newest last: "2026-11-14|approvals" (the first half of Gemini's self-weighting prompts, kept honest).
+    @AppStorage("pldev.moveLog") private var moveLog = ""
     @State private var decisionDraft = ""
 
     var body: some View {
@@ -360,6 +362,18 @@ struct PerformancePage: View {
                         }
                     }
                 }
+                // Gemini's threshold-unlocked telemetry (his "anything else", 11-14): a rate is shown only when its counts can carry it
+                let orders = data?.money?.patrons?.count ?? 0, visitors = s.totals?.users_28d ?? 0
+                if orders >= 5 {
+                    let recentOrders = (data?.money?.patrons ?? []).filter { $0.day >= String(Date.now.addingTimeInterval(-28 * 86400).formatted(.iso8601.year().month().day())) }.count
+                    figure("Visitor to order, 28 days", visitors > 0 ? String(format: "%.1f%%", Double(recentOrders) / Double(visitors) * 100) : "\u{2014}")
+                } else {
+                    Label("The visitor-to-order rate opens at 5 orders (now \(orders)); fewer cannot carry a rate.", systemImage: "lock")
+                        .font(.caption2).foregroundStyle(.secondary)
+                }
+                if visitors < 500 {
+                    Label("Page drop-off opens at 500 visitors a month (now \(visitors)).", systemImage: "lock").font(.caption2).foregroundStyle(.secondary)
+                }
                 Text("Last 28 days, Google Analytics. Read \(String((s.as_of ?? "").prefix(10))).").font(.caption2).foregroundStyle(.secondary)
             } else {
                 Text(data == nil ? "Not read yet." : "No site read yet: the PC board posts it each night.").font(.callout).foregroundStyle(.secondary)
@@ -381,6 +395,8 @@ struct PerformancePage: View {
         let move = TonightsMove.pick(lanes: lanes, target: runway?.lane_runway_ceiling_days ?? 14, waiting: waiting,
                                      firstTask: data?.tasks?.first?.title, postsThisWeek: data?.weekly?.last?.posts)
         return Button {
+            let entry = String(Date.now.formatted(.iso8601.year().month().day())) + "|" + move.room
+            moveLog = (moveLog.split(separator: "\n").suffix(199).map(String.init) + [entry]).joined(separator: "\n")
             if let u = URL(string: "pldev://section/house/" + move.room) { openURL(u) }
         } label: {
             VStack(alignment: .leading, spacing: 8) {
@@ -439,6 +455,13 @@ struct PerformancePage: View {
                 figure("Visitors, 7 days", "\(recent)\(days.count >= 14 ? " (\(recent >= before ? "+" : "")\(recent - before))" : "")")
                 Divider().frame(height: 34)
                 figure("Posts", weeks.last.map { "\($0.posts)\(weeks.count > 1 ? " (\(weeks[weeks.count - 2].posts) before)" : "")" } ?? "\u{2014}")
+            }
+            // what he actually did this week, from his own Tonight taps (no guess about what it caused)
+            let since = String(Date.now.addingTimeInterval(-7 * 86400).formatted(.iso8601.year().month().day()))
+            let moves = moveLog.split(separator: "\n").compactMap { l -> String? in let p = l.split(separator: "|"); return p.count == 2 && String(p[0]) >= since ? String(p[1]) : nil }
+            if !moves.isEmpty {
+                let by = Dictionary(moves.map { ($0, 1) }, uniquingKeysWith: +).sorted { $0.value > $1.value }
+                Text("Your moves: " + by.map { "\($0.key) \($0.value)" }.joined(separator: " · ")).font(.footnote).foregroundStyle(.secondary)
             }
             if let d = decisions[lastWeek], !d.isEmpty {
                 VStack(alignment: .leading, spacing: 2) {
