@@ -241,8 +241,9 @@ struct BuddyView: View {
     }
 }
 
-/// One of his pieces with a Liquid Glass look (his ruling 11-15, "Glass face pieces"): his drawing, Apple's clear glass laid over it in
-/// the piece's own shape (masked by its alpha), and a soft sheen from the top-left. His marks stay visible; only the surface turns glass.
+/// One of his pieces with a Liquid Glass look (his ruling 11-15, "Glass face pieces"): his drawing in its own colours, a soft sheen from
+/// the top-left and a bright rim along the top edge, both in the piece's own shape. (Apple's glass material laid over it turned his whites
+/// and his orange grey on the simulator, 11-15, so it is not used; the look is the light on the surface, not a tint.)
 struct BuddyGlassPiece: View {
     let img: UIImage
 
@@ -250,9 +251,10 @@ struct BuddyGlassPiece: View {
         let shape = Image(uiImage: img).resizable().aspectRatio(contentMode: .fit)
         ZStack {
             shape
-            Color.clear.glassEffect(.clear, in: .rect).mask(shape)
-            LinearGradient(colors: [.white.opacity(0.5), .white.opacity(0)], startPoint: .topLeading, endPoint: .center)
+            LinearGradient(colors: [.white.opacity(0.55), .white.opacity(0)], startPoint: .topLeading, endPoint: .center)
                 .mask(shape).blendMode(.plusLighter)
+            shape.colorMultiply(.clear).overlay(LinearGradient(colors: [.white.opacity(0.9), .clear], startPoint: .top, endPoint: .init(x: 0.5, y: 0.18)).mask(shape))
+                .offset(y: 1).blendMode(.plusLighter).opacity(0.6)
         }
         .compositingGroup()
     }

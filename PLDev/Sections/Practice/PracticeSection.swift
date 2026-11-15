@@ -168,6 +168,7 @@ struct PracticeView: View {
     @Bindable var state: PracticeModel
     @State private var started = false
     @State private var buddy = BuddyModel()   // Buddy lives top-right of Practice (his circle, 11-15), his drawn faces only
+    @State private var rope: BuddyRopeRig?     // his rope, built once the bar item's place on screen is known
 
     var body: some View {
         ScrollViewReader { proxy in
@@ -201,8 +202,17 @@ struct PracticeView: View {
         .toolbar {
             ToolbarItem(placement: .topBarTrailing) {
                 // a real Button: a bar item's plain tap gesture never fired on his phone (11-15, "Tap didn't play anything")
-                Button { buddy.playNext() } label: { BuddyRope(buddy: buddy) }
+                // the bar clips anything drawn past an item (the simulator shot 11-15 showed the rope cut to a box), so the bar item is
+                // only the touch target; the rope and Buddy are drawn in an overlay under the glass bar, from this item's place on screen
+                Button { buddy.playNext() } label: { Color.clear.frame(width: 48, height: 44).contentShape(Rectangle()) }
                     .buttonStyle(.plain)
+                    .onGeometryChange(for: CGRect.self) { $0.frame(in: .global) } action: { f in
+                        let home = CGPoint(x: f.midX, y: f.midY)
+                        if rope.map({ hypot($0.home.x - home.x, $0.home.y - home.y) > 2 }) ?? true { rope = BuddyRopeRig(home: home) }
+                    }
+                    .simultaneousGesture(DragGesture(minimumDistance: 6, coordinateSpace: .global)
+                        .onChanged { v in rope?.grab = v.location }
+                        .onEnded { _ in rope?.grab = nil })
                     .simultaneousGesture(LongPressGesture(minimumDuration: 0.5).onEnded { _ in buddy.swapFace() })
                     .accessibilityHint("Tap for his next move, hold to swap faces, drag to swing him")
                     .onAppear { buddy.react(.open) }
@@ -217,6 +227,7 @@ struct PracticeView: View {
             .sharedBackgroundVisibility(.hidden)
         }
         .toolbar(state.entryDone ? .automatic : .hidden, for: .navigationBar)
+        .overlay { if state.entryDone, let rope { BuddyRope(buddy: buddy, rig: rope).ignoresSafeArea().allowsHitTesting(false) } }
         .overlay { if !state.entryDone { PracticeEntry(model: model, state: state).transition(.opacity) } }
         .sensoryFeedback(PLHaptic.commit, trigger: state.tick)
         .navigationDestination(isPresented: $state.preview) { VisionPreviewView() }
@@ -283,17 +294,20 @@ struct PracticeKpis: View {
 /// item's 56x44 frame (the bar does not clip it); only the item takes touches.
 @MainActor final class BuddyRopeRig {
     static let n = 16
-    static let anchor = CGPoint(x: 90, y: 30), tipHome = CGPoint(x: 292, y: 138), bend = CGPoint(x: 205, y: 140)   // canvas points
+    let home: CGPoint
     var hx: [Double] = [], hy: [Double] = [], px: [Double] = [], py: [Double] = [], ox: [Double] = [], oy: [Double] = []
     var grab: CGPoint?
     var t = 0.0
     private var acc = 0.0, last: Date?
 
-    init() {
+    /// Screen points: the rope hangs from above the top edge, left of Buddy, and sweeps down to his home (his mock-up 11-15).
+    init(home: CGPoint) {
+        self.home = home
+        let a = CGPoint(x: home.x - 200, y: -40), c = CGPoint(x: home.x - 90, y: home.y + 6), b = home
         for k in 0..<Self.n {
-            let u = Double(k) / Double(Self.n - 1), a = Self.anchor, c = Self.bend, b = Self.tipHome
-            let x = (1 - u) * (1 - u) * a.x + 2 * (1 - u) * u * c.x + u * u * b.x, y = (1 - u) * (1 - u) * a.y + 2 * (1 - u) * u * c.y + u * u * b.y
-            hx.append(x); hy.append(y)
+            let u = Double(k) / Double(Self.n - 1)
+            hx.append((1 - u) * (1 - u) * a.x + 2 * (1 - u) * u * c.x + u * u * b.x)
+            hy.append((1 - u) * (1 - u) * a.y + 2 * (1 - u) * u * c.y + u * u * b.y)
         }
         px = hx; py = hy; ox = hx; oy = hy
     }
@@ -340,31 +354,17 @@ struct PracticeKpis: View {
 
 struct BuddyRope: View {
     let buddy: BuddyModel
-    @State private var rig = BuddyRopeRig()
+    let rig: BuddyRopeRig
     @Environment(\.accessibilityReduceMotion) private var reduceMotion
-    private static let canvas = CGSize(width: 320, height: 160)
     private static let orange = Color(red: 143 / 255, green: 101 / 255, blue: 40 / 255)   // sampled from his mock-up
 
     var body: some View {
         TimelineView(.animation(minimumInterval: 1 / 60, paused: reduceMotion && rig.grab == nil)) { tl in
             let _ = rig.advance(tl.date, still: reduceMotion && rig.grab == nil)
-            let tip = rig.tip
             ZStack(alignment: .topLeading) {
                 Canvas { ctx, _ in ctx.stroke(rig.path(), with: .color(Self.orange), style: StrokeStyle(lineWidth: 26, lineCap: .butt, lineJoin: .round)) }
-                    .frame(width: Self.canvas.width, height: Self.canvas.height)
-                BuddyView(model: buddy).frame(width: 44, height: 44).position(tip)
+                BuddyView(model: buddy).frame(width: 46, height: 46).position(rig.tip)
             }
-            .frame(width: Self.canvas.width, height: Self.canvas.height)
         }
-        // the item is 56x44 at Buddy's home; the drawing hangs up and to the left of it
-        .frame(width: 56, height: 44, alignment: .bottomTrailing)
-        .offset(x: 0, y: 0)
-        .contentShape(Rectangle())
-        .simultaneousGesture(DragGesture(minimumDistance: 6, coordinateSpace: .local)
-            .onChanged { v in
-                // item-local -> canvas: Buddy's home (28, 22) in the item is tipHome in the canvas
-                rig.grab = CGPoint(x: BuddyRopeRig.tipHome.x + (v.location.x - 28), y: BuddyRopeRig.tipHome.y + (v.location.y - 22))
-            }
-            .onEnded { _ in rig.grab = nil })
     }
 }
