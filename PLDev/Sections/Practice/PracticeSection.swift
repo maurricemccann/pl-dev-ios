@@ -323,7 +323,8 @@ struct PracticeKpis: View {
     func step() {
         let N = Self.n
         for k in 1..<N {   // the anchor (k = 0) stays above the top edge
-            let u = Double(k) / Double(N - 1), s = t * 0.008, amp = 6 * sin(.pi * u * 0.9)
+            // a visible idle sway (his note 11-15, "the rope should move"): grows toward the tip, so Buddy swings with it
+            let u = Double(k) / Double(N - 1), s = t * 0.02, amp = 16 * u * u
             let tx = hx[k] + sin(s * 1.1 + u * 3) * amp, ty = hy[k] + cos(s * 0.9 + u * 2.4) * amp
             let vx = (px[k] - ox[k]) * FieldRig.damp, vy = (py[k] - oy[k]) * FieldRig.damp
             ox[k] = px[k]; oy[k] = py[k]
@@ -368,7 +369,7 @@ struct BuddyRope: View {
     let buddy: BuddyModel
     let rig: BuddyRopeRig
     @Environment(\.accessibilityReduceMotion) private var reduceMotion
-    private static let orange = Color(red: 143 / 255, green: 101 / 255, blue: 40 / 255)   // sampled from his mock-up
+    private static let orange = Color(red: 196 / 255, green: 136 / 255, blue: 48 / 255)   // his mock-up's orange, brighter (his note 11-15)
 
     var body: some View {
         TimelineView(.animation(minimumInterval: 1 / 60, paused: reduceMotion && rig.grab == nil)) { tl in
