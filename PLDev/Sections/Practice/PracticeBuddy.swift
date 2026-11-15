@@ -269,7 +269,7 @@ struct BuddyView: View {
     }
 }
 
-/// One of his pieces in Apple's see-through Liquid Glass (his ruling 11-15, "Use apples see through glass"): the clear areas (eye
+/// One of his pieces: his whites as he drew them, his colours in Apple's Liquid Glass tinted his own colour (his rulings 11-15). Was: the clear areas (eye
 /// whites, teeth) are clear glass, his colours are glass tinted with his own colour, both in the piece's exact shape (the glass is masked
 /// by the layer's alpha); his lines are drawn on top, untouched.
 struct BuddyGlassPiece: View {
@@ -278,7 +278,8 @@ struct BuddyGlassPiece: View {
     var body: some View {
         ZStack {
             if let c = glass.clear {
-                Color.clear.glassEffect(.clear, in: .rect).mask(Image(uiImage: c).resizable().aspectRatio(contentMode: .fit))
+                // his whites drawn as he drew them (his ruling 11-15, "Back to his drawing": clear glass let the rope show through his eyes)
+                Image(uiImage: c).resizable().aspectRatio(contentMode: .fit)
             }
             if let t = glass.tint, let col = glass.colour {
                 Color.clear.glassEffect(.clear.tint(col), in: .rect).mask(Image(uiImage: t).resizable().aspectRatio(contentMode: .fit))
