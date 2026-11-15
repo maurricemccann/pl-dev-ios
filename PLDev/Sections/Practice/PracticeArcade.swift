@@ -231,7 +231,7 @@ struct ReturnGame: View {
 
 // MARK: - The Practice (runner)
 
-@MainActor final class RunnerModel {
+@MainActor @Observable final class RunnerModel {
     struct Obstacle { var x: Double; let h: Double; let label: String }
     var y = 0.0, vy = 0.0, days = 0.0, speed = 180.0, spawnIn = 1.5
     var obstacles: [Obstacle] = []
@@ -266,7 +266,6 @@ struct ReturnGame: View {
 struct RunnerGame: View {
     let endLines: [String]
     @State private var m = RunnerModel()
-    @State private var tick = 0
 
     var body: some View {
         VStack(spacing: 14) {
@@ -299,14 +298,13 @@ struct RunnerGame: View {
                 Text("\(Int(m.days)) days of practice.").plHand(28, relativeTo: .title).foregroundStyle(Candle.goldHi)
                 Text(endLines.randomElement() ?? "Despite the conditions.").font(.system(size: 14, design: .serif).italic()).foregroundStyle(Candle.goldHi).multilineTextAlignment(.center)
                 Text("Best \(ArcadeScores.best(.practice)) days").candleHint()
-                Button("Run again") { m.reset(); tick += 1 }.buttonStyle(CandleButton())
+                Button("Run again") { m.reset() }.buttonStyle(CandleButton())
             } else if !m.running {
                 Text("Daily. Without exception. Jump doubt, distraction, fear.").candleHint()
-                Button("Begin") { m.reset(); tick += 1 }.buttonStyle(CandleButton())
+                Button("Begin") { m.reset() }.buttonStyle(CandleButton())
             }
         }
         .onChange(of: m.over) { _, over in if over { ArcadeScores.offer(.practice, Int(m.days)) } }
-        .id(tick)
     }
 }
 
@@ -334,7 +332,7 @@ struct CompoundGame: View {
             }
             .padding(8)
             .background(Candle.card, in: RoundedRectangle(cornerRadius: 12, style: .continuous))
-            .gesture(DragGesture(minimumDistance: 20).onEnded { v in
+            .highPriorityGesture(DragGesture(minimumDistance: 20).onEnded { v in
                 let dx = v.translation.width, dy = v.translation.height
                 move(abs(dx) > abs(dy) ? (dx > 0 ? 1 : 3) : (dy > 0 ? 2 : 0))
             })
