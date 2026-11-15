@@ -1,10 +1,14 @@
 import SwiftUI
 
-// One Teacher (S348·9a3e): the Path as a map. His rulings 11-15: "One of my hand study curves drawing itself across the glyphs the
-// glyphs look like islands"; the curve is The Direction ("The piece named the direction"); the islands are his 5 drawn glyphs ("Only
-// the 5 with images"). His six strokes draw in, in his order and stagger, in his colour, with the ground showing through where they
-// cross (as the piece does). Stroke 1, his top-to-bottom spine, carries one island per unit. The art is PracticeMapArt, generated from
-// his files by .claude/scripts/pl-path-art.py; nothing here redraws it.
+// One Teacher (S348·9a3e): the Path as fields of his curves. His rulings 11-15:
+// - the curve is The Direction ("The piece named the direction"), his six strokes, generated into PracticeMapArt from his files;
+// - "Lesson 1 rides stroke 1, lesson 2 stroke 2 … then when all are drawn it stays like the curve hero";
+// - "Fields of 6 wrapped around the curve, appearing as lessons complete; the island appears in gold when that chapter is complete";
+// - "Yes, one per unit" (his glyph is the island), "Yes, like the hero" (the finger pushes the curves), "Turns gold, keeps moving".
+// So: a unit's lessons split into chapters of six. A finished lesson's stroke draws itself in and turns gold; the next lesson's stroke
+// shows as a faint trace to tap; later strokes are not drawn yet. Drawn strokes live like the storefront's curve hero (SiteCurve.swift):
+// each is a 24-point rope that springs home, drifts slowly, parts around the finger, carries the bend along itself, and cuts its own
+// clearance channel through what lies beneath. Reduce Motion: no drift, no draw-in, the strokes rest where he drew them.
 
 enum PracticeMapGeometry {
     /// A smooth curve through his points (Catmull-Rom, as the piece's spline), scaled to the frame.
@@ -42,74 +46,232 @@ enum PracticeMapGeometry {
     static func ease(_ x: Double) -> Double { let c = min(1, max(0, x)); return c * c * (3 - 2 * c) }
 }
 
-struct PracticeMap: View {
-    let course: Course
-    let start: (CourseUnit) -> Void
+/// Six lessons of one unit: one field.
+struct PracticeChapter: Identifiable {
+    let unit: Int
+    let index: Int          // 0-based chapter within its unit
+    let count: Int          // chapters in the unit
+    let lessons: [CourseLesson]
+    var id: String { "\(unit)-\(index)" }
+
+    static func of(_ u: CourseUnit) -> [PracticeChapter] {
+        let ls = u.playableLessons, n = (ls.count + 5) / 6
+        return (0..<n).map { i in PracticeChapter(unit: u.n, index: i, count: n, lessons: Array(ls[(i * 6)..<min(ls.count, i * 6 + 6)])) }
+    }
+}
+
+/// The hero's rope physics (SiteCurve.swift `CurveRig`, its constants), with homes taken from his strokes instead of random cubics.
+@MainActor final class FieldRig {
+    static let n = 24, radius = 110.0, spring = 0.06, damp = 0.86, spread = 0.35, channel = 9.0
+    struct Rope { var hx: [Double], hy: [Double], px: [Double], py: [Double], ox: [Double], oy: [Double], phase: Double, speed: Double }
+    var ropes: [Rope] = []
+    var size: CGSize = .zero
+    var t = 0.0
+    var mx = -1e9, my = -1e9
+    var reduce = false
+    private var acc = 0.0, last: Date?
+
+    func setup(_ s: CGSize) {
+        guard s.width > 1, s.height > 1, s != size || ropes.isEmpty else { return }
+        size = s
+        ropes = PracticeMapArt.strokes.enumerated().map { i, pts in
+            let path = PracticeMapGeometry.stroke(pts, in: s)
+            var hx = [Double](), hy = [Double]()
+            for k in 0..<Self.n {
+                let p = PracticeMapGeometry.point(on: path, at: CGFloat(k) / CGFloat(Self.n - 1))
+                hx.append(Double(p.x)); hy.append(Double(p.y))
+            }
+            return Rope(hx: hx, hy: hy, px: hx, py: hy, ox: hx, oy: hy, phase: Double(i) * 1.7, speed: 0.6 + Double(i) * 0.11)
+        }
+    }
+
+    func advance(_ now: Date) {
+        defer { last = now }
+        guard !reduce, let last else { return }
+        acc += min(0.1, now.timeIntervalSince(last)) * 60
+        var g = 0
+        while acc >= 1, g < 4 { step(); acc -= 1; g += 1 }
+    }
+
+    /// One tick: each interior point springs toward its home plus a slow drift (the hero's breathing), the finger shoves it toward the
+    /// radius edge, then the displacement is smoothed along the rope so a push travels. The two ends stay where he drew them.
+    func step() {
+        let N = Self.n
+        for ri in ropes.indices {
+            var r = ropes[ri]
+            for k in 0..<N {
+                let u = Double(k) / Double(N - 1), s = r.speed * t * 0.008
+                let amp = 14 * sin(.pi * u)
+                let tx = r.hx[k] + sin(s * 1.1 + r.phase + u * 3) * amp, ty = r.hy[k] + cos(s * 0.9 + r.phase * 1.3 + u * 2.4) * amp
+                if k == 0 || k == N - 1 { r.px[k] = r.hx[k]; r.py[k] = r.hy[k]; r.ox[k] = r.hx[k]; r.oy[k] = r.hy[k]; continue }
+                let vx = (r.px[k] - r.ox[k]) * Self.damp, vy = (r.py[k] - r.oy[k]) * Self.damp
+                r.ox[k] = r.px[k]; r.oy[k] = r.py[k]
+                r.px[k] += vx + (tx - r.px[k]) * Self.spring; r.py[k] += vy + (ty - r.py[k]) * Self.spring
+                let qx = r.px[k] - mx, qy = r.py[k] - my, q2 = qx * qx + qy * qy
+                if q2 < Self.radius * Self.radius && q2 > 0.01 {
+                    let dl = q2.squareRoot(), f = ((Self.radius - dl) / dl) * 0.35
+                    r.px[k] += qx * f; r.py[k] += qy * f
+                }
+            }
+            for k in 1..<(N - 1) {
+                let dx = (r.px[k - 1] - r.hx[k - 1] + r.px[k + 1] - r.hx[k + 1]) * 0.5 - (r.px[k] - r.hx[k])
+                let dy = (r.py[k - 1] - r.hy[k - 1] + r.py[k + 1] - r.hy[k + 1]) * 0.5 - (r.py[k] - r.hy[k])
+                r.px[k] += dx * Self.spread; r.py[k] += dy * Self.spread
+            }
+            ropes[ri] = r
+        }
+        t += 1
+    }
+
+    func path(_ i: Int) -> Path {
+        let r = ropes[i], N = Self.n
+        var p = Path()
+        p.move(to: CGPoint(x: r.px[0], y: r.py[0]))
+        for k in 1..<(N - 1) {
+            p.addQuadCurve(to: CGPoint(x: (r.px[k] + r.px[k + 1]) * 0.5, y: (r.py[k] + r.py[k + 1]) * 0.5), control: CGPoint(x: r.px[k], y: r.py[k]))
+        }
+        p.addLine(to: CGPoint(x: r.px[N - 1], y: r.py[N - 1]))
+        return p
+    }
+
+    /// The rope closest to a point, if within reach of a finger.
+    func hit(_ p: CGPoint, among idx: [Int]) -> Int? {
+        var best: (Int, Double)?
+        for i in idx where i < ropes.count {
+            let r = ropes[i]
+            for k in 0..<Self.n {
+                let d = hypot(r.px[k] - Double(p.x), r.py[k] - Double(p.y))
+                if d < 34, d < (best?.1 ?? .infinity) { best = (i, d) }
+            }
+        }
+        return best?.0
+    }
+}
+
+/// Lessons whose draw-in he has already seen, so a finished lesson draws itself in once, on the first return to the Path.
+enum FieldSeen {
+    static var set: Set<String> {
+        get { Set(UserDefaults.standard.stringArray(forKey: "course.map.seen") ?? []) }
+        set { UserDefaults.standard.set(Array(newValue), forKey: "course.map.seen") }
+    }
+}
+
+struct PracticeField: View {
+    let unit: CourseUnit
+    let chapter: PracticeChapter
+    let open: Bool
+    let play: (CourseLesson) -> Void
     @Environment(\.accessibilityReduceMotion) private var reduceMotion
-    @State private var began = Date()
+    @State private var rig = FieldRig()
+    @State private var drawing: [Int: Date] = [:]   // stroke index -> when its draw-in began
+    @State private var dragged = false
     private let record = CourseRecord.shared
 
-    private var colour: Color { Color(hex: PracticeMapArt.strokeColour) }
-    private var total: Double { Double(PracticeMapArt.strokes.count - 1) * PracticeMapArt.stagger + PracticeMapArt.build }
+    private var done: [Bool] { chapter.lessons.map { record.isDone(unit.n, $0.n) } }
+    private var nextIndex: Int? { open ? done.firstIndex(of: false) : nil }
+    private var chapterGold: Bool { !done.isEmpty && done.allSatisfy { $0 } }
+    private var glyph: (slug: String, name: String, aspect: CGFloat, outlines: [[CGPoint]]) { PracticeMapArt.glyphs[(unit.n - 1) % PracticeMapArt.glyphs.count] }
+    private var violet: Color { Color(hex: PracticeMapArt.strokeColour) }
 
     var body: some View {
-        GeometryReader { geo in
-            let size = geo.size
-            ZStack(alignment: .topLeading) {
-                TimelineView(.animation(paused: reduceMotion)) { ctx in
-                    let t = reduceMotion ? total : ctx.date.timeIntervalSince(began)
-                    Canvas { g, sz in draw(&g, sz, t: t) }
+        VStack(alignment: .leading, spacing: 8) {
+            HStack(spacing: 12) {
+                island
+                VStack(alignment: .leading, spacing: 2) {
+                    Text(chapter.count > 1 ? "\(unit.title) · chapter \(chapter.index + 1) of \(chapter.count)" : unit.title).candleH2()
+                    Text(status).candleHint()
                 }
-                ForEach(course.units) { u in island(u, size) }
+                Spacer(minLength: 0)
             }
+            GeometryReader { geo in
+                TimelineView(.animation(paused: reduceMotion)) { tl in
+                    Canvas { ctx, size in
+                        rig.reduce = reduceMotion
+                        rig.setup(size)
+                        rig.advance(tl.date)
+                        draw(&ctx, size: size, now: tl.date)
+                    }
+                }
+                .contentShape(Rectangle())
+                // simultaneous, not exclusive: the field sits inside the scrolling Path, so the page must still scroll under the thumb
+                .simultaneousGesture(DragGesture(minimumDistance: 0, coordinateSpace: .local)
+                    .onChanged { v in
+                        rig.mx = v.location.x; rig.my = v.location.y
+                        if hypot(v.translation.width, v.translation.height) > 10 { dragged = true }
+                    }
+                    .onEnded { v in
+                        rig.mx = -1e9; rig.my = -1e9
+                        defer { dragged = false }
+                        guard !dragged else { return }
+                        let tappable = chapter.lessons.indices.filter { done[$0] || $0 == nextIndex }
+                        if let i = rig.hit(v.location, among: tappable) { play(chapter.lessons[i]) }
+                    })
+            }
+            .frame(height: 380)
+            .clipShape(RoundedRectangle(cornerRadius: Candle.radius, style: .continuous))
+            .overlay { RoundedRectangle(cornerRadius: Candle.radius, style: .continuous).strokeBorder(Candle.hairline, lineWidth: 1) }
+            .accessibilityElement()
+            .accessibilityLabel("\(unit.title), chapter \(chapter.index + 1): \(done.filter { $0 }.count) of \(done.count) lessons done")
+            .accessibilityAction(named: "Play the next lesson") { if let i = nextIndex { play(chapter.lessons[i]) } }
         }
-        .frame(height: CGFloat(course.units.count) * 128 + 60)
-        .clipShape(RoundedRectangle(cornerRadius: Candle.radius, style: .continuous))
-        .overlay { RoundedRectangle(cornerRadius: Candle.radius, style: .continuous).strokeBorder(Candle.hairline, lineWidth: 1) }
-        .onAppear { began = .now }
+        .opacity(open ? 1 : 0.55)
+        .onAppear { startDrawIns() }
     }
 
-    private func draw(_ g: inout GraphicsContext, _ size: CGSize, t: Double) {
-        let w = min(size.width, size.height) * PracticeMapArt.strokeWidth
-        let gap = max(4, min(size.width, size.height) * 0.010)
-        for (i, pts) in PracticeMapArt.strokes.enumerated() {
-            let u = PracticeMapGeometry.ease((t - Double(i) * PracticeMapArt.stagger) / PracticeMapArt.build)
-            guard u > 0 else { continue }
-            let path = PracticeMapGeometry.stroke(pts, in: size).trimmedPath(from: 0, to: u)
-            // the ground showing through where his strokes cross, then the stroke, as the piece draws them
-            g.stroke(path, with: .color(Candle.bg), style: StrokeStyle(lineWidth: w + gap * 2, lineCap: .round, lineJoin: .round))
-            g.stroke(path, with: .color(colour), style: StrokeStyle(lineWidth: w, lineCap: .round, lineJoin: .round))
-        }
+    private var status: String {
+        let d = done.filter { $0 }.count
+        if chapterGold { return "Complete. All \(done.count) lessons drawn." }
+        if !open { return "Opens when the unit before it has every lesson played." }
+        if let i = nextIndex { return "\(d) of \(done.count) drawn. Next: lesson \(chapter.lessons[i].n), tap its trace or the glyph." }
+        return "\(d) of \(done.count) drawn."
     }
 
-    /// One unit's island on his spine: one of his glyphs, gold when the unit is gold. Tap to play its next lesson (or its quiz).
-    private func island(_ u: CourseUnit, _ size: CGSize) -> some View {
-        let spine = PracticeMapGeometry.stroke(PracticeMapArt.strokes[0], in: size)
-        let n = CGFloat(course.units.count)
-        let c = PracticeMapGeometry.point(on: spine, at: (CGFloat(u.n) - 0.5) / n * 0.86 + 0.07)
-        let glyph = PracticeMapArt.glyphs[(u.n - 1) % PracticeMapArt.glyphs.count]
-        let open = record.isOpen(u, in: course), gold = record.isGold(u)
-        let isNext = open && !gold && record.next(in: course)?.0.n == u.n
-        let side: CGFloat = 64
-        // not `.disabled`: that fades the whole island and the stroke showed through its disc (sweep 11-15); a closed unit ignores the tap
-        let playable = open && !u.playableLessons.isEmpty
-        return Button { if playable { start(u) } } label: {
+    /// The unit's glyph; gold once every lesson of this chapter is drawn. Tapping it plays the chapter's next lesson.
+    private var island: some View {
+        let side: CGFloat = 56
+        return Button { if let i = nextIndex { play(chapter.lessons[i]) } } label: {
             ZStack {
-                Circle().fill(Candle.bg).overlay { Circle().strokeBorder(gold ? Candle.gold : (isNext ? Candle.goldHi : Candle.pillLine), lineWidth: isNext ? 3 : 1.5) }
+                Circle().fill(Candle.bg).overlay { Circle().strokeBorder(chapterGold ? Candle.gold : (nextIndex != nil ? Candle.goldHi : Candle.pillLine), lineWidth: nextIndex != nil ? 2.5 : 1.5) }
                 PracticeMapGeometry.glyph(glyph, side: side * 0.56, centre: CGPoint(x: side / 2, y: side / 2))
-                    .fill(gold ? Candle.gold : (open ? Candle.ink : Candle.ink.opacity(0.35)), style: FillStyle(eoFill: true))
+                    .fill(chapterGold ? Candle.gold : (open ? Candle.ink : Candle.ink.opacity(0.4)), style: FillStyle(eoFill: true))
             }
             .frame(width: side, height: side)
-            .overlay(alignment: .bottomTrailing) {
-                Text("\(u.n)").font(.system(size: 11, weight: .semibold).monospacedDigit())
-                    .foregroundStyle(gold ? Color.black : Candle.ink)
-                    .frame(width: 22, height: 22).background(gold ? Candle.gold : Candle.card, in: Circle())
-            }
             .contentShape(Circle())
         }
         .buttonStyle(.plain)
-        .accessibilityAddTraits(playable ? [] : .isStaticText)
-        .position(c)
-        .accessibilityLabel("Unit \(u.n), \(u.title), \(gold ? "gold" : (open ? (isNext ? "next" : "open") : "not open yet")). Glyph: \(glyph.name).")
+        .accessibilityLabel("\(glyph.name). \(chapterGold ? "Chapter complete" : (nextIndex != nil ? "Play the next lesson" : "Not open yet"))")
+    }
+
+    /// Finished lessons he has not watched draw in yet: draw them now, one after another at the piece's stagger.
+    private func startDrawIns() {
+        var seen = FieldSeen.set
+        var order = 0
+        for (i, l) in chapter.lessons.enumerated() where done[i] {
+            let key = "\(unit.n)-\(l.n)"
+            if seen.contains(key) || reduceMotion { continue }
+            drawing[i] = Date().addingTimeInterval(Double(order) * PracticeMapArt.stagger)
+            order += 1
+            seen.insert(key)
+        }
+        FieldSeen.set = seen
+    }
+
+    private func draw(_ ctx: inout GraphicsContext, size: CGSize, now: Date) {
+        let w = min(size.width, size.height) * PracticeMapArt.strokeWidth
+        for i in chapter.lessons.indices where i < rig.ropes.count {
+            let path = rig.path(i)
+            if done[i] {
+                let u = drawing[i].map { PracticeMapGeometry.ease(now.timeIntervalSince($0) / PracticeMapArt.build) } ?? 1
+                guard u > 0 else { continue }
+                let shown = u < 1 ? path.trimmedPath(from: 0, to: u) : path
+                var cut = ctx
+                cut.blendMode = .destinationOut   // the hero's channel: this stroke's clearance through everything beneath it
+                cut.stroke(shown, with: .color(.black), style: StrokeStyle(lineWidth: w + FieldRig.channel * 2, lineCap: .butt))
+                // drawing in, it is his violet; landed, it turns gold
+                ctx.stroke(shown, with: .color(u < 1 ? violet : Candle.gold), style: StrokeStyle(lineWidth: w, lineCap: .round, lineJoin: .round))
+            } else if i == nextIndex {
+                ctx.stroke(path, with: .color(Candle.ink.opacity(0.22)), style: StrokeStyle(lineWidth: max(3, w * 0.18), lineCap: .round, dash: [2, 9]))
+            }
+        }
     }
 }

@@ -139,8 +139,13 @@ struct PathScreen: View {
             if minutes == 0 { goalCard }
             if let course = state.course {
                 summary(course)
-                PracticeMap(course: course) { u in open(u, course) }
-                ForEach(course.units) { u in unitCard(u, course) }
+                ForEach(course.units) { u in
+                    unitCard(u, course)
+                    // his ruling 11-15: each unit's lessons as fields of six, lesson n riding stroke n of The Direction
+                    ForEach(PracticeChapter.of(u)) { ch in
+                        PracticeField(unit: u, chapter: ch, open: record.isOpen(u, in: course)) { l in start(u, l, course) }
+                    }
+                }
             } else if state.message == nil {
                 ProgressView().tint(Candle.gold).frame(maxWidth: .infinity).padding(.top, 40)
             }
@@ -185,8 +190,7 @@ struct PathScreen: View {
             if u.playableLessons.isEmpty {
                 Text(u.waits_on.map { "Lessons wait on: \($0)." } ?? "No lessons yet.").candleHint()
             } else {
-                Text("Lessons").font(.system(size: 11)).textCase(.uppercase).tracking(1).foregroundStyle(Candle.ink.opacity(0.5)).padding(.top, 4)
-                lessonDots(u, course, open: open)
+                Text("\(u.playableLessons.count - record.lessonsLeft(u)) of \(u.playableLessons.count) lessons drawn, in \(PracticeChapter.of(u).count) \(PracticeChapter.of(u).count == 1 ? "chapter" : "chapters") below.").candleHint().padding(.top, 4)
                 if !open { Text("Opens when the unit before it has every lesson played.").candleHint() }
                 if open && record.lessonsLeft(u) == 0 && !u.quiz.filter(\.isPlayable).isEmpty {
                     Button(record.quizPassed.contains(u.n) ? "Quiz passed \u{2713} \u{00b7} retake" : "Take the unit quiz") {
@@ -221,32 +225,6 @@ struct PathScreen: View {
                 Text(p.title.capitalized + " (not in the Academy yet)").candleHint()
             }
         }
-    }
-
-    /// The lesson stops of one unit: done, next, or still closed. Tapping a done or next stop plays it.
-    private func lessonDots(_ u: CourseUnit, _ course: Course, open: Bool) -> some View {
-        let lessons = u.playableLessons
-        let firstOpen = lessons.first { !record.isDone(u.n, $0.n) }?.n
-        return LazyVGrid(columns: [GridItem(.adaptive(minimum: 44), spacing: 8)], alignment: .leading, spacing: 8) {
-            ForEach(lessons) { l in
-                let done = record.isDone(u.n, l.n), isNext = open && l.n == firstOpen
-                Button { start(u, l, course) } label: {
-                    Text("\(l.n)").font(.system(size: 13, weight: .medium))
-                        .foregroundStyle(done ? Color.black : (isNext ? Candle.goldHi : Candle.ink.opacity(0.4)))
-                        .frame(width: 44, height: 44)
-                        .background(done ? Candle.gold : Color.clear, in: Circle())
-                        .overlay { Circle().strokeBorder(isNext ? Candle.gold : Candle.pillLine, lineWidth: isNext ? 2 : 1) }
-                }
-                .buttonStyle(.plain).disabled(!(done || isNext))
-                .accessibilityLabel("Lesson \(l.n), \(done ? "done" : (isNext ? "next" : "closed"))")
-            }
-        }
-    }
-
-    /// An island tapped: the unit's next lesson, or its quiz once every lesson is played.
-    private func open(_ u: CourseUnit, _ course: Course) {
-        if let l = u.playableLessons.first(where: { !record.isDone(u.n, $0.n) }) { start(u, l, course) }
-        else if !u.quiz.filter(\.isPlayable).isEmpty { playing = LessonRun(unit: u, lesson: nil, exercises: u.quiz.filter(\.isPlayable), isQuiz: true) }
     }
 
     private func start(_ u: CourseUnit, _ l: CourseLesson, _ course: Course) {
