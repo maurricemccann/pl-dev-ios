@@ -215,9 +215,9 @@ struct LabARView: View {
         probes.append(a); aligns[ObjectIdentifier(a)] = alignment
     }
 
-    func build(_ c: RealityViewCameraContent) {
-        content = c
+    func build(_ c: inout RealityViewCameraContent) {
         c.camera = .spatialTracking
+        content = c
         addProbe(.horizontal); addProbe(.vertical)
         _ = c.subscribe(to: SceneEvents.Update.self) { [weak self] _ in
             guard let self else { return }
@@ -230,7 +230,7 @@ struct LabARView: View {
         guard await AVCaptureDevice.requestAccess(for: .video) else { return "Camera access is off, so the room cannot be tracked. Showing the view overlay instead." }
         let un = await session.run(.init(tracking: [.plane], camera: .back))
         if let un {
-            if un.missingCameraAuthorization { return "Camera access is off, so the room cannot be tracked. Showing the view overlay instead." }
+            if un.missingCameraAuthorization == true { return "Camera access is off, so the room cannot be tracked. Showing the view overlay instead." }
             if un.anchor.contains(.plane) { return "This phone cannot track a room. Showing the view overlay instead." }
         }
         running = true
@@ -242,8 +242,8 @@ struct LabARView: View {
     func tapped(_ p: CGPoint) async {
         guard let content, let cg = tile?.cgImage else { say("The pattern is still loading. Try again in a moment."); return }
         guard let ray = content.ray(through: p, in: .local, to: .scene), let scene = probes.first?.scene,
-              let hit = scene.raycast(origin: ray.origin, direction: ray.direction).first(where: { h in probes.contains { h.entity.isDescendant(of: $0) } }),
-              let anchor = probes.first(where: { hit.entity.isDescendant(of: $0) }) else { say("No surface there yet. Move the phone slowly over a floor, a table or a wall."); return }
+              let hit = scene.raycast(origin: ray.origin, direction: ray.direction).first(where: { h in probes.contains { h.entity.parent === $0 } }),
+              let anchor = probes.first(where: { hit.entity.parent === $0 }) else { say("No surface there yet. Move the phone slowly over a floor, a table or a wall."); return }
         guard let tex = try? await TextureResource(image: cg, options: .init(semantic: .color)) else { return }
         var m = UnlitMaterial()
         m.color = .init(tint: .white, texture: .init(tex))
@@ -268,7 +268,7 @@ private struct LabARRoomView: View {
     @State private var pulse = false
 
     var body: some View {
-        RealityView { content in box.build(content) }
+        RealityView { content in box.build(&content) }
             .gesture(SpatialTapGesture().onEnded { v in Task { await box.tapped(v.location) } })
             .ignoresSafeArea()
             .overlay(alignment: .top) {
