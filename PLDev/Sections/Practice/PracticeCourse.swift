@@ -300,6 +300,8 @@ struct LessonView: View {
             .padding(20).frame(maxWidth: 640)
         }
         .preferredColorScheme(.dark)
+        // his ask 11-15: Buddy watches your moves; every touch on the lesson tells his eyes where to look (never takes the touch)
+        .simultaneousGesture(DragGesture(minimumDistance: 0, coordinateSpace: .global).onChanged { buddy.look($0.location) })
         .sensoryFeedback(PLHaptic.success, trigger: right)
         .sensoryFeedback(PLHaptic.warning, trigger: answered == false)
         .onAppear { buddy.react(.open) }

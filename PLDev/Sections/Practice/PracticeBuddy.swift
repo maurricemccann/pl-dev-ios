@@ -52,6 +52,11 @@ final class BuddyRig: @unchecked Sendable {
     var move: String?
     var moveAt = Date()
     let born = Date()
+    /// Where his finger last touched (global points) and when: Buddy's pupils follow it in lessons (his ask 11-15, "as you're doing
+    /// them he's watching your moves"), then ease back to the rig's own look about 2 s after the last touch.
+    @ObservationIgnored var lookAt: CGPoint?
+    @ObservationIgnored var lookAtTime = Date.distantPast
+    func look(_ p: CGPoint) { lookAt = p; lookAtTime = .now }
     private var lastReaction = Date.distantPast
 
     /// Gemini's table, played as rig moves: one reaction per event, a 3 s rest for the small ones.
@@ -148,21 +153,39 @@ struct BuddyFaceArt {
 /// His face, moved by the rig's numbers (ArtRig.eye + ArtFace's mouth and pupils), in the box it is given.
 struct BuddyView: View {
     let model: BuddyModel
+    @State private var centre = CGPoint.zero   // his centre on screen (global), so his eyes know where the finger is
     @Environment(\.accessibilityReduceMotion) private var reduceMotion
 
     var body: some View {
         TimelineView(.animation(minimumInterval: 1 / 30, paused: reduceMotion && model.move == nil)) { tl in   // a move asked for always plays; Reduce Motion only stills the idle breathing
             GeometryReader { geo in
                 if let art = model.face == "clench" ? BuddyFaceArt.clench : BuddyFaceArt.grin {
-                    let n = reduceMotion && model.move == nil ? [:] : model.numbers(tl.date)
+                    let n = watching(reduceMotion && model.move == nil ? [:] : model.numbers(tl.date), now: tl.date)
                     face(art, size: geo.size, n: n, now: tl.date)
                 }
             }
         }
+        .onGeometryChange(for: CGRect.self) { $0.frame(in: .global) } action: { centre = CGPoint(x: $0.midX, y: $0.midY) }
         .accessibilityLabel("Buddy" + (model.move.map { ", \($0.replacingOccurrences(of: "_", with: " "))" } ?? ""))
     }
 
     private static func cl(_ v: CGFloat, _ lo: CGFloat, _ hi: CGFloat) -> CGFloat { max(lo, min(hi, v)) }
+
+    /// While a finger touched within the last 2 s, his pupils point at it (reaching further than a rig move, 0.18 of the eye),
+    /// fading back to the rig's own pupils over the following half second.
+    private func watching(_ n0: [String: Double], now: Date) -> [String: Double] {
+        var n = n0; n["look_reach"] = 0.10
+        guard let p = model.lookAt else { return n }
+        let age = now.timeIntervalSince(model.lookAtTime)
+        guard age < 2.5 else { return n }
+        let w = age < 2 ? 1.0 : (2.5 - age) / 0.5
+        let dx = Double(p.x - centre.x), dy = Double(p.y - centre.y), d = max(1, (dx * dx + dy * dy).squareRoot())
+        let k = min(1, d / 160)
+        n["pupil_x"] = (n0["pupil_x"] ?? 0) * (1 - w) + dx / d * k * w
+        n["pupil_y"] = (n0["pupil_y"] ?? 0) * (1 - w) + dy / d * k * w
+        n["look_reach"] = 0.10 + 0.08 * w
+        return n
+    }
 
     private func face(_ a: BuddyFaceArt, size: CGSize, n: [String: Double], now: Date) -> some View {
         let r: (String) -> CGFloat = { CGFloat(n[$0] ?? 0) }   // one number type throughout: mixed Double/CGFloat stalls the type checker
@@ -189,8 +212,8 @@ struct BuddyView: View {
                         if let p = rect("pupil" + s), let pi = a.images["pupil" + s] {
                             Image(uiImage: pi).resizable().frame(width: p.width, height: p.height)
                                 .scaleEffect(max(0.5, 1 + r("pupil_size")))
-                                .offset(x: p.minX - e.minX + e.width * Self.cl(r("pupil_x"), -1, 1) * 0.10,
-                                        y: p.minY - e.minY + e.height * Self.cl(r("pupil_y"), -1, 1) * 0.10)
+                                .offset(x: p.minX - e.minX + e.width * Self.cl(r("pupil_x"), -1, 1) * r("look_reach"),
+                                        y: p.minY - e.minY + e.height * Self.cl(r("pupil_y"), -1, 1) * r("look_reach"))
                         }
                     }
                     .frame(width: e.width, height: e.height, alignment: .topLeading)
