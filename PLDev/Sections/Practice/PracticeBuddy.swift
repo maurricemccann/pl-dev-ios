@@ -81,12 +81,14 @@ final class BuddyRig: @unchecked Sendable {
         lastReaction = .now
         move = mv; moveAt = .now
         if m == .wrong { frownAt = .now }
-        // ChatGPT's 18-state set (his ruling 11-15), each played once as drawn (about 2 s), then his rest face returns. Thinking, proud
-        // grin and sad frown are still to come: reading shows nothing, a right answer shows happy, a wrong one keeps the turned-over frown.
+        // his emotions, rendered in Blender from one recipe each (his ruling 11-15, procedural toon), each played once (about 2 s),
+        // then his rest face returns
         let s: String? = {
             switch m {
-            case .open, .right: return "happy"
-            case .reading, .wrong: return nil
+            case .open: return "happy"
+            case .reading: return "thinking"
+            case .right: return "proudGrin"
+            case .wrong: return "sadFrown"
             case .streak: return "bigLaugh"
             case .finish: return "satisfied"
             case .gold: return "starstruck"
@@ -176,7 +178,8 @@ struct BuddyFaceArt {
     let mouthFrames: [BuddyGlass]   // the glass face's mouth, rest to its full grin (ChatGPT's art only, his ruling 11-15)
     let states: [String: [UIImage]] // ChatGPT's 18-state set, whole faces, every frame (his ruling 11-15; 15 arrived)
     let timing: [String: [Int]]     // each state's frame times in ms, as its GIF has them
-    static let stateNames = ["happy", "bigLaugh", "satisfied", "starstruck", "surprised", "waking", "sleepy", "wink", "blink", "looking"]
+    static let stateNames = ["happy", "thinking", "proudGrin", "sadFrown", "bigLaugh", "satisfied", "starstruck", "surprised", "waking",
+                             "sleepy", "wink", "blink", "looking"]
     let lessonMouth: [BuddyGlass]   // ChatGPT's 16 glossy 3D mouth frames, worn in lessons (his ruling 11-15)
 
     @MainActor static let grin = load()
@@ -315,7 +318,7 @@ struct BuddyView: View {
                 // opening; each frame is his full 1132x560 canvas with the open grin (988x559) at its top-left, so it is drawn at the
                 // mouth box scaled by 1132/988 x 560/559, anchored top-left, and his full grin lands exactly on the old mouth piece.
                 let msx = Self.cl(1 + r("mouth_w") * 0.5, 0.88, 1.08)
-                let flip = lessonM ? 1 : CGFloat(1 - 2 * frownNow)   // a wrong answer turns his rest mouth over (until the sad frown arrives)
+                let flip = lessonM || a.states["sadFrown"] != nil ? 1 : CGFloat(1 - 2 * frownNow)   // the sad frown is its own face now
                 let msy: CGFloat = (mf == nil ? Self.cl(1 + r("mouth_open") * 0.15 + r("mouth_curve") * 0.05, 0.9, 1.08) : Self.cl(1 + r("mouth_curve") * 0.05, 0.9, 1.08)) * flip
                 // his frames are drawn the mouth box's width at their own proportions, centred on the box's height (red 354x266,
                 // his yellow grin cropped to one shared box for all its frames)
