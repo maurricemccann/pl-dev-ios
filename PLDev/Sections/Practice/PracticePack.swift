@@ -107,27 +107,25 @@ struct PackCardView: View {
     }
 }
 
-/// The opening. Tap the pack to start; with Reduce Motion, or for a pack already opened, the cards are simply shown face up.
+/// The opening: the pack in real 3D (PracticePack3D.swift), then the cards face up in a row. With Reduce Motion, or for a pack
+/// already opened, the cards are simply shown face up.
 struct PackOpening: View {
     let model: AppModel
     let cards: [PackCard]
     let animate: Bool
     @Environment(\.accessibilityReduceMotion) private var reduceMotion
-    @State private var start: Date?
     @State private var done = false
 
     private var stops: [Double] { cards.indices.map { 4.6 + Double($0) * 1.5 } }
-    private var end: Double { (stops.last ?? 4.6) + 1.5 }
 
     var body: some View {
         GeometryReader { geo in
             ZStack {
                 if done || !animate || reduceMotion {
                     row(geo.size, t: 999)
-                } else if let start {
-                    TimelineView(.animation) { ctx in scene(geo.size, t: ctx.date.timeIntervalSince(start)) }
                 } else {
-                    closed(geo.size)
+                    // the opening in real 3D (his ruling 11-15, PracticePack3D.swift); the cards then rest face up, readable, below
+                    Pack3DStage(model: model, cards: cards) { withAnimation(.easeOut(duration: 0.4)) { done = true } }
                 }
             }
             .frame(width: geo.size.width, height: geo.size.height)
@@ -136,56 +134,6 @@ struct PackOpening: View {
     }
 
     private func ease(_ x: Double) -> Double { let c = min(1, max(0, x)); return c * c * (3 - 2 * c) }
-    private func packFrame(_ s: CGSize) -> CGRect {
-        let w = min(s.width * 0.5, 220), h = w * 0.62
-        return CGRect(x: (s.width - w) / 2, y: s.height - h - 12, width: w, height: h)
-    }
-
-    private func packBody(_ r: CGRect) -> some View {
-        RoundedRectangle(cornerRadius: 10, style: .continuous).fill(Candle.gold.gradient)
-            .overlay { GlyphField(strength: 0.35).blendMode(.multiply).clipShape(RoundedRectangle(cornerRadius: 10, style: .continuous)) }
-            .frame(width: r.width, height: r.height)
-    }
-
-    private func closed(_ s: CGSize) -> some View {
-        let r = packFrame(s)
-        return Button {
-            start = .now
-            let wait = end
-            Task { try? await Task.sleep(for: .seconds(wait)); withAnimation(.easeOut(duration: 0.3)) { done = true } }
-        } label: {
-            VStack(spacing: 12) {
-                packBody(r)
-                Text("Tap to open").font(.system(size: 13)).foregroundStyle(Candle.ink.opacity(0.7))
-            }
-            .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .bottom).contentShape(Rectangle())
-        }
-        .buttonStyle(.plain)
-        .accessibilityLabel("Open the pack")
-    }
-
-    @ViewBuilder private func scene(_ s: CGSize, t: Double) -> some View {
-        let r = packFrame(s)
-        ZStack {
-            if t < 0.9 {
-                packBody(r).position(x: r.midX, y: r.midY).opacity(1 - ease((t - 0.6) / 0.3))
-                // the strip torn off the top
-                Rectangle().fill(Candle.goldHi).frame(width: r.width, height: 6)
-                    .position(x: r.midX + 30 * ease(t / 0.6), y: r.minY - 40 * ease(t / 0.6)).opacity(1 - ease(t / 0.6))
-            }
-            if t >= 0.6 && t < 3.25 {
-                let k = ease((t - 0.6) / 1.6)
-                let w = r.width * 0.8 + (min(s.width * 0.7, 300) - r.width * 0.8) * k
-                let h = r.height * 0.9 + (min(s.height * 0.72, 430) - r.height * 0.9) * k
-                RoundedRectangle(cornerRadius: 14, style: .continuous).fill(Candle.gold)
-                    .frame(width: w, height: h)
-                    .shadow(color: Candle.gold.opacity(0.75), radius: 18 + 10 * sin(t * 6))
-                    .position(x: s.width / 2, y: r.midY + (s.height * 0.46 - r.midY) * k)
-                    .opacity(1 - ease((t - 3.0) / 0.25))
-            }
-            if t >= 3.0 { row(s, t: t).opacity(ease((t - 3.0) / 0.25)) }
-        }
-    }
 
     private func row(_ s: CGSize, t: Double) -> some View {
         let w = cards.count > 1 ? min((s.width - 16) / 2, 190) : min(s.width * 0.62, 250)
