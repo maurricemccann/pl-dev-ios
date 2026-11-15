@@ -1,0 +1,69 @@
+import Foundation
+
+/// A backend site PL DEV opens in its own web view (Plans/SPEC — PL DEV BACKEND PAGE (S348), his rulings 11-14).
+/// Plain logic only: no UIKit, no network, so it is tested on Linux in CI.
+public struct BackendTemplate: Codable, Equatable, Identifiable, Sendable {
+    public var id: String
+    public var name: String
+    public var symbol: String          // an SF Symbol name
+    public var startURL: String        // empty = not set yet (the Horizon tile waits for his first Safari share, premise 4)
+    public var allowedHosts: [String]  // the site itself; a host or any subdomain of one
+
+    public init(id: String, name: String, symbol: String, startURL: String, allowedHosts: [String]) {
+        self.id = id; self.name = name; self.symbol = symbol; self.startURL = startURL; self.allowedHosts = allowedHosts
+    }
+
+    public var isReady: Bool { URL(string: startURL)?.scheme?.lowercased() == "https" }
+}
+
+public enum BackendTemplates {
+    /// The starting set (premise 1). Horizon's address is NOT guessed: it is set from the first page he shares (premise 4).
+    public static let builtIn: [BackendTemplate] = [
+        BackendTemplate(id: "cloudflare", name: "Cloudflare", symbol: "cloud", startURL: "https://dash.cloudflare.com/", allowedHosts: ["cloudflare.com"]),
+        BackendTemplate(id: "printful", name: "Printful", symbol: "shippingbox", startURL: "https://www.printful.com/dashboard", allowedHosts: ["printful.com"]),
+        BackendTemplate(id: "horizon", name: "Meta Horizon Creator Club", symbol: "visionpro", startURL: "", allowedHosts: ["meta.com", "facebook.com", "oculus.com"]),
+    ]
+
+    /// Sign-in providers a site may bounce through; allowed in every tile so a Google or Apple sign-in does not leave the app.
+    public static let signInHosts: [String] = ["accounts.google.com", "appleid.apple.com"]
+
+    /// The lower-cased host of an https address, or nil for anything else (http, a file, no host).
+    public static func host(of address: String) -> String? {
+        guard let url = URL(string: address.trimmingCharacters(in: .whitespacesAndNewlines)),
+              url.scheme?.lowercased() == "https", let h = url.host?.lowercased(), !h.isEmpty else { return nil }
+        return h
+    }
+
+    /// True when the host is one of the tile's sites (or a subdomain of one) or a sign-in provider.
+    /// A host that merely ends in the same letters (evil-cloudflare.com) is refused: the match is on a dot boundary.
+    public static func allows(_ host: String, for template: BackendTemplate) -> Bool {
+        let h = host.lowercased()
+        return (template.allowedHosts + signInHosts).contains { h == $0 || h.hasSuffix("." + $0) }
+    }
+
+    /// The built-in tile whose site this address belongs to.
+    public static func match(_ address: String) -> BackendTemplate? {
+        guard let h = host(of: address) else { return nil }
+        return builtIn.first { t in t.allowedHosts.contains { h == $0 || h.hasSuffix("." + $0) } }
+    }
+
+    /// A tile for any other https page he shares: named from the page title (else the host), starting at that page, limited to its host.
+    public static func custom(address: String, title: String?) -> BackendTemplate? {
+        guard let h = host(of: address) else { return nil }
+        let base = h.hasPrefix("www.") ? String(h.dropFirst(4)) : h
+        let clean = title?.trimmingCharacters(in: .whitespacesAndNewlines) ?? ""
+        return BackendTemplate(id: "custom-" + base, name: clean.isEmpty ? base : String(clean.prefix(40)), symbol: "globe",
+                               startURL: address.trimmingCharacters(in: .whitespacesAndNewlines), allowedHosts: [base])
+    }
+
+    /// The template an address should become: its built-in one with that address as the start (when the built-in has none yet),
+    /// else a custom one. Nil when the address is not https.
+    public static func template(for address: String, title: String?) -> BackendTemplate? {
+        guard host(of: address) != nil else { return nil }
+        if var t = match(address) {
+            if !t.isReady { t.startURL = address.trimmingCharacters(in: .whitespacesAndNewlines) }
+            return t
+        }
+        return custom(address: address, title: title)
+    }
+}

@@ -100,14 +100,14 @@ struct HomeView: View {
 
     private var pageDots: some View {
         HStack(spacing: 8) {
-            ForEach(0..<2, id: \.self) { i in
+            ForEach(0..<3, id: \.self) { i in
                 Circle().fill(.white.opacity(page == i ? 0.95 : 0.4)).frame(width: 7, height: 7)
                     .onTapGesture { withAnimation(.snappy) { page = i } }
             }
         }
         .padding(.horizontal, 6).padding(.vertical, 6)
-        .accessibilityElement().accessibilityLabel(page == 0 ? "Today, page 1 of 2" : "Apps, page 2 of 2")
-        .accessibilityAdjustableAction { d in withAnimation { page = d == .increment ? 1 : 0 } }
+        .accessibilityElement().accessibilityLabel(["Today, page 1 of 3", "Apps, page 2 of 3", "Backend, page 3 of 3"][min(max(page, 0), 2)])
+        .accessibilityAdjustableAction { d in withAnimation { page = min(max(page + (d == .increment ? 1 : -1), 0), 2) } }
     }
 
     private var blocked: SectionEntry? { model.sections.first { $0.id == blockedID } }
@@ -119,6 +119,7 @@ struct HomeView: View {
             TabView(selection: $page) {
                 ScrollView { todayPage }.tag(0)
                 ScrollView { appsPage }.tag(1)
+                ScrollView { BackendPage(columns: columns, reduce: reduce) }.tag(2)   // his ask 11-14: the third-party consoles (Cloudflare, Printful, Horizon)
             }
             .tabViewStyle(.page(indexDisplayMode: .never))
             .environment(\.colorScheme, .dark)   // light text on the wallpaper, as on the Home Screen; pushed screens keep his setting

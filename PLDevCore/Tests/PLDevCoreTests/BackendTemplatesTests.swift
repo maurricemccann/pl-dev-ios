@@ -1,0 +1,49 @@
+import XCTest
+@testable import PLDevCore
+
+/// The Backend page's matching rules (Plans/SPEC — PL DEV BACKEND PAGE (S348), acceptance test 7).
+final class BackendTemplatesTests: XCTestCase {
+    func testTheStartingSetIsExactlyThree() {
+        XCTAssertEqual(BackendTemplates.builtIn.map(\.id), ["cloudflare", "printful", "horizon"])
+        XCTAssertTrue(BackendTemplates.builtIn[0].isReady)
+        XCTAssertTrue(BackendTemplates.builtIn[1].isReady)
+        XCTAssertFalse(BackendTemplates.builtIn[2].isReady, "Horizon waits for his first share, its address is not guessed")
+    }
+
+    func testMatchFindsTheBuiltInBySite() {
+        XCTAssertEqual(BackendTemplates.match("https://dash.cloudflare.com/abc/workers")?.id, "cloudflare")
+        XCTAssertEqual(BackendTemplates.match("https://cloudflare.com")?.id, "cloudflare")
+        XCTAssertEqual(BackendTemplates.match("https://www.printful.com/dashboard/orders")?.id, "printful")
+        XCTAssertNil(BackendTemplates.match("https://example.org/"))
+        XCTAssertNil(BackendTemplates.match("http://www.printful.com/"), "plain http is not a tile")
+    }
+
+    func testAllowsRefusesLookAlikes() {
+        let cf = BackendTemplates.builtIn[0]
+        XCTAssertTrue(BackendTemplates.allows("dash.cloudflare.com", for: cf))
+        XCTAssertTrue(BackendTemplates.allows("cloudflare.com", for: cf))
+        XCTAssertFalse(BackendTemplates.allows("evil-cloudflare.com", for: cf))
+        XCTAssertFalse(BackendTemplates.allows("cloudflare.com.evil.org", for: cf))
+        XCTAssertFalse(BackendTemplates.allows("example.org", for: cf))
+        XCTAssertTrue(BackendTemplates.allows("accounts.google.com", for: cf), "a Google sign-in stays in the tile")
+    }
+
+    func testCustomTilesAreNamedAndLimitedToTheirHost() {
+        let t = BackendTemplates.custom(address: "https://www.example.org/console", title: "  Example Console ")
+        XCTAssertEqual(t?.name, "Example Console")
+        XCTAssertEqual(t?.allowedHosts, ["example.org"])
+        XCTAssertEqual(t?.id, "custom-example.org")
+        XCTAssertEqual(BackendTemplates.custom(address: "https://example.org", title: nil)?.name, "example.org")
+        XCTAssertNil(BackendTemplates.custom(address: "http://example.org", title: "x"))
+        XCTAssertNil(BackendTemplates.custom(address: "javascript:alert(1)", title: "x"))
+    }
+
+    func testTemplateForFillsHorizonFromTheSharedAddress() {
+        let t = BackendTemplates.template(for: "https://www.meta.com/horizon/creators/", title: "Creators")
+        XCTAssertEqual(t?.id, "horizon")
+        XCTAssertEqual(t?.startURL, "https://www.meta.com/horizon/creators/")
+        XCTAssertTrue(t?.isReady == true)
+        XCTAssertEqual(BackendTemplates.template(for: "https://dash.cloudflare.com/", title: nil)?.startURL, "https://dash.cloudflare.com/")
+        XCTAssertNil(BackendTemplates.template(for: "ftp://x", title: nil))
+    }
+}
