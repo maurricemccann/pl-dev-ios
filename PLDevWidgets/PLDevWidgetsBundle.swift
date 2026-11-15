@@ -43,6 +43,7 @@ struct PLDevLiveActivities: WidgetBundle {
         ShiftLiveActivity()
         RenderLiveActivity()
         RehearsalLiveActivity()
+        BuddyLiveActivity()
         SittingLiveActivity()
     }
 }

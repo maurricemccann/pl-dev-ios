@@ -53,4 +53,14 @@ struct RehearsalAttributes: ActivityAttributes {
     var started: Date
     var ends: Date
 }
+
+/// Buddy in the Dynamic Island (his ruling 11-15, "Yes, always while practicing today"): from opening Practice until today's lesson is
+/// done. The face changes on a right answer (his open grin), a wrong one (the clench) and at rest; tapping opens the Path. Local only.
+struct BuddyAttributes: ActivityAttributes {
+    struct ContentState: Codable, Hashable {
+        var face: String        // "rest", "open", "clench"
+        var line: String        // "Today's lesson is waiting", "Right.", "Done for today."
+    }
+    var day: String
+}
 #endif

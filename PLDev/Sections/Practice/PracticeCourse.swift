@@ -328,7 +328,8 @@ struct LessonView: View {
             Text(e.prompt).font(.system(size: 13)).textCase(.uppercase).tracking(1).foregroundStyle(Candle.gold)
             ExerciseBody(exercise: e, locked: answered != nil) { ok in
                 answered = ok
-                if ok { right += 1; streak += 1; buddy.react(streak % 3 == 0 ? .streak : .right) } else { record.miss(e.item); streak = 0; buddy.react(.wrong) }
+                if ok { right += 1; streak += 1; buddy.react(streak % 3 == 0 ? .streak : .right); BuddyIsland.show("open", "Right.") }
+                else { record.miss(e.item); streak = 0; buddy.react(.wrong); BuddyIsland.show("clench", "It comes back later.") }
                 PracticeSound.play(ok ? .right : .wrong)   // his picks by ear 11-15
             }
             .id(e.id + "\(index)")
@@ -358,7 +359,7 @@ struct LessonView: View {
         if index + 1 < run.exercises.count { index += 1; return }
         // a lesson counts once it is played through; the quiz passes at four in five (or all, when it is shorter)
         if run.isQuiz { if right >= max(1, run.exercises.count - 1) { record.passQuiz(run.unit.n) } }
-        else if let l = run.lesson { record.finish(unit: run.unit.n, lesson: l.n) }
+        else if let l = run.lesson { record.finish(unit: run.unit.n, lesson: l.n); BuddyIsland.lessonDone() }
         finished = true
         PracticeSound.play(.done)
         buddy.react(.finish)

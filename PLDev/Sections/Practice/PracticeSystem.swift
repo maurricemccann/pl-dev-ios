@@ -118,6 +118,44 @@ extension Date {
     }
 }
 
+// MARK: - Buddy in the Dynamic Island
+
+/// His ruling 11-15: Buddy sits in the Dynamic Island from opening Practice until today's lesson is done.
+@MainActor enum BuddyIsland {
+    nonisolated static var running: Activity<BuddyAttributes>? { Activity<BuddyAttributes>.activities.first }
+    private static var day: String { let f = DateFormatter(); f.dateFormat = "yyyy-MM-dd"; return f.string(from: .now) }
+    private static var doneToday: String? { get { UserDefaults.standard.string(forKey: "buddy.island.done") } set { UserDefaults.standard.set(newValue, forKey: "buddy.island.done") } }
+
+    /// From opening Practice, unless today's lesson is already done; an activity left from another day is ended first.
+    static func start() {
+        guard ActivityAuthorizationInfo().areActivitiesEnabled, doneToday != day else { return }
+        if let a = running {
+            if a.attributes.day == day { return }
+            Task { await a.end(nil, dismissalPolicy: .immediate) }
+        }
+        let end = Calendar.current.startOfDay(for: .now).addingTimeInterval(86_400)
+        _ = try? Activity.request(attributes: BuddyAttributes(day: day),
+                                  content: .init(state: .init(face: "rest", line: "Today's lesson is waiting."), staleDate: end, relevanceScore: 60))
+    }
+
+    /// A face for a moment of the lesson: "open" on a right answer, "clench" on a wrong one.
+    static func show(_ face: String, _ line: String) {
+        guard let a = running else { return }
+        Task {
+            await a.update(.init(state: .init(face: face, line: line), staleDate: nil, relevanceScore: 70))
+            try? await Task.sleep(for: .seconds(3))
+            if a.content.state.face == face { await a.update(.init(state: .init(face: "rest", line: "In a lesson."), staleDate: nil, relevanceScore: 60)) }
+        }
+    }
+
+    /// Today's lesson is done: his grin, then he leaves the island.
+    static func lessonDone() {
+        doneToday = day
+        guard let a = running else { return }
+        Task { await a.end(.init(state: .init(face: "open", line: "Done for today."), staleDate: nil), dismissalPolicy: .after(.now.addingTimeInterval(60))) }
+    }
+}
+
 // MARK: - The rehearsal Live Activity
 
 @MainActor enum RehearsalLive {

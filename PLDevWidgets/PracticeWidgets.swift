@@ -83,6 +83,45 @@ struct PracticeWidget: Widget {
     }
 }
 
+// MARK: - Buddy in the Dynamic Island
+
+/// His pieces composed small for the island (the widget cannot read the app's resources): rest, open grin, clench.
+private func buddyFace(_ face: String) -> Image {
+    if let u = Bundle.main.url(forResource: "buddy-island-" + (["rest", "open", "clench"].contains(face) ? face : "rest"), withExtension: "png"),
+       let i = UIImage(contentsOfFile: u.path) { return Image(uiImage: i) }
+    return Image(systemName: "face.smiling")
+}
+
+struct BuddyLiveActivity: Widget {
+    var body: some WidgetConfiguration {
+        ActivityConfiguration(for: BuddyAttributes.self) { ctx in
+            HStack(spacing: 12) {
+                buddyFace(ctx.state.face).resizable().scaledToFit().frame(width: 44, height: 44)
+                VStack(alignment: .leading, spacing: 2) {
+                    Text("Buddy").font(.headline.weight(.semibold))
+                    Text(ctx.isStale ? "Open Practice" : ctx.state.line).font(.caption).foregroundStyle(.secondary).lineLimit(1)
+                }
+                Spacer(minLength: 0)
+            }
+            .padding(16)
+            .activityBackgroundTint(Color.black.opacity(0.35))
+            .widgetURL(URL(string: "pldev://section/practice/path"))
+        } dynamicIsland: { ctx in
+            DynamicIsland {
+                DynamicIslandExpandedRegion(.leading) { buddyFace(ctx.state.face).resizable().scaledToFit().frame(width: 52, height: 52) }
+                DynamicIslandExpandedRegion(.center) { Text(ctx.state.line).font(.headline.weight(.semibold)).lineLimit(2) }
+            } compactLeading: {
+                buddyFace(ctx.state.face).resizable().scaledToFit().frame(width: 24, height: 24)
+            } compactTrailing: {
+                EmptyView()
+            } minimal: {
+                buddyFace(ctx.state.face).resizable().scaledToFit().frame(width: 22, height: 22)
+            }
+            .widgetURL(URL(string: "pldev://section/practice/path"))
+        }
+    }
+}
+
 // MARK: - The rehearsal as a Live Activity
 
 struct RehearsalLiveActivity: Widget {
