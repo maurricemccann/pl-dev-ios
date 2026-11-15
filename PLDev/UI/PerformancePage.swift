@@ -30,7 +30,12 @@ struct PerformancePage: View {
         let money: Money?; let audience: Audience?; let landed: Landed?; let cost: Cost?
         let months: [Month]?; let weekly: [Week]?; let top_posts: [Top]?
         let tasks: [TaskLine]?; let suggestions: Suggestions?
+        struct Order: Decodable, Identifiable { let no: String?; let day: String; let total: Double?; let currency: String?; let status: String?; let kind: String?; var id: String { (no ?? "") + day + "\(total ?? 0)" } }
+        struct Attention: Decodable, Identifiable { let label: String; let count: Int?; let room: String?; var id: String { label } }
+        let orders: [Order]?; let attention: [Attention]?
     }
+
+    @Environment(\.openURL) private var openURL
 
     /// The on-device model's word on one suggestion: nil = not judged yet.
     @State private var judged: [Int: (can: Bool, step: String)] = [:]
@@ -43,7 +48,9 @@ struct PerformancePage: View {
                 Text(failed ? "Could not read the house. Pull down to try again." : (data == nil ? "Reading the house…" : "Business and social, live from the house."))
                     .plFont(.footnote).foregroundStyle(.white.opacity(0.75))
             }
+            attentionCard
             moneyCard
+            ordersCard
             monthsCard
             tasksCard
             suggestionsCard
@@ -189,6 +196,69 @@ struct PerformancePage: View {
         if r.engagement >= 10 { return PLTone.good }
         if r.engagement > 0 || (r.avg_views ?? 0) >= 20 { return PLTone.warn }
         return Color.secondary
+    }
+
+    /// Everything that waits on him, most urgent look first: only lines with something waiting are listed, and a tap opens the room that
+    /// handles it. A count that could not be read says so and is never shown as zero.
+    private var attentionCard: some View {
+        let lines = (data?.attention ?? []).filter { ($0.count ?? 1) > 0 }
+        let total = lines.compactMap(\.count).reduce(0, +)
+        return VStack(alignment: .leading, spacing: 10) {
+            Text("Needs your attention").plHand(20)
+            if data == nil {
+                Text("Not read yet.").font(.callout).foregroundStyle(.secondary)
+            } else if lines.isEmpty {
+                Label("Nothing is waiting on you.", systemImage: "checkmark.circle.fill").font(.callout).foregroundStyle(PLTone.good)
+            }
+            ForEach(lines) { a in
+                Button {
+                    let path = (a.room ?? "").isEmpty ? "section/house" : "section/house/" + (a.room ?? "")
+                    if let u = URL(string: "pldev://" + path) { openURL(u) }
+                } label: {
+                    HStack {
+                        Text(a.label).font(.callout)
+                        Spacer(minLength: 8)
+                        Text(a.count.map { "\($0)" } ?? "not read").font(.system(.callout, design: .monospaced).weight(.semibold)).monospacedDigit()
+                            .foregroundStyle(a.count == nil ? Color.secondary : PLTone.warn)
+                        Image(systemName: "chevron.right").font(.caption2.weight(.bold)).foregroundStyle(.secondary)
+                    }
+                    .contentShape(Rectangle())
+                }
+                .buttonStyle(.plain)
+            }
+        }
+        .frame(maxWidth: .infinity, alignment: .leading)
+        .padding(14)
+        .glassEffect(.regular.tint((total > 0 ? PLTone.warn : PLTone.good).opacity(0.18)), in: RoundedRectangle(cornerRadius: PLRadius.card, style: .continuous))
+    }
+
+    /// The latest orders: day, number, amount and state. No customer detail is sent to the phone for this.
+    private var ordersCard: some View {
+        card("Orders") {
+            let rows = data?.orders ?? []
+            if rows.isEmpty {
+                Text(data == nil ? "Not read yet." : "No orders yet.").font(.callout).foregroundStyle(.secondary)
+            }
+            ForEach(rows) { o in
+                HStack(alignment: .firstTextBaseline) {
+                    VStack(alignment: .leading, spacing: 1) {
+                        Text(o.day).font(.system(.footnote, design: .monospaced))
+                        Text([o.no ?? "", o.kind ?? ""].filter { !$0.isEmpty }.joined(separator: " · ")).font(.caption2).foregroundStyle(.secondary).lineLimit(1)
+                    }
+                    Spacer(minLength: 8)
+                    Text(dollars(o.total)).font(.system(.callout, design: .monospaced)).monospacedDigit()
+                    Text((o.status ?? "").capitalized).font(.caption2).foregroundStyle(orderTone(o.status)).frame(width: 78, alignment: .trailing)
+                }
+                .accessibilityElement(children: .combine)
+            }
+        }
+    }
+
+    private func orderTone(_ status: String?) -> Color {
+        let s = (status ?? "").uppercased()
+        if ["COMPLETED", "FULFILLED", "DELIVERED"].contains(s) { return PLTone.good }
+        if ["CANCELED", "CANCELLED", "REFUNDED"].contains(s) { return Color.secondary }
+        return PLTone.warn
     }
 
     /// His open founder tasks, as the house lists them.
