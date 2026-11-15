@@ -106,13 +106,14 @@ struct LabARView: View {
     let model: AppModel
     @State private var ar = LabARModel()
     @State private var dragStart: CGSize = .zero
+    @Environment(\.accessibilityReduceMotion) private var reduceMotion
 
     var body: some View {
         ZStack {
             Color(hex: 0x0e0c08).ignoresSafeArea()
             switch ar.mode {
             case .idle: gate
-            case .room: LabARRoomView(tile: ar.tile) { ar.note = $0 }.ignoresSafeArea()
+            case .room: LabARRoomView(tile: ar.tile, say: { ar.note = $0 }, failed: { ar.preview($0) }).ignoresSafeArea()
             case .camera, .preview:
                 if ar.mode == .camera { LabCameraBackdrop(session: ar.session).ignoresSafeArea() }
                 else { RadialGradient(colors: [Color(hex: 0x151109), Color(hex: 0x0e0c08)], center: .center, startRadius: 0, endRadius: 400).ignoresSafeArea() }
@@ -130,7 +131,7 @@ struct LabARView: View {
                     Picker("Mode", selection: Binding(get: { ar.mode == .room ? 1 : 0 }, set: { v in if v == 1 { ar.openRoom() } else { Task { await ar.openCamera() } } })) {
                         Text("The view").tag(0); Text("The room").tag(1)
                     }.pickerStyle(.segmented).frame(width: 190).padding(.trailing, 14) }
-                    .padding(.top, 56); Spacer() }
+                    .padding(.top, 12); Spacer() }
             }
         }
         .task { await ar.loadTile(model: model) }
@@ -164,7 +165,7 @@ struct LabARView: View {
             Canvas { gc, size in
                 guard let tile = ar.tile else { return }
                 ar.offX += (ar.tOffX - ar.offX) * 0.08; ar.offY += (ar.tOffY - ar.offY) * 0.08; ar.rot += (ar.tRot - ar.rot) * 0.08
-                let phase = tl.date.timeIntervalSince(ar.start) * 0.6
+                let phase = reduceMotion ? 0 : tl.date.timeIntervalSince(ar.start) * 0.6
                 let side: CGFloat = 512   // one repeat is 512 CSS px on the page, so 512 points here
                 let img = gc.resolve(Image(uiImage: tile))
                 var c = gc
@@ -190,47 +191,101 @@ struct LabARView: View {
     }
 }
 
-// MARK: - the room: ARKit world tracking, tap to anchor
+// MARK: - the room: RealityView + SpatialTrackingSession, tap to anchor (floors and walls)
 
-private struct LabARRoomView: UIViewRepresentable {
+/// Holds the session and the scene for the room. A plane AnchorEntity binds to one real plane the system finds, so each alignment gets an invisible
+/// probe (a thin collision slab) on such an anchor; a tap is a ray through the screen, and the tile goes where the ray meets a probe.
+@MainActor final class LabRoomBox {
+    let session = SpatialTrackingSession()
+    var content: RealityViewCameraContent?
+    var tile: UIImage?
+    var probes: [AnchorEntity] = []
+    var aligns: [ObjectIdentifier: AnchoringComponent.Target.Alignment] = [:]
+    var running = false
+    var say: (String) -> Void = { _ in }
+    var found: (Bool) -> Void = { _ in }
+
+    private func addProbe(_ alignment: AnchoringComponent.Target.Alignment) {
+        guard let content else { return }
+        let a = AnchorEntity(.plane(alignment, classification: .any, minimumBounds: [0.3, 0.3]))
+        let slab = Entity()
+        slab.components.set(CollisionComponent(shapes: [.generateBox(width: 6, height: 0.02, depth: 6)]))
+        a.addChild(slab)
+        content.add(a)
+        probes.append(a); aligns[ObjectIdentifier(a)] = alignment
+    }
+
+    func build(_ c: RealityViewCameraContent) {
+        content = c
+        c.camera = .spatialTracking
+        addProbe(.horizontal); addProbe(.vertical)
+        _ = c.subscribe(to: SceneEvents.Update.self) { [weak self] _ in
+            guard let self else { return }
+            self.found(self.probes.contains { $0.isAnchored })
+        }
+    }
+
+    /// Camera access first (a denial is a line and the preview, never a black screen), then the tracking session.
+    func start() async -> String? {
+        guard await AVCaptureDevice.requestAccess(for: .video) else { return "Camera access is off, so the room cannot be tracked. Showing the view overlay instead." }
+        let un = await session.run(.init(tracking: [.plane], camera: .back))
+        if let un {
+            if un.missingCameraAuthorization { return "Camera access is off, so the room cannot be tracked. Showing the view overlay instead." }
+            if un.anchor.contains(.plane) { return "This phone cannot track a room. Showing the view overlay instead." }
+        }
+        running = true
+        return nil
+    }
+
+    func stop() { guard running else { return }; running = false; let s = session; Task { await s.stop() } }
+
+    func tapped(_ p: CGPoint) async {
+        guard let content, let cg = tile?.cgImage else { say("The pattern is still loading. Try again in a moment."); return }
+        guard let ray = content.ray(through: p, in: .local, to: .scene), let scene = probes.first?.scene,
+              let hit = scene.raycast(origin: ray.origin, direction: ray.direction).first(where: { h in probes.contains { h.entity.isDescendant(of: $0) } }),
+              let anchor = probes.first(where: { hit.entity.isDescendant(of: $0) }) else { say("No surface there yet. Move the phone slowly over a floor, a table or a wall."); return }
+        guard let tex = try? await TextureResource(image: cg, options: .init(semantic: .color)) else { return }
+        var m = UnlitMaterial()
+        m.color = .init(tint: .white, texture: .init(tex))
+        m.blending = .transparent(opacity: 0.94)
+        // a plane anchor's local y is the surface normal, so the plane mesh lies flat on a floor and flat against a wall
+        let plane = ModelEntity(mesh: .generatePlane(width: 1.2, depth: 1.2), materials: [m])
+        plane.setPosition(anchor.convert(position: hit.position, from: nil), relativeTo: anchor)
+        plane.position.y += 0.002
+        anchor.addChild(plane)
+        // the anchor now holds a tile; a fresh probe of the same kind can bind to another surface
+        if let al = aligns[ObjectIdentifier(anchor)] { addProbe(al) }
+        say("Anchored. Tap again to add another.")
+    }
+}
+
+private struct LabARRoomView: View {
     let tile: UIImage?
     let say: (String) -> Void
+    let failed: (String) -> Void
+    @State private var box = LabRoomBox()
+    @State private var found = false
+    @State private var pulse = false
 
-    func makeCoordinator() -> Coord { Coord(tile: tile, say: say) }
-    func makeUIView(context: Context) -> ARView {
-        let v = ARView(frame: .zero)
-        v.automaticallyConfigureSession = false
-        let cfg = ARWorldTrackingConfiguration()
-        cfg.planeDetection = [.horizontal]
-        v.session.run(cfg)
-        v.addGestureRecognizer(UITapGestureRecognizer(target: context.coordinator, action: #selector(Coord.tapped(_:))))
-        context.coordinator.view = v
-        return v
-    }
-    func updateUIView(_ v: ARView, context: Context) { context.coordinator.tile = tile }
-    static func dismantleUIView(_ v: ARView, coordinator: Coord) { v.session.pause() }
-
-    @MainActor final class Coord: NSObject {
-        var tile: UIImage?
-        let say: (String) -> Void
-        weak var view: ARView?
-        init(tile: UIImage?, say: @escaping (String) -> Void) { self.tile = tile; self.say = say }
-
-        @objc func tapped(_ g: UITapGestureRecognizer) {
-            guard let view, let cg = tile?.cgImage else { say("The pattern is still loading. Try again in a moment."); return }
-            let p = g.location(in: view)
-            guard let hit = view.raycast(from: p, allowing: .estimatedPlane, alignment: .horizontal).first else { say("No surface there yet. Move the phone slowly over the floor or table."); return }
-            Task { @MainActor in
-                guard let tex = try? await TextureResource(image: cg, options: .init(semantic: .color)) else { return }
-                var m = UnlitMaterial()
-                m.color = .init(tint: .white, texture: .init(tex))
-                m.blending = .transparent(opacity: 0.94)
-                let plane = ModelEntity(mesh: .generatePlane(width: 1.2, depth: 1.2), materials: [m])
-                let anchor = AnchorEntity(raycastResult: hit)
-                anchor.addChild(plane)
-                view.scene.addAnchor(anchor)
-                say("Anchored. Tap again to add another.")
+    var body: some View {
+        RealityView { content in box.build(content) }
+            .gesture(SpatialTapGesture().onEnded { v in Task { await box.tapped(v.location) } })
+            .ignoresSafeArea()
+            .overlay(alignment: .top) {
+                if !found {   // RealityView has no coaching overlay of its own (that one needs an ARSession), so the house draws the line
+                    Label("Finding a surface. Move the phone slowly.", systemImage: "viewfinder")
+                        .font(.system(size: 12, weight: .medium)).foregroundStyle(.white).padding(.horizontal, 14).frame(minHeight: 44)
+                        .glassEffect(.regular, in: Capsule())
+                        .opacity(pulse ? 1 : 0.6).padding(.top, 64)
+                        .onAppear { withAnimation(.easeInOut(duration: 1).repeatForever()) { pulse = true } }
+                        .accessibilityLabel("Finding a surface. Move the phone slowly.")
+                }
             }
-        }
+            .task {
+                box.tile = tile; box.say = say; box.found = { if $0 != found { found = $0 } }
+                if let why = await box.start() { failed(why) }
+            }
+            .onChange(of: tile) { _, t in box.tile = t }
+            .onDisappear { box.stop() }
     }
 }
