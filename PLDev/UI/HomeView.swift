@@ -119,7 +119,7 @@ struct HomeView: View {
             TabView(selection: $page) {
                 ScrollView { todayPage }.tag(0)
                 ScrollView { appsPage }.tag(1)
-                ScrollView { BackendPage(model: model, columns: columns, reduce: reduce) }.tag(2)
+                ScrollView { BackendPage(columns: columns, reduce: reduce) }.tag(2)
                 ScrollView { PerformancePage(model: model) }.tag(3)   // his ask 11-14: business and social numbers that are not on Today   // his ask 11-14: the third-party consoles (Cloudflare, Printful, Horizon)
             }
             .tabViewStyle(.page(indexDisplayMode: .never))

@@ -356,20 +356,18 @@ struct CurateView: View {
 
     // MARK: controls
 
-    /// His five keycaps, in the web deck's order (cut, maybe, keep, fav, undo), each pressing down under the finger.
+    /// The five mark buttons, in the web deck's order (cut, maybe, keep, fav, undo): Liquid Glass with his icons (11-14).
     private func keysRow(_ it: LibraryItem) -> some View {
         let c = state.carried(it)
         let leave = state.mode.kind == .favs || (state.mode.rePassRules && (c.prev == "keep" || c.prev == "fav"))
-        return HStack(spacing: 2) {
+        return GlassEffectContainer(spacing: 8) { HStack(spacing: 8) {
             KeyCap(model: model, name: "cut", label: "Cut") { act("cut") }
             if allowsMaybe { KeyCap(model: model, name: "maybe", label: "Maybe") { act("maybe") } }
             KeyCap(model: model, name: "keep", label: leave ? (c.prev == "fav" ? "Leave as favourite" : "Leave as keep") : "Keep") { act("keep") }
             KeyCap(model: model, name: "fav", label: "Favourite: a keep, and a taste reference", down: state.starred || c.prev == "fav") { favourite() }
             KeyCap(model: model, name: "undo", label: "Undo") { undo() }
                 .disabled(state.history.isEmpty).opacity(state.history.isEmpty ? 0.4 : 1)
-        }
-        .padding(5).background(PLC.tray, in: RoundedRectangle(cornerRadius: 8, style: .continuous))
-        .shadow(color: .black.opacity(0.25), radius: 7, y: 4)
+        } }
     }
 
     /// A re-pass maybe says what he likes: the image, the phrase or the layout.

@@ -4,7 +4,6 @@ import UIKit
 /// Home page 3: backend sites as tiles (Plans/SPEC — PL DEV BACKEND PAGE (S348), his rulings 11-14). A tile opens the site inside PL DEV
 /// with its own saved sign-in. More tiles come from a page he shared from Safari, or a pasted address.
 struct BackendPage: View {
-    let model: AppModel
     let columns: [GridItem]
     let reduce: Bool
     @State private var store = BackendStore.shared
@@ -25,7 +24,6 @@ struct BackendPage: View {
                 ForEach(store.tiles) { t in tile(t) }
                 addTile
             }
-            BackendGraph(model: model)   // his ask 11-14: the vault's graph in the space under the tiles
         }
         .padding(.horizontal, PLSpace.margin).padding(.top, PLSpace.gap).padding(.bottom, 120)
         .fullScreenCover(item: $open) { t in BackendWebScreen(template: t) }

@@ -199,31 +199,34 @@ struct CurateCardMedia: View {
     }
 }
 
-/// One of his keycap pictures (gallery /remote/cap-<name>-up|down-t3.png): up at rest, down while pressed, and pinned down when
-/// the card is already a favourite. Five caps edge to edge in the black tray, as the macropad is built (S332, S336).
+/// A mark button: Apple's Liquid Glass with his own icon on it (his ask 11-14: "replace the 3D keycaps for Apple natives ... if we can
+/// keep the icons for the buttons that'd be great"). The icons are the Design Kit's (gallery /kit/icons/pl_icon_<name>.png), tinted
+/// by the mark's colour; a favourite already set stays lit.
 struct KeyCap: View {
     let model: AppModel
     let name: String
     let label: String
     var down = false
     let action: () -> Void
-    var body: some View {
-        Button(action: action) { EmptyView() }
-            .buttonStyle(CapStyle(base: LibraryData.shared.base(model), name: name, pinned: down))
-            .accessibilityLabel(label)
-            .accessibilityAddTraits(down ? .isSelected : [])
+
+    private var file: String { name == "fav" ? "favorite" : name }
+    private var tint: Color {
+        switch name { case "keep": return PLC.keep; case "cut": return PLC.cut; case "maybe": return PLC.maybe; case "fav": return PLG.gold; default: return PLG.dim(.dark) }
     }
-    struct CapStyle: ButtonStyle {
-        let base: String
-        let name: String
-        let pinned: Bool
-        func makeBody(configuration: Configuration) -> some View {
-            let pressed = configuration.isPressed || pinned
-            AsyncImage(url: URL(string: "\(base)/remote/cap-\(name)-\(pressed ? "down" : "up")-t3.png")) { $0.resizable().scaledToFit() }
-                placeholder: { RoundedRectangle(cornerRadius: 10, style: .continuous).fill(PLG.surface(.dark)) }
-                .aspectRatio(152.0 / 134.0, contentMode: .fit)
-                .frame(maxWidth: 80)
+
+    var body: some View {
+        Button(action: action) {
+            AsyncImage(url: URL(string: "\(LibraryData.shared.base(model))/kit/icons/pl_icon_\(file).png")) { img in
+                img.resizable().renderingMode(.template).scaledToFit()
+            } placeholder: { Color.clear }
+                .foregroundStyle(down ? PLG.bg(.dark) : tint)
+                .frame(width: 30, height: 30)
+                .frame(maxWidth: 80, minHeight: 58)
                 .contentShape(Rectangle())
         }
+        .buttonStyle(.plain)
+        .plGlass(tint: down ? tint.opacity(0.85) : tint.opacity(0.12), interactive: true, in: RoundedRectangle(cornerRadius: 18, style: .continuous))
+        .accessibilityLabel(label)
+        .accessibilityAddTraits(down ? .isSelected : [])
     }
 }

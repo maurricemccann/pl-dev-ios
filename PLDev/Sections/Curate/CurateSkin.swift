@@ -15,7 +15,6 @@ enum PLC {
     static var bone: Color { PLCarry.tone(.ink, .dark, Color(hex: 0xece7da)) }
     static var ink: Color { PLCarry.tone(.ink, .light, Color(hex: 0x1a1510)) }
     /// The keycap tray: a black case the five caps sit edge to edge in (`#141210`, 8 pt corner).
-    static var tray: Color { PLCarry.tone(.well, .dark, Color(hex: 0x141210)) }
 }
 
 extension TasteMark {
