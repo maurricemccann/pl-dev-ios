@@ -41,7 +41,7 @@ enum GameID: String, CaseIterable, Identifiable {
 
 /// Best scores and the daily record, on the phone. Scores only ever rise; the daily record only ever adds.
 enum GameScores {
-    private static let store = UserDefaults.standard
+    private static var store: UserDefaults { .standard }   // computed: a stored static UserDefaults fails Swift 6's concurrency check
     static func best(_ g: GameID) -> Int { store.integer(forKey: "game.best." + g.rawValue) }
     static func offer(_ g: GameID, _ score: Int) { if score > best(g) { store.set(score, forKey: "game.best." + g.rawValue) } }
     static var dailyDays: Set<String> {
