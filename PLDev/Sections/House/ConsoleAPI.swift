@@ -102,12 +102,29 @@ struct ConfirmButton: View {
     var role: ButtonRole? = nil
     let action: () async -> Void
     @State private var asking = false
+    @State private var done = false
+    @State private var sealTick = 0
     var body: some View {
-        Button(title, role: role) { asking = true }
+        // a tap asks (and is the VoiceOver way); a press held for a moment seals it without the question (Gemini 11-14, his pick N20),
+        // and the button rests on "Done" for a moment so the task ends resolved, not straight back to the list (his pick N21)
+        Button(role: role) { asking = true } label: {
+            if done { Label("Done", systemImage: "checkmark") } else { Text(title) }
+        }
+            .onLongPressGesture(minimumDuration: 0.8) { sealTick += 1; Task { await run() } }
+            .sensoryFeedback(.success, trigger: sealTick)
             .confirmationDialog(question, isPresented: $asking, titleVisibility: .visible) {
-                Button(confirm ?? title, role: role) { Task { await action() } }
+                Button(confirm ?? title, role: role) { Task { await run() } }
                 Button("Cancel", role: .cancel) {}
-            }
+            } message: { Text("Or hold the button to seal it.") }
+            .accessibilityHint("Asks before it acts")
+            .disabled(done)
+    }
+
+    private func run() async {
+        await action()
+        withAnimation(.snappy) { done = true }
+        try? await Task.sleep(for: .seconds(2))
+        withAnimation(.snappy) { done = false }
     }
 }
 

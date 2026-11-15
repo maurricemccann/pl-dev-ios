@@ -30,6 +30,7 @@ public enum BackendTemplates {
     public static let builtIn: [BackendTemplate] = [
         BackendTemplate(id: "cloudflare", name: "Cloudflare", symbol: "cloud", startURL: "https://dash.cloudflare.com/", allowedHosts: ["cloudflare.com"]),
         BackendTemplate(id: "printful", name: "Printful", symbol: "shippingbox", startURL: "https://www.printful.com/dashboard", allowedHosts: ["printful.com"]),
+        BackendTemplate(id: "pinterest", name: "Pinterest", symbol: "pin", startURL: "https://www.pinterest.com/business/hub/", allowedHosts: ["pinterest.com", "pinimg.com"]),   // his pick N23, 11-14
         BackendTemplate(id: "horizon", name: "Meta Horizon Creator Club", symbol: "visionpro", startURL: "", allowedHosts: ["meta.com", "facebook.com", "oculus.com", "fb.com", "fb.me", "instagram.com", "messenger.com"]),
     ]
 
@@ -68,6 +69,11 @@ public enum BackendTemplates {
 
     /// A saved list read back after an update: each built-in tile takes the current name, symbol and allowed sites from the code
     /// (keeping any extra site he allowed and any address he set); tiles he added are kept as they are.
+    /// Built-ins added in a later version show up once for a phone that saved its tiles before them; one he removed stays removed.
+    public static func addingNew(_ tiles: [BackendTemplate], seen: Set<String>) -> [BackendTemplate] {
+        tiles + builtIn.filter { b in !seen.contains(b.id) && !tiles.contains { $0.id == b.id } }
+    }
+
     public static func refreshed(_ saved: [BackendTemplate]) -> [BackendTemplate] {
         saved.map { s in
             guard let code = builtIn.first(where: { $0.id == s.id }) else { return s }

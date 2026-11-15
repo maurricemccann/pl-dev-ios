@@ -530,13 +530,19 @@ struct DripView: View {
                                    text: PLOS.text(scheme), dim: PLOS.dim(scheme)).padding(.vertical, 4)
                     }.listRowBackground(OSRowBackground())
                 }
-                ForEach(rows) { r in
+                // grouped by the day they go out (his pick P2)
+                let days = Dictionary(grouping: rows, by: { String(($0.publish_at ?? "").prefix(10)) })
+                ForEach(days.keys.sorted(), id: \.self) { day in
+                  Section(Date.pl(day)?.formatted(.dateTime.weekday(.wide).month().day()) ?? (day.isEmpty ? "No date" : day)) {
+                    ForEach(days[day] ?? []) { r in
                     HStack(alignment: .top, spacing: 10) {
                         VStack(alignment: .leading, spacing: 2) {
                             HStack { Text((r.platform ?? "").capitalized).font(.caption.bold()).foregroundStyle(PLOS.platform(r.platform)); Spacer(); Ago(text: r.publish_at).font(.caption) }.foregroundStyle(.secondary)
                             Text(r.caption ?? "").lineLimit(3)
                         }
                     }
+                    }
+                  }.listRowBackground(OSRowBackground())
                 }
             }
         }

@@ -13,11 +13,14 @@ import Observation
         let dir = (try? FileManager.default.url(for: .applicationSupportDirectory, in: .userDomainMask, appropriateFor: nil, create: true))
             ?? FileManager.default.temporaryDirectory
         file = dir.appendingPathComponent("backend-tiles.json")
+        let seenKey = "pldev.backendSeen"
+        let seen = Set(UserDefaults.standard.stringArray(forKey: seenKey) ?? ["cloudflare", "printful", "horizon"])   // the set before 11-14
         if let data = try? Data(contentsOf: file), let saved = try? JSONDecoder().decode([BackendTemplate].self, from: data) {
-            tiles = BackendTemplates.refreshed(saved)
+            tiles = BackendTemplates.addingNew(BackendTemplates.refreshed(saved), seen: seen)
         } else {
             tiles = BackendTemplates.builtIn
         }
+        UserDefaults.standard.set(BackendTemplates.builtIn.map(\.id), forKey: seenKey)
     }
 
     /// Adds a tile, or fills in a built-in that had no address yet (Horizon). Returns the line to show him.

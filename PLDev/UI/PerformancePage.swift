@@ -72,6 +72,14 @@ struct PerformancePage: View {
     @AppStorage("pldev.weekDecisions") private var decisionsJSON = "{}"
     /// Every "Tonight" tap, newest last: "2026-11-14|approvals" (the first half of Gemini's self-weighting prompts, kept honest).
     @AppStorage("pldev.moveLog") private var moveLog = ""
+    /// One experiment a week, from the best post (Codex's reach-into-experiment, his pick N17): "2026-W46" -> text.
+    @AppStorage("pldev.weekExperiments") private var experimentsJSON = "{}"
+    @State private var experimentDraft = ""
+    /// The app's own changes (his pick N19): what it changed, and what it was before, newest last.
+    @AppStorage("pldev.todayLead") private var todayLead = ""
+    @AppStorage("pldev.appliedChanges") private var appliedJSON = "[]"
+    @AppStorage("pldev.settledProposals") private var settledCSV = ""
+    struct Applied: Codable, Identifiable { let id: String; let text: String; let before: String; let at: String }
     @State private var decisionDraft = ""
 
     var body: some View {
@@ -463,6 +471,8 @@ struct PerformancePage: View {
                 let by = Dictionary(moves.map { ($0, 1) }, uniquingKeysWith: +).sorted { $0.value > $1.value }
                 Text("Your moves: " + by.map { "\($0.key) \($0.value)" }.joined(separator: " · ")).font(.footnote).foregroundStyle(.secondary)
             }
+            experimentRows(thisWeek: thisWeek, lastWeek: lastWeek)
+            proposalRows(moves: moves)
             if let d = decisions[lastWeek], !d.isEmpty {
                 VStack(alignment: .leading, spacing: 2) {
                     Text("Last week you decided").plLabel(10).foregroundStyle(.secondary)
@@ -478,6 +488,74 @@ struct PerformancePage: View {
                     Button("Keep it") { saveDecision(thisWeek) }.font(.footnote.weight(.semibold)).tint(PLTone.accent)
                 }
             }
+        }
+    }
+
+    /// Last week's experiment beside this week's real result, and one experiment for this week drawn from the best post.
+    @ViewBuilder private func experimentRows(thisWeek: String, lastWeek: String) -> some View {
+        let ex = (try? JSONDecoder().decode([String: String].self, from: Data(experimentsJSON.utf8))) ?? [:]
+        let weeks = data?.weekly ?? []
+        if let e = ex[lastWeek], !e.isEmpty {
+            VStack(alignment: .leading, spacing: 2) {
+                Text("Last week's experiment").plLabel(10).foregroundStyle(.secondary)
+                Text(e).font(.callout)
+                if let w = weeks.last { Text("This week so far: \(w.posts) posts, \(w.reach) reach, \(w.engagement) likes and comments. A hypothesis, not proof.").font(.caption2).foregroundStyle(.secondary) }
+            }
+        }
+        VStack(alignment: .leading, spacing: 4) {
+            if let best = data?.top_posts?.first {
+                Text("Best post: \(best.channel.capitalized), \(best.engagement) likes and comments").font(.caption2).foregroundStyle(.secondary)
+            }
+            TextField(ex[thisWeek] ?? "One experiment from it this week", text: $experimentDraft, axis: .vertical).font(.callout).lineLimit(1...3)
+            if !experimentDraft.isEmpty {
+                Button("Keep the experiment") {
+                    var d = ex; d[thisWeek] = String(experimentDraft.trimmingCharacters(in: .whitespacesAndNewlines).prefix(280))
+                    if let s = try? JSONEncoder().encode(d), let j = String(data: s, encoding: .utf8) { experimentsJSON = j }
+                    experimentDraft = ""
+                }
+                .font(.footnote.weight(.semibold)).tint(PLTone.accent)
+            }
+        }
+    }
+
+    /// The app's one proposal this week, and the list of what it changed with Undo (Plans/SPEC — PL DEV PROPOSES ITS OWN CHANGES).
+    @ViewBuilder private func proposalRows(moves: [String]) -> some View {
+        let settled = Set(settledCSV.split(separator: ",").map(String.init))
+        let oldest = CaptureSection.state.deck.compactMap { Date.pl($0.created_at) }.min()
+        let p = ProposalRules.pick(.init(movesLast7: Dictionary(moves.map { ($0, 1) }, uniquingKeysWith: +),
+                                         oldestWaitingCaptureDays: oldest.map { Int(Date.now.timeIntervalSince($0) / 86400) }, settled: settled))
+        let applied = (try? JSONDecoder().decode([Applied].self, from: Data(appliedJSON.utf8))) ?? []
+        if let p {
+            VStack(alignment: .leading, spacing: 6) {
+                Label(p.text, systemImage: "wand.and.stars").font(.callout)
+                HStack(spacing: 8) {
+                    Button("Yes") {
+                        let rec = Applied(id: p.id, text: p.text, before: todayLead, at: String(Date.now.formatted(.iso8601.year().month().day())))
+                        if p.setting == "todayLead" { todayLead = p.value }
+                        if let s = try? JSONEncoder().encode(applied + [rec]), let j = String(data: s, encoding: .utf8) { appliedJSON = j }
+                        settledCSV = (settled.union([p.id])).joined(separator: ",")
+                    }
+                    .buttonStyle(.bordered).tint(PLTone.accent)
+                    Button("Never ask this") { settledCSV = (settled.union([p.id])).joined(separator: ",") }.buttonStyle(.bordered).tint(.secondary)
+                }
+            }
+        }
+        if !applied.isEmpty {
+            DisclosureGroup("Changes the app made (\(applied.count))") {
+                ForEach(applied.reversed()) { a in
+                    HStack {
+                        Text(a.text).font(.caption).lineLimit(2)
+                        Spacer(minLength: 6)
+                        Button("Undo") {
+                            todayLead = a.before
+                            let rest = applied.filter { $0.id != a.id }
+                            if let s = try? JSONEncoder().encode(rest), let j = String(data: s, encoding: .utf8) { appliedJSON = j }
+                        }
+                        .font(.caption.weight(.semibold))
+                    }
+                }
+            }
+            .font(.footnote)
         }
     }
 

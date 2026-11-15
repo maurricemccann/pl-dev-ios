@@ -29,6 +29,7 @@ struct HomeDashboard: View {
     struct DripPost: Decodable, Identifiable { let id: String; let platform: String?; let caption: String?; let publish_at: String?; let media_url: String? }
     @State private var drip: [DripPost] = []
     @State private var capture = CaptureSection.state
+    @AppStorage("pldev.todayLead") private var todayLead = ""
 
     var body: some View {
         VStack(spacing: 14) {
@@ -37,8 +38,8 @@ struct HomeDashboard: View {
             } else {
                 nowLine
                 PerformancePage(model: model, part: .action)
-                runwayCard
-                captureCard
+                // the order the app may change on his Yes (his pick N19); Tonight and what needs him always lead
+                if todayLead == "captures" { captureCard; runwayCard } else { runwayCard; captureCard }
                 houseCard
                 practiceCard
                 townCard

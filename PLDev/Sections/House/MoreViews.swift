@@ -204,6 +204,15 @@ struct MerchView: View {
                     Spacer()
                     PLChip(word: "switches " + (nowSeason == "fw" ? "Mar 1" : "Sep 1"), tint: PLOS.dim(scheme))
                 }
+                let next: Date = {
+                    let cal = Calendar.current, y = cal.component(.year, from: .now), m = cal.component(.month, from: .now)
+                    let c = nowSeason == "fw" ? DateComponents(year: m >= 9 ? y + 1 : y, month: 3, day: 1) : DateComponents(year: y, month: 9, day: 1)
+                    return cal.date(from: c) ?? .now
+                }()
+                PLBigTile(number: "\(max(0, Calendar.current.dateComponents([.day], from: .now, to: next).day ?? 0))", label: "Days to the next season switch",
+                          tint: PLOS.gold, text: PLOS.text(scheme), dim: PLOS.dim(scheme)) {
+                    Text(next.formatted(.dateTime.month(.abbreviated).day())).font(.system(size: 13, design: .monospaced)).foregroundStyle(PLOS.gold)
+                }
                 if !rows.isEmpty {
                     PLStageBar(stages: [.init(name: "On the grid", count: rows.filter { onGrid($0.season) }.count, tint: PLOS.ok),
                                         .init(name: "Resting", count: rows.filter { !onGrid($0.season) }.count, tint: PLOS.muted)],

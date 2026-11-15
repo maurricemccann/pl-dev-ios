@@ -3,11 +3,19 @@ import XCTest
 
 /// The Backend page's matching rules (Plans/SPEC — PL DEV BACKEND PAGE (S348), acceptance test 7).
 final class BackendTemplatesTests: XCTestCase {
-    func testTheStartingSetIsExactlyThree() {
-        XCTAssertEqual(BackendTemplates.builtIn.map(\.id), ["cloudflare", "printful", "horizon"])
+    func testTheStartingSetIsExactlyThree() {   // four since 11-14 (his pick N23: Pinterest); the name is kept for history
+        XCTAssertEqual(BackendTemplates.builtIn.map(\.id), ["cloudflare", "printful", "pinterest", "horizon"])
         XCTAssertTrue(BackendTemplates.builtIn[0].isReady)
         XCTAssertTrue(BackendTemplates.builtIn[1].isReady)
-        XCTAssertFalse(BackendTemplates.builtIn[2].isReady, "Horizon waits for his first share, its address is not guessed")
+        XCTAssertTrue(BackendTemplates.builtIn[2].isReady)
+        XCTAssertFalse(BackendTemplates.builtIn[3].isReady, "Horizon waits for his first share, its address is not guessed")
+    }
+
+    func testANewBuiltInAppearsOnceAndARemovedOneStaysGone() {
+        let old = Array(BackendTemplates.builtIn.filter { $0.id != "pinterest" })
+        XCTAssertTrue(BackendTemplates.addingNew(old, seen: ["cloudflare", "printful", "horizon"]).contains { $0.id == "pinterest" })
+        let removed = old.filter { $0.id != "printful" }
+        XCTAssertFalse(BackendTemplates.addingNew(removed, seen: ["cloudflare", "printful", "horizon", "pinterest"]).contains { $0.id == "printful" })
     }
 
     func testMatchFindsTheBuiltInBySite() {
