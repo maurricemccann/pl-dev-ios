@@ -127,7 +127,13 @@ struct HomeView: View {
             .tabViewStyle(.page(indexDisplayMode: .never))
             .onAppear { if page > 2 { page = 2 } }   // a page remembered from the four-page Home (before 11-14) lands on Pulse
             .environment(\.colorScheme, .dark)   // light text on the wallpaper, as on the Home Screen; pushed screens keep his setting
-            .background(Wallpaper(model: model))
+            .background {
+                ZStack {
+                    Wallpaper(model: model)
+                    if page == 2 { MoneyGround().transition(.opacity) }   // Pulse wears his money-goes-up glyph field (11-14)
+                }
+                .animation(.easeInOut(duration: 0.35), value: page)
+            }
             .refreshable { await Poller.shared.refreshAll() }
             // one bar like the Home Screen dock (his note 11-14 with Aqara's tab bar on Cosmos: the dots and Settings floated apart and
             // cut through the screen, and sat high): dots left, Settings right, one glass bar, close to the home indicator

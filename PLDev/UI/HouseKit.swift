@@ -155,6 +155,27 @@ extension PLTone {
 
 /// The ground under every app's screens: the palette's ground with his curve tile drawn faintly in its text colour (dark), or the
 /// palette's cream with the tile in ink (light). The psyground of the Design Kit: about 11 %, so the glass and the cards stand out.
+/// Pulse's ground (his ask 11-14: "the performance one have a glyph field of the money goes up glyph"): the same ground and Settings
+/// dial as the curves, with his money glyph (Design Kit `glyphs/money.png`, bundled as `money-field.png`) tiled in the palette's key colour.
+struct MoneyGround: View {
+    @State private var kit = HouseKit.shared
+    @AppStorage("pldev.tileStrength") private var strength = 0.5
+    @Environment(\.accessibilityReduceTransparency) private var reduce
+    private static let tile: UIImage? = Bundle.main.url(forResource: "money-field", withExtension: "png").flatMap { UIImage(contentsOfFile: $0.path) }
+    var body: some View {
+        let p = kit.palette, k = 0.22 * max(0.2, strength) * (1 + max(0, strength - 0.5) * 3)
+        ZStack {
+            p.groundColor
+            if !reduce, let t = Self.tile {
+                Image(uiImage: t).renderingMode(.template).resizable(resizingMode: .tile)
+                    .foregroundStyle(p.keyColor.opacity(k))
+            }
+        }
+        .ignoresSafeArea()
+        .accessibilityHidden(true)
+    }
+}
+
 struct HouseGround: View {
     @Environment(\.colorScheme) private var scheme
     @Environment(\.accessibilityReduceTransparency) private var reduce
