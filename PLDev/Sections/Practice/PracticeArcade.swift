@@ -7,6 +7,8 @@ import SwiftUI
 
 enum ArcadeID: String, CaseIterable, Identifiable {
     case preparation, theReturn = "the-return", practice = "the-practice", compound, restore = "restore-the-archive", resonance
+    // wave 1 (spec vault Plans/SPEC - GAMES, WAVE 1 (S348).md)
+    case seeds = "the-seeds", curve = "the-curve", architect = "reality-architect", oracle = "oracle-game"
     var id: String { rawValue }
     var title: String {
         switch self {
@@ -16,6 +18,10 @@ enum ArcadeID: String, CaseIterable, Identifiable {
         case .compound: return "Compound"
         case .restore: return "Restore the Archive"
         case .resonance: return "Resonance"
+        case .seeds: return "The Seeds"
+        case .curve: return "The Curve"
+        case .architect: return "Reality Architect"
+        case .oracle: return "Oracle Paths"
         }
     }
     var line: String {
@@ -26,6 +32,10 @@ enum ArcadeID: String, CaseIterable, Identifiable {
         case .compound: return "Merge the stages from Day 1 to Year 7."
         case .restore: return "Slide the pieces until the archive work is whole."
         case .resonance: return "Swap your glyphs, match three, reach 500."
+        case .seeds: return "Rebuild your seed phrases, from memory or descrambled."
+        case .curve: return "Watch his stroke draw itself, then redraw it from memory."
+        case .architect: return "State Self, Wealth and World. Clarity is scored by rules you can read."
+        case .oracle: return "Five choices through his story to one of the Truths."
         }
     }
     var symbol: String {
@@ -36,6 +46,10 @@ enum ArcadeID: String, CaseIterable, Identifiable {
         case .compound: return "square.grid.3x3.fill"
         case .restore: return "square.grid.4x3.fill"
         case .resonance: return "sparkles"
+        case .seeds: return "text.word.spacing"
+        case .curve: return "scribble.variable"
+        case .architect: return "building.columns"
+        case .oracle: return "signpost.right.and.left"
         }
     }
 }
@@ -68,6 +82,10 @@ struct ArcadeGlyph: View {
     case .compound: CompoundGame()
     case .restore: RestoreGame()
     case .resonance: ResonanceGame()
+    case .seeds: SeedsGame(seeds: seeds)
+    case .curve: CurveGame()
+    case .architect: ArchitectGame()
+    case .oracle: OraclePathsGame()
     }
 }
 
