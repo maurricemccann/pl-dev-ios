@@ -65,9 +65,18 @@ struct BackendGraph: View {
         return CGPoint(x: cx + (x - cx) * zoom + offset.width, y: cy + (y - cy) * zoom + offset.height)
     }
 
-    /// One steady colour per top folder, spread round the wheel.
+    /// One steady colour per top folder, from his palettes (his ruling 11-14): the chosen palette's key and accent first, then the key and
+    /// accent of each Design Kit palette, repeating when there are more folders than colours.
+    private var houseColors: [Color] {
+        let kit = HouseKit.shared
+        var seen = Set<String>(), out: [Color] = []
+        for p in [kit.palette] + kit.palettes { for hex in [p.key, p.accent] where seen.insert(hex.lowercased()).inserted { if let c = Color(hex: hex) { out.append(c) } } }
+        return out.isEmpty ? [PLTone.accent] : out
+    }
+
     private func tone(_ group: Int, of count: Int) -> Color {
-        Color(hue: Double(group) / Double(max(count, 1)), saturation: 0.55, brightness: 0.95)
+        let c = houseColors
+        return c[((group % c.count) + c.count) % c.count]
     }
 
     private func canvas(_ g: Graph, size: CGSize) -> some View {

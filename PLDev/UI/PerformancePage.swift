@@ -1,4 +1,5 @@
 import SwiftUI
+import Charts
 
 /// Home page 4: PL Performance (Plans/SPEC — PL DEV PERFORMANCE PAGE (S348), his ask 11-14). Business and social numbers that are not on
 /// the Today page, in one read from pl-cron `api/widget/performance` (totals only). A number that was not read shows a dash, never a zero.
@@ -33,6 +34,15 @@ struct PerformancePage: View {
         struct Order: Decodable, Identifiable { let no: String?; let day: String; let total: Double?; let currency: String?; let status: String?; let kind: String?; var id: String { (no ?? "") + day + "\(total ?? 0)" } }
         struct Attention: Decodable, Identifiable { let label: String; let count: Int?; let room: String?; var id: String { label } }
         let orders: [Order]?; let attention: [Attention]?
+        /// The site's last 28 days from Google Analytics (the PC board reads it each night and posts it to the house).
+        struct Site: Decodable {
+            struct Totals: Decodable { let users_28d: Int?; let sessions_28d: Int?; let views_28d: Int? }
+            struct Day: Decodable, Identifiable { let date: String; let users: Int; let sessions: Int; let views: Int; var id: String { date } }
+            struct Page: Decodable, Identifiable { let path: String; let views: Int; let users: Int; var id: String { path } }
+            struct Source: Decodable, Identifiable { let source: String; let medium: String; let sessions: Int; var id: String { source + "/" + medium } }
+            let totals: Totals?; let days: [Day]?; let pages: [Page]?; let sources: [Source]?; let as_of: String?
+        }
+        let site: Site?
     }
 
     @Environment(\.openURL) private var openURL
@@ -66,6 +76,7 @@ struct PerformancePage: View {
             tasksCard
             suggestionsCard
             audienceCard
+            siteCard
             landedCard
             weeklyCard
             topCard
@@ -275,6 +286,54 @@ struct PerformancePage: View {
         if ["COMPLETED", "FULFILLED", "DELIVERED"].contains(s) { return PLTone.good }
         if ["CANCELED", "CANCELLED", "REFUNDED"].contains(s) { return Color.secondary }
         return PLTone.warn
+    }
+
+    /// Site visits from Google Analytics: 28-day totals, visits by day, the pages people open and where they came from.
+    private var siteCard: some View {
+        card("Site visits") {
+            if let s = data?.site {
+                HStack(alignment: .top) {
+                    figure("Visitors", count(s.totals?.users_28d))
+                    Divider().frame(height: 34)
+                    figure("Visits", count(s.totals?.sessions_28d))
+                    Divider().frame(height: 34)
+                    figure("Page views", count(s.totals?.views_28d))
+                }
+                if let days = s.days, !days.isEmpty {
+                    Chart(days) { d in
+                        BarMark(x: .value("Day", String(d.date.suffix(5))), y: .value("Visitors", d.users))
+                            .foregroundStyle(PLTone.accent.gradient)
+                    }
+                    .chartXAxis { AxisMarks(values: .stride(by: 7)) { _ in AxisValueLabel() } }
+                    .frame(height: 120)
+                    .accessibilityLabel("Visitors each day for 28 days")
+                }
+                if let pages = s.pages, !pages.isEmpty {
+                    Text("Pages they open").plLabel(10).foregroundStyle(.secondary).padding(.top, 4)
+                    ForEach(pages.prefix(6)) { p in
+                        HStack {
+                            Text(p.path).font(.system(.footnote, design: .monospaced)).lineLimit(1).truncationMode(.middle)
+                            Spacer(minLength: 8)
+                            Text("\(p.views)").font(.system(.footnote, design: .monospaced)).monospacedDigit()
+                        }
+                    }
+                }
+                if let sources = s.sources, !sources.isEmpty {
+                    Text("Where they came from").plLabel(10).foregroundStyle(.secondary).padding(.top, 4)
+                    ForEach(sources.prefix(6)) { x in
+                        HStack {
+                            Text(x.source == "(direct)" ? "Typed or bookmarked" : x.source).font(.footnote).lineLimit(1)
+                            if x.medium != "(none)" && !x.medium.isEmpty { Text(x.medium).font(.caption2).foregroundStyle(.secondary) }
+                            Spacer(minLength: 8)
+                            Text("\(x.sessions)").font(.system(.footnote, design: .monospaced)).monospacedDigit()
+                        }
+                    }
+                }
+                Text("Last 28 days, Google Analytics. Read \(String((s.as_of ?? "").prefix(10))).").font(.caption2).foregroundStyle(.secondary)
+            } else {
+                Text(data == nil ? "Not read yet." : "No site read yet: the PC board posts it each night.").font(.callout).foregroundStyle(.secondary)
+            }
+        }
     }
 
     /// His open founder tasks, as the house lists them.
