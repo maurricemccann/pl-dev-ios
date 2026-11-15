@@ -36,14 +36,15 @@ struct BackendPage: View {
 
     private func tile(_ t: BackendTemplate) -> some View {
         Button {
-            if t.isReady { open = t } else { adding = t; showAdd = true }   // a tile with no address yet asks for one
+            // a tap opens Apple's Safari view (his ruling 11-14: the in-app web view could not do his sign-ins; passkeys and iCloud Keychain work here)
+            if t.isReady, let url = URL(string: t.startURL) { safariPage = WebPage(url) } else { adding = t; showAdd = true }   // a tile with no address yet asks for one
         } label: {
             BackendTile(symbol: t.symbol, name: t.name, ready: t.isReady)
         }
         .buttonStyle(PressableStyle(reduce: reduce))
         .contextMenu {
-            if t.isReady, let url = URL(string: t.startURL) {
-                Button("Open in Safari view (passkeys work)", systemImage: "safari") { safariPage = WebPage(url) }
+            if t.isReady {
+                Button("Open in the PL DEV web view", systemImage: "rectangle.on.rectangle") { open = t }
             }
             Button("Remove", systemImage: "trash", role: .destructive) { store.remove(t.id) }
             Button("Bring back the built-in tiles", systemImage: "arrow.counterclockwise") { store.reset() }
