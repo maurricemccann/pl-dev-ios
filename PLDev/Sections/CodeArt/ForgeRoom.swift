@@ -101,7 +101,6 @@ struct ForgeBench: View {
         .navigationTitle("Forge")
         .navigationBarTitleDisplayMode(.inline)
         .scrollDismissesKeyboard(.interactively)
-        .toolbar { ToolbarItem(placement: .keyboard) { Button("Done") { editing = false } } }
         .plGround()
         .onAppear { if VJAudio.shared.source == .off { VJAudio.shared.setSynthetic(true) } }
         .onDisappear { VJAudio.shared.setSynthetic(false) }

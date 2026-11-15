@@ -28,6 +28,12 @@ struct PLDevApp: App {
     var body: some Scene {
         WindowGroup {
             RootView(model: AppModel.shared)
+                .toolbar {   // every keyboard gets a way out, typed in or not (his report 11-14)
+                    ToolbarItemGroup(placement: .keyboard) {
+                        Spacer()
+                        Button("Done") { UIApplication.shared.sendAction(#selector(UIResponder.resignFirstResponder), to: nil, from: nil, for: nil) }
+                    }
+                }
                 #if targetEnvironment(simulator)
                 // Simulator only (the screens workflow): a config file and a link handed in at launch, so every screen can be
                 // photographed without the system's "Open in PL DEV?" prompt. Never compiled into a device build.

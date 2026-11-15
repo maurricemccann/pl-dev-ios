@@ -126,9 +126,9 @@ struct HomeView: View {
             // Two pages, like the iPhone (his ask 11-13): the apps first, and to their left the Today page of widgets
             // (Apple's Today View: swipe right from the first page). Page dots sit above the controls.
             TabView(selection: $page) {
-                ScrollView { todayPage }.tag(0)
-                ScrollView { appsPage }.tag(1)
-                ScrollView { PerformancePage(model: model) }.tag(2)   // Pulse (his ruling 11-14, Gemini's three pages): reach, money, the machine
+                ScrollView { todayPage }.scrollDismissesKeyboard(.interactively).tag(0)
+                ScrollView { appsPage }.scrollDismissesKeyboard(.interactively).tag(1)
+                ScrollView { PerformancePage(model: model) }.scrollDismissesKeyboard(.interactively).tag(2)   // Pulse (his ruling 11-14, Gemini's three pages): reach, money, the machine
             }
             .tabViewStyle(.page(indexDisplayMode: .never))
             .onAppear { if page > 2 { page = 2 } }   // a page remembered from the four-page Home (before 11-14) lands on Pulse
