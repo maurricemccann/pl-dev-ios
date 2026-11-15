@@ -61,7 +61,7 @@ final class BackendTemplatesTests: XCTestCase {
     }
 
     func testRefreshedBringsOldSavedTilesUpToDate() {
-        var oldHorizon = BackendTemplates.builtIn[2]
+        var oldHorizon = BackendTemplates.builtIn.first { $0.id == "horizon" }!   // by name: its place in the list moves when a tile is added
         oldHorizon.allowedHosts = ["meta.com", "my-extra.example"]   // as saved by an earlier build
         oldHorizon.startURL = "https://www.meta.com/horizon/creators/"
         let custom = BackendTemplates.custom(address: "https://example.org/x", title: "Ex")!
