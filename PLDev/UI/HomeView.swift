@@ -28,14 +28,15 @@ struct HomeView: View {
             ?? (Bundle.main.object(forInfoDictionaryKey: "CFBundleName") as? String) ?? "Home"
     }
 
-    /// Four apps across, as on the Home Screen; two at the accessibility text sizes, where a name needs the room.
+    /// Three across (both reviews 11-14: four cut "Colour Survey" and "Congregation" short); two at the accessibility text sizes.
     private var columns: [GridItem] {
-        typeSize.isAccessibilitySize ? Array(repeating: GridItem(.flexible()), count: 2) : Array(repeating: GridItem(.flexible(), spacing: PLSpace.pad), count: 4)   // the Home Screen's four across
+        typeSize.isAccessibilitySize ? Array(repeating: GridItem(.flexible()), count: 2) : Array(repeating: GridItem(.flexible(), spacing: PLSpace.pad), count: 3)
     }
 
     private var summary: String {
-        let count = model.sections.count
-        let waiting = model.sections.filter { !$0.readiness.isReady }.count
+        let shown = model.sections.filter { $0.id != "status" }   // Status is a Today widget, not a tile (it read "12 sections" over 11)
+        let count = shown.count
+        let waiting = shown.filter { !$0.readiness.isReady }.count
         var line = count == 1 ? "1 section" : "\(count) sections"
         if waiting > 0 { line += ", \(waiting) not ready" }
         return line
@@ -67,6 +68,8 @@ struct HomeView: View {
                 }
                 .animation(PLMotion.spring(reduce: reduce), value: model.sections.map(\.badge))
             }
+            // the services he signs in to, as a row under the apps (his ruling 11-14: the Backend page folds in here)
+            BackendPage(columns: columns, reduce: reduce, embedded: true)
         }
         .padding(.horizontal, PLSpace.margin).padding(.top, PLSpace.gap).padding(.bottom, PLSpace.block)
     }
@@ -100,14 +103,14 @@ struct HomeView: View {
 
     private var pageDots: some View {
         HStack(spacing: 8) {
-            ForEach(0..<4, id: \.self) { i in
+            ForEach(0..<3, id: \.self) { i in
                 Circle().fill(.white.opacity(page == i ? 0.95 : 0.4)).frame(width: 7, height: 7)
                     .onTapGesture { withAnimation(.snappy) { page = i } }
             }
         }
         .padding(.horizontal, 6).padding(.vertical, 6)
-        .accessibilityElement().accessibilityLabel(["Today, page 1 of 4", "Apps, page 2 of 4", "Backend, page 3 of 4", "Performance, page 4 of 4"][min(max(page, 0), 3)])
-        .accessibilityAdjustableAction { d in withAnimation { page = min(max(page + (d == .increment ? 1 : -1), 0), 3) } }
+        .accessibilityElement().accessibilityLabel(["Today, page 1 of 3", "Apps, page 2 of 3", "Pulse, page 3 of 3"][min(max(page, 0), 2)])
+        .accessibilityAdjustableAction { d in withAnimation { page = min(max(page + (d == .increment ? 1 : -1), 0), 2) } }
     }
 
     private var blocked: SectionEntry? { model.sections.first { $0.id == blockedID } }
@@ -119,10 +122,10 @@ struct HomeView: View {
             TabView(selection: $page) {
                 ScrollView { todayPage }.tag(0)
                 ScrollView { appsPage }.tag(1)
-                ScrollView { BackendPage(columns: columns, reduce: reduce) }.tag(2)
-                ScrollView { PerformancePage(model: model) }.tag(3)   // his ask 11-14: business and social numbers that are not on Today   // his ask 11-14: the third-party consoles (Cloudflare, Printful, Horizon)
+                ScrollView { PerformancePage(model: model) }.tag(2)   // Pulse (his ruling 11-14, Gemini's three pages): reach, money, the machine
             }
             .tabViewStyle(.page(indexDisplayMode: .never))
+            .onAppear { if page > 2 { page = 2 } }   // a page remembered from the four-page Home (before 11-14) lands on Pulse
             .environment(\.colorScheme, .dark)   // light text on the wallpaper, as on the Home Screen; pushed screens keep his setting
             .background(Wallpaper(model: model))
             .refreshable { await Poller.shared.refreshAll() }

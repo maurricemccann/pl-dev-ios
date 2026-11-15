@@ -61,28 +61,40 @@ struct PerformancePage: View {
     /// The on-device model's word on one suggestion: nil = not judged yet.
     @State private var judged: [Int: (can: Bool, step: String)] = [:]
     @State private var judging = false
+    @State private var goalsOpen = false
+
+    /// Which half to draw: `.action` leads Today (what needs him, what he can do); `.pulse` is the third Home page.
+    enum Part { case action, pulse }
+    var part: Part = .pulse
 
     var body: some View {
         VStack(alignment: .leading, spacing: 14) {
-            VStack(alignment: .leading, spacing: 4) {
-                Text("Performance").plFont(.title2, emphasized: true).foregroundStyle(.white)
-                Text(failed ? "Could not read the house. Pull down to try again." : (data == nil ? "Reading the house…" : "Business and social, live from the house."))
-                    .plFont(.footnote).foregroundStyle(.white.opacity(0.75))
+            if part == .action {
+                attentionCard
+                suggestionsCard
+                tasksCard
+            } else {
+                VStack(alignment: .leading, spacing: 4) {
+                    Text("Pulse").plFont(.title2, emphasized: true).foregroundStyle(.white)
+                    Text(failed ? "Could not read the house. Pull down to try again." : (data == nil ? "Reading the house…" : "Reach first, then money, then the machine."))
+                        .plFont(.footnote).foregroundStyle(.white.opacity(0.75))
+                }
+                // reach first (both reviews 11-14: the constraint is reach, not production)
+                landedCard
+                siteCard
+                audienceCard
+                weeklyCard
+                topCard
+                moneyCard
+                ordersCard
+                if (data?.months ?? []).count > 1 { monthsCard }   // one month of sales repeats Money
+                // the machine, moved off Today (his ruling 11-14)
+                HomeStatusStrip(model: model)
+                HomeDashboard(model: model, part: .machine)
+                costCard
             }
-            attentionCard
-            moneyCard
-            ordersCard
-            monthsCard
-            tasksCard
-            suggestionsCard
-            audienceCard
-            siteCard
-            landedCard
-            weeklyCard
-            topCard
-            costCard
         }
-        .padding(.horizontal, PLSpace.margin).padding(.top, PLSpace.gap).padding(.bottom, 120)
+        .padding(.horizontal, part == .action ? 0 : PLSpace.margin).padding(.top, part == .action ? 0 : PLSpace.gap).padding(.bottom, part == .action ? 0 : 120)
         .task { await load() }
         .refreshable { await load() }
     }
@@ -146,18 +158,29 @@ struct PerformancePage: View {
                 Divider().frame(height: 34)
                 figure("Orders", count(m?.orders_ytd))
             }
-            // the goal lines and their words come from the house (private), never from this public code
-            ForEach(Array((m?.lines ?? []).enumerated()), id: \.offset) { _, line in
-                VStack(alignment: .leading, spacing: 4) {
-                    HStack {
-                        Text(line.label).font(.caption)
-                        Spacer()
-                        Text(m?.ytd.map { String(format: "%.2f%%", min($0 / max(line.amount, 1), 1) * 100) } ?? "\u{2014}").font(.caption).monospacedDigit().foregroundStyle(.secondary)
+            // the goal lines and their words come from the house (private), never from this public code; one tap away (his ruling 11-14)
+            if !(m?.lines ?? []).isEmpty {
+                Button { withAnimation(.snappy) { goalsOpen.toggle() } } label: {
+                    HStack(spacing: 4) {
+                        Text(goalsOpen ? "Hide the goals" : "The goals").plLabel(10)
+                        Image(systemName: "chevron.right").font(.system(size: 9, weight: .bold)).rotationEffect(.degrees(goalsOpen ? 90 : 0))
                     }
-                    ProgressView(value: min((m?.ytd ?? 0) / max(line.amount, 1), 1)).tint(PLTone.accent)
+                    .foregroundStyle(.secondary).frame(minHeight: 32).contentShape(Rectangle())
+                }
+                .buttonStyle(.plain)
+            }
+            if goalsOpen {
+                ForEach(Array((m?.lines ?? []).enumerated()), id: \.offset) { _, line in
+                    VStack(alignment: .leading, spacing: 4) {
+                        HStack {
+                            Text(line.label).font(.caption)
+                            Spacer()
+                            Text(m?.ytd.map { String(format: "%.2f%%", min($0 / max(line.amount, 1), 1) * 100) } ?? "\u{2014}").font(.caption).monospacedDigit().foregroundStyle(.secondary)
+                        }
+                        ProgressView(value: min((m?.ytd ?? 0) / max(line.amount, 1), 1)).tint(PLTone.accent)
+                    }
                 }
             }
-            if let s = m?.source { Text("Source: \(s).").font(.caption2).foregroundStyle(.secondary) }
         }
     }
 
@@ -269,7 +292,6 @@ struct PerformancePage: View {
                 HStack(alignment: .firstTextBaseline) {
                     VStack(alignment: .leading, spacing: 1) {
                         Text(o.day).font(.system(.footnote, design: .monospaced))
-                        Text([o.no ?? "", o.kind ?? ""].filter { !$0.isEmpty }.joined(separator: " · ")).font(.caption2).foregroundStyle(.secondary).lineLimit(1)
                     }
                     Spacer(minLength: 8)
                     Text(dollars(o.total)).font(.system(.callout, design: .monospaced)).monospacedDigit()

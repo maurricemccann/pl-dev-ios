@@ -21,20 +21,68 @@ struct HomeDashboard: View {
     }
     struct HouseGlanceNumbers { var needs = 0; var approve = 0; var standing = 0; var queued = 0; var week = 0 }
 
+    /// `.today` = the work (his ruling 11-14, Gemini's three pages): the line, what needs him, the drip, the house, practice, town.
+    /// `.machine` = the PC card, drawn on Pulse beside Status.
+    enum Part { case today, machine }
+    var part: Part = .today
+    @State private var runway: ApprovalsModel.Runway?
+
     var body: some View {
         VStack(spacing: 14) {
-            nowLine
-            HomeStatusStrip(model: model)
-            pcCard
-            houseCard
-            townCard
-            practiceCard
-            askBar
+            if part == .machine {
+                pcCard
+            } else {
+                nowLine
+                PerformancePage(model: model, part: .action)
+                runwayCard
+                houseCard
+                practiceCard
+                townCard
+                askBar
+            }
         }
         .task { await load() }
         .task {   // the PC moves; read it again every minute while Home is on screen
             while !Task.isCancelled { try? await Task.sleep(for: .seconds(60)); await loadPC() }
         }
+    }
+
+    // MARK: the drip: how many days each platform can post before it runs dry (both reviews 11-14: this belongs on Today)
+
+    private var runwayCard: some View {
+        VStack(alignment: .leading, spacing: 10) {
+            Text("The drip").plHand(20)
+            let lanes = (runway?.lane_runway_days ?? [:]).map { (p: $0.key, d: $0.value) }.sorted { $0.d < $1.d }
+            let target = runway?.lane_runway_ceiling_days ?? 14
+            if lanes.isEmpty {
+                Text(runway == nil ? "Not read yet." : "No lanes running.").font(.callout).foregroundStyle(.secondary)
+            }
+            ForEach(lanes.prefix(7), id: \.p) { l in
+                HStack(spacing: 8) {
+                    Text(l.p.capitalized).font(.footnote).frame(width: 84, alignment: .leading).lineLimit(1).minimumScaleFactor(0.7)
+                    GeometryReader { g in
+                        ZStack(alignment: .leading) {
+                            Capsule().fill(.white.opacity(0.12))
+                            Capsule().fill(l.d < 1 ? PLTone.bad : (l.d < target ? PLTone.warn : PLTone.good)).frame(width: max(4, g.size.width * CGFloat(min(l.d / target, 1))))
+                        }
+                    }
+                    .frame(height: 8)
+                    Text(String(format: "%.1f d", l.d)).font(.system(.caption, design: .monospaced)).monospacedDigit().frame(width: 52, alignment: .trailing)
+                }
+                .accessibilityElement(children: .ignore)
+                .accessibilityLabel("\(l.p): \(String(format: "%.1f", l.d)) days of posts left")
+            }
+            if !lanes.isEmpty {
+                door("house/approvals") {
+                    HStack(spacing: 4) { Text("Days of posts left, target \(Int(target)). Fill it in Approvals").plLabel(10); Image(systemName: "arrow.right").font(.system(size: 10, weight: .bold)) }
+                        .foregroundStyle(.white.opacity(0.9))
+                }
+            }
+        }
+        .frame(maxWidth: .infinity, alignment: .leading)
+        .padding(14)
+        .plGlass(in: RoundedRectangle(cornerRadius: PLRadius.card, style: .continuous))
+        .task { if part == .today { runway = try? await Console.get("run/moderation-runway", ApprovalsModel.Runway.self, model: model) } }
     }
 
     // MARK: now (WHOOP's insight line on Mobbin, 11-13): the one thing worth knowing, in a sentence, from the real numbers

@@ -6,6 +6,7 @@ import UIKit
 struct BackendPage: View {
     let columns: [GridItem]
     let reduce: Bool
+    var embedded = false
     @State private var store = BackendStore.shared
     @State private var open: BackendTemplate?
     @State private var adding: BackendTemplate?
@@ -15,17 +16,14 @@ struct BackendPage: View {
 
     var body: some View {
         VStack(alignment: .leading, spacing: PLSpace.roomy) {
-            VStack(alignment: .leading, spacing: 4) {
-                Text("Backend").plFont(.title2, emphasized: true).foregroundStyle(.white)
-                Text("Sign in once. PL DEV keeps it until the site ends the session.").plFont(.footnote).foregroundStyle(.white.opacity(0.75))
-            }
+            Text("Services").plLabel(11).foregroundStyle(.white.opacity(0.8)).padding(.top, embedded ? PLSpace.roomy : 0)
             if let notice { NoteLine(symbol: "checkmark.circle", tint: PLTone.accent, text: notice) }
             LazyVGrid(columns: columns, spacing: PLSpace.roomy + PLSpace.pad) {
                 ForEach(store.tiles) { t in tile(t) }
                 addTile
             }
         }
-        .padding(.horizontal, PLSpace.margin).padding(.top, PLSpace.gap).padding(.bottom, 120)
+        .padding(.horizontal, embedded ? 0 : PLSpace.margin).padding(.top, embedded ? 0 : PLSpace.gap).padding(.bottom, embedded ? 0 : 120)
         .fullScreenCover(item: $open) { t in BackendWebScreen(template: t) }
         .sheet(item: $safariPage) { page in SafariSheet(url: page.url).ignoresSafeArea() }   // Apple's browser sheet: passkeys and security keys work here
         .sheet(isPresented: $showAdd) {
