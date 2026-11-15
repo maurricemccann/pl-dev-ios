@@ -81,37 +81,35 @@ final class BuddyRig: @unchecked Sendable {
         lastReaction = .now
         move = mv; moveAt = .now
         if m == .wrong { frownAt = .now }
-        // ChatGPT's expression set (frames: 0 grin, 1 laugh, 2 big laugh, 3 smirk, 4 flat, 5 frown, 6 sad with tears, 7 angry, 8 shout,
-        // 9 nervous, 10 sweat, 11 kiss, 12 sparkle, 13 sharp grin, 14 uneasy, 15 yawn); shown 2.4 s, then his mouth returns
-        let e: Int? = {
+        // ChatGPT's 18-state set (his ruling 11-15), each played once as drawn (about 2 s), then his rest face returns. Thinking, proud
+        // grin and sad frown are still to come: reading shows nothing, a right answer shows happy, a wrong one keeps the turned-over frown.
+        let s: String? = {
             switch m {
-            case .open: return 0
-            case .reading: return 3
-            case .right: return 12
-            case .wrong: return 6
-            case .streak: return 2
-            case .finish: return 1
-            case .gold: return 12
-            case .returned: return 15
-            case .pack: return 8
+            case .open, .right: return "happy"
+            case .reading, .wrong: return nil
+            case .streak: return "bigLaugh"
+            case .finish: return "satisfied"
+            case .gold: return "starstruck"
+            case .returned: return "waking"
+            case .pack: return "surprised"
             }
         }()
-        expression = e; expressionAt = .now
+        if let s { state = s; stateAt = .now }
     }
+    func playState(_ s: String) { state = s; stateAt = .now }
 
     /// The frown (his ruling 11-15): on a wrong answer his mouth closes and turns upside down, holds, and turns back.
     /// 0 = his smile, 1 = fully flipped; a quarter second each way, held two seconds.
     @ObservationIgnored var frownAt = Date.distantPast
-    @ObservationIgnored var expression: Int?
-    @ObservationIgnored var expressionAt = Date.distantPast
-    /// The emotion now and which of its 9 frames shows (his ruling 11-15: every emotion in-betweened from rest): it flows in over 0.3 s,
-    /// holds, and flows back out over 0.3 s, 2.4 s in all.
-    func emotion(_ now: Date) -> (Int, Int)? {
-        guard let e = expression else { return nil }
-        let t = now.timeIntervalSince(expressionAt)
-        guard t >= 0, t < 2.4 else { return nil }
-        let k = t < 0.3 ? t / 0.3 : (t > 2.1 ? (2.4 - t) / 0.3 : 1)
-        return (e, max(0, min(8, Int((k * 8).rounded()))))
+    @ObservationIgnored var state: String?
+    @ObservationIgnored var stateAt = Date.distantPast
+    /// The state playing now and its frame, from the GIF's own frame timings (ms); nil once it has played through.
+    func stateFrame(_ now: Date, timing: [String: [Int]]) -> (String, Int)? {
+        guard let s = state, let ms = timing[s] else { return nil }
+        var t = Int(now.timeIntervalSince(stateAt) * 1000)
+        guard t >= 0 else { return nil }
+        for (i, d) in ms.enumerated() { if t < d { return (s, i) }; t -= d }
+        return nil
     }
     func frown(_ now: Date) -> Double {
         let t = now.timeIntervalSince(frownAt)
@@ -126,9 +124,13 @@ final class BuddyRig: @unchecked Sendable {
     /// A tap on Buddy in the title bar plays his next move: every rig move once, in a shuffled order, then a fresh shuffle
     /// (the house's "random = shuffled deck"). His ask 11-15: Buddy lives top-right so he can be seen tested.
     func playNext() {
-        if deck.isEmpty { deck = (BuddyRig.shared?.moves.keys.filter { $0 != "breathing" } ?? []).shuffled() }
+        // the deck holds every rig move and every one of ChatGPT's states ("st:" + name)
+        if deck.isEmpty {
+            deck = ((BuddyRig.shared?.moves.keys.filter { $0 != "breathing" } ?? [])
+                + (BuddyFaceArt.stateNames.map { "st:" + $0 })).shuffled()
+        }
         guard let mv = deck.popLast() else { return }
-        move = mv; moveAt = .now
+        if mv.hasPrefix("st:") { playState(String(mv.dropFirst(3))) } else { move = mv; moveAt = .now }
     }
 
     /// The rig's numbers now: breathing plus the current move. When a one-shot move ends Buddy returns to the grin at rest.
@@ -172,7 +174,9 @@ struct BuddyFaceArt {
     let layout: Layout
     let pieces: [String: BuddyGlass]
     let mouthFrames: [BuddyGlass]   // the glass face's mouth, rest to its full grin (ChatGPT's art only, his ruling 11-15)
-    let emotions: [[BuddyGlass]]    // the 16 emotions in glass, each 9 frames from his rest mouth in (his ruling 11-15)
+    let states: [String: [UIImage]] // ChatGPT's 18-state set, whole faces, every frame (his ruling 11-15; 15 arrived)
+    let timing: [String: [Int]]     // each state's frame times in ms, as its GIF has them
+    static let stateNames = ["happy", "bigLaugh", "satisfied", "starstruck", "surprised", "waking", "sleepy", "wink", "blink", "looking"]
     let lessonMouth: [BuddyGlass]   // ChatGPT's 16 glossy 3D mouth frames, worn in lessons (his ruling 11-15)
 
     @MainActor static let grin = load()
@@ -193,7 +197,14 @@ struct BuddyFaceArt {
         for p in layout.parts.keys { if let g = glass("buddy-grin-\(p)") { pieces[p] = g } }
         var frames: [BuddyGlass] = []   // as many as he drew, read until the next is missing
         while let f = glass(String(format: "buddy-grin-open-%02d", frames.count)) { frames.append(f) }
-        let emotions: [[BuddyGlass]] = (0...15).map { e in (0...8).compactMap { glass(String(format: "buddy-emo-%02d-%02d", e, $0)) } }
+        let timing = (Bundle.main.url(forResource: "buddy-states", withExtension: "json").flatMap { try? Data(contentsOf: $0) })
+            .flatMap { try? JSONDecoder().decode([String: [Int]].self, from: $0) } ?? [:]
+        var states: [String: [UIImage]] = [:]
+        for (s, ms) in timing {
+            let fs = (0..<ms.count).compactMap { i in Bundle.main.url(forResource: String(format: "buddy-st-\(s)-%02d", i), withExtension: "png")
+                .flatMap { UIImage(contentsOfFile: $0.path) } }
+            if fs.count == ms.count { states[s] = fs }
+        }
         // whole pictures, drawn as they are (no glass split): ChatGPT's sets carry tongues, tears and sparkles in their own colours
         func plain(_ base: String) -> [BuddyGlass] {
             let s = (0...15).compactMap { i in Bundle.main.url(forResource: String(format: "\(base)-%02d", i), withExtension: "png")
@@ -201,7 +212,7 @@ struct BuddyFaceArt {
             return s.count == 16 ? s : []
         }
         return pieces["mouth"] == nil ? nil : BuddyFaceArt(layout: layout, pieces: pieces, mouthFrames: frames.count > 1 ? frames : [],
-                                                          emotions: emotions.allSatisfy { $0.count == 9 } ? emotions : [], lessonMouth: plain("buddy-gl3d"))
+                                                          states: states, timing: timing.filter { states[$0.key] != nil }, lessonMouth: plain("buddy-gl3d"))
     }
 }
 
@@ -267,13 +278,17 @@ struct BuddyView: View {
         // in a lesson: ChatGPT's 3D mouth opens through its frames 0-4, a wrong answer shows its grimace (12);
         // elsewhere a moment flows into its emotion and back (2.4 s); otherwise the glass face's mouth
         let lessonM = lesson && !a.lessonMouth.isEmpty
-        let expr = lessonM || a.emotions.isEmpty ? nil : model.emotion(now).map { a.emotions[$0.0][$0.1] }
+        let st = lessonM ? nil : model.stateFrame(now, timing: a.timing).flatMap { a.states[$0.0]?[$0.1] }   // a whole face from ChatGPT's set
         let mf = lessonM ? a.lessonMouth[frownNow > 0 ? 12 : min(4, Int((Double(level) / 50 * 4).rounded()))]
-            : expr ?? (a.mouthFrames.isEmpty ? nil : a.mouthFrames[min(a.mouthFrames.count - 1, Int((Double(level) / 50 * Double(a.mouthFrames.count - 1)).rounded()))])
+            : (a.mouthFrames.isEmpty ? nil : a.mouthFrames[min(a.mouthFrames.count - 1, Int((Double(level) / 50 * Double(a.mouthFrames.count - 1)).rounded()))])
         // the whole face: a small drift, turn and stretch (the rig's face_* numbers)
         let fx = pinned ? 0 : r("face_x") * size.width * 0.12, fy = pinned ? 0 : r("face_y") * size.width * 0.12, frot = r("face_rot")
         let fsx = Self.cl(1 + r("face_sx"), 0.85, 1.08), fsy = Self.cl(1 + r("face_sy"), 0.85, 1.08)
         return ZStack(alignment: .topLeading) {
+          if let st {
+            // a state plays as ChatGPT drew it: the whole face, eyes and mouth together, on the same canvas as the rest pieces
+            Image(uiImage: st).resizable().frame(width: a.layout.w * k, height: a.layout.h * k).offset(x: ox, y: oy)
+          } else {
             ForEach(["L", "R"], id: \.self) { s in
                 if let e = rect("eye" + s), let img = a.pieces["eye" + s] {
                     // ArtRig.eye: move by eye widths, the lids squash his eye between them (never a hard crop), a lid's slant leans it
@@ -300,7 +315,7 @@ struct BuddyView: View {
                 // opening; each frame is his full 1132x560 canvas with the open grin (988x559) at its top-left, so it is drawn at the
                 // mouth box scaled by 1132/988 x 560/559, anchored top-left, and his full grin lands exactly on the old mouth piece.
                 let msx = Self.cl(1 + r("mouth_w") * 0.5, 0.88, 1.08)
-                let flip = (lessonM || expr != nil || !a.emotions.isEmpty) ? 1 : CGFloat(1 - 2 * frownNow)   // the emotions draw their own frown (sad, 6)
+                let flip = lessonM ? 1 : CGFloat(1 - 2 * frownNow)   // a wrong answer turns his rest mouth over (until the sad frown arrives)
                 let msy: CGFloat = (mf == nil ? Self.cl(1 + r("mouth_open") * 0.15 + r("mouth_curve") * 0.05, 0.9, 1.08) : Self.cl(1 + r("mouth_curve") * 0.05, 0.9, 1.08)) * flip
                 // his frames are drawn the mouth box's width at their own proportions, centred on the box's height (red 354x266,
                 // his yellow grin cropped to one shared box for all its frames)
@@ -312,6 +327,7 @@ struct BuddyView: View {
                     .scaleEffect(x: msx, y: msy, anchor: .center)   // centre, so the frown turns his mouth over in place
                     .offset(x: m.minX + r("mouth_x") * eyeW + (trail["mouth"]?.width ?? 0), y: m.minY + fy + r("mouth_y") * eyeW - r("mouth_curve") * 6 * k + (trail["mouth"]?.height ?? 0))
             }
+          }
         }
         .frame(width: size.width, height: size.height, alignment: .topLeading)
         .scaleEffect(x: fsx, y: fsy)
