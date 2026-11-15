@@ -91,7 +91,7 @@ enum PracticeRoom: String, CaseIterable, Identifiable, Hashable {
 
 @MainActor @Observable final class PracticeModel {
     enum Tab: String, CaseIterable, Identifiable {
-        case path, today, trends
+        case path, today, games, trends
         var id: String { rawValue }
         var title: String { rawValue.capitalized }
     }
@@ -176,6 +176,7 @@ struct PracticeView: View {
                     switch state.tab {
                     case .path: PathScreen(model: model)
                     case .today: TodayScreen(model: model, state: state)
+                    case .games: GamesScreen(model: model)
                     case .trends: TrendsScreen(model: model, state: state)
                     }
                 }

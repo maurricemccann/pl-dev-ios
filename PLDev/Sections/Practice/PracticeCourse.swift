@@ -45,6 +45,7 @@ struct CourseUnit: Decodable, Sendable, Identifiable {
     let title: String
     let about: String
     let guidebook: [CoursePage]
+    let items: [CourseItem]?
     let lessons: [CourseLesson]
     let quiz: [CourseExercise]
     let waits_on: String?
