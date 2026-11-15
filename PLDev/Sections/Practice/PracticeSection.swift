@@ -312,8 +312,12 @@ struct PracticeKpis: View {
         px = hx; py = hy; ox = hx; oy = hy
     }
 
-    func advance(_ now: Date, still: Bool) {
+    private var lastFace = Date.distantPast
+    var swing = 1.0
+    func advance(_ now: Date, still: Bool, calm: Bool = false, faceAt: Date = .distantPast) {
         defer { last = now }
+        swing = calm ? 0.5 : 1.0
+        if faceAt != lastFace { lastFace = faceAt; if now.timeIntervalSince(faceAt) < 1 { kick() } }
         guard !still, let last else { return }
         acc += min(0.1, now.timeIntervalSince(last)) * 60
         var g = 0
@@ -324,7 +328,7 @@ struct PracticeKpis: View {
         let N = Self.n
         for k in 1..<N {   // the anchor (k = 0) stays above the top edge
             // a visible idle sway (his note 11-15, "the rope should move"): grows toward the tip, so Buddy swings with it
-            let u = Double(k) / Double(N - 1), s = t * 0.02, amp = 16 * u * u
+            let u = Double(k) / Double(N - 1), s = t * 0.02, amp = 16 * u * u * swing
             let tx = hx[k] + sin(s * 1.1 + u * 3) * amp, ty = hy[k] + cos(s * 0.9 + u * 2.4) * amp
             let vx = (px[k] - ox[k]) * FieldRig.damp, vy = (py[k] - oy[k]) * FieldRig.damp
             ox[k] = px[k]; oy[k] = py[k]
@@ -338,6 +342,12 @@ struct PracticeKpis: View {
             px[k] += dx * FieldRig.spread; py[k] += dy * FieldRig.spread
         }
         t += 1
+    }
+
+    /// A face starting nudges the rope's end (and the two before it, less), so it bounces and settles through the spring.
+    func kick() {
+        let N = Self.n
+        for (k, f) in [(N - 1, 1.0), (N - 2, 0.6), (N - 3, 0.3)] { ox[k] -= 3 * f * swing; oy[k] += 7 * f * swing }
     }
 
     var tip: CGPoint { CGPoint(x: px[Self.n - 1], y: py[Self.n - 1]) }
@@ -372,8 +382,10 @@ struct BuddyRope: View {
     private static let orange = Color(red: 196 / 255, green: 136 / 255, blue: 48 / 255)   // his mock-up's orange, brighter (his note 11-15)
 
     var body: some View {
-        TimelineView(.animation(minimumInterval: 1 / 60, paused: reduceMotion && rig.grab == nil)) { tl in
-            let _ = rig.advance(tl.date, still: reduceMotion && rig.grab == nil)
+        // never frozen (his note 11-15: "the rope doesn't move ... a static curve"; his phone has Reduce Motion on, which paused it):
+        // under Reduce Motion it sways at half the swing; every new face kicks the tip, so the rope and his face move together
+        TimelineView(.animation(minimumInterval: 1 / 60)) { tl in
+            let _ = rig.advance(tl.date, still: false, calm: reduceMotion, faceAt: buddy.stateAt)
             ZStack(alignment: .topLeading) {
                 Canvas { ctx, _ in ctx.stroke(rig.path(), with: .color(Self.orange), style: StrokeStyle(lineWidth: 26, lineCap: .butt, lineJoin: .round)) }
                 BuddyView(model: buddy, trail: ["eyeL": rig.lagOffset(3), "eyeR": rig.lagOffset(5), "mouth": rig.lagOffset(8)], pinned: true)

@@ -96,9 +96,17 @@ final class BuddyRig: @unchecked Sendable {
             case .pack: return "surprised"
             }
         }()
-        if let s { state = s; stateAt = .now }
+        if let s { playState(s) }
     }
-    func playState(_ s: String) { state = s; stateAt = .now }
+    /// A face plays; if another is still showing and a blend from it to this one was rendered, the blend plays instead (his ask 11-15:
+    /// "two shape keys that look totally different ... blend from one face to another naturally").
+    func playState(_ s: String) {
+        if let cur = state, cur != s, Date().timeIntervalSince(stateAt) < 2.0,
+           let base = cur.components(separatedBy: "-to-").last, BuddyFaceArt.grin?.timing["\(base)-to-\(s)"] != nil {
+            state = "\(base)-to-\(s)"
+        } else { state = s }
+        stateAt = .now
+    }
 
     /// The frown (his ruling 11-15): on a wrong answer his mouth closes and turns upside down, holds, and turns back.
     /// 0 = his smile, 1 = fully flipped; a quarter second each way, held two seconds.
@@ -179,8 +187,11 @@ struct BuddyFaceArt {
     let states: [String: [UIImage]] // ChatGPT's 18-state set, whole faces, every frame (his ruling 11-15; 15 arrived)
     let timing: [String: [Int]]     // each state's frame times in ms, as its GIF has them
     static let stateNames = ["happy", "thinking", "proudGrin", "sadFrown", "bigLaugh", "satisfied", "starstruck", "surprised", "waking",
-                             "sleepy", "wink", "blink", "looking"]
-    let lessonMouth: [BuddyGlass]   // ChatGPT's 16 glossy 3D mouth frames, worn in lessons (his ruling 11-15)
+                             "sleepy", "wink", "blink", "looking",
+                             // the R1's 21 moods (his ask 11-15), the joker excepted: it stays his own drawn face
+                             "angry", "calm", "cheshire", "confused", "curious", "dizzy", "excited", "love", "shy", "squint", "tongue",
+                             "talk", "yawn"]
+    let lessonMouth: [BuddyGlass]   // was ChatGPT's glossy 3D mouth in lessons; retired 11-15 (his "these will replace the two faces in the practice"): the files are gone, so this stays empty and lessons wear the toon faces
 
     @MainActor static let grin = load()
 
@@ -237,10 +248,13 @@ struct BuddyView: View {
     @Environment(\.accessibilityReduceMotion) private var reduceMotion
 
     var body: some View {
-        TimelineView(.animation(minimumInterval: 1 / 30, paused: reduceMotion && model.move == nil)) { tl in   // a move asked for always plays; Reduce Motion only stills the idle breathing
+        TimelineView(.animation(minimumInterval: 1 / 30, paused: reduceMotion && model.move == nil && Date().timeIntervalSince(model.stateAt) > 3)) { tl in   // a face playing always animates   // a move asked for always plays; Reduce Motion only stills the idle breathing
             GeometryReader { geo in
                 if let art = BuddyFaceArt.grin {
-                    let n = watching(reduceMotion && model.move == nil ? [:] : model.numbers(tl.date), now: tl.date)
+                    let n0 = watching(reduceMotion && model.move == nil ? [:] : model.numbers(tl.date), now: tl.date)
+                    // on the rope his features never wander off its end (his note 11-15, "his face floats ... detach from the curve"):
+                    // only the pupils keep their own look; every other piece holds its place
+                    let n = pinned ? n0.filter { !(($0.key.hasSuffix("_x") || $0.key.hasSuffix("_y") || $0.key.hasSuffix("_rot")) && !$0.key.hasPrefix("pupil")) } : n0
                     face(art, size: geo.size, n: n, now: tl.date)
                 }
             }
