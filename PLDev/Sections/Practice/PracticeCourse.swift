@@ -291,7 +291,7 @@ struct LessonView: View {
                 Spacer(minLength: 0)
                 // his ruling 11-15: Buddy lives down in the empty space under the exercise (never over it), as large as the room left
                 // allows; a tap plays his next move
-                Button { buddy.playNext() } label: { BuddyView(model: buddy).aspectRatio(590 / 663, contentMode: .fit).frame(maxWidth: 220, maxHeight: 240) }
+                Button { buddy.playNext() } label: { BuddyView(model: buddy, lesson: true).aspectRatio(590 / 663, contentMode: .fit).frame(maxWidth: 220, maxHeight: 240) }
                     .buttonStyle(.plain)
                     .frame(maxWidth: .infinity)
                     .layoutPriority(-1)
