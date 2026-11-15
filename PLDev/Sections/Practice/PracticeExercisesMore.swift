@@ -174,10 +174,12 @@ struct DrawItExercise: View {
     /// The share of the glyph's outline points that have a traced point within 16 pt. Right at 60 % or more.
     private func check() {
         guard let g = Self.art(glyphName), side_ > 0 else { return }
-        let w = g.aspect >= 1 ? side_ : side_ * g.aspect, h = g.aspect >= 1 ? side_ / g.aspect : side_
-        let targets = g.outlines.flatMap { $0 }.enumerated().filter { $0.offset % 3 == 0 }.map { e in
-            CGPoint(x: centre_.x - w / 2 + e.element.x * w, y: centre_.y - h / 2 + e.element.y * h)
-        }
+        let w: CGFloat = g.aspect >= 1 ? side_ : side_ * g.aspect
+        let h: CGFloat = g.aspect >= 1 ? side_ / g.aspect : side_
+        let x0: CGFloat = centre_.x - w / 2, y0: CGFloat = centre_.y - h / 2
+        let all: [CGPoint] = g.outlines.flatMap { $0 }
+        var targets: [CGPoint] = []
+        for (i, q) in all.enumerated() where i % 3 == 0 { targets.append(CGPoint(x: x0 + q.x * w, y: y0 + q.y * h)) }
         let drawn = strokes.flatMap { $0 }
         guard !targets.isEmpty, !drawn.isEmpty else { return }
         let covered = targets.filter { t in drawn.contains { hypot($0.x - t.x, $0.y - t.y) < 16 } }.count

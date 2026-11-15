@@ -47,7 +47,7 @@ enum ArcadeScores {
 }
 
 /// One of his drawn glyphs, filled, fitted to its frame.
-struct GlyphMark: View {
+struct ArcadeGlyph: View {
     let index: Int
     var colour: Color = Candle.ink
     var body: some View {
@@ -181,7 +181,7 @@ struct ReturnGame: View {
                     ForEach(0..<n, id: \.self) { i in
                         let a = Double(i) / Double(n) * 2 * .pi - .pi / 2
                         Button { press(i) } label: {
-                            GlyphMark(index: i, colour: lit == i ? Color.black : Candle.ink)
+                            ArcadeGlyph(index: i, colour: lit == i ? Color.black : Candle.ink)
                                 .padding(14)
                                 .frame(width: 88, height: 88)
                                 .background(wrong == i ? Color.red.opacity(0.6) : (lit == i ? Candle.goldHi : Candle.card), in: Circle())
@@ -233,9 +233,14 @@ struct ReturnGame: View {
 
 @MainActor @Observable final class RunnerModel {
     struct Obstacle { var x: Double; let h: Double; let label: String }
-    var y = 0.0, vy = 0.0, days = 0.0, speed = 180.0, spawnIn = 1.5
+    var y = 0.0
+    var vy = 0.0
+    var days = 0.0
+    var speed = 180.0
+    var spawnIn = 1.5
     var obstacles: [Obstacle] = []
-    var running = false, over = false
+    var running = false
+    var over = false
     var last: Date?
     let words = ["DOUBT", "DISTRACTION", "FEAR", "NOISE", "RESISTANCE", "DELAY"]
 
@@ -506,7 +511,7 @@ struct ResonanceGame: View {
             LazyVGrid(columns: Array(repeating: GridItem(.flexible(), spacing: 4), count: Self.size), spacing: 4) {
                 ForEach(grid.indices, id: \.self) { i in
                     Button { tap(i) } label: {
-                        GlyphMark(index: grid[i], colour: picked == i ? Color.black : Candle.ink)
+                        ArcadeGlyph(index: grid[i], colour: picked == i ? Color.black : Candle.ink)
                             .padding(5)
                             .frame(maxWidth: .infinity).aspectRatio(1, contentMode: .fit)
                             .background(picked == i ? Candle.goldHi : Candle.card, in: RoundedRectangle(cornerRadius: 6, style: .continuous))
