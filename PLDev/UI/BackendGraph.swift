@@ -1,5 +1,4 @@
 import SwiftUI
-import PLDevCore
 
 /// The vault's note graph on the Backend page (his ask 11-14): one dot per note, one line per link, the way Obsidian draws it.
 /// The PC lays it out and serves it over Tailscale (PL Call's `vaultgraph`, keyed); this view only draws. No note name lives in
