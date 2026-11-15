@@ -170,6 +170,9 @@ struct CheckinCard: View {
     @State private var result: String?
     @State private var busy = false
     @State private var failedOnce = false
+    @State private var cards: PracticeCollection?
+    @State private var fresh: PracticeEarned?
+    @State private var showCards = false
 
     private var done: Bool { evening ? state.eveningDone : state.morningDone }
     private var label: String {
@@ -190,8 +193,12 @@ struct CheckinCard: View {
             HStack { Button(label) { Task { await save() } }.buttonStyle(CandleButton()).disabled(busy); Spacer(minLength: 0) }
             CandleResult(text: result)
             CoachNote(text: note)
+            if evening, let cards, cards.count > 0 {
+                Button("\(cards.count) cards earned \u{00b7} show") { fresh = nil; showCards = true }.buttonStyle(.plain).font(.footnote)
+            }
         }
-        .task(id: state.today?.date ?? "") { prefill() }
+        .task(id: state.today?.date ?? "") { prefill(); if evening { cards = await PracticeCards.load(model: model) } }
+        .sheet(isPresented: $showCards) { if let cards { EarnedCardSheet(model: model, fresh: fresh, collection: cards) } }
     }
 
     /// A completed check-in shows as completed, not as a blank form (S144's "did it even save").
@@ -212,6 +219,10 @@ struct CheckinCard: View {
             guard sent else { result = PracticeWords.offlineSaved; return }
             result = nil
             await state.loadToday(model: model)
+            if evening, let c = await PracticeCards.load(model: model) {
+                cards = c
+                if let top = c.cards.first, PracticeCards.isFresh(top) { fresh = top; showCards = true }
+            }
             await PracticeNotice.reschedule(model: model)
             note = "\u{2026}"
             let body: [String: Any] = evening ? ["gratitude": gratitude, "shifted": shifted] : ["mood": mood, "story": story]
