@@ -298,6 +298,7 @@ struct PracticeKpis: View {
     var hx: [Double] = [], hy: [Double] = [], px: [Double] = [], py: [Double] = [], ox: [Double] = [], oy: [Double] = []
     var grab: CGPoint?
     var t = 0.0
+    var trail: [CGPoint] = []   // the tip's last positions, newest last (the ragdoll squish reads it)
     private var acc = 0.0, last: Date?
 
     /// Screen points: the rope hangs from above the top edge, left of Buddy, and sweeps down to his home (his mock-up 11-15).
@@ -330,6 +331,7 @@ struct PracticeKpis: View {
             px[k] += vx + (tx - px[k]) * FieldRig.spring; py[k] += vy + (ty - py[k]) * FieldRig.spring
         }
         if let g = grab { px[N - 1] = g.x; py[N - 1] = g.y }   // the finger holds Buddy; the rope follows
+        trail.append(CGPoint(x: px[N - 1], y: py[N - 1])); if trail.count > 14 { trail.removeFirst() }
         for k in 1..<(N - 1) {
             let dx = (px[k - 1] - hx[k - 1] + px[k + 1] - hx[k + 1]) * 0.5 - (px[k] - hx[k])
             let dy = (py[k - 1] - hy[k - 1] + py[k + 1] - hy[k + 1]) * 0.5 - (py[k] - hy[k])
@@ -339,6 +341,17 @@ struct PracticeKpis: View {
     }
 
     var tip: CGPoint { CGPoint(x: px[Self.n - 1], y: py[Self.n - 1]) }
+
+    /// The ragdoll squish fitted to his top curve (spec BUDDY RAGDOLL SQUISH, his ruling 11-15 "Do but fit his top curve"): each piece
+    /// sits where the tip was `lag` frames ago, so as the rope swings his eyes and mouth trail his head by their own delays and settle
+    /// back when the rope rests. Offsets are capped so a hard fling never pulls a piece off his face.
+    func lagOffset(_ lag: Int) -> CGSize {
+        guard trail.count > lag else { return .zero }
+        let then = trail[trail.count - 1 - lag], now = tip
+        let dx = then.x - now.x, dy = then.y - now.y, d = max(1, hypot(dx, dy)), cap: CGFloat = 9
+        let k = min(1, cap / d)
+        return CGSize(width: dx * k, height: dy * k)
+    }
 
     func path() -> Path {
         var p = Path(); let N = Self.n
@@ -363,7 +376,8 @@ struct BuddyRope: View {
             let _ = rig.advance(tl.date, still: reduceMotion && rig.grab == nil)
             ZStack(alignment: .topLeading) {
                 Canvas { ctx, _ in ctx.stroke(rig.path(), with: .color(Self.orange), style: StrokeStyle(lineWidth: 26, lineCap: .butt, lineJoin: .round)) }
-                BuddyView(model: buddy).frame(width: 46, height: 46).position(rig.tip)
+                BuddyView(model: buddy, trail: ["eyeL": rig.lagOffset(3), "eyeR": rig.lagOffset(5), "mouth": rig.lagOffset(8)])
+                    .frame(width: 46, height: 46).position(rig.tip)
             }
         }
     }
