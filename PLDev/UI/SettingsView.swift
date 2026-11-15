@@ -55,6 +55,7 @@ struct SettingsView: View {
                 appearance
                 notifications
                 keys
+                ServerKeysRows(model: model)
                 sections
                 diagnostics
                 forget
@@ -571,5 +572,33 @@ private struct AccountSignInSheet: View {
                 }
             }
             .navigationTitle("Psyched Luxuries")
+    }
+}
+
+/// Which secrets the gallery Worker has set, from its `api/keys-status` route: names and Set / Not set only, never a value.
+/// The route is founder-gated (the gallery's own lock), so a refusal says so instead of showing an empty list.
+struct ServerKeysRows: View {
+    let model: AppModel
+    @State private var rows: [(name: String, set: Bool)]?
+    @State private var note: String?
+    var body: some View {
+        Section {
+            if let rows {
+                if rows.isEmpty { Text("The gallery reported no keys.").foregroundStyle(.secondary) }
+                ForEach(rows, id: \.name) { r in LabeledContent(r.name) { Text(r.set ? "Set" : "Not set").foregroundStyle(r.set ? Color.secondary : Color.red) } }
+            } else {
+                Text(note ?? "Asking the gallery…").foregroundStyle(.secondary)
+            }
+        } header: { Text("Server keys") } footer: { Text("Whether each key is set on the gallery server. Values are never shown.") }
+            .task { await load() }
+    }
+    private func load() async {
+        guard let http = model.http, model.config?.origin("gallery") != nil else { note = "The gallery is not in your config."; return }
+        do {
+            let d = try await http.send(RequestPlan(origin: "gallery", path: "api/keys-status"), timeout: 12, cache: false)
+            guard let o = try JSONSerialization.jsonObject(with: d) as? [String: Any] else { note = "The gallery sent something unreadable."; return }
+            if (o["ok"] as? Bool) == false { note = "The gallery is locked to this iPhone. Unlock it once from its own page."; return }
+            rows = o.compactMap { k, v in (v as? Bool).map { (name: k, set: $0) } }.sorted { $0.name < $1.name }
+        } catch { note = "Could not reach the gallery: \(plainSentence(error))" }
     }
 }

@@ -259,6 +259,13 @@ struct FounderTab: View {
                     }
                 }
                 shiftPanel
+                OSPanel(title: "The board", badge: board.map { "\($0.inbox + $0.pending)" }, owed: (board?.inbox ?? 0) + (board?.pending ?? 0) > 0) {
+                    if let b = board {
+                        Text("\(b.inbox) in the inbox · \(b.pending) approvals waiting").font(.system(size: 12, design: .monospaced)).foregroundStyle(PLOS.dim(scheme))
+                    } else {
+                        Text(boardNote ?? "Asking the board…").foregroundStyle(PLOS.dim(scheme))
+                    }
+                }
                 OSPanel(title: "Approvals", badge: "\(state.stats?.pending ?? 0)", startOpen: (state.stats?.pending ?? 0) > 0) {
                     if let s = state.stats { Text("\(s.queued ?? 0) in the drip · \(s.held ?? 0) held · \(s.week_total ?? 0) made this week").font(.system(size: 12, design: .monospaced)).foregroundStyle(PLOS.dim(scheme)) }
                     door("Review the drafts", "checkmark.seal", .approvals)
@@ -306,8 +313,26 @@ struct FounderTab: View {
             }
             .padding(.horizontal, 14).padding(.bottom, 24)
         }
-        .refreshable { await state.loadFounder(model: model) }
+        .refreshable { await state.loadFounder(model: model); await loadBoard() }
         .task { await state.loadFounder(model: model) }
+        .task { await loadBoard() }
+    }
+
+    // MARK: the board's two counts (jarvis api/brief inbox, api/approvals pending)
+
+    @State private var board: (inbox: Int, pending: Int)?
+    @State private var boardNote: String?
+
+    private func loadBoard() async {
+        struct Brief: Decodable { struct Inbox: Decodable { let open: Int? }; let inbox: Inbox? }
+        struct Item: Decodable {}
+        struct Appr: Decodable { let pending: [Item]? }
+        guard let http = model.http, model.config?.origin("board") != nil else { boardNote = "The board is not in your config."; return }
+        do {
+            let b = try JSONDecoder().decode(Brief.self, from: try await http.send(RequestPlan(origin: "board", path: "api/brief"), timeout: 8, cache: false))
+            let a = try JSONDecoder().decode(Appr.self, from: try await http.send(RequestPlan(origin: "board", path: "api/approvals"), timeout: 8, cache: false))
+            board = (b.inbox?.open ?? 0, a.pending?.count ?? 0); boardNote = nil
+        } catch { if board == nil { boardNote = "The board is asleep or did not answer. Pull to try again." } }
     }
 
     // MARK: the strip and the call bar (pl-os StatusStrip)
