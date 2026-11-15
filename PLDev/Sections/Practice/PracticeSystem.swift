@@ -129,30 +129,37 @@ extension Date {
     /// From opening Practice, unless today's lesson is already done; an activity left from another day is ended first.
     static func start() {
         guard ActivityAuthorizationInfo().areActivitiesEnabled, doneToday != day else { return }
-        if let a = running {
-            if a.attributes.day == day { return }
-            Task { await a.end(nil, dismissalPolicy: .immediate) }
-        }
+        if let a = running, a.attributes.day == day { return }
+        let today = day
+        Task { await endOtherDays(today) }   // a Buddy left from another day goes first
         let end = Calendar.current.startOfDay(for: .now).addingTimeInterval(86_400)
-        _ = try? Activity.request(attributes: BuddyAttributes(day: day),
+        _ = try? Activity.request(attributes: BuddyAttributes(day: today),
                                   content: .init(state: .init(face: "rest", line: "Today's lesson is waiting."), staleDate: end, relevanceScore: 60))
     }
 
-    /// A face for a moment of the lesson: "open" on a right answer, "clench" on a wrong one.
-    static func show(_ face: String, _ line: String) {
+    // The activity is looked up inside each nonisolated helper and never handed between actors (Swift 6 rejected sending it, 11-15).
+    nonisolated private static func endOtherDays(_ today: String) async {
+        for a in Activity<BuddyAttributes>.activities where a.attributes.day != today { await a.end(nil, dismissalPolicy: .immediate) }
+    }
+
+    /// A face for a moment of the lesson: "open" on a right answer, "clench" on a wrong one; back to rest after 3 s.
+    nonisolated static func show(_ face: String, _ line: String) async {
         guard let a = running else { return }
-        Task {
-            await a.update(.init(state: .init(face: face, line: line), staleDate: nil, relevanceScore: 70))
-            try? await Task.sleep(for: .seconds(3))
-            if a.content.state.face == face { await a.update(.init(state: .init(face: "rest", line: "In a lesson."), staleDate: nil, relevanceScore: 60)) }
-        }
+        await a.update(.init(state: .init(face: face, line: line), staleDate: nil, relevanceScore: 70))
+        try? await Task.sleep(for: .seconds(3))
+        if a.content.state.face == face { await a.update(.init(state: .init(face: "rest", line: "In a lesson."), staleDate: nil, relevanceScore: 60)) }
     }
 
     /// Today's lesson is done: his grin, then he leaves the island.
     static func lessonDone() {
         doneToday = day
-        guard let a = running else { return }
-        Task { await a.end(.init(state: .init(face: "open", line: "Done for today."), staleDate: nil), dismissalPolicy: .after(.now.addingTimeInterval(60))) }
+        Task { await endToday() }
+    }
+
+    nonisolated private static func endToday() async {
+        for a in Activity<BuddyAttributes>.activities {
+            await a.end(.init(state: .init(face: "open", line: "Done for today."), staleDate: nil), dismissalPolicy: .after(.now.addingTimeInterval(60)))
+        }
     }
 }
 
