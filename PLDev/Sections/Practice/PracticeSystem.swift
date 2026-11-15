@@ -142,7 +142,7 @@ extension Date {
         for a in Activity<BuddyAttributes>.activities where a.attributes.day != today { await a.end(nil, dismissalPolicy: .immediate) }
     }
 
-    /// A face for a moment of the lesson: "open" on a right answer, "clench" on a wrong one; back to rest after 3 s.
+    /// A face for a moment of the lesson: "open" on a right answer, "rest" with a line on a wrong one; back to rest after 3 s.
     nonisolated static func show(_ face: String, _ line: String) async {
         guard let a = running else { return }
         await a.update(.init(state: .init(face: face, line: line), staleDate: nil, relevanceScore: 70))

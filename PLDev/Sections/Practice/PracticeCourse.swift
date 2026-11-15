@@ -329,7 +329,7 @@ struct LessonView: View {
             ExerciseBody(exercise: e, locked: answered != nil) { ok in
                 answered = ok
                 if ok { right += 1; streak += 1; buddy.react(streak % 3 == 0 ? .streak : .right); Task { await BuddyIsland.show("open", "Right.") } }
-                else { record.miss(e.item); streak = 0; buddy.react(.wrong); Task { await BuddyIsland.show("clench", "It comes back later.") } }
+                else { record.miss(e.item); streak = 0; buddy.react(.wrong); Task { await BuddyIsland.show("rest", "It comes back later.") } }
                 PracticeSound.play(ok ? .right : .wrong)   // his picks by ear 11-15
             }
             .id(e.id + "\(index)")

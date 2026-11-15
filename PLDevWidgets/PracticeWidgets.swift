@@ -85,9 +85,9 @@ struct PracticeWidget: Widget {
 
 // MARK: - Buddy in the Dynamic Island
 
-/// His pieces composed small for the island (the widget cannot read the app's resources): rest, open grin, clench.
+/// His pieces composed small for the island (the widget cannot read the app's resources): rest and his open grin.
 private func buddyFace(_ face: String) -> Image {
-    if let u = Bundle.main.url(forResource: "buddy-island-" + (["rest", "open", "clench"].contains(face) ? face : "rest"), withExtension: "png"),
+    if let u = Bundle.main.url(forResource: "buddy-island-" + (face == "open" ? "open" : "rest"), withExtension: "png"),
        let i = UIImage(contentsOfFile: u.path) { return Image(uiImage: i) }
     return Image(systemName: "face.smiling")
 }

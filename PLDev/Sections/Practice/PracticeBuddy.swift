@@ -48,7 +48,6 @@ final class BuddyRig: @unchecked Sendable {
 /// What Buddy is doing: which face, and the move he is playing (nil = breathing only).
 @MainActor @Observable final class BuddyModel {
     enum Moment { case open, reading, right, wrong, streak, finish, gold, returned, pack }
-    var face = "grin"
     var move: String?
     var moveAt = Date()
     let born = Date()
@@ -61,23 +60,24 @@ final class BuddyRig: @unchecked Sendable {
 
     /// Gemini's table, played as rig moves: one reaction per event, a 3 s rest for the small ones.
     func react(_ m: Moment) {
-        let (f, mv): (String, String) = {
+        // the clench face is gone (his ruling 11-15, crossed out, "Everywhere"): every moment is a move on his grin
+        let mv: String = {
             switch m {
-            case .open: return ("grin", "happy")
-            case .reading: return ("grin", "thinking")
-            case .right: return ("grin", "nod_yes")
-            case .wrong: return ("clench", "hmm")
-            case .streak: return ("grin", "laugh")
-            case .finish: return ("grin", "proud")
-            case .gold: return ("clench", "starstruck")
-            case .returned: return ("grin", "wake_stretch")
-            case .pack: return ("clench", "surprised")
+            case .open: return "happy"
+            case .reading: return "thinking"
+            case .right: return "nod_yes"
+            case .wrong: return "hmm"
+            case .streak: return "laugh"
+            case .finish: return "proud"
+            case .gold: return "starstruck"
+            case .returned: return "wake_stretch"
+            case .pack: return "surprised"
             }
         }()
         let big: Bool = { switch m { case .finish, .gold, .pack, .returned, .streak: return true; default: return false } }()
         guard big || Date().timeIntervalSince(lastReaction) > 3 else { return }
         lastReaction = .now
-        face = f; move = mv; moveAt = .now
+        move = mv; moveAt = .now
     }
 
     @ObservationIgnored private var deck: [String] = []
@@ -90,16 +90,13 @@ final class BuddyRig: @unchecked Sendable {
         move = mv; moveAt = .now
     }
 
-    /// A long press swaps his two drawn faces (grin, clench).
-    func swapFace() { face = face == "grin" ? "clench" : "grin" }
-
     /// The rig's numbers now: breathing plus the current move. When a one-shot move ends Buddy returns to the grin at rest.
     func numbers(_ now: Date) -> [String: Double] {
         var out: [String: Double] = [:]
         guard let rig = BuddyRig.shared else { return out }
         rig.add("breathing", ms: now.timeIntervalSince(born) * 1000, into: &out)
         if let mv = move, !rig.add(mv, ms: now.timeIntervalSince(moveAt) * 1000, into: &out) {
-            Task { @MainActor in if self.move == mv { self.move = nil; self.face = "grin" } }
+            Task { @MainActor in if self.move == mv { self.move = nil } }
         }
         return out
     }
@@ -130,26 +127,37 @@ final class BuddyRig: @unchecked Sendable {
 struct BuddyFaceArt {
     struct Box: Decodable { let x: CGFloat; let y: CGFloat; let w: CGFloat; let h: CGFloat }
     struct Layout: Decodable { let w: CGFloat; let h: CGFloat; let parts: [String: Box] }
-    let name: String
     let layout: Layout
-    let images: [String: UIImage]
-    let mouthFrames: [UIImage]   // his rubber-band grin, closed to open (grin only; empty for clench)
+    let pieces: [String: BuddyGlass]
+    let mouthFrames: [BuddyGlass]   // his rubber-band grin, closed to open, 51 frames
 
-    @MainActor static let grin = load("grin")
-    @MainActor static let clench = load("clench")
+    @MainActor static let grin = load()
 
-    static func load(_ name: String) -> BuddyFaceArt? {
-        guard let url = Bundle.main.url(forResource: "buddy-\(name)-face", withExtension: "json"),
+    /// His grin pieces as written by `.claude/scripts/pl-buddy-glass.py --masks` (his originals kept in the vault rig folder).
+    static func load() -> BuddyFaceArt? {
+        guard let url = Bundle.main.url(forResource: "buddy-grin-face", withExtension: "json"),
               let data = try? Data(contentsOf: url), let layout = try? JSONDecoder().decode(Layout.self, from: data) else { return nil }
-        var imgs: [String: UIImage] = [:]
-        for p in layout.parts.keys {
-            if let u = Bundle.main.url(forResource: "buddy-\(name)-\(p)", withExtension: "png"), let i = UIImage(contentsOfFile: u.path) { imgs[p] = i }
+        let tints = (Bundle.main.url(forResource: "buddy-glass", withExtension: "json").flatMap { try? Data(contentsOf: $0) })
+            .flatMap { try? JSONDecoder().decode([String: [Double]].self, from: $0) } ?? [:]
+        func glass(_ name: String) -> BuddyGlass? {
+            func img(_ s: String) -> UIImage? { Bundle.main.url(forResource: "\(name)-\(s)", withExtension: "png").flatMap { UIImage(contentsOfFile: $0.path) } }
+            guard let lines = img("lines") else { return nil }
+            let c = tints[name].flatMap { $0.count == 3 ? Color(red: $0[0], green: $0[1], blue: $0[2]) : nil }
+            return BuddyGlass(lines: lines, clear: img("clear"), tint: c == nil ? nil : img("tint"), colour: c)
         }
-        let frames: [UIImage] = (0...50).compactMap { i in
-            Bundle.main.url(forResource: String(format: "buddy-\(name)-open-%02d", i), withExtension: "png").flatMap { UIImage(contentsOfFile: $0.path) }
-        }
-        return imgs["mouth"] == nil ? nil : BuddyFaceArt(name: name, layout: layout, images: imgs, mouthFrames: frames.count == 51 ? frames : [])
+        var pieces: [String: BuddyGlass] = [:]
+        for p in layout.parts.keys { if let g = glass("buddy-grin-\(p)") { pieces[p] = g } }
+        let frames = (0...50).compactMap { glass(String(format: "buddy-grin-open-%02d", $0)) }
+        return pieces["mouth"] == nil ? nil : BuddyFaceArt(layout: layout, pieces: pieces, mouthFrames: frames.count == 51 ? frames : [])
     }
+}
+
+/// One piece of his, ready for Apple's glass: his lines, the areas that are clear glass, and the areas that are tinted glass.
+struct BuddyGlass {
+    let lines: UIImage
+    let clear: UIImage?
+    let tint: UIImage?
+    let colour: Color?
 }
 
 /// His face, moved by the rig's numbers (ArtRig.eye + ArtFace's mouth and pupils), in the box it is given.
@@ -162,7 +170,7 @@ struct BuddyView: View {
     var body: some View {
         TimelineView(.animation(minimumInterval: 1 / 30, paused: reduceMotion && model.move == nil)) { tl in   // a move asked for always plays; Reduce Motion only stills the idle breathing
             GeometryReader { geo in
-                if let art = model.face == "clench" ? BuddyFaceArt.clench : BuddyFaceArt.grin {
+                if let art = BuddyFaceArt.grin {
                     let n = watching(reduceMotion && model.move == nil ? [:] : model.numbers(tl.date), now: tl.date)
                     face(art, size: geo.size, n: n, now: tl.date)
                 }
@@ -205,15 +213,15 @@ struct BuddyView: View {
         let fsx = Self.cl(1 + r("face_sx"), 0.85, 1.08), fsy = Self.cl(1 + r("face_sy"), 0.85, 1.08)
         return ZStack(alignment: .topLeading) {
             ForEach(["L", "R"], id: \.self) { s in
-                if let e = rect("eye" + s), let img = a.images["eye" + s] {
+                if let e = rect("eye" + s), let img = a.pieces["eye" + s] {
                     // ArtRig.eye: move by eye widths, the lids squash his eye between them (never a hard crop), a lid's slant leans it
                     let uc = Self.cl(r("eye\(s)_lidU_y"), 0, 0.9), lc = Self.cl(r("eye\(s)_lidL_y"), 0, 0.9), keep = max(0.2, 1 - uc - lc)
                     let lidShift = (uc * e.height + keep * e.height / 2) - e.height / 2
                     let dir: CGFloat = s == "L" ? 1 : -1
                     ZStack(alignment: .topLeading) {
-                        BuddyGlassPiece(img: img).frame(width: e.width, height: e.height)
-                        if let p = rect("pupil" + s), let pi = a.images["pupil" + s] {
-                            Image(uiImage: pi).resizable().frame(width: p.width, height: p.height)
+                        BuddyGlassPiece(glass: img).frame(width: e.width, height: e.height)
+                        if let p = rect("pupil" + s), let pi = a.pieces["pupil" + s] {
+                            BuddyGlassPiece(glass: pi).frame(width: p.width, height: p.height)
                                 .scaleEffect(max(0.5, 1 + r("pupil_size")))
                                 .offset(x: p.minX - e.minX + e.width * Self.cl(r("pupil_x"), -1, 1) * r("look_reach"),
                                         y: p.minY - e.minY + e.height * Self.cl(r("pupil_y"), -1, 1) * r("look_reach"))
@@ -225,14 +233,14 @@ struct BuddyView: View {
                     .offset(x: e.minX + r("eye\(s)_x") * e.width + (trail["eye" + s]?.width ?? 0), y: e.minY + r("eye\(s)_y") * e.width + lidShift + (trail["eye" + s]?.height ?? 0))
                 }
             }
-            if let m = rect("mouth"), let img = mf ?? a.images["mouth"] {
+            if let m = rect("mouth"), let img = mf ?? a.pieces["mouth"] {
                 // ArtFace's mouth: width stretches it (capped), the curve lifts it, the rig moves it by eye widths. His frames do the
                 // opening; each frame is his full 1132x560 canvas with the open grin (988x559) at its top-left, so it is drawn at the
                 // mouth box scaled by 1132/988 x 560/559, anchored top-left, and his full grin lands exactly on the old mouth piece.
                 let msx = Self.cl(1 + r("mouth_w") * 0.5, 0.88, 1.08)
                 let msy: CGFloat = mf == nil ? Self.cl(1 + r("mouth_open") * 0.15 + r("mouth_curve") * 0.05, 0.9, 1.08) : Self.cl(1 + r("mouth_curve") * 0.05, 0.9, 1.08)
                 let fw: CGFloat = mf == nil ? m.width : m.width * 1132 / 988, fh: CGFloat = mf == nil ? m.height : m.height * 560 / 559
-                BuddyGlassPiece(img: img).frame(width: fw, height: fh, alignment: .topLeading)
+                BuddyGlassPiece(glass: img).frame(width: fw, height: fh, alignment: .topLeading)
                     .scaleEffect(x: msx, y: msy, anchor: .bottom)
                     .offset(x: m.minX + r("mouth_x") * eyeW + (trail["mouth"]?.width ?? 0), y: m.minY + r("mouth_y") * eyeW - r("mouth_curve") * 6 * k + (trail["mouth"]?.height ?? 0))
             }
@@ -244,14 +252,21 @@ struct BuddyView: View {
     }
 }
 
-/// One of his pieces with its Liquid Glass look (his ruling 11-15, "Glass face pieces", crowned from Gemini's example): the glass is
-/// baked into the bundled pieces by `.claude/scripts/pl-buddy-glass.py` (height from his own shapes, top-left light, clear whites, amber
-/// lips; his originals kept in the vault rig folder). Here only a soft shadow lifts him off the page, as the glass sits on a surface.
+/// One of his pieces in Apple's see-through Liquid Glass (his ruling 11-15, "Use apples see through glass"): the clear areas (eye
+/// whites, teeth) are clear glass, his colours are glass tinted with his own colour, both in the piece's exact shape (the glass is masked
+/// by the layer's alpha); his lines are drawn on top, untouched.
 struct BuddyGlassPiece: View {
-    let img: UIImage
+    let glass: BuddyGlass
 
     var body: some View {
-        Image(uiImage: img).resizable().aspectRatio(contentMode: .fit)
-            .shadow(color: .black.opacity(0.35), radius: 3, x: 0, y: 2)
+        ZStack {
+            if let c = glass.clear {
+                Color.clear.glassEffect(.clear, in: .rect).mask(Image(uiImage: c).resizable().aspectRatio(contentMode: .fit))
+            }
+            if let t = glass.tint, let col = glass.colour {
+                Color.clear.glassEffect(.clear.tint(col), in: .rect).mask(Image(uiImage: t).resizable().aspectRatio(contentMode: .fit))
+            }
+            Image(uiImage: glass.lines).resizable().aspectRatio(contentMode: .fit)
+        }
     }
 }

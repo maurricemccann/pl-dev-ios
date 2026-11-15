@@ -213,8 +213,7 @@ struct PracticeView: View {
                     .simultaneousGesture(DragGesture(minimumDistance: 6, coordinateSpace: .global)
                         .onChanged { v in rope?.grab = v.location }
                         .onEnded { _ in rope?.grab = nil })
-                    .simultaneousGesture(LongPressGesture(minimumDuration: 0.5).onEnded { _ in buddy.swapFace() })
-                    .accessibilityHint("Tap for his next move, hold to swap faces, drag to swing him")
+                    .accessibilityHint("Tap for his next move, drag to swing him")
                     .onAppear { buddy.react(.open); BuddyIsland.start() }
                     .task {
                         // his ruling 11-15 "now and then": at rest, every 20-40 s Buddy plays his next move from the shuffled deck
