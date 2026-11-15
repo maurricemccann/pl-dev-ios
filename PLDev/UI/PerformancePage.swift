@@ -42,7 +42,7 @@ struct PerformancePage: View {
     struct ClaudeUse: Decodable {
         struct Block: Decodable { let generated: String?; let active: Bool?; let block_end: String?; let minutes_left: Int?; let tokens: Double?; let requests: Int?; let pct_of_peak: Double? }
         struct Week: Decodable { let pct: Double?; let read_at: String?; let resets: String? }
-        let board_day: String?; let board_calls: Int?; let board_cap: Int?; let block: Block?; let week: Week?
+        let board_day: String?; let board_calls: Int?; let board_cap: Int?; let block: Block?; let week: Week?; let five: Week?
     }
     private struct PCReply: Decodable { let claude: ClaudeUse? }
     @State private var claude: ClaudeUse?
@@ -449,7 +449,7 @@ struct PerformancePage: View {
                 HStack(alignment: .top) {
                     figure("Board calls today", u.board_calls.map { "\($0) / \(u.board_cap ?? 200)" } ?? "\u{2014}")
                     Divider().frame(height: 34)
-                    figure("5-hour block", u.block?.pct_of_peak.map { String(format: "%.0f%% of peak", $0) } ?? "\u{2014}")
+                    figure("5-hour limit", u.five?.pct.map { String(format: "%.0f%%", $0) } ?? u.block?.pct_of_peak.map { String(format: "%.0f%% of peak", $0) } ?? "\u{2014}")
                     Divider().frame(height: 34)
                     figure("Week limit", u.week?.pct.map { String(format: "%.0f%%", $0) } ?? "\u{2014}")
                 }
@@ -459,7 +459,7 @@ struct PerformancePage: View {
                 if let w = u.week, w.pct != nil {
                     Text("Week limit read \(String((w.read_at ?? "").prefix(16)))\(w.resets.map { ", resets \($0)" } ?? "").").font(.caption2).foregroundStyle(.secondary)
                 } else {
-                    Text("The week limit is account state: it shows here once a session reads it from the account page. Console dollars need an admin key the house does not hold.")
+                    Text("The limits show here once a Claude Code session on the PC has read them. Console dollars need an admin key the house does not hold.")
                         .font(.caption2).foregroundStyle(.secondary)
                 }
             } else {
