@@ -184,7 +184,7 @@ struct BuddyFaceArt {
     let layout: Layout
     let pieces: [String: BuddyGlass]
     let mouthFrames: [BuddyGlass]   // the glass face's mouth, rest to its full grin (ChatGPT's art only, his ruling 11-15)
-    let states: [String: [UIImage]] // ChatGPT's 18-state set, whole faces, every frame (his ruling 11-15; 15 arrived)
+    let states: [String: [String]]  // every toon face and blend, whole faces, one file path per frame (his rulings 11-15)
     let timing: [String: [Int]]     // each state's frame times in ms, as its GIF has them
     static let stateNames = ["happy", "thinking", "proudGrin", "sadFrown", "bigLaugh", "satisfied", "starstruck", "surprised", "waking",
                              "sleepy", "wink", "blink", "looking",
@@ -213,10 +213,10 @@ struct BuddyFaceArt {
         while let f = glass(String(format: "buddy-grin-open-%02d", frames.count)) { frames.append(f) }
         let timing = (Bundle.main.url(forResource: "buddy-states", withExtension: "json").flatMap { try? Data(contentsOf: $0) })
             .flatMap { try? JSONDecoder().decode([String: [Int]].self, from: $0) } ?? [:]
-        var states: [String: [UIImage]] = [:]
+        // file paths only: 4,000+ frames (26 faces and 156 blends) are decoded one at a time when drawn, never all at launch
+        var states: [String: [String]] = [:]
         for (s, ms) in timing {
-            let fs = (0..<ms.count).compactMap { i in Bundle.main.url(forResource: String(format: "buddy-st-\(s)-%02d", i), withExtension: "png")
-                .flatMap { UIImage(contentsOfFile: $0.path) } }
+            let fs = (0..<ms.count).compactMap { i in Bundle.main.url(forResource: String(format: "buddy-st-\(s)-%02d", i), withExtension: "png")?.path }
             if fs.count == ms.count { states[s] = fs }
         }
         // whole pictures, drawn as they are (no glass split): ChatGPT's sets carry tongues, tears and sparkles in their own colours
@@ -295,7 +295,7 @@ struct BuddyView: View {
         // in a lesson: ChatGPT's 3D mouth opens through its frames 0-4, a wrong answer shows its grimace (12);
         // elsewhere a moment flows into its emotion and back (2.4 s); otherwise the glass face's mouth
         let lessonM = lesson && !a.lessonMouth.isEmpty
-        let st = lessonM ? nil : model.stateFrame(now, timing: a.timing).flatMap { a.states[$0.0]?[$0.1] }   // a whole face from ChatGPT's set
+        let st = lessonM ? nil : model.stateFrame(now, timing: a.timing).flatMap { a.states[$0.0]?[$0.1] }.flatMap { UIImage(contentsOfFile: $0) }   // the one frame showing, read now
         let mf = lessonM ? a.lessonMouth[frownNow > 0 ? 12 : min(4, Int((Double(level) / 50 * 4).rounded()))]
             : (a.mouthFrames.isEmpty ? nil : a.mouthFrames[min(a.mouthFrames.count - 1, Int((Double(level) / 50 * Double(a.mouthFrames.count - 1)).rounded()))])
         // the whole face: a small drift, turn and stretch (the rig's face_* numbers)
