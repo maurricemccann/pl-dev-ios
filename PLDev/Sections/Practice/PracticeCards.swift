@@ -173,6 +173,7 @@ struct CheckinCard: View {
     @State private var cards: PracticeCollection?
     @State private var fresh: PracticeEarned?
     @State private var showCards = false
+    @State private var question: String?
 
     private var done: Bool { evening ? state.eveningDone : state.morningDone }
     private var label: String {
@@ -186,6 +187,7 @@ struct CheckinCard: View {
             if evening {
                 PField(prompt: "What was real today?", text: $gratitude, lines: 3)
                 PField(prompt: "Did today\u{2019}s story shift?", text: $shifted, lines: 3)
+                if let q = question { Text("Sit with this: " + q).candleHint() }
             } else {
                 PSelect(options: Self.moods.map { ($0, $0) }, value: $mood)
                 PField(prompt: "What story is running right now?", text: $story, lines: 3)
@@ -197,7 +199,14 @@ struct CheckinCard: View {
                 Button("\(cards.count) cards earned \u{00b7} show") { fresh = nil; showCards = true }.buttonStyle(.plain).font(.footnote)
             }
         }
-        .task(id: state.today?.date ?? "") { prefill(); if evening { cards = await PracticeCards.load(model: model) } }
+        .task(id: state.today?.date ?? "") {
+            prefill()
+            guard evening else { return }
+            cards = await PracticeCards.load(model: model)
+            // the evening Doctrine question (GET /api/evening-questions), a shuffled deck; the card stands without it
+            if question == nil, let q = try? await Practice.get("evening-questions", PracticeItems<String>.self, model: model).items,
+               let k = PracticeDeck.next(of: q.indices.map(String.init), deck: "practice.evening.deck"), let i = Int(k) { question = q[i] }
+        }
         .sheet(isPresented: $showCards) { if let cards { EarnedCardSheet(model: model, fresh: fresh, collection: cards) } }
     }
 
@@ -229,6 +238,60 @@ struct CheckinCard: View {
             struct Coach: Decodable { let note: String? }
             if let d = try? await Practice.post("coach", body, model: model), let c = try? JSONDecoder().decode(Coach.self, from: d) { note = c.note ?? "" } else { note = "" }
         } catch { failedOnce = true; result = error.localizedDescription }
+    }
+}
+
+// MARK: - Which Truth? (the web's #truth-card, his ruling 11-15: the Academy's scenarios, one source, GET /api/truths)
+
+struct PracticeTruth: Decodable { let scenario: String; let answer: Int; let why: String }
+struct PracticeItems<T: Decodable>: Decodable { let items: [T] }
+
+struct TruthCard: View {
+    let model: AppModel
+    @State private var all: [PracticeTruth] = []
+    @State private var current: PracticeTruth?
+    @State private var picked: Int?
+    @State private var failed = false
+    private static let names = ["1 \u{00b7} Prepared", "2 \u{00b7} In control", "3 \u{00b7} Persists"]
+
+    var body: some View {
+        PCard(title: "Which Truth?", id: "truth") {
+            if let t = current {
+                Text(t.scenario).font(.system(size: 14)).foregroundStyle(Candle.ink).frame(maxWidth: .infinity, alignment: .leading)
+                ViewThatFits(in: .horizontal) {
+                    HStack(spacing: 6) { picks(t) }
+                    VStack(alignment: .leading, spacing: 6) { picks(t) }
+                }
+                if let p = picked {
+                    Text((p == t.answer ? "Yes. " : "The \(["", "First", "Second", "Third"][min(max(t.answer, 0), 3)]) Truth. ") + t.why).candleHint()
+                    HStack { Button("Another") { deal() }.buttonStyle(CandleGhost()); Spacer(minLength: 0) }
+                }
+            } else {
+                Text(failed ? "The scenarios are out of reach right now." : "Loading\u{2026}").candleHint()
+            }
+        }
+        .task { await load() }
+    }
+
+    @ViewBuilder private func picks(_ t: PracticeTruth) -> some View {
+        ForEach(1...3, id: \.self) { n in
+            // after a pick the right one carries a check and a wrong pick a cross, so the answer is never colour alone
+            let mark = picked == nil ? "" : (n == t.answer ? " \u{2713}" : (n == picked ? " \u{2717}" : ""))
+            Button(Self.names[n - 1] + mark) { picked = n }
+                .buttonStyle(CandleGhost()).disabled(picked != nil)
+                .opacity(picked != nil && n != t.answer && n != picked ? 0.5 : 1)
+        }
+    }
+
+    private func load() async {
+        guard all.isEmpty else { return }
+        if let l = try? await Practice.get("truths", PracticeItems<PracticeTruth>.self, model: model), !l.items.isEmpty { all = l.items; deal() } else { failed = true }
+    }
+
+    private func deal() {
+        picked = nil
+        guard let k = PracticeDeck.next(of: all.indices.map(String.init), deck: "practice.truth.deck"), let i = Int(k) else { return }
+        current = all[i]
     }
 }
 

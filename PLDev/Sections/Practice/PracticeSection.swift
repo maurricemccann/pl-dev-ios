@@ -262,6 +262,7 @@ struct TodayScreen: View {
             WinsCard(model: model, state: state)
             CheckinCard(model: model, state: state, evening: false)
             LessonCard(model: model, state: state)
+            TruthCard(model: model)
             ReframeCard(model: model, state: state)
             AffirmationsCard(model: model, state: state)
             SeedDrawCard()
