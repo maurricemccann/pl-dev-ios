@@ -127,6 +127,7 @@ struct PathScreen: View {
     @State private var state = CourseModel()
     @State private var playing: LessonRun?
     @State private var goldPack: GoldPack?
+    @State private var livePack = false
     /// His daily minutes (asked once here, changeable in Settings): a lesson is about three minutes.
     @AppStorage("course.minutes") private var minutes = 0
     @State private var pathBuddy = BuddyModel()
@@ -139,6 +140,7 @@ struct PathScreen: View {
         VStack(spacing: 16) {
             if let m = state.message { Text(m).candleHint().frame(maxWidth: .infinity, alignment: .leading) }
             if minutes == 0 { goalCard }
+            Button("The pack \u{00b7} live test") { livePack = true }.buttonStyle(CandleGhost())
             if let course = state.course {
                 summary(course)
                 ForEach(course.units) { u in
@@ -156,6 +158,7 @@ struct PathScreen: View {
         .task { await state.load(model: model) }
         .fullScreenCover(item: $playing) { run in LessonView(model: model, run: run) { playing = nil } }
         .background { Color.clear.fullScreenCover(item: $goldPack) { g in PackScreen(model: model, key: "gold-\(g.unit)") { goldPack = nil } } }
+        .background { Color.clear.fullScreenCover(isPresented: $livePack) { LivePackScreen { livePack = false } } }
     }
 
     /// First open: his daily goal in minutes sizes what Today suggests.
