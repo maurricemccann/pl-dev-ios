@@ -44,9 +44,9 @@ struct CaptureWidgetView: View {
                         row("Drafts", g.drafts); row("Pins", g.pins); row("Tasks", g.tasks); row("Shift", g.shiftOpen)
                         Spacer(minLength: 2)
                         HStack(spacing: 6) {
-                            quick("Text", "text.alignleft", "text")
+                            quick("Thought", "bubble.left", "thought")
+                            quick("Task", "checklist", "task")
                             quick("Quote", "quote.opening", "quote")
-                            quick("Link", "link", "link")
                         }
                     }
                     .frame(maxWidth: .infinity, alignment: .leading)
@@ -91,7 +91,7 @@ struct CaptureWidget: Widget {
             CaptureWidgetView(entry: e).widgetURL(URL(string: "pldev://section/capture/waiting")).containerBackground(.fill.tertiary, for: .widget)
         }
         .configurationDisplayName("Waiting on you")
-        .description("What waits on you across the house, and a way to capture a text, a quote or a link.")
+        .description("What waits on you across the house, and a way to capture a thought, a task or a quote.")
         .supportedFamilies([.systemSmall, .systemMedium, .accessoryRectangular, .accessoryCircular])
     }
 }

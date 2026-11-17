@@ -7,6 +7,8 @@ public enum CaptureRoute: String, CaseIterable, Identifiable, Sendable {
     case seed    // the board's inbox, tagged SEED (his ruling 11-14: seeds go to the board inbox; a session files them)
     case art     // the intake as artwork (an image)
     case tile    // a new Backend tile (the "PWA" tile)
+    case thought // raw, into the vault's THOUGHTS.md (his ruling 11-17)
+    case task    // a task for a session: THOUGHTS.md tagged TASK, which /pl-open turns into a QUEUE item
 
     public var id: String { rawValue }
 
@@ -17,6 +19,8 @@ public enum CaptureRoute: String, CaseIterable, Identifiable, Sendable {
         case .seed: return "Seed"
         case .art: return "Art"
         case .tile: return "Make a tile"
+        case .thought: return "Thought"
+        case .task: return "Task"
         }
     }
 
@@ -27,6 +31,8 @@ public enum CaptureRoute: String, CaseIterable, Identifiable, Sendable {
         case .seed: return "leaf"
         case .art: return "paintpalette"
         case .tile: return "square.grid.2x2"
+        case .thought: return "bubble.left"
+        case .task: return "checklist"
         }
     }
 }
@@ -41,8 +47,8 @@ public enum SmartCapture {
             var out: [CaptureRoute] = [.board]
             if hasText { out += [.quote, .seed] }
             if let url, BackendTemplates.host(of: url) != nil { out.append(.tile) }   // a tile needs an https address
-            return out
-        default: return [.board, .quote, .seed]
+            return out + [.thought, .task]
+        default: return [.board, .quote, .seed, .thought, .task]
         }
     }
 

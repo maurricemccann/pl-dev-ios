@@ -203,6 +203,10 @@ struct CaptureDropBox: View {
             defer { if scoped { url.stopAccessingSecurityScopedResource() } }
             if let s = try? String(contentsOf: url, encoding: .utf8) { text = s }
         }
+        .onChange(of: state.presetRoute) { _, r in
+            guard let r else { return }
+            whereRoute = r; focused = true; state.presetRoute = nil
+        }
         .sheet(item: $pending) { p in
             CaptureWhereSheet(pending: p, state: state, model: model) { sent in
                 if sent { text = ""; photo = nil; original = nil; straight = nil; fromCamera = false; read = nil; state.room = .trail }
@@ -311,6 +315,8 @@ struct CaptureWhereSheet: View {
         case .seed: return "The board's inbox, tagged SEED"
         case .art: return "The art inbox: name, PL number, your verdict"
         case .tile: return "A new tile on the Backend page"
+        case .thought: return "Your thoughts file, for every session to read"
+        case .task: return "The next session's queue, as a task"
         }
     }
 }
@@ -336,6 +342,8 @@ extension CaptureModel {
         case .board:
             _ = await enqueue(kind: p.kind == "url" ? "url" : "text", text: p.text, note: nil, file: nil, label: String(p.text.prefix(120)),
                               toBoard: board, route: route.rawValue, model: model)
+        case .thought, .task:   // his ruling 11-17: the only two routes the on-device model adds; they reach THOUGHTS.md through pl-cron
+            _ = await enqueue(kind: route.rawValue, text: p.text, note: nil, file: nil, label: String(p.text.prefix(120)), toBoard: false, route: route.rawValue, model: model)
         case .tile:
             guard let t = BackendTemplates.template(for: p.url ?? p.text, title: nil) else { message = "That is not an https address."; return }
             let line = BackendStore.shared.add(t)

@@ -179,6 +179,7 @@ struct LinkPreview: Equatable {
     // where he is
     var room: CaptureRoom = .add
     var kind: CaptureKind = .artwork
+    var presetRoute: CaptureRoute? = nil   // the widget set the Where pill (thought or task); the drop box takes it once
 
     // the form (pl-os Intake)
     var title = ""

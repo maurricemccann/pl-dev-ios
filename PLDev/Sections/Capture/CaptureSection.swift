@@ -29,7 +29,9 @@ import UserNotifications
     static func handle(link: DeepLink, model: AppModel) -> Bool {
         if case .section(_, let path, let query) = link {
             if let first = path.first, let room = CaptureRoom(rawValue: first) { state.room = room }
-            if let mode = query["mode"], let kind = CaptureKind(rawValue: mode) { state.room = .add; state.switchKind(kind) }
+            if let mode = query["mode"], let route = CaptureRoute(rawValue: mode), route == .thought || route == .task {   // the widget's Thought and Task buttons
+                state.room = .add; state.presetRoute = route
+            } else if let mode = query["mode"], let kind = CaptureKind(rawValue: mode) { state.room = .add; state.switchKind(kind) }
         }
         return true
     }
@@ -99,6 +101,15 @@ import UserNotifications
                 return true
             }
             guard !words.isEmpty else { return true }   // nothing to send
+            if item.kind == "thought" || item.kind == "task" {   // capture route (11-17): pl-cron keeps them for the PC sync into THOUGHTS.md
+                let body = try JSONSerialization.data(withJSONObject: ["text": String(words.prefix(2000)), "source": "pl-" + item.kind])
+                let data = try await http.send(RequestPlan(origin: "cron", method: "POST", path: "api/widget/capture",
+                                                           headers: ["content-type": "application/json"], body: body),
+                                               idempotent: false, extraHeaders: ["Authorization": "Bearer " + write])
+                state.noteCap(from: data)
+                state.markSent(item.id)
+                return true
+            }
             if item.origin == "board", config.origin("board") != nil {
                 let body = try JSONSerialization.data(withJSONObject: ["text": words, "context": "PL DEV capture"])
                 _ = try await http.send(RequestPlan(origin: "board", method: "POST", path: "api/for-claude",
