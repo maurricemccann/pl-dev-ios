@@ -8,6 +8,10 @@ struct PerformancePage: View {
     @State private var data: Performance?
     @State private var failed = false
     @State private var loading = false
+    /// The Standing Board's "needs you" rows, pushed by the PC sync as a note tail (`api/widget/note?t=board`). nil = not read.
+    @State private var board: BoardRows?
+    struct BoardRows { let pulled: String; let link: URL?; let rows: [(call: Bool, text: String)] }
+    private struct BoardTail: Decodable { let text: String }
 
     struct Performance: Decodable {
         struct Line: Decodable { let amount: Double; let label: String }
@@ -123,6 +127,7 @@ struct PerformancePage: View {
         do {
             data = try JSONDecoder().decode(Performance.self, from: try await http.send(RequestPlan(origin: "cron", path: "api/widget/performance"), timeout: 30))
             failed = false
+            await loadBoard()
             if part == .action { runway = try? await Console.get("run/moderation-runway", ApprovalsModel.Runway.self, model: model) }
             await loadClaude()
             await judge()
@@ -614,7 +619,50 @@ struct PerformancePage: View {
                     }
                 }
             }
+            Divider().padding(.vertical, 2)
+            boardRows
         }
+    }
+
+    /// Under the divider: what the Standing Board says needs him, straight from the board's own data. A hand is a thing to do, a
+    /// question mark is a call to make. The board itself opens from the last row.
+    @ViewBuilder private var boardRows: some View {
+        HStack(alignment: .firstTextBaseline) {
+            Text("Standing Board").font(.caption.weight(.semibold)).foregroundStyle(.secondary)
+            Spacer()
+            if let b = board { Text("\(b.rows.count) · pulled \(b.pulled)").font(.caption2).foregroundStyle(.secondary) }
+        }
+        if let b = board {
+            if b.rows.isEmpty { Text("Nothing waiting on you.").font(.callout).foregroundStyle(.secondary) }
+            ForEach(Array(b.rows.enumerated()), id: \.offset) { _, r in
+                HStack(alignment: .top, spacing: 8) {
+                    Image(systemName: r.call ? "questionmark.circle" : "hand.raised").font(.caption).foregroundStyle(PLTone.accent).padding(.top, 3)
+                        .accessibilityLabel(r.call ? "Your call" : "Your hands")
+                    Text(r.text).font(.callout)
+                }
+            }
+            if let u = b.link {
+                Button { openURL(u) } label: { Label("Open the Standing Board", systemImage: "arrow.up.right.square").font(.callout) }
+                    .frame(minHeight: 44, alignment: .leading)
+            }
+        } else {
+            Text("The board has not been read yet. The PC sends it every 10 minutes.").font(.callout).foregroundStyle(.secondary)
+        }
+    }
+
+    /// Reads the board rows. Lines: "pulled <date>", "link <url>", then "YOURS|text" or "CALL|text". A failed read keeps the last one.
+    private func loadBoard() async {
+        guard let http = model.http,
+              let d = try? await http.send(RequestPlan(origin: "cron", path: "api/widget/note", query: ["t": "board"])),
+              let t = try? JSONDecoder().decode(BoardTail.self, from: d), !t.text.isEmpty else { return }
+        var pulled = "", link: URL?, rows: [(call: Bool, text: String)] = []
+        for line in t.text.split(separator: "\n") {
+            if line.hasPrefix("pulled ") { pulled = String(line.dropFirst(7)) }
+            else if line.hasPrefix("link ") { link = URL(string: String(line.dropFirst(5))) }
+            else if line.hasPrefix("YOURS|") { rows.append((false, String(line.dropFirst(6)))) }
+            else if line.hasPrefix("CALL|") { rows.append((true, String(line.dropFirst(5)))) }
+        }
+        board = BoardRows(pulled: pulled, link: link, rows: rows)
     }
 
     /// The scouts' suggestions, kept to what he can do: the on-device model checks each against the rules the house sends. A suggestion
