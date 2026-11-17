@@ -9,6 +9,8 @@ public enum CaptureRoute: String, CaseIterable, Identifiable, Sendable {
     case tile    // a new Backend tile (the "PWA" tile)
     case thought // raw, into the vault's THOUGHTS.md (his ruling 11-17)
     case task    // a task for a session: THOUGHTS.md tagged TASK, which /pl-open turns into a QUEUE item
+    case today   // a line on the board's TODAY.md task list (capture selector, his words 11-17)
+    case claude  // an item in for-claude.md, the inbox every session drains first
 
     public var id: String { rawValue }
 
@@ -21,6 +23,8 @@ public enum CaptureRoute: String, CaseIterable, Identifiable, Sendable {
         case .tile: return "Make a tile"
         case .thought: return "Thought"
         case .task: return "Task"
+        case .today: return "Today"
+        case .claude: return "For Claude"
         }
     }
 
@@ -33,8 +37,46 @@ public enum CaptureRoute: String, CaseIterable, Identifiable, Sendable {
         case .tile: return "square.grid.2x2"
         case .thought: return "bubble.left"
         case .task: return "checklist"
+        case .today: return "sun.max"
+        case .claude: return "text.bubble"
         }
     }
+
+    /// The Obsidian note this route writes to, or nil when it goes elsewhere (the board, the intake, the Backend page).
+    /// A vault route draws in the house violet instead of gold; its note has a live view on the phone.
+    public var vaultNote: VaultNote? {
+        switch self {
+        case .thought, .task: return VaultNote(key: "thoughts", file: "THOUGHTS.md")
+        case .today: return VaultNote(key: "today", file: "TODAY.md")
+        case .claude: return VaultNote(key: "claude", file: "for-claude.md")
+        default: return nil
+        }
+    }
+
+    public var isVault: Bool { vaultNote != nil }
+
+    /// What pl-cron's `/api/widget/capture` is sent for a vault route: the source, and the target note's key when the route is not one of the two original ones.
+    public var wire: (source: String, target: String?)? {
+        switch self {
+        case .thought: return ("pl-thought", nil)
+        case .task: return ("pl-task", nil)
+        case .today: return ("pl-note", "today")
+        case .claude: return ("pl-note", "claude")
+        default: return nil
+        }
+    }
+
+    /// The route a queued item's kind names, when that kind is a vault route.
+    public static func vault(kind: String) -> CaptureRoute? {
+        guard let r = CaptureRoute(rawValue: kind), r.isVault else { return nil }
+        return r
+    }
+}
+
+/// A vault note he can capture into. `key` is the target pl-cron and the PC sync use; `file` is for his eyes.
+public struct VaultNote: Equatable, Sendable {
+    public let key: String
+    public let file: String
 }
 
 public enum SmartCapture {
@@ -47,8 +89,8 @@ public enum SmartCapture {
             var out: [CaptureRoute] = [.board]
             if hasText { out += [.quote, .seed] }
             if let url, BackendTemplates.host(of: url) != nil { out.append(.tile) }   // a tile needs an https address
-            return out + [.thought, .task]
-        default: return [.board, .quote, .seed, .thought, .task]
+            return out + [.thought, .task, .today, .claude]
+        default: return [.board, .quote, .seed, .thought, .task, .today, .claude]
         }
     }
 

@@ -12,12 +12,12 @@ final class SmartCaptureTests: XCTestCase {
         XCTAssertEqual(SmartCapture.suggest(kind: "url", text: nil, url: "https://dash.cloudflare.com/x"), .tile)
         XCTAssertEqual(SmartCapture.suggest(kind: "url", text: nil, url: "https://www.printful.com/dashboard"), .tile)
         XCTAssertEqual(SmartCapture.suggest(kind: "url", text: nil, url: "https://example.org/post"), .board)
-        XCTAssertEqual(SmartCapture.available(kind: "url", url: "https://example.org/post"), [.board, .tile, .thought, .task])
-        XCTAssertEqual(SmartCapture.available(kind: "url", url: "http://example.org/post"), [.board, .thought, .task], "no tile for plain http")
+        XCTAssertEqual(SmartCapture.available(kind: "url", url: "https://example.org/post"), [.board, .tile, .thought, .task, .today, .claude])
+        XCTAssertEqual(SmartCapture.available(kind: "url", url: "http://example.org/post"), [.board, .thought, .task, .today, .claude], "no tile for plain http")
     }
 
     func testALinkWithHighlightedTextOffersQuoteAndSeedAndLeadsWithTheText() {
-        XCTAssertEqual(SmartCapture.available(kind: "url", url: "https://example.org/a", hasText: true), [.board, .quote, .seed, .tile, .thought, .task])
+        XCTAssertEqual(SmartCapture.available(kind: "url", url: "https://example.org/a", hasText: true), [.board, .quote, .seed, .tile, .thought, .task, .today, .claude])
         XCTAssertEqual(SmartCapture.suggest(kind: "url", text: "What persists in the mind becomes your reality.", url: "https://example.org/a"), .seed)
         XCTAssertEqual(SmartCapture.suggest(kind: "url", text: nil, url: "https://dash.cloudflare.com/"), .tile)
         XCTAssertEqual(SmartCapture.suggest(kind: "url", text: "   ", url: "https://example.org/a"), .board)
@@ -29,9 +29,23 @@ final class SmartCaptureTests: XCTestCase {
     }
 
     func testTextCanAlwaysBeRoutedToThoughtOrTask() {
-        XCTAssertEqual(SmartCapture.available(kind: "text", url: nil), [.board, .quote, .seed, .thought, .task])
+        XCTAssertEqual(SmartCapture.available(kind: "text", url: nil), [.board, .quote, .seed, .thought, .task, .today, .claude])
         XCTAssertEqual(CaptureRoute(rawValue: "thought"), .thought)
         XCTAssertEqual(CaptureRoute(rawValue: "task"), .task)
+    }
+
+    func testOnlyVaultRoutesHaveANoteAndAWire() {
+        for r in CaptureRoute.allCases {
+            XCTAssertEqual(r.isVault, [.thought, .task, .today, .claude].contains(r), r.rawValue)
+            XCTAssertEqual(r.wire != nil, r.isVault, r.rawValue)
+        }
+        XCTAssertEqual(CaptureRoute.thought.vaultNote, CaptureRoute.task.vaultNote)   // both land in THOUGHTS.md
+        XCTAssertEqual(CaptureRoute.today.wire?.target, "today")
+        XCTAssertEqual(CaptureRoute.claude.wire?.source, "pl-note")
+        XCTAssertEqual(CaptureRoute.task.wire?.source, "pl-task")
+        XCTAssertEqual(CaptureRoute.vault(kind: "claude"), .claude)
+        XCTAssertNil(CaptureRoute.vault(kind: "quote"))
+        XCTAssertNil(CaptureRoute.vault(kind: "nonsense"))
     }
 
     func testAShortPlainLineIsASeed() {
