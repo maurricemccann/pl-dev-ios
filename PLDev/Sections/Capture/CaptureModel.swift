@@ -104,8 +104,12 @@ func captureTrailLink(_ payload: String?) -> URL? {
 struct CaptureState: Equatable {
     enum Tone { case pool, plain, dim }
     let label: String, detail: String, tone: Tone
-    init(status: String?, poolKey: String?) {
+    /// The capture routes that write a vault note (Thought, Task, Today, For Claude): the PC sync writes them, they never go to Notion (S348 capture E2E).
+    static func isVaultRoute(_ source: String?) -> Bool { source == "pl-thought" || source == "pl-task" || (source?.hasPrefix("pl-note:") ?? false) }
+    init(status: String?, poolKey: String?, source: String? = nil) {
         if let k = poolKey, !k.isEmpty { label = "In the pool"; detail = "Fetched and indexed. The content generator can draw on it."; tone = .pool }
+        else if CaptureState.isVaultRoute(source), status == "synced" { label = "In your notes"; detail = "Written to your vault note by the PC sync."; tone = .plain }
+        else if CaptureState.isVaultRoute(source), status != "rejected" { label = "On its way to your notes"; detail = "The PC writes it into your vault note within about 10 minutes."; tone = .plain }
         else if status == "synced" { label = "In Notion"; detail = "Synced to the Notion inbox."; tone = .plain }
         else if status == "rejected" { label = "Rejected"; detail = "You rejected it in moderation. The row is kept, not deleted."; tone = .dim }
         else { label = "Waiting"; detail = "In your moderation deck. Links are picked up on the next sweep."; tone = .plain }
@@ -166,7 +170,7 @@ struct LinkPreview: Equatable {
         let id: String
         let type: String?, payload: String?, status: String?, source: String?, created_at: String?, pool_key: String?
         var promoted_cr: String? = nil   // the PL number once the intake stamped it (spec P2)
-        var state: CaptureState { CaptureState(status: status, poolKey: pool_key) }
+        var state: CaptureState { CaptureState(status: status, poolKey: pool_key, source: source) }
         var label: String { captureLabel(payload) }
     }
     /// A capture waiting in the moderation deck (the console's `captures`).
