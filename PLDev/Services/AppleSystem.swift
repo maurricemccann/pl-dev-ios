@@ -122,11 +122,11 @@ import FoundationModels
         guard isReady else { return nil }
         let rules = """
         You sort things an artist drops into a capture box. Reply with exactly these four lines and nothing else:
-        ROUTE: one of board, quote, seed, art, tile, thought, task
+        ROUTE: one of board, quote, seed, art, tile, thought, task, today, claude
         ASK: one short question to ask the artist about it, at most eight words
         NAME: a title of two to four words if it is an artwork, otherwise none
         MEDIUM: the medium if it is a photo of a physical artwork (for example oil pastel on paper), otherwise none
-        Meanings: art is a picture of artwork. quote is words another person said. seed is a short original line of the artist's own. tile is the web address of a service dashboard. thought is a raw idea, feeling or observation of the artist's own that is not a finished line. task is something a working session should go do: an instruction, a fix, a thing to build or check. board is anything else.
+        Meanings: art is a picture of artwork. quote is words another person said. seed is a short original line of the artist's own. tile is the web address of a service dashboard. thought is a raw idea, feeling or observation of the artist's own that is not a finished line. task is something a working session should go do: an instruction, a fix, a thing to build or check. today is a small thing to do or remember today. claude is a question or message for the AI assistant itself. board is anything else.
         """
         let session = LanguageModelSession(instructions: rules)
         let typed = text.trimmingCharacters(in: .whitespacesAndNewlines)

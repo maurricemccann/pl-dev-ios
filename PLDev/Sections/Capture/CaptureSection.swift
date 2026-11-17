@@ -29,7 +29,7 @@ import UserNotifications
     static func handle(link: DeepLink, model: AppModel) -> Bool {
         if case .section(_, let path, let query) = link {
             if let first = path.first, let room = CaptureRoom(rawValue: first) { state.room = room }
-            if let mode = query["mode"], let route = CaptureRoute(rawValue: mode), route == .thought || route == .task {   // the widget's Thought and Task buttons
+            if let mode = query["mode"], let route = CaptureRoute(rawValue: mode), route.isVault {   // the widget's Thought and Task buttons, and any other vault note
                 state.room = .add; state.presetRoute = route
             } else if let mode = query["mode"], let kind = CaptureKind(rawValue: mode) { state.room = .add; state.switchKind(kind) }
         }
@@ -101,8 +101,10 @@ import UserNotifications
                 return true
             }
             guard !words.isEmpty else { return true }   // nothing to send
-            if item.kind == "thought" || item.kind == "task" {   // capture route (11-17): pl-cron keeps them for the PC sync into THOUGHTS.md
-                let body = try JSONSerialization.data(withJSONObject: ["text": String(words.prefix(2000)), "source": "pl-" + item.kind])
+            if let wire = CaptureRoute.vault(kind: item.kind)?.wire {   // vault routes (11-17): pl-cron keeps them for the PC sync into the right note
+                var fields: [String: String] = ["text": String(words.prefix(2000)), "source": wire.source]
+                if let t = wire.target { fields["target"] = t }
+                let body = try JSONSerialization.data(withJSONObject: fields)
                 let data = try await http.send(RequestPlan(origin: "cron", method: "POST", path: "api/widget/capture",
                                                            headers: ["content-type": "application/json"], body: body),
                                                idempotent: false, extraHeaders: ["Authorization": "Bearer " + write])

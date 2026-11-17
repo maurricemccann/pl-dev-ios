@@ -80,6 +80,7 @@ struct CaptureWidgetView: View {
     private func quick(_ title: String, _ symbol: String, _ mode: String) -> some View {
         Link(destination: URL(string: "pldev://section/capture/add?mode=\(mode)")!) {
             Label(title, systemImage: symbol).font(.caption2.weight(.semibold)).frame(maxWidth: .infinity, minHeight: 28)
+                .foregroundStyle(mode == "thought" || mode == "task" ? Color(red: 0.608, green: 0.447, blue: 0.812) : Color.primary)   // the buttons that write a vault note are violet (#9b72cf), as in the app
                 .background(.fill.tertiary, in: Capsule())
         }
     }

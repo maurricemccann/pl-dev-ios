@@ -29,9 +29,23 @@ final class SmartCaptureTests: XCTestCase {
     }
 
     func testTextCanAlwaysBeRoutedToThoughtOrTask() {
-        XCTAssertEqual(SmartCapture.available(kind: "text", url: nil), [.board, .quote, .seed, .thought, .task])
+        XCTAssertEqual(SmartCapture.available(kind: "text", url: nil), [.board, .quote, .seed, .thought, .task, .today, .claude])
         XCTAssertEqual(CaptureRoute(rawValue: "thought"), .thought)
         XCTAssertEqual(CaptureRoute(rawValue: "task"), .task)
+    }
+
+    func testOnlyVaultRoutesHaveANoteAndAWire() {
+        for r in CaptureRoute.allCases {
+            XCTAssertEqual(r.isVault, [.thought, .task, .today, .claude].contains(r), r.rawValue)
+            XCTAssertEqual(r.wire != nil, r.isVault, r.rawValue)
+        }
+        XCTAssertEqual(CaptureRoute.thought.vaultNote, CaptureRoute.task.vaultNote)   // both land in THOUGHTS.md
+        XCTAssertEqual(CaptureRoute.today.wire?.target, "today")
+        XCTAssertEqual(CaptureRoute.claude.wire?.source, "pl-note")
+        XCTAssertEqual(CaptureRoute.task.wire?.source, "pl-task")
+        XCTAssertEqual(CaptureRoute.vault(kind: "claude"), .claude)
+        XCTAssertNil(CaptureRoute.vault(kind: "quote"))
+        XCTAssertNil(CaptureRoute.vault(kind: "nonsense"))
     }
 
     func testAShortPlainLineIsASeed() {

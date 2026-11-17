@@ -80,15 +80,21 @@ struct CaptureDropBox: View {
     private var whereMenu: some View {
         Menu {
             Button("Auto", systemImage: "wand.and.stars") { whereRoute = nil }
-            ForEach(CaptureRoute.allCases) { r in Button(r.title, systemImage: r.symbol) { whereRoute = r } }
+            ForEach(CaptureRoute.allCases.filter { !$0.isVault }) { r in Button(r.title, systemImage: r.symbol) { whereRoute = r } }
+            Section("Notes in your vault") {
+                ForEach(CaptureRoute.allCases.filter(\.isVault)) { r in
+                    Button("\(r.title) · \(r.vaultNote?.file ?? "")", systemImage: r.symbol) { whereRoute = r }
+                }
+            }
         } label: {
             HStack(spacing: 4) {
                 Text(whereRoute.map { "Where: " + $0.title } ?? "Where: Auto")
                 Image(systemName: "chevron.up.chevron.down").font(.caption2)
             }
-            .font(.footnote.weight(.medium)).foregroundStyle(PLOS.text(scheme))
+            .font(.footnote.weight(.medium)).foregroundStyle(whereRoute?.isVault == true ? PLOS.vault : PLOS.text(scheme))   // a vault note reads violet
             .padding(.horizontal, 10).padding(.vertical, 6)
             .background(PLOS.surface2(scheme).opacity(0.8), in: Capsule())
+            .overlay(Capsule().stroke(PLOS.vault.opacity(whereRoute?.isVault == true ? 0.7 : 0), lineWidth: 1))
         }
         .accessibilityLabel("Where it goes")
     }
@@ -258,20 +264,27 @@ struct CaptureWhereSheet: View {
                     ForEach(pending.options) { r in
                         Button { route = r } label: {
                             HStack(spacing: 12) {
-                                Image(systemName: r.symbol).frame(width: 26)
+                                Image(systemName: r.symbol).frame(width: 26).foregroundStyle(r.isVault ? PLOS.vault : Color.primary)
                                 VStack(alignment: .leading, spacing: 2) {
                                     Text(r.title).font(.body.weight(.medium))
                                     Text(Self.line(r)).font(.footnote).foregroundStyle(.secondary)
                                 }
                                 Spacer(minLength: 0)
                                 if r == pending.suggested { Text("Suggested").font(.caption2).foregroundStyle(.secondary) }
-                                if r == route { Image(systemName: "checkmark.circle.fill").foregroundStyle(PLOS.gold) }
+                                if r == route { Image(systemName: "checkmark.circle.fill").foregroundStyle(r.isVault ? PLOS.vault : PLOS.gold) }   // an Obsidian note is violet, everything else gold
                             }
                         }
                         .buttonStyle(.plain)
                         .accessibilityAddTraits(r == route ? .isSelected : [])
                     }
                 } header: { Text("Where does it go?") }
+                if let note = route.vaultNote {
+                    Section {
+                        NavigationLink { NoteLiveView(note: note, model: model) } label: {
+                            Label("See the end of \(note.file)", systemImage: "doc.text.magnifyingglass").foregroundStyle(PLOS.vault)
+                        }
+                    } footer: { Text("Read only, as the house last synced it.") }
+                }
                 if route == .art {
                     Section {
                         TextField("Optional, your words", text: $extra)
@@ -315,8 +328,10 @@ struct CaptureWhereSheet: View {
         case .seed: return "The board's inbox, tagged SEED"
         case .art: return "The art inbox: name, PL number, your verdict"
         case .tile: return "A new tile on the Backend page"
-        case .thought: return "Your thoughts file, for every session to read"
-        case .task: return "The next session's queue, as a task"
+        case .thought: return "THOUGHTS.md, raw, for every session to read"
+        case .task: return "THOUGHTS.md as a task: the next session's queue"
+        case .today: return "TODAY.md, a line on the board's task list"
+        case .claude: return "for-claude.md, the inbox every session drains first"
         }
     }
 }
@@ -342,7 +357,7 @@ extension CaptureModel {
         case .board:
             _ = await enqueue(kind: p.kind == "url" ? "url" : "text", text: p.text, note: nil, file: nil, label: String(p.text.prefix(120)),
                               toBoard: board, route: route.rawValue, model: model)
-        case .thought, .task:   // his ruling 11-17: the only two routes the on-device model adds; they reach THOUGHTS.md through pl-cron
+        case .thought, .task, .today, .claude:   // the vault routes (11-17): they reach their note through pl-cron and the PC sync
             _ = await enqueue(kind: route.rawValue, text: p.text, note: nil, file: nil, label: String(p.text.prefix(120)), toBoard: false, route: route.rawValue, model: model)
         case .tile:
             guard let t = BackendTemplates.template(for: p.url ?? p.text, title: nil) else { message = "That is not an https address."; return }
@@ -462,4 +477,47 @@ struct CaptureRender: View {
         }
         .padding(.top, 6)
     }
+}
+
+extension PLOS {
+    /// The violet of every route that writes an Obsidian note (his word 11-17: purple, not gold). The house's own purple, `philosophy`.
+    static var vault: Color { philosophy }
+}
+
+/// The live end of a vault note, read-only: pl-cron holds the last 3,500 characters the PC sync pushed, behind his widget token.
+struct NoteLiveView: View {
+    let note: VaultNote
+    let model: AppModel
+    @State private var text: String?
+    @State private var age: Int?
+    @State private var failed = false
+
+    var body: some View {
+        ScrollView {
+            VStack(alignment: .leading, spacing: 10) {
+                if let text {
+                    Text(text.isEmpty ? "Nothing synced yet. The PC pushes this on its next capture sync." : text)
+                        .font(.system(.footnote, design: .monospaced)).textSelection(.enabled)
+                } else if failed {
+                    Text("It would not load. Pull to try again.").foregroundStyle(.secondary)
+                } else { ProgressView() }
+            }
+            .frame(maxWidth: .infinity, alignment: .leading).padding()
+        }
+        .navigationTitle(note.file).navigationBarTitleDisplayMode(.inline)
+        .safeAreaInset(edge: .bottom) {
+            if let age { Text("Synced " + (age < 1 ? "just now" : age < 90 ? "\(age) min ago" : "\(age / 60) h ago")).font(.caption2).foregroundStyle(.secondary).padding(8) }
+        }
+        .refreshable { await load() }
+        .task { await load() }
+    }
+
+    private func load() async {
+        guard let http = model.http,
+              let data = try? await http.send(RequestPlan(origin: "cron", path: "api/widget/note", query: ["t": note.key])),
+              let r = try? JSONDecoder().decode(NoteTail.self, from: data) else { failed = true; return }
+        failed = false; text = r.text; age = r.age_min
+    }
+
+    private struct NoteTail: Decodable { let text: String; let age_min: Int? }
 }

@@ -129,7 +129,7 @@ final class ShareViewController: UIViewController {
         case .quote: kind = "quote"; target = "cron"
         case .art: break
         case .tile: itemRoute = "tile"
-        case .thought, .task: kind = route.rawValue; target = "cron"   // capture route: the app sends these to pl-cron for THOUGHTS.md
+        case .thought, .task, .today, .claude: kind = route.rawValue; target = "cron"   // the vault routes: the app sends these to pl-cron for the right note
         }
         let item = SharedInbox.Item(
             id: UUID().uuidString,
