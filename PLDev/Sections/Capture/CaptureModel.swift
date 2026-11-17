@@ -109,7 +109,7 @@ struct CaptureState: Equatable {
     init(status: String?, poolKey: String?, source: String? = nil) {
         if let k = poolKey, !k.isEmpty { label = "In the pool"; detail = "Fetched and indexed. The content generator can draw on it."; tone = .pool }
         else if CaptureState.isVaultRoute(source), status == "synced" { label = "In your notes"; detail = "Written to your vault note by the PC sync."; tone = .plain }
-        else if CaptureState.isVaultRoute(source), status != "rejected" { label = "On its way to your notes"; detail = "The PC writes it into your vault note within about 10 minutes."; tone = .plain }
+        else if CaptureState.isVaultRoute(source), status != "rejected" { label = "On its way to your notes"; detail = "The PC writes it into your vault note within about 5 minutes."; tone = .plain }
         else if status == "synced" { label = "In Notion"; detail = "Synced to the Notion inbox."; tone = .plain }
         else if status == "rejected" { label = "Rejected"; detail = "You rejected it in moderation. The row is kept, not deleted."; tone = .dim }
         else { label = "Waiting"; detail = "In your moderation deck. Links are picked up on the next sweep."; tone = .plain }

@@ -646,7 +646,7 @@ struct PerformancePage: View {
                     .frame(minHeight: 44, alignment: .leading)
             }
         } else {
-            Text("The board has not been read yet. The PC sends it every 10 minutes.").font(.callout).foregroundStyle(.secondary)
+            Text("The board has not been read yet. The PC sends it every 5 minutes.").font(.callout).foregroundStyle(.secondary)
         }
     }
 
