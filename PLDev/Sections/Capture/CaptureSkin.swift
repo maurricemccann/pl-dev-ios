@@ -44,50 +44,10 @@ struct CaptureRoomBar: View {
     }
 }
 
-/// Intake's `LBL` over its `INPUT`: the label in the instrument face, the field under it.
-struct CaptureField<Content: View>: View {
-    let label: String
-    @ViewBuilder let content: () -> Content
-    @Environment(\.colorScheme) private var scheme
-    var body: some View {
-        VStack(alignment: .leading, spacing: 6) {
-            Text(label).osEyebrow(10).foregroundStyle(PLOS.dim(scheme))
-            content()
-        }
-        .frame(maxWidth: .infinity, alignment: .leading)
-    }
-}
-
-/// Intake's `INPUT`: a see-through well with the console hairline, gold when it has the focus.
-struct CaptureInput: ViewModifier {
-    @Environment(\.colorScheme) private var scheme
-    func body(content: Content) -> some View {
-        content
-            .foregroundStyle(PLOS.text(scheme))
-            .padding(.horizontal, 14).padding(.vertical, 12)
-            .background(PLOS.surface2(scheme).opacity(scheme == .dark ? 0.45 : 0.55), in: RoundedRectangle(cornerRadius: 12, style: .continuous))
-            .overlay { RoundedRectangle(cornerRadius: 12, style: .continuous).strokeBorder(PLOS.line(scheme), lineWidth: 0.8) }
-    }
-}
-
 extension View {
-    func captureInput() -> some View { modifier(CaptureInput()) }
     /// One full-width row of the room list: clear, no separator, the screen's own side margins.
     func captureRow() -> some View {
         listRowBackground(Color.clear).listRowSeparator(.hidden).listRowInsets(EdgeInsets(top: 6, leading: 14, bottom: 6, trailing: 14))
-    }
-}
-
-/// "Add to the system →": gold, full width, black type (Intake's submit).
-struct CaptureGoldButton: ButtonStyle {
-    @Environment(\.isEnabled) private var enabled
-    func makeBody(configuration: Configuration) -> some View {
-        configuration.label
-            .font(.system(size: 15, weight: .medium))
-            .foregroundStyle(.black)
-            .frame(maxWidth: .infinity, minHeight: 50)
-            .background(PLOS.gold, in: RoundedRectangle(cornerRadius: 14, style: .continuous))
-            .opacity(enabled ? (configuration.isPressed ? 0.85 : 1) : 0.4)
     }
 }
 

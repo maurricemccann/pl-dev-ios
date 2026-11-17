@@ -24,16 +24,12 @@ enum CaptureRoom: String, CaseIterable, Identifiable {
 enum CaptureKind: String, CaseIterable, Identifiable {
     case artwork, text, quote, link
     var id: String { rawValue }
-    var title: String { switch self { case .artwork: return "Artwork"; case .text: return "Text"; case .quote: return "Quote"; case .link: return "Link" } }
     var sub: String {
         switch self {
         case .artwork: return "Image + metadata"; case .text: return "Body or essay"
         case .quote: return "Phrase · hook · caption"; case .link: return "URL → pull it in"
         }
     }
-    var symbol: String { switch self { case .artwork: return "photo"; case .text: return "text.alignleft"; case .quote: return "quote.opening"; case .link: return "link" } }
-    /// The type the console writes to the captures table.
-    var apiType: String { self == .artwork ? "art" : rawValue }
 }
 
 /// A capture this phone made, kept so the trail can show it the instant it is saved (pl-os "Saving…" rows), before the server lists it.
@@ -116,51 +112,6 @@ struct CaptureState: Equatable {
     }
 }
 
-/// pl-os `fetchLinkPreview`, on the phone: the page's own title, description and picture (Open Graph). Http and https only.
-struct LinkPreview: Equatable {
-    var title: String
-    var description: String
-    var image: String
-
-    static func fetch(_ raw: String) async -> LinkPreview? {
-        var text = raw.trimmingCharacters(in: .whitespacesAndNewlines)
-        if !text.contains("://") { text = "https://" + text }
-        guard let url = URL(string: text), url.scheme == "http" || url.scheme == "https" else { return nil }
-        var req = URLRequest(url: url, timeoutInterval: 8)
-        req.setValue("Mozilla/5.0 (iPhone; CPU iPhone OS 18_0 like Mac OS X) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/18.0 Mobile/15E148 Safari/604.1", forHTTPHeaderField: "User-Agent")
-        guard let (data, response) = try? await URLSession.shared.data(for: req),
-              (response as? HTTPURLResponse).map({ $0.statusCode < 400 }) ?? true else { return nil }
-        let html = String(decoding: data.prefix(512 * 1024), as: UTF8.self)
-        func meta(_ prop: String) -> String {
-            let p = NSRegularExpression.escapedPattern(for: prop)
-            for pattern in ["<meta[^>]+(?:property|name)=[\"']\(p)[\"'][^>]+content=[\"']([^\"']*)[\"']",
-                            "<meta[^>]+content=[\"']([^\"']*)[\"'][^>]+(?:property|name)=[\"']\(p)[\"']"] {
-                if let re = try? NSRegularExpression(pattern: pattern, options: .caseInsensitive),
-                   let m = re.firstMatch(in: html, range: NSRange(html.startIndex..., in: html)),
-                   let r = Range(m.range(at: 1), in: html) { return decodeEntities(String(html[r])) }
-            }
-            return ""
-        }
-        var title = meta("og:title")
-        if title.isEmpty, let re = try? NSRegularExpression(pattern: "<title[^>]*>([^<]*)</title>", options: .caseInsensitive),
-           let m = re.firstMatch(in: html, range: NSRange(html.startIndex..., in: html)), let r = Range(m.range(at: 1), in: html) {
-            title = decodeEntities(String(html[r]))
-        }
-        var description = meta("og:description")
-        if description.isEmpty { description = meta("description") }
-        var image = meta("og:image")
-        if !image.isEmpty, let abs = URL(string: image, relativeTo: url)?.absoluteString { image = abs }
-        title = title.trimmingCharacters(in: .whitespacesAndNewlines)
-        if title.isEmpty && image.isEmpty && description.isEmpty { return nil }
-        return LinkPreview(title: String((title.isEmpty ? text : title).prefix(200)), description: String(description.trimmingCharacters(in: .whitespacesAndNewlines).prefix(500)), image: image)
-    }
-
-    private static func decodeEntities(_ s: String) -> String {
-        s.replacingOccurrences(of: "&amp;", with: "&").replacingOccurrences(of: "&quot;", with: "\"").replacingOccurrences(of: "&#39;", with: "'")
-            .replacingOccurrences(of: "&#x27;", with: "'").replacingOccurrences(of: "&lt;", with: "<").replacingOccurrences(of: "&gt;", with: ">")
-    }
-}
-
 @MainActor @Observable final class CaptureModel {
     struct Waiting: Decodable, Equatable {
         var drafts: Int?, pins: Int?, manual: Int?, ads: Int?, emails: Int?, tasks: Int?, captures: Int?, shift_open: Int?
@@ -185,24 +136,6 @@ struct LinkPreview: Equatable {
     var kind: CaptureKind = .artwork
     var presetRoute: CaptureRoute? = nil   // the widget set the Where pill (thought or task); the drop box takes it once
 
-    // the form (pl-os Intake)
-    var title = ""
-    var medium = ""
-    var year = ""
-    var notes = ""
-    var body = ""
-    var words = ""
-    var attribution = ""
-    var linkURL = ""
-    var photo: Data?
-    var photoNote: String?
-    var photoText = ""   // apple lane: the words Vision read in the photo, offered to add to the notes
-    var preview: LinkPreview?
-    var fetching = false
-    var toBoard = false
-    var busy = false
-    var done = false
-    var doneOffline = false
     var message: String?
     var sentTick = 0
     var tick = 0
@@ -240,16 +173,6 @@ struct LinkPreview: Equatable {
     var owed: Int {
         guard let w = waiting else { return 0 }
         return (w.drafts ?? 0) + (w.pins ?? 0) + (w.tasks ?? 0) + (w.shift_open ?? 0) + (w.captures ?? 0)
-    }
-
-    var canSubmit: Bool {
-        if busy { return false }
-        switch kind {
-        case .artwork: return photo != nil
-        case .text: return !body.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty
-        case .quote: return !words.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty
-        case .link: return !linkURL.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty
-        }
     }
 
     // MARK: reads
@@ -317,33 +240,7 @@ struct LinkPreview: Equatable {
 
     func switchKind(_ k: CaptureKind) {
         guard k != kind else { return }
-        kind = k; done = false; preview = nil; message = nil
-    }
-
-    func resetForm() {
-        title = ""; medium = ""; year = ""; notes = ""; body = ""; words = ""; attribution = ""; linkURL = ""
-        photo = nil; photoNote = nil; photoText = ""; preview = nil; done = false; doneOffline = false; message = nil
-    }
-
-    func setPhoto(_ data: Data?) {
-        guard let data else { return }
-        guard let jpeg = CaptureModel.jpeg(data) else { message = "That picture could not be read or is too large. Try another."; photo = nil; return }
-        photo = jpeg; message = nil
-        photoNote = ByteCountFormatter.string(fromByteCount: Int64(jpeg.count), countStyle: .file)
-        photoText = ""
-        Task { [weak self] in
-            let read = await PLVision.text(in: jpeg)
-            if let self, self.photo == jpeg { self.photoText = read }
-        }
-    }
-
-    func pullLink() async {
-        let t = linkURL.trimmingCharacters(in: .whitespacesAndNewlines)
-        guard !t.isEmpty else { return }
-        fetching = true; preview = nil; message = nil
-        let p = await LinkPreview.fetch(t)
-        preview = p; fetching = false
-        if p == nil { message = "The page gave nothing to pull. The link is still saved bare." }
+        kind = k; message = nil
     }
 
     /// Saves the capture into the shared inbox (the same door the share sheet uses) and drains it. True when the server took it.
@@ -359,43 +256,6 @@ struct LinkPreview: Equatable {
         log = CaptureLog.read()
         publishGlance(model: model)
         return log.first(where: { $0.id == id })?.sent ?? false
-    }
-
-    func submit(model: AppModel) async {
-        guard canSubmit else { return }
-        busy = true; message = nil
-        defer { busy = false }
-        let board = toBoard && model.config?.origin("board") != nil && kind != .artwork
-        let sent: Bool
-        switch kind {
-        case .artwork:
-            let t = title.trimmingCharacters(in: .whitespacesAndNewlines)
-            let n = notes.trimmingCharacters(in: .whitespacesAndNewlines)
-            let y = year.trimmingCharacters(in: .whitespacesAndNewlines)
-            let m = medium.trimmingCharacters(in: .whitespacesAndNewlines)
-            var caption = [t.isEmpty ? "Untitled piece" : t, m.isEmpty ? nil : m, y.isEmpty ? nil : "made \(y)"].compactMap { $0 }.joined(separator: " · ")
-            if !n.isEmpty { caption += ". " + n }
-            sent = await enqueue(kind: "image", text: nil, note: caption, file: photo, label: t.isEmpty ? "Artwork" : t, toBoard: false, model: model)
-        case .text:
-            let b = body.trimmingCharacters(in: .whitespacesAndNewlines)
-            sent = await enqueue(kind: "text", text: b, note: nil, file: nil, label: String(b.prefix(120)), toBoard: board, model: model)
-        case .quote:
-            let w = words.trimmingCharacters(in: .whitespacesAndNewlines)
-            let a = attribution.trimmingCharacters(in: .whitespacesAndNewlines)
-            let full = a.isEmpty ? w : w + "\n— " + a
-            sent = await enqueue(kind: "quote", text: full, note: nil, file: nil, label: String(w.prefix(120)), toBoard: board, model: model)
-        case .link:
-            let u = linkURL.trimmingCharacters(in: .whitespacesAndNewlines)
-            // pl-os: the address, then the page's title, description and picture; a link whose preview failed is still saved, bare
-            let full = [u, preview?.title, preview?.description, preview.flatMap { $0.image.isEmpty ? nil : "[image] " + $0.image }]
-                .compactMap { $0 }.filter { !$0.isEmpty }.joined(separator: "\n")
-            sent = await enqueue(kind: "url", text: full, note: nil, file: nil, label: u, toBoard: board, model: model)
-        }
-        if message != nil { return }   // the inbox itself refused: stay on the form with its sentence
-        doneOffline = !sent
-        done = true
-        sentTick += 1
-        await loadTrail(model: model)
     }
 
     // MARK: moderation (the same call House makes)
