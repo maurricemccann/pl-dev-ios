@@ -38,6 +38,7 @@ def main() -> None:
     ap.add_argument("--repo", required=True)
     ap.add_argument("--tag", required=True)
     ap.add_argument("--out", required=True)
+    ap.add_argument("--notes", default="", help="a text file: what changed in this build (SideStore shows it as What is New)")
     a = ap.parse_args()
 
     with open(os.path.join(a.app, "Info.plist"), "rb") as f:
@@ -65,6 +66,12 @@ def main() -> None:
         "size": os.path.getsize(a.ipa),
         "minOSVersion": str(info.get("MinimumOSVersion", "26.0")),
     }
+    # What is New: SideStore reads the version's own localizedDescription. Without it every build showed "NIL" (his report 11-17).
+    notes = ""
+    if a.notes and os.path.exists(a.notes):
+        with open(a.notes, encoding="utf-8") as f:
+            notes = f.read().strip()
+    version["localizedDescription"] = (notes or "No notes were written for this build.")[:1500]
     source = {
         "name": "PL DEV",
         "subtitle": "A native iPhone app",

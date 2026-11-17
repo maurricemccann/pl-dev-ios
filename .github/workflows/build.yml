@@ -26,6 +26,8 @@ jobs:
       EXTENSIONS: PLDevWidgets PLDevShare PLDevSafari
     steps:
       - uses: actions/checkout@v7
+        with:
+          fetch-depth: 0   # the notes step reads the history back to the last published build tag
 
       - name: Select Xcode 27.2
         run: sudo xcode-select -s /Applications/Xcode_27.2.app
@@ -124,11 +126,17 @@ jobs:
       - name: Write the SideStore source
         if: ${{ inputs.publish && github.ref == 'refs/heads/main' }}
         run: |
+          # What changed since the last published build, one line per commit, newest first (his report 11-17: every build said NIL).
+          PREV=$(git describe --tags --abbrev=0 --match 'build-*' HEAD 2>/dev/null || true)
+          if [ -n "$PREV" ]; then git log --no-merges --pretty='- %s' "$PREV"..HEAD | head -12 > notes.txt; else git log --no-merges --pretty='- %s' -8 > notes.txt; fi
+          [ -s notes.txt ] || echo "- Rebuilt; no code changes since $PREV." > notes.txt
+          cat notes.txt
           python3 scripts/make_source.py \
             --app "$APP" \
             --ipa PLDev.ipa \
             --repo "${{ github.repository }}" \
             --tag "build-${{ github.run_number }}" \
+            --notes notes.txt \
             --out source.json
           cat source.json
 
@@ -139,7 +147,7 @@ jobs:
         run: |
           gh release create "build-${{ github.run_number }}" PLDev.ipa source.json \
             --title "Build ${{ github.run_number }}" \
-            --notes "Unsigned build, signed on the phone by SideStore." \
+            --notes-file notes.txt \
             --latest
 
       - uses: actions/upload-artifact@v7
