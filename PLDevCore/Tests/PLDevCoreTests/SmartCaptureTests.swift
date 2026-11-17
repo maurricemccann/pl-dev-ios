@@ -12,12 +12,12 @@ final class SmartCaptureTests: XCTestCase {
         XCTAssertEqual(SmartCapture.suggest(kind: "url", text: nil, url: "https://dash.cloudflare.com/x"), .tile)
         XCTAssertEqual(SmartCapture.suggest(kind: "url", text: nil, url: "https://www.printful.com/dashboard"), .tile)
         XCTAssertEqual(SmartCapture.suggest(kind: "url", text: nil, url: "https://example.org/post"), .board)
-        XCTAssertEqual(SmartCapture.available(kind: "url", url: "https://example.org/post"), [.board, .tile, .thought, .task])
-        XCTAssertEqual(SmartCapture.available(kind: "url", url: "http://example.org/post"), [.board, .thought, .task], "no tile for plain http")
+        XCTAssertEqual(SmartCapture.available(kind: "url", url: "https://example.org/post"), [.board, .tile, .thought, .task, .today, .claude])
+        XCTAssertEqual(SmartCapture.available(kind: "url", url: "http://example.org/post"), [.board, .thought, .task, .today, .claude], "no tile for plain http")
     }
 
     func testALinkWithHighlightedTextOffersQuoteAndSeedAndLeadsWithTheText() {
-        XCTAssertEqual(SmartCapture.available(kind: "url", url: "https://example.org/a", hasText: true), [.board, .quote, .seed, .tile, .thought, .task])
+        XCTAssertEqual(SmartCapture.available(kind: "url", url: "https://example.org/a", hasText: true), [.board, .quote, .seed, .tile, .thought, .task, .today, .claude])
         XCTAssertEqual(SmartCapture.suggest(kind: "url", text: "What persists in the mind becomes your reality.", url: "https://example.org/a"), .seed)
         XCTAssertEqual(SmartCapture.suggest(kind: "url", text: nil, url: "https://dash.cloudflare.com/"), .tile)
         XCTAssertEqual(SmartCapture.suggest(kind: "url", text: "   ", url: "https://example.org/a"), .board)
