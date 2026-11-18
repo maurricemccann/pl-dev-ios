@@ -6,7 +6,7 @@ import UserNotifications
 @MainActor enum PLWorldSection: PLSection {
     static let manifest = SectionManifest(id: "plworld", title: "PL World", symbol: "globe.europe.africa", needsKeys: [], needsOrigins: [])
 
-    static func makeRoot(model: AppModel) -> AnyView { AnyView(PLWorldHome()) }
+    static func makeRoot(model: AppModel) -> AnyView { AnyView(PLWHome()) }
     static func probes(model: AppModel) -> [ProbeModel.Item] { [] }
     static func settingsRows(model: AppModel) -> AnyView? { nil }
     static func notificationCategories() -> Set<UNNotificationCategory> { [] }
