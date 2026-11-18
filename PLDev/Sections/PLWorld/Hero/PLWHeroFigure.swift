@@ -9,6 +9,7 @@ import UIKit
     let root = Entity()
     private(set) var model: Entity?
     private var anims: [Pose: AnimationResource] = [:]
+    private var fitted: [Pose: AnimationResource] = [:]   // the same clips re-fitted onto his own rig by RealityKit (played on the skinned mesh)
     private var playing: Pose?
     private(set) var missing = false
     private var armature: Entity?, bind = simd_quatf(ix: 0, iy: 0, iz: 0, r: 1), checked = 0
@@ -42,8 +43,12 @@ import UIKit
         armature = e.findEntity(named: "Armature"); bind = armature?.orientation(relativeTo: fit) ?? bind
         skin = Self.firstSkinned(e); hipsBind = skin?.jointTransforms.first?.rotation ?? hipsBind
         for (pose, name) in [(Pose.idle, "idle"), (Pose.walking, "walking"), (Pose.jump, "jump")] {
-            if let u = Self.clipURL(name), let ce = await PLWLog.entity(contentsOf: u), let a = ce.availableAnimations.first { anims[pose] = a }
+            if let u = Self.clipURL(name), let ce = await PLWLog.entity(contentsOf: u), let a = ce.availableAnimations.first {
+                anims[pose] = a
+                if let r = retarget(a, from: ce, name, model: e) { fitted[pose] = r }
+            }
         }
+        PLWLog.note("hero moves: \(fitted.count) of \(anims.count) re-fitted onto his rig by RealityKit\(fitted.count == anims.count ? "" : "; the rest play with the holder correction")")
         play(.idle)
     }
 
@@ -51,7 +56,11 @@ import UIKit
     func play(_ p: Pose) {
         guard p != playing, let model, let a = anims[p] else { return }
         playing = p
-        model.playAnimation(p == .jump ? a : a.repeat(), transitionDuration: 0.2, startsPaused: false)
+        if let r = fitted[p], let skin {     // Apple's retargeting: joints only, so nothing tips the rig over
+            skin.playAnimation(p == .jump ? r : r.repeat(), transitionDuration: 0.2, startsPaused: false)
+        } else {
+            model.playAnimation(p == .jump ? a : a.repeat(), transitionDuration: 0.2, startsPaused: false)
+        }
     }
 
     /// S350 (his "facing down like a stiff board"): the clip files' rig is turned 90 degrees from the model's (measured in Blender:
@@ -72,6 +81,26 @@ import UIKit
             PLWLog.note("hero hips (\(skin?.jointNames.first ?? "none")): clip turns them \(Int(hipOff)) deg from bind")
             PLWLog.note("hero rig v2: clip turns the rig \(Int(off)) deg; after correction rig up = \(String(format: "%.2f %.2f %.2f", up.x, up.y, up.z)) (bind up = \(String(format: "%.2f %.2f %.2f", bind.act([0, 1, 0]).x, bind.act([0, 1, 0]).y, bind.act([0, 1, 0]).z)))")
         }
+    }
+
+    /// Apple's own fix for a clip made on a rig that faces another way (RealityKit `RetargetingConfiguration.automatchBiped`, whose two
+    /// root transforms exist "when characters are positioned or oriented differently in their bind poses"). Nil, with a log line, when
+    /// anything is missing; the clip then plays as before under the holder correction in `hold()`.
+    private func retarget(_ a: AnimationResource, from ce: Entity, _ name: String, model e: Entity) -> AnimationResource? {
+        guard #available(iOS 27.0, *) else { return nil }   // shortcut: assumed iOS 27 SDK API; older iOS keeps the holder correction
+        guard let srcSkin = Self.firstSkinned(ce), let src = srcSkin.model?.mesh.contents.skeletons.first,
+              let dst = skin?.model?.mesh.contents.skeletons.first else { PLWLog.note("hero retarget \(name): no skeleton in the clip or the model"); return nil }
+        let def = a.definition
+        let sampled = (def as? SampledAnimation<JointTransforms>)
+            ?? (def as? AnimationGroup)?.group.compactMap { $0 as? SampledAnimation<JointTransforms> }.first
+        guard let sampled else { PLWLog.note("hero retarget \(name): clip is \(type(of: def)), not sampled joints"); return nil }
+        do {
+            let srcRot = ce.findEntity(named: "Armature")?.orientation(relativeTo: ce) ?? simd_quatf(ix: 0, iy: 0, iz: 0, r: 1)
+            let dstRot = e.findEntity(named: "Armature")?.orientation(relativeTo: e) ?? simd_quatf(ix: 0, iy: 0, iz: 0, r: 1)
+            let cfg = try RetargetingConfiguration.automatchBiped(try SkeletonResource(from: src), sourceTransform: Transform(rotation: srcRot),
+                                                                   to: try SkeletonResource(from: dst), targetTransform: Transform(rotation: dstRot))
+            return try AnimationResource.generate(with: try sampled.processAndCreateAnimation(retargeting: cfg))
+        } catch { PLWLog.fail("hero retarget \(name)", error); return nil }
     }
 
     private static func firstSkinned(_ e: Entity) -> ModelEntity? {
