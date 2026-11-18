@@ -162,6 +162,8 @@ struct PathScreen: View {
     var body: some View {
         let _ = seen
         VStack(spacing: 16) {
+            // a title on the Path itself, so it is named even when the bar's title is scrolled or hidden
+            Text("The Path").candleH2().accessibilityAddTraits(.isHeader).frame(maxWidth: .infinity, alignment: .leading)
             if let m = state.message { Text(m).candleHint().frame(maxWidth: .infinity, alignment: .leading) }
             // Gemini and Codex 11-17: one action first. The next lesson leads; the minutes question and the pack test follow it.
             if let course = state.course {

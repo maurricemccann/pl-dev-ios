@@ -26,6 +26,11 @@ struct PracticeEntry: View {
         }
         .contentShape(Rectangle())
         .onTapGesture { Task { await speak() } }
+        // a visible way in past the line (every screen has a way out): the nav bar is hidden while this covers the practice
+        .overlay(alignment: .topTrailing) {
+            Button { close() } label: { Text("Skip").font(.system(size: 15)).foregroundStyle(Candle.ink.opacity(0.7)).frame(minWidth: 44, minHeight: 44) }
+                .padding(.trailing, 12).padding(.top, 8).accessibilityLabel("Skip the line and open the practice")
+        }
         .accessibilityElement(children: .ignore)
         .accessibilityLabel("Hear today\u{2019}s line").accessibilityAddTraits(.isButton)
         .accessibilityAction { Task { await speak() } }
