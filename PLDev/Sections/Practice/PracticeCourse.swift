@@ -141,10 +141,10 @@ struct PathScreen: View {
         let _ = seen
         VStack(spacing: 16) {
             if let m = state.message { Text(m).candleHint().frame(maxWidth: .infinity, alignment: .leading) }
-            if minutes == 0 { goalCard }
-            Button("The pack \u{00b7} live test") { livePack = true }.buttonStyle(CandleGhost())
+            // Gemini and Codex 11-17: one action first. The next lesson leads; the minutes question and the pack test follow it.
             if let course = state.course {
                 summary(course)
+                if minutes == 0 { goalCard }
                 ForEach(course.units) { u in
                     unitCard(u, course)
                     // his ruling 11-15: each unit's lessons as fields of six, lesson n riding stroke n of The Direction
@@ -154,6 +154,7 @@ struct PathScreen: View {
             } else if state.message == nil {
                 ProgressView().tint(Candle.gold).frame(maxWidth: .infinity).padding(.top, 40)
             }
+            Button("The pack \u{00b7} live test") { livePack = true }.buttonStyle(CandleGhost()).padding(.top, 8)
         }
         .onAppear { seen += 1 }
         .task { await state.load(model: model) }
