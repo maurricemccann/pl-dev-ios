@@ -186,7 +186,12 @@ struct CaptureDropBox: View {
         }
         .onChange(of: pickerItem) { _, item in
             Task {
-                if let item, let data = try? await item.loadTransferable(type: Data.self) { photo = data; fromCamera = false; original = nil; straight = nil }
+                if let item, let data = try? await item.loadTransferable(type: Data.self) {
+                    photo = data; fromCamera = false; original = data; straight = nil
+                    // 11-18 smart capture: a library photo is straightened by default too; the crop button goes back to the original
+                    let flat = await Task.detached(priority: .userInitiated) { CaptureMeta.straightened(data) }.value
+                    if original == data { straight = flat; if let flat { photo = flat } }
+                }
                 pickerItem = nil
             }
         }

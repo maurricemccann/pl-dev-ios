@@ -71,10 +71,15 @@ import UserNotifications
                 day.locale = Locale(identifier: "en_US_POSIX")
                 // his rules 11-14: the year comes from the photo itself when it says (else the day captured); his signature goes into the
                 // image's metadata; a medium travels only when one was given (a camera capture of a physical piece)
+                // 11-18 smart capture: a share-sheet image (named image.jpg) is straightened here, on the phone, before it leaves; the drop box
+                // already did it by default (and honours his "use as taken"), so only the share path is done now. No clear rectangle = as taken.
+                let forSend = item.fileName == "image.jpg"
+                    ? (await Task.detached(priority: .userInitiated) { CaptureMeta.straightened(file) }.value).flatMap { CaptureModel.jpeg($0) } ?? jpeg
+                    : jpeg
                 let made = CaptureMeta.madeDate(of: file) ?? day.string(from: item.createdAt)
                 let title = String((item.note ?? "").prefix(120))
                 let medium = String((item.text ?? "").prefix(80))
-                let signedJPEG = CaptureMeta.signed(jpeg, artist: config.capture?.signature ?? "Psyched Luxuries", made: made, title: title)
+                let signedJPEG = CaptureMeta.signed(forSend, artist: config.capture?.signature ?? "Psyched Luxuries", made: made, title: title)
                 var query = ["title": title, "made": made]
                 if !medium.isEmpty { query["medium"] = medium }
                 let data = try await http.send(RequestPlan(origin: "cron", method: "POST", path: "api/widget/art",
