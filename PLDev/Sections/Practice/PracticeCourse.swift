@@ -38,7 +38,7 @@ struct CourseExercise: Decodable, Sendable, Identifiable, Equatable {
     var isPlayable: Bool { Self.playable.contains(kind) && (kind != "draw-it" || DrawItExercise.art(glyph ?? "") != nil) }
 }
 
-struct CourseLesson: Decodable, Sendable, Identifiable { let n: Int; let exercises: [CourseExercise]; let review_slots: Int?; var id: Int { n } }
+struct CourseLesson: Decodable, Sendable, Identifiable { let n: Int; let exercises: [CourseExercise]; let review_slots: Int?; let read: [CourseRead]?; var id: Int { n } }
 struct CoursePage: Decodable, Sendable, Identifiable { let title: String; let key: String?; var id: String { title } }
 
 struct CourseUnit: Decodable, Sendable, Identifiable {
@@ -95,8 +95,10 @@ struct Course: Decodable, Sendable { let version: Int; let units: [CourseUnit] }
         guard let prev = course.units.first(where: { $0.n == u.n - 1 }) else { return true }
         return prev.playableLessons.isEmpty || lessonsLeft(prev) == 0
     }
+    /// His ruling 11-17: a unit's lessons wait until its pages are read. A unit he already started stays playable.
+    func isPrepared(_ u: CourseUnit) -> Bool { pagesLeft(u) == 0 || lessonsLeft(u) < u.playableLessons.count }
     func next(in course: Course) -> (CourseUnit, CourseLesson)? {
-        for u in course.units where isOpen(u, in: course) {
+        for u in course.units where isOpen(u, in: course) && isPrepared(u) {
             if let l = u.playableLessons.first(where: { !isDone(u.n, $0.n) }) { return (u, l) }
         }
         return nil
@@ -147,7 +149,7 @@ struct PathScreen: View {
                     unitCard(u, course)
                     // his ruling 11-15: each unit's lessons as fields of six, lesson n riding stroke n of The Direction
                     ForEach(PracticeChapter.of(u)) { ch in
-                        PracticeField(unit: u, chapter: ch, open: record.isOpen(u, in: course)) { l in start(u, l, course) }
+                        PracticeField(unit: u, chapter: ch, open: record.isOpen(u, in: course) && record.isPrepared(u)) { l in start(u, l, course) }
                     }
                 }
             } else if state.message == nil {
@@ -193,6 +195,8 @@ struct PathScreen: View {
             if minutes > 0 { Text("About \(max(1, minutes / 3)) \(minutes / 3 > 1 ? "lessons" : "lesson") a day for your \(minutes) minutes.").candleHint() }
             if let (u, l) = record.next(in: course) {
                 Button("Next lesson: \(u.title), \(l.n)") { start(u, l, course) }.buttonStyle(CandleButton()).padding(.top, 6)
+            } else if let u = course.units.first(where: { record.isOpen($0, in: course) && !record.isPrepared($0) }) {
+                Text("Next: read \(u.title). Its lessons open when you have.").candleH2().padding(.top, 6)
             }
         }
         .candleCard()
@@ -210,6 +214,7 @@ struct PathScreen: View {
             } else {
                 Text("\(u.playableLessons.count - record.lessonsLeft(u)) of \(u.playableLessons.count) lessons drawn, in \(PracticeChapter.of(u).count) \(PracticeChapter.of(u).count == 1 ? "chapter" : "chapters") below.").candleHint().padding(.top, 4)
                 if !open { Text("Opens when the unit before it has every lesson played.").candleHint() }
+                else if !record.isPrepared(u) { Text("Read these first. The lessons open when you have.").candleH2().padding(.top, 2) }
                 if open && record.lessonsLeft(u) == 0 && !u.quiz.filter(\.isPlayable).isEmpty {
                     Button(record.quizPassed.contains(u.n) ? "Quiz passed \u{2713} \u{00b7} retake" : "Take the unit quiz") {
                         playing = LessonRun(unit: u, lesson: nil, exercises: u.quiz.filter(\.isPlayable), isQuiz: true)
@@ -272,6 +277,8 @@ struct LessonView: View {
     @State private var right = 0
     @State private var answered: Bool?
     @State private var finished = false
+    /// false until the lesson's passages are read (his ruling 11-17)
+    @State private var ready = false
     @State private var pack: PracticePack?
     @State private var packNote: String?
     @State private var buddy = BuddyModel()
@@ -290,7 +297,9 @@ struct LessonView: View {
                     ProgressView(value: Double(index), total: Double(max(1, run.exercises.count))).tint(Candle.gold)
                     Text("\(min(index + 1, run.exercises.count)) / \(run.exercises.count)").font(.system(size: 12).monospacedDigit()).foregroundStyle(Candle.ink.opacity(0.6))
                 }
-                if finished { done } else if index < run.exercises.count { exercise(run.exercises[index]) }
+                if finished { done }
+                else if !ready, let p = run.lesson?.read, !p.isEmpty, !run.isQuiz { LessonReadStep(passages: p) { ready = true } }
+                else if index < run.exercises.count { exercise(run.exercises[index]) }
                 Spacer(minLength: 0)
                 // his ruling 11-15: Buddy lives down in the empty space under the exercise (never over it), as large as the room left
                 // allows; a tap plays his next move
