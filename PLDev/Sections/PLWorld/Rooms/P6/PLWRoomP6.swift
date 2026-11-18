@@ -4,7 +4,7 @@ import simd
 
 // Page 6, The Dwarfing (gemini-s340/06-the-dwarfing-spec.md, web room6.js). A forest bowl 34 m across, mostly grey, and his tree 28 m tall with his eyes (the pupils follow GlyphGuy)
 // and plate 6's grin. Stand in the circle before the face: the camera climbs the trunk, an emerald wave follows it, the grin warms to gold and colour comes back.
-// Not built here (need a contract line, listed in LANES-plw-d.md): the S341 root shelf and the hold-JUMP updraft. Local frame: start at the origin facing -Z, exit at z = -34.2.
+// S341's tree-as-a-place: a root shelf ringing the trunk 9 m up and a green updraft that floats him to it (hold JUMP, the `.lift` command). Local frame: start at the origin facing -Z, exit at z = -34.2.
 
 @MainActor final class PLWRoomP6: PLWDRoom {
     private let radius: Float = 17, wallH: Float = 16
@@ -16,7 +16,8 @@ import simd
     private var grin = Entity(), faceTex: TextureResource?
     private var pupils: [(e: ModelEntity, c: V3, tg: V3, u: Float, v: Float)] = []
     private var lookT: Float = -1, colour: Float = 0, lastColour: Float = -1, inLook = false, nearCarve = false, carveFound = false, said = ""
-    private var carvePos: V3 = .zero
+    private var carvePos: V3 = .zero, updraft: V3 = .zero, taught = false
+    private let shelfY: Float = 9, updraftH: Float = 10.6
 
     init() { super.init(.p6) }
 
@@ -78,6 +79,16 @@ import simd
             let e = picture(pupilTex, await PLWD.quad(123 * fs, 256 * fs), tint: .black, at: c, yaw: atan2(n.x, n.z))
             pupils.append((e, c, simd_normalize(simd_cross([0, 1, 0], n)), 0, 0))
         }
+        // the root shelf ringing the trunk 9 m up (round the sides and back, never over his face), and the green updraft on the east that floats him up to it
+        let ringPts: [V3] = (0...22).map { k in let a = 1.0 + Float(k) / 22 * (2 * .pi - 2.0); return tree + V3(sin(a) * 5.9, shelfY - 0.65, cos(a) * 5.9) }
+        for k in 0..<22 {
+            let a = ringPts[k], b = ringPts[k + 1], m = (a + b) / 2, d = b - a
+            bark.append(box([simd_length(d) + 0.15, 1.3, 3.4], barkSkin.twoSidedCopy(), at: m, yaw: atan2(-d.z, d.x), round: 0.1))
+        }
+        updraft = tree + V3(sin(1.75) * 10.2, 0, cos(1.75) * 10.2)
+        let col = ModelEntity(mesh: .generateCylinder(height: updraftH, radius: 2), materials: [])
+        var um = UnlitMaterial(color: UIColor.world(0x2EE676)); um.blending = .transparent(opacity: 0.25); um.faceCulling = .none; col.model?.materials = [um]
+        col.position = updraft + [0, updraftH / 2, 0]; root.addChild(col)
         // the emerald wave that climbs the trunk
         var wm = UnlitMaterial(color: UIColor.world(0x2EE676)); wm.blending = .transparent(opacity: 0.45)
         let w = ModelEntity(mesh: .generateCylinder(height: 0.4, radius: 5.2), materials: [wm]); w.position = tree + [0, 1, 0]; w.isEnabled = false; root.addChild(w); wave = w
@@ -145,6 +156,10 @@ import simd
             level(grin, 0.07 + 0.93 * PLWD.smooth(3.8, 4.2, lookT))
         } else { wave?.isEnabled = false; level(grin, momentDone ? 1 : 0.07) }
         paint()
+        // the updraft: hold JUMP inside the green column and the integrator lifts him (it clamps the acceleration)
+        let inDraft = flat(p, updraft) < 2.1 && p.y < updraftH
+        if inDraft, f.jumpHeld { out.append(.lift(22)) }
+        if !taught, flat(p, updraft) < 6, lookT >= 5.4 || momentDone { taught = true; out += say("hold JUMP in the green updraft to float") }
         if lookT < 0, flat(p, lookAt) < 7 { out += say("look up") } else if said == "look up" { _ = say("") }
         for i in pupils.indices {
             let d = p + [0, 0.6, 0] - pupils[i].c, l = max(simd_length(d), 0.001)

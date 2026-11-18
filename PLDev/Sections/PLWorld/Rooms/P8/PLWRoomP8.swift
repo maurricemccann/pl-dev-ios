@@ -4,7 +4,7 @@ import simd
 
 // Page 8, The Launch (gemini-s340/08-the-launch-spec.md, web room8.js). A storm gorge of indigo basalt, cliffs leaning in overhead, a wet slate floor with his curve tile down the middle,
 // his two clouds from plate 8 spanning the gap (gold over the test, blue beyond) and a veil of rain. Halfway a gold mark lights: hold still on it and a gold dome of his curves forms round
-// him; his bolt falls from the gold cloud, meets the dome and bends away into the rock. Not built (needs a contract line, listed in LANES-plw-d.md): the S341 zip along the gold curve.
+// him; his bolt falls from the gold cloud, meets the dome and bends away into the rock. S341's zip: hold ACT at either end of the gold curve between the bays and the integrator carries him along it (`.rail`).
 // Local frame: start at the origin facing -Z, the gorge runs 30 m to the exit at z = -30.
 
 @MainActor final class PLWRoomP8: PLWDRoom {
@@ -17,6 +17,7 @@ import simd
     private var mark: ModelEntity?, dome: ModelEntity?, bolt: ModelEntity?, glance: ModelEntity?, study: ModelEntity?
     private var strikeLight = Entity(), shieldLight = Entity()
     private var still: Float = 0, strikeT: Float = -1, done = false, nearTest = false, nearStudy = false, studyFound = false
+    private var zipPts: [V3] = [], railCool: Float = 0, taught = false
     private var markA: Float = 0, domeA: Float = 0, lastFlash: Float = -1, said = ""
 
     init() { super.init(.p8) }
@@ -108,6 +109,10 @@ import simd
         box([2.4, 0.4, 1.6], basalt, at: studyPos + [0, 2.3, 0] - sn * 0.2, yaw: syaw)
         study = picture(boltTex, await PLWD.quad(0.85, 1.24), tint: UIColor(white: 0.45, alpha: 1), at: studyPos + [0, 0.8, 0] + sn * 0.21, yaw: syaw + .pi)
 
+        // the zip: a gold curve from one bay's top terrace over the gorge to the other's, thicker at its two anchors (it passes 7 m over the storm mark)
+        zipPts = PLWD.spline([off(8, -9.4, 2.6), off(11.5, -6.2, 4.9), off(16.2, -2.2, 7.2), off(20.6, -5.6, 5.3), off(24.5, -9.4, 2.6)], per: 14)
+        add(await PLWD.tube(zipPts.map { $0 + [0, -0.16, 0] }, radius: { 0.11 * (1 + 1.6 * pow(abs(2 * $0 - 1), 6)) }, sides: 8), PLWDSkin(hex: 0xF0C44C, rough: 0.3, metal: 0.5, glow: 0xF0C44C, glowK: 1.2))
+
         // light: a dim storm fill, the strike light at 18 m, the shield's gold, the gold behind his cloud, the next page's colour at the way out
         sun(150, from: [4, 20, 6], toward: [0, 0, -15], color: 0x6E83B0)
         sun(420, from: [-4, 22, 8], toward: [0, 0, -15], color: 0x4A5A80)
@@ -178,6 +183,16 @@ import simd
         var out: [PLWCommand] = []
         let dt = f.dt, p = f.position
         rainV -= dt * 1.9; setRain()
+        // the zip: hold ACT within reach of either end; the integrator carries him to the other and locks input until then
+        railCool = max(0, railCool - dt)
+        if let first = zipPts.first, let last = zipPts.last {
+            let atFirst = simd_distance(p, first) < 2.2, atLast = simd_distance(p, last) < 2.2
+            if f.actHeld, railCool == 0, atFirst != atLast {
+                var len: Float = 0; for i in 1..<zipPts.count { len += simd_distance(zipPts[i], zipPts[i - 1]) }
+                out.append(.rail(points: atFirst ? zipPts : zipPts.reversed(), speed: 9)); railCool = len / 9 + 1.5
+            }
+            if !taught, atFirst || atLast { taught = true; out += say("hold ACT and steer along the gold curve to zip") }
+        }
         // a soft distant flash every 4 s (no strobe)
         let flash = 0.6 * max(0, 1 - clock.truncatingRemainder(dividingBy: 4) / 0.4)
         if abs(flash - lastFlash) > 0.03 { lastFlash = flash; tintClouds(flash: flash) }
