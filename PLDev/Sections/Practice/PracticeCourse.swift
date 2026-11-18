@@ -110,6 +110,9 @@ struct Course: Decodable, Sendable { let version: Int; let units: [CourseUnit] }
     }
     /// One earlier exercise for review: the most-missed item first, then a shuffled deck over the rest.
     func review(for unit: CourseUnit, in course: Course) -> CourseExercise? {
+        // spaced review first (PracticeReview): an item he has met whose time has come, from this unit or any before it
+        let met = course.units.filter { $0.n <= unit.n }.flatMap { $0.lessons.flatMap(\.exercises) + $0.quiz }.filter { $0.isPlayable && LessonView.graded($0) }
+        for item in PracticeReview.due() { if let e = met.first(where: { $0.item == item }) { return e } }
         let pool = course.units.filter { $0.n < unit.n }.flatMap(\.quiz).filter(\.isPlayable)
         guard !pool.isEmpty else { return nil }
         if let worst = pool.max(by: { (misses[$0.item] ?? 0) < (misses[$1.item] ?? 0) }), (misses[worst.item] ?? 0) > 0 { return worst }
@@ -355,6 +358,7 @@ struct LessonView: View {
                 if ok { if Self.graded(e) { right += 1 }; streak += 1; buddy.react(streak % 3 == 0 ? .streak : .right); Task { await BuddyIsland.show("open", Self.graded(e) ? "Right." : "Kept.") } }
                 else { record.miss(e.item); streak = 0; buddy.react(.wrong); Task { await BuddyIsland.show("rest", "It comes back later.") } }
                 PracticeSound.play(ok ? .right : .wrong)   // his picks by ear 11-15
+                if Self.graded(e) { PracticeReview.record(e.item, right: ok) }
             }
             .id(e.id + "\(index)")
             if let answered {
