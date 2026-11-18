@@ -3,7 +3,7 @@ import Foundation
 /// Spaced review (council 11-17, Codex and Gemini agreeing): an item answered right comes back after 1, 3, 7, 14, then 30 days;
 /// a miss moves only that item back to tomorrow. Nothing here is ever shown as debt, overdue or a count against him.
 /// Stored per item as [stage, due time], beside the course record in the phone's defaults.
-enum PracticeReview {
+enum SpacedReview {
     static let days: [Double] = [1, 3, 7, 14, 30]
     private static let key = "course.review.state"
     private static var store: UserDefaults { .standard }
