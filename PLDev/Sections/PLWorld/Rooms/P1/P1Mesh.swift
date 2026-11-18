@@ -113,6 +113,6 @@ struct P1Mesh {
         d.normals = MeshBuffers.Normals(nn)
         d.textureCoordinates = MeshBuffers.TextureCoordinates(uv.map { SIMD2<Float>($0.x, 1 - $0.y) })   // RealityKit's V runs down the image
         d.primitives = .triangles(idx)
-        return try? MeshResource.generate(from: [d])
+        return PLWLog.mesh(from: [d])
     }
 }

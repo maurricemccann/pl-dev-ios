@@ -4,7 +4,7 @@ import Observation
 /// What the app did, kept in memory: the last 40 lines on screen in Settings, and, only while Debug is on,
 /// scrubbed events sent to the owner's own log address. Logging never throws and never blocks a caller.
 @MainActor @Observable final class DebugLog {
-    static let shown = 40
+    static let shown = 200   // S350: his ask, "read all errors" (was 40)
 
     private(set) var lines: [String] = []
 

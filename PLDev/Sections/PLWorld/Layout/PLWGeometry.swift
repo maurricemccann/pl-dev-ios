@@ -51,7 +51,7 @@ struct PLWMeshBuilder {
         d.normals = MeshBuffers.Normals(nor)
         d.textureCoordinates = MeshBuffers.TextureCoordinates(uv)
         d.primitives = .triangles(idx)
-        return try? MeshResource.generate(from: [d])
+        return PLWLog.mesh(from: [d])
     }
 
     /// A profile (radius, height) swept round the origin from a0 to a1 degrees. The solid lies to the RIGHT of travel, so the visible face is on the LEFT:
@@ -95,7 +95,7 @@ struct PLWMeshBuilder {
     static func loadTile() async -> TextureResource? {
         guard let url = Bundle.main.url(forResource: "plw-hub-tile", withExtension: "png"),
               let cg = UIImage(contentsOfFile: url.path)?.cgImage else { return nil }
-        return try? await TextureResource(image: cg, options: .init(semantic: .color, mipmapsMode: .allocateAndGenerateAll))
+        return await PLWLog.texture(image: cg, options: .init(semantic: .color, mipmapsMode: .allocateAndGenerateAll))
     }
 
     func material(rgb: SIMD3<Float>, textured: Bool, rough: Float, metal: Float, glow: Float, opacity: Float, fixed: Bool) -> PhysicallyBasedMaterial {
@@ -137,5 +137,5 @@ struct PLWMeshBuilder {
         ShapeResource.generateBox(size: size).offsetBy(rotation: simd_quatf(angle: roll, axis: SIMD3<Float>(0, 0, 1)), translation: p)
     }
     /// A triangle-mesh shape for a revolved piece; nil if RealityKit refuses it (the piece then renders but does not block: logged by the caller).
-    static func mesh(_ m: MeshResource) async -> ShapeResource? { try? await ShapeResource.generateStaticMesh(from: m) }
+    static func mesh(_ m: MeshResource) async -> ShapeResource? { await PLWLog.staticMesh(from: m) }
 }

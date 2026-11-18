@@ -29,12 +29,13 @@ import UIKit
 
     /// Loads the model, scaled to `height` metres (his GlyphGuy is fitted by its longest side, as the labs do), and the three clips the runtime needs.
     func load(_ hero: PLWHero, height: Float) async {
-        guard let url = Self.modelURL(hero), let e = try? await Entity(contentsOf: url) else { missing = true; return }
+        guard let url = Self.modelURL(hero) else { PLWLog.note("FAILED hero model: \(hero) has no usdz in the app"); missing = true; return }
+        guard let e = await PLWLog.entity(contentsOf: url) else { missing = true; return }
         let fit = ThreeDModels.fitted(e, longest: height)
         root.addChild(fit)
         model = e
         for (pose, name) in [(Pose.idle, "idle"), (Pose.walking, "walking"), (Pose.jump, "jump")] {
-            if let u = Self.clipURL(name), let ce = try? await Entity(contentsOf: u), let a = ce.availableAnimations.first { anims[pose] = a }
+            if let u = Self.clipURL(name), let ce = await PLWLog.entity(contentsOf: u), let a = ce.availableAnimations.first { anims[pose] = a }
         }
         play(.idle)
     }

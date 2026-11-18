@@ -61,7 +61,7 @@ struct PLWEPaint { let entity: ModelEntity; var mat: PLWEMat }
         out.setFillColor(ui(ground).cgColor); out.fill(rect)
         out.draw(strokes, in: rect)
         guard let done = out.makeImage() else { return nil }
-        return try? await TextureResource(image: done, options: .init(semantic: .color))
+        return await PLWLog.texture(image: done, options: .init(semantic: .color))
     }
     /// His glyph silhouette (`plwe-glyph-<name>.png`) recoloured gold, alpha kept.
     static func glyphArt(_ name: String) async -> (tex: TextureResource, aspect: Float)? {
@@ -70,12 +70,12 @@ struct PLWEPaint { let entity: ModelEntity; var mat: PLWEMat }
         guard let ctx = CGContext(data: nil, width: w, height: h, bitsPerComponent: 8, bytesPerRow: 0, space: CGColorSpaceCreateDeviceRGB(), bitmapInfo: CGImageAlphaInfo.premultipliedLast.rawValue) else { return nil }
         let r = CGRect(x: 0, y: 0, width: w, height: h)
         ctx.draw(src, in: r); ctx.setBlendMode(.sourceIn); ctx.setFillColor(ui(rgb(0xFFC83A)).cgColor); ctx.fill(r)
-        guard let img = ctx.makeImage(), let tex = try? await TextureResource(image: img, options: .init(semantic: .color)) else { return nil }
+        guard let img = ctx.makeImage(), let tex = await PLWLog.texture(image: img, options: .init(semantic: .color)) else { return nil }
         return (tex, Float(w) / Float(h))
     }
     static func plainTexture(_ name: String) async -> TextureResource? {
         guard let url = Bundle.main.url(forResource: name, withExtension: "png") else { return nil }
-        return try? await TextureResource(contentsOf: url, options: .init(semantic: .color))
+        return await PLWLog.texture(contentsOf: url, options: .init(semantic: .color))
     }
 
     // MARK: materials and lights
@@ -134,7 +134,7 @@ struct PLWEPaint { let entity: ModelEntity; var mat: PLWEMat }
         var d = MeshDescriptor(name: "plwe")
         d.positions = MeshBuffers.Positions(pos); d.normals = MeshBuffers.Normals(nrm); d.textureCoordinates = MeshBuffers.TextureCoordinates(uvs)
         d.primitives = .triangles(idx)
-        return try? MeshResource.generate(from: [d])
+        return PLWLog.mesh(from: [d])
     }
 
     /// A round disc or dome: `height(x, z)` gives the surface, rings from the centre out. Faces up.
@@ -212,7 +212,7 @@ struct PLWEPaint { let entity: ModelEntity; var mat: PLWEMat }
         }
         var d = MeshDescriptor(name: "blobs")
         d.positions = MeshBuffers.Positions(pos); d.normals = MeshBuffers.Normals(nrm); d.textureCoordinates = MeshBuffers.TextureCoordinates(uv); d.primitives = .triangles(idx)
-        return try? MeshResource.generate(from: [d])
+        return PLWLog.mesh(from: [d])
     }
 
     /// Runs of angles round a full circle with the door gaps left out (each run becomes one wall mesh).
@@ -240,7 +240,7 @@ struct PLWEPaint { let entity: ModelEntity; var mat: PLWEMat }
     // MARK: collision
     /// Static collision for a solid piece (a static mesh shape needs the static physics body mode as well).
     static func solid(_ e: ModelEntity) async {
-        guard let mesh = e.model?.mesh, let shape = try? await ShapeResource.generateStaticMesh(from: mesh) else { return }
+        guard let mesh = e.model?.mesh, let shape = await PLWLog.staticMesh(from: mesh) else { return }
         e.components.set(CollisionComponent(shapes: [shape]))
         e.components.set(PhysicsBodyComponent(massProperties: .default, material: nil, mode: .static))
     }
@@ -296,7 +296,7 @@ struct PLWEPaint { let entity: ModelEntity; var mat: PLWEMat }
     /// A turning gold token for one glyph key. (Stand-in form until his Glyph Field art is wired: see LANES-plw-e.md.)
     func addGlyphs(_ list: [PLWGlyphPlacement]) async {
         glyphs = list
-        let coin = try? MeshResource.generate(from: [PLWEKit.glyphTokenDescriptor()])
+        let coin = PLWLog.mesh(from: [PLWEKit.glyphTokenDescriptor()])
         var goldCoin = PLWEMat(0xE8B21A, rough: 0.28, metal: 0.9); goldCoin.emissive = PLWEKit.rgb(0xFFC83A); goldCoin.emissiveI = 0.35
         for g in list {
             let e: ModelEntity

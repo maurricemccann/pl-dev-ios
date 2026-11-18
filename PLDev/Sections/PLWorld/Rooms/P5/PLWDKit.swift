@@ -44,7 +44,7 @@ extension PLWDSkin { func twoSidedCopy() -> PLWDSkin { var s = self; s.twoSided 
     static func texture(_ name: String, _ folder: String) async -> TextureResource? {
         guard let url = Bundle.main.url(forResource: name, withExtension: "png") ?? Bundle.main.url(forResource: name, withExtension: "png", subdirectory: "PLWorld/\(folder)") else { return nil }
         guard let cg = UIImage(contentsOfFile: url.path)?.cgImage else { return nil }
-        return try? await TextureResource(image: cg, options: .init(semantic: .color))
+        return await PLWLog.texture(image: cg, options: .init(semantic: .color))
     }
 
     /// A texture drawn in code (grass, plaster): the closure paints a size x size square, seeded so it is the same every run.
@@ -52,7 +52,7 @@ extension PLWDSkin { func twoSidedCopy() -> PLWDSkin { var s = self; s.twoSided 
         let r = UIGraphicsImageRenderer(size: CGSize(width: size, height: size), format: { let f = UIGraphicsImageRendererFormat(); f.scale = 1; f.opaque = opaque; return f }())
         let img = r.image { paint($0.cgContext) }
         guard let cg = img.cgImage else { return nil }
-        return try? await TextureResource(image: cg, options: .init(semantic: .color))
+        return await PLWLog.texture(image: cg, options: .init(semantic: .color))
     }
 
     static func smooth(_ a: Float, _ b: Float, _ x: Float) -> Float { let t = max(0, min(1, (x - a) / (b - a))); return t * t * (3 - 2 * t) }
@@ -160,7 +160,7 @@ extension PLWDSkin { func twoSidedCopy() -> PLWDSkin { var s = self; s.twoSided 
         return await ribbon(rows, metresPerUV: 3)
     }
 
-    static func shape(_ m: MeshResource) async -> ShapeResource? { try? await ShapeResource.generateStaticMesh(from: m) }
+    static func shape(_ m: MeshResource) async -> ShapeResource? { await PLWLog.staticMesh(from: m) }
 }
 
 // MARK: - the room base

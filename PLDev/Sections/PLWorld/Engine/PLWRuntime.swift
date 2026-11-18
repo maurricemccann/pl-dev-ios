@@ -141,11 +141,11 @@ import simd
     private func build(_ area: PLWArea) async {
         var r: any PLWRoom = PLWRoomRegistry.make(area)
         do { try await r.load() } catch {
-            AppModel.shared.debug.note("plworld", "room \(area.rawValue) did not load (\(error.localizedDescription)); greybox in its place")
+            PLWLog.fail("room \(area.rawValue) (greybox stands in)", error)
             r.unload()
-            notice = "Area \(area.rawValue) did not load; a plain room stands in."
+            notice = "Area \(area.rawValue) did not load: \(String(describing: error)). A plain room stands in. Settings > Log has the details."
             r = PLWRoomGreybox(area: area)
-            do { try await r.load() } catch { return }
+            do { try await r.load() } catch { PLWLog.fail("greybox for room \(area.rawValue)", error); return }
         }
         guard rooms[area] == nil else { r.unload(); return }
         r.restore(store.save)

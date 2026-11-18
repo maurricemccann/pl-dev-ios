@@ -357,6 +357,12 @@ struct DebugLogView: View {
                 EmptyNote(symbol: "text.alignleft", title: "Nothing noted yet", detail: "What the app does shows here as it happens.")
                     .listRowBackground(Color.clear)
             } else {
+                // S350, his ask: "have it read all errors and I can send it to you"; the lines are already scrubbed of keys
+                ShareLink(item: log.lines.reversed().joined(separator: "\n"), subject: Text("PL DEV log"), message: Text("PL DEV log")) {
+                    Label("Send the log", systemImage: "square.and.arrow.up")
+                        .plFont(.body)
+                        .frame(minHeight: 44)
+                }
                 ForEach(Array(log.lines.enumerated()), id: \.offset) { _, line in
                     Text(line)
                         .plFont(.footnote)

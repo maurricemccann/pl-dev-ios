@@ -142,7 +142,7 @@ import simd
         await add(PLWMeshBuilder.revolve([SIMD2(0, 0.9), SIMD2(3.3, 0.9), SIMD2(3.6, 0.55), SIMD2(3.9, 0)], from: 0, to: 360, stepDeg: 6, metres: 2), "plw.hub.pedestal",
                   rgb: SIMD3<Float>(0.85, 0.65, 0.18), rough: 0.3, metal: 0.85, fixed: true)
         let holder = Entity(); holder.name = "plw.hub.heart"; holder.position = SIMD3<Float>(0, 0.9, 0)
-        if let url = Bundle.main.url(forResource: "heart1", withExtension: "usdz"), let e = try? await Entity(contentsOf: url) {
+        if let url = Bundle.main.url(forResource: "heart1", withExtension: "usdz"), let e = await PLWLog.entity(contentsOf: url) {
             var gold = PhysicallyBasedMaterial()
             gold.baseColor = .init(tint: UIColor(red: 0.91, green: 0.70, blue: 0.10, alpha: 1))
             gold.roughness = .init(floatLiteral: 0.28); gold.metallic = .init(floatLiteral: 1)
