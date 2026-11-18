@@ -63,7 +63,7 @@ struct NativeLayersSheet: View {
     private func groupHeader(_ id: Int) -> some View {
         let g = canvas.groupRows.first { $0.id == id }
         return HStack {
-            Button { canvas.setGroup(id, "open", !(g?.open ?? true), history: false) } label: { Image(systemName: (g?.open ?? true) ? "chevron.down" : "chevron.right").frame(width: 22) }.buttonStyle(.plain)
+            Button { canvas.setGroup(id, "open", !(g?.open ?? true), history: false) } label: { Image(systemName: (g?.open ?? true) ? "chevron.down" : "chevron.right").frame(width: 44, height: 44).contentShape(Rectangle()) }.buttonStyle(.plain)
             Image(systemName: "folder")
             Text(g?.name ?? "Group").font(.subheadline.weight(.semibold))
             Spacer()
@@ -86,7 +86,7 @@ struct NativeLayersSheet: View {
     private func layerRow(_ row: LayerRow) -> some View {
         let on = row.id == canvas.activeLayer && canvas.selectedGroup == 0
         return HStack(spacing: 10) {
-            Button { canvas.toggleVisible(row.id) } label: { Image(systemName: row.visible ? "eye" : "eye.slash").frame(width: 26) }
+            Button { canvas.toggleVisible(row.id) } label: { Image(systemName: row.visible ? "eye" : "eye.slash").frame(width: 44, height: 44).contentShape(Rectangle()) }
                 .buttonStyle(.plain)
                 .simultaneousGesture(LongPressGesture(minimumDuration: 0.55).onEnded { _ in canvas.soloLayer(row.id) })
                 .accessibilityLabel(row.visible ? "Hide \(row.name)" : "Show \(row.name)")

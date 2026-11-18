@@ -76,7 +76,7 @@ struct NativeCanvasView: View {
     // MARK: bars
 
     private func roundButton(_ symbol: String, _ label: String, disabled: Bool = false, on: Bool = false, action: @escaping () -> Void) -> some View {
-        Button(action: action) { Image(systemName: symbol).font(.body.weight(.semibold)).frame(width: 38, height: 38) }
+        Button(action: action) { Image(systemName: symbol).font(.body.weight(.semibold)).frame(width: 44, height: 44) }
             .glassControl(tint: on ? Wallpaper.line : nil, in: Circle())
             .disabled(disabled).opacity(disabled ? 0.45 : 1).accessibilityLabel(label)
     }
@@ -125,7 +125,7 @@ struct NativeCanvasView: View {
     /// The ••• opens Actions (NativeActions.swift): tabs in a sheet that keeps its place. It was a 30-row Menu that redrew on every
     /// canvas change and jumped back to its top, so Settings, its last row, could not be reached (his note 11-14).
     private var moreMenu: some View {
-        Button { canvas.panel = .actions } label: { Image(systemName: "wrench.adjustable").font(.body.weight(.semibold)).frame(width: 38, height: 38) }
+        Button { canvas.panel = .actions } label: { Image(systemName: "wrench.adjustable").font(.body.weight(.semibold)).frame(width: 44, height: 44) }
             .buttonStyle(.plain)
             .glassControl(in: Circle()).accessibilityLabel("Actions").accessibilityIdentifier("canvas.actions")
     }
@@ -295,7 +295,7 @@ struct NativeCanvasView: View {
     }
 
     private func dockButton(_ symbol: String, _ label: String, on: Bool, _ action: @escaping () -> Void) -> some View {
-        Button(action: action) { Image(systemName: symbol).font(.callout).frame(width: 34, height: 30) }
+        Button(action: action) { Image(systemName: symbol).font(.callout).frame(width: 34, height: 30).padding(.vertical, 7).padding(.horizontal, 5).contentShape(Rectangle()) }
             .buttonStyle(.plain)
             .background(on ? Wallpaper.line.opacity(0.35) : .clear, in: RoundedRectangle(cornerRadius: 9, style: .continuous))
             .accessibilityLabel(label)
