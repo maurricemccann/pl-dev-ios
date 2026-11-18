@@ -1,4 +1,5 @@
 import Foundation
+import Metal
 import RealityKit
 import UIKit
 import simd
