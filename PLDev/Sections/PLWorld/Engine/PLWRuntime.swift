@@ -185,7 +185,7 @@ import simd
         guard let r = room else { return }
         let tr = r.ports[port] ?? r.ports["start"] ?? Transform()
         let p = r.root.convert(position: tr.translation, to: nil)
-        player.position = p + SIMD3(0, tuning.capsuleHeight / 2 + 0.05, 0)
+        player.teleportCharacter(to: p + SIMD3(0, tuning.capsuleHeight / 2 + 0.05, 0), relativeTo: nil)   // S350: a plain position set was undone by the controller, so a respawn looped forever (his 1:10 PM recording)
         let fwd = tr.rotation.act(SIMD3<Float>(0, 0, -1))
         camera.yaw = atan2(-fwd.x, -fwd.z); camera.snap()
         facing = camera.yaw; vel = .zero; airLock = 0.2
@@ -301,7 +301,11 @@ import simd
         if grounded, !wasGrounded { kick(.soft) }
         wasGrounded = grounded
         let feet = player.position - SIMD3(0, t.capsuleHeight / 2, 0)
-        if feet.y < -80 { Task { await respawn() }; return }                    // fell out of the world: back to the last checkpoint
+        if feet.y < -80 {                                                        // fell out of the world: back to the last checkpoint, once
+            ready = false
+            PLWLog.note("fell out at \(Int(feet.x)) \(Int(feet.y)) \(Int(feet.z)) in \(current); back to \(store.save.checkpointArea) \(store.save.checkpointPort)")
+            Task { await respawn() }; return
+        }
 
         // the hero: turns toward where he goes, plays idle, walking or jump
         let speed = simd_length(SIMD2(vel.x, vel.z))
