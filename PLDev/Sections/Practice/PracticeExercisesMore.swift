@@ -100,6 +100,8 @@ struct SayItExercise: View {
                     .buttonStyle(CandleButton())
                     if !heard.isEmpty && !listening { Button("Check") { check() }.buttonStyle(CandleGhost()) }
                 }
+                // Codex critic 11-17: a refused microphone or a missed hearing never traps the lesson
+                if !listening { Button("I said it aloud") { answer(true) }.buttonStyle(CandleGhost()).frame(minHeight: 44) }
             }
         }
         .onDisappear { if listening { say.stop() } }
