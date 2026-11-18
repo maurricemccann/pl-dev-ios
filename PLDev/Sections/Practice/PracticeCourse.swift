@@ -440,17 +440,25 @@ struct OptionExercise: View {
 
     var body: some View {
         VStack(alignment: .leading, spacing: 12) {
-            if let text { Text(text).font(.system(size: 19)).foregroundStyle(Candle.ink).lineSpacing(4).fixedSize(horizontal: false, vertical: true) }
+            // Gemini 11-17: the question sits in its own card; the answers are full-width rows and the right one fills gold
+            if let text { Text(text).font(.system(size: 19)).foregroundStyle(Candle.ink).lineSpacing(4).fixedSize(horizontal: false, vertical: true)
+                .frame(maxWidth: .infinity, alignment: .leading).candleCard(padding: 18).padding(.bottom, 6) }
             ForEach(Array(options.enumerated()), id: \.offset) { i, o in
-                Button { guard !locked else { return }; picked = i; answer(i == correct) } label: {
-                    Text(o).font(.system(size: 15)).foregroundStyle(Candle.ink).multilineTextAlignment(.leading)
-                        .frame(maxWidth: .infinity, minHeight: 44, alignment: .leading).padding(.horizontal, 14).padding(.vertical, 6)
-                        .overlay { RoundedRectangle(cornerRadius: 8, style: .continuous).strokeBorder(line(i), lineWidth: locked && i == correct ? 2 : 1) }
+                Button { guard !locked else { return }; withAnimation(.snappy(duration: 0.22)) { picked = i }; answer(i == correct) } label: {
+                    Text(o).font(.system(size: 16, weight: filled(i) ? .semibold : .regular)).foregroundStyle(filled(i) ? Candle.bg : Candle.ink).multilineTextAlignment(.leading)
+                        .frame(maxWidth: .infinity, minHeight: 52, alignment: .leading).padding(.horizontal, 16).padding(.vertical, 6)
+                        .background { RoundedRectangle(cornerRadius: 14, style: .continuous).fill(filled(i) ? Candle.gold : Candle.ink.opacity(i == picked ? 0.1 : 0.03)) }
+                        .overlay { RoundedRectangle(cornerRadius: 14, style: .continuous).strokeBorder(line(i), lineWidth: locked && i == correct ? 2 : 1) }
+                        .scaleEffect(i == picked ? 1.02 : 1)
+                        .contentShape(Rectangle())
                 }
                 .buttonStyle(.plain).disabled(locked)
             }
         }
+        .sensoryFeedback(.selection, trigger: picked)
     }
+    /// The right answer fills gold once the answer is in; a wrong pick stays a soft fill, never red.
+    private func filled(_ i: Int) -> Bool { locked && i == correct }
     private func line(_ i: Int) -> Color {
         guard locked else { return Candle.pillLine }
         if i == correct { return Candle.gold }
