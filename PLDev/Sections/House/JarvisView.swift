@@ -47,7 +47,7 @@ import SwiftUI
         guard model.http != nil else { online = false; return }
         guard let cfg = await get("api/config", ConfigReply.self, timeout: 4) else { online = false; return }
         online = true
-        let order = ["npu", "fast", "ollama", "vjcoder", "drafter", "council", "oracle"]
+        let order = ["npu", "fast", "vjcoder", "drafter", "council", "oracle"]
         let all = cfg.brains ?? [:]
         let keys = order.filter { all[$0] != nil } + all.keys.filter { !order.contains($0) }.sorted()
         brains = [("conductor", "\u{25C6} Conductor")] + keys.map { ($0, all[$0] ?? $0) }
@@ -331,14 +331,14 @@ struct JarvisView: View {
                 Text(">").foregroundStyle(accent)
                 TextField(j.recording ? (j.heard.isEmpty ? "Listening\u{2026}" : j.heard) : "Talk to the fleet\u{2026}", text: $input).focused($focused).disabled(j.busy).submitLabel(.send)
                     .onSubmit { let t = input; input = ""; j.send(t) }.tint(accent)
-                Button { Task { await j.toggleMic() } } label: { Image(systemName: j.recording ? "record.circle.fill" : "mic").frame(width: 36, height: 44) }
+                Button { Task { await j.toggleMic() } } label: { Image(systemName: j.recording ? "record.circle.fill" : "mic").frame(width: 44, height: 44) }
                     .foregroundStyle(j.recording ? accent : dim).accessibilityLabel("Voice input")
-                Button { j.speak.toggle() } label: { Image(systemName: j.speak ? "speaker.wave.2.fill" : "speaker.slash").frame(width: 32, height: 44) }
+                Button { j.speak.toggle() } label: { Image(systemName: j.speak ? "speaker.wave.2.fill" : "speaker.slash").frame(width: 44, height: 44) }
                     .foregroundStyle(j.speak ? amber : dim).opacity(j.speak ? 1 : 0.6).accessibilityLabel("Speak replies aloud")
                 if j.busy {
-                    Button { j.stop() } label: { Image(systemName: "stop.circle").frame(width: 36, height: 44) }.foregroundStyle(accent).accessibilityLabel("Stop")
+                    Button { j.stop() } label: { Image(systemName: "stop.circle").frame(width: 44, height: 44) }.foregroundStyle(accent).accessibilityLabel("Stop")
                 } else {
-                    Button { let t = input; input = ""; j.send(t) } label: { Image(systemName: "return").frame(width: 36, height: 44) }
+                    Button { let t = input; input = ""; j.send(t) } label: { Image(systemName: "return").frame(width: 44, height: 44) }
                         .foregroundStyle(accent).disabled(input.trimmingCharacters(in: .whitespaces).isEmpty).accessibilityLabel("Send")
                 }
             }

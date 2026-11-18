@@ -616,7 +616,7 @@ enum SystemData {
         ("The Founder", [("You", "Capture \u{00B7} approve \u{00B7} publish \u{00B7} watch. The one node a Worker cannot replace.", 0xc9a84c)]),
         ("The Mind", [("Obsidian", "Doctrine \u{00B7} archive manifest \u{00B7} Codex \u{00B7} drafts. Agents read it through a local bridge.", 0x9b82c0),
                       ("Incubation Chamber", "Where founder Transmissions are drafted before they enter the pipeline.", 0x9b82c0),
-                      ("V.A.U.L.T.", "The local board. NPU \u{00B7} Ollama \u{00B7} the Conductor \u{00B7} night crew.", 0x9b82c0)]),
+                      ("V.A.U.L.T.", "The local board. NPU \u{00B7} the Conductor \u{00B7} night crew.", 0x9b82c0)]),
         ("The Core", [("\u{2726} PSYCHED LUXURIES", "One living entity. You capture \u{2014} it creates itself.", 0xc9a84c)]),
         ("Operations", [("Notion", "Drop Pipeline \u{00B7} Content Calendar \u{00B7} Art Intake \u{00B7} System Status", 0x7d9a6b),
                         ("\u{27F3} Night Agents", "Briefing \u{00B7} Intake \u{00B7} Content wave \u{00B7} Pipeline sync. Stack health check 22:00 UTC.", 0x7d9a6b),
