@@ -18,8 +18,11 @@ struct PLWDSkin {
     var tex: TextureResource? = nil
     var uv: SIMD2<Float> = [1, 1]
     var pageMix: Float = 0              // 0...1 toward the page hue
+    var grey: Float = 0                 // 0...1 toward its own grey (colour that returns later)
     var twoSided = false
 }
+
+extension PLWDSkin { func twoSidedCopy() -> PLWDSkin { var s = self; s.twoSided = true; return s } }
 
 @MainActor enum PLWD {
     static let sampler: MaterialParameters.Texture.Sampler = {
@@ -41,6 +44,14 @@ struct PLWDSkin {
     static func texture(_ name: String, _ folder: String) async -> TextureResource? {
         guard let url = Bundle.main.url(forResource: name, withExtension: "png") ?? Bundle.main.url(forResource: name, withExtension: "png", subdirectory: "PLWorld/\(folder)") else { return nil }
         return try? await TextureResource(contentsOf: url)
+    }
+
+    /// A texture drawn in code (grass, plaster): the closure paints a size x size square, seeded so it is the same every run.
+    static func drawn(_ size: Int, opaque: Bool = true, _ paint: (CGContext) -> Void) async -> TextureResource? {
+        let r = UIGraphicsImageRenderer(size: CGSize(width: size, height: size), format: { let f = UIGraphicsImageRendererFormat(); f.scale = 1; f.opaque = opaque; return f }())
+        let img = r.image { paint($0.cgContext) }
+        guard let cg = img.cgImage else { return nil }
+        return try? await TextureResource(image: cg, options: .init(semantic: .color))
     }
 
     static func smooth(_ a: Float, _ b: Float, _ x: Float) -> Float { let t = max(0, min(1, (x - a) / (b - a))); return t * t * (3 - 2 * t) }
@@ -122,6 +133,32 @@ struct PLWDSkin {
         p.append([-hw, y0]); return p
     }
 
+    /// Catmull-Rom through the points, `per` samples per span.
+    static func spline(_ p: [V3], per: Int = 8) -> [V3] {
+        guard p.count > 2 else { return p }
+        var out: [V3] = []
+        for i in 0..<(p.count - 1) {
+            let p0 = p[max(0, i - 1)], p1 = p[i], p2 = p[i + 1], p3 = p[min(p.count - 1, i + 2)]
+            for k in 0..<per {
+                let t = Float(k) / Float(per), t2 = t * t, t3 = t2 * t
+                out.append(0.5 * ((2 * p1) + (p2 - p0) * t + (2 * p0 - 5 * p1 + 4 * p2 - p3) * t2 + (3 * p1 - p0 - 3 * p2 + p3) * t3))
+            }
+        }
+        out.append(p[p.count - 1]); return out
+    }
+
+    /// A swelling tube along a path, radius as a function of 0...1 along it.
+    static func tube(_ path: [V3], radius: (Float) -> Float, sides: Int = 12) async -> MeshResource {
+        var rows: [[V3]] = []
+        for (i, c) in path.enumerated() {
+            let t = simd_normalize(path[min(path.count - 1, i + 1)] - path[max(0, i - 1)])
+            let up: V3 = abs(t.y) > 0.9 ? [1, 0, 0] : [0, 1, 0]
+            let n = simd_normalize(simd_cross(t, up)), b = simd_cross(t, n), r = radius(Float(i) / Float(path.count - 1))
+            rows.append((0...sides).map { k in let a = Float(k) / Float(sides) * 2 * .pi; return c + n * (cos(a) * r) + b * (sin(a) * r) })
+        }
+        return await ribbon(rows, metresPerUV: 3)
+    }
+
     static func shape(_ m: MeshResource) async -> ShapeResource? { try? await ShapeResource.generateStaticMesh(from: m) }
 }
 
@@ -140,6 +177,7 @@ struct PLWDSkin {
     var momentDone = false
     private var skins: [(ModelEntity, PLWDSkin)] = []
     private var lights: [(Entity, Float)] = []
+    private var drive: [ObjectIdentifier: Float] = [:]      // a room-driven light's fraction (0 = off), kept across `apply`
     private var keyVisuals: [PLWKey: Entity] = [:]
     private var fetched = false
 
@@ -171,7 +209,7 @@ struct PLWDSkin {
 
     func restore(_ save: PLWSave) { self.save = save; momentDone = save.completed.contains(id) }
     func receive(_ event: PLWTriggerEvent) -> [PLWCommand] { trigger(event) }
-    func unload() { root.children.removeAll(); skins.removeAll(); lights.removeAll(); keyVisuals.removeAll(); fetched = false; clock = 0 }
+    func unload() { root.children.removeAll(); skins.removeAll(); lights.removeAll(); drive.removeAll(); keyVisuals.removeAll(); fetched = false; clock = 0 }
 
     func step(_ f: PLWFrame) -> [PLWCommand] {
         clock += f.dt; save = f.save
@@ -198,7 +236,7 @@ struct PLWDSkin {
     func apply(_ look: PLWLook) {
         lookNow = look
         for (e, s) in skins { e.model?.materials = [material(s)] }
-        for (e, k) in lights { setLight(e, k * look.exposure) }
+        for (e, k) in lights { setLight(e, k * (drive[ObjectIdentifier(e)] ?? 1) * look.exposure) }
     }
 
     // MARK: builders for the rooms
@@ -219,13 +257,15 @@ struct PLWDSkin {
 
     /// A solid box (collides) with a skin.
     @discardableResult
-    func box(_ size: V3, _ skin: PLWDSkin, at p: V3, yaw: Float = 0, solid: Bool = true, round: Float = 0.02) -> ModelEntity {
-        add(.generateBox(size: size, cornerRadius: round), skin, at: p, yaw: yaw, shape: solid ? .generateBox(size: size) : nil)
+    func box(_ size: V3, _ skin: PLWDSkin, at p: V3, yaw: Float = 0, solid: Bool = true, round: Float = 0.02, to parent: Entity? = nil) -> ModelEntity {
+        add(.generateBox(size: size, cornerRadius: round), skin, at: p, yaw: yaw, shape: solid ? .generateBox(size: size) : nil, to: parent)
     }
+
+    func reskinAll(_ es: [ModelEntity], _ s: PLWDSkin) { for e in es { reskin(e, s) } }
 
     /// Swaps an entity's skin (and what `apply` will rebuild it from).
     func reskin(_ e: ModelEntity, _ s: PLWDSkin) {
-        if let i = skins.firstIndex(where: { $0.0 === e }) { skins[i].1 = s }
+        if let i = skins.firstIndex(where: { $0.0 === e }) { skins[i].1 = s } else { skins.append((e, s)) }
         e.model?.materials = [material(s)]
     }
 
@@ -267,7 +307,7 @@ struct PLWDSkin {
         root.addChild(e); lights.append((e, intensity)); return e
     }
     /// Drives a room light as a fraction (0...) of the intensity it was made with, still scaled by the exposure.
-    func level(_ e: Entity, _ k: Float) { if let b = lights.first(where: { $0.0 === e })?.1 { setLight(e, b * k * lookNow.exposure) } }
+    func level(_ e: Entity, _ k: Float) { drive[ObjectIdentifier(e)] = k; if let b = lights.first(where: { $0.0 === e })?.1 { setLight(e, b * k * lookNow.exposure) } }
     func setLight(_ e: Entity, _ intensity: Float) {
         if var l = e.components[PointLightComponent.self] { l.intensity = intensity; e.components.set(l) }
         else if var l = e.components[DirectionalLightComponent.self] { l.intensity = intensity; e.components.set(l) }
@@ -277,7 +317,7 @@ struct PLWDSkin {
     func material(_ s: PLWDSkin) -> PhysicallyBasedMaterial {
         var m = PhysicallyBasedMaterial()
         let base = PLWD.rgb(s.hex), mixed = base + (lookNow.pageRGB - base) * s.pageMix
-        let c = PLWD.color(mixed, sat: lookNow.saturation)
+        let lum = simd_dot(mixed, V3(0.3, 0.59, 0.11)), c = PLWD.color(mixed + (V3(repeating: lum) - mixed) * s.grey, sat: lookNow.saturation)
         if let t = s.tex { m.baseColor = .init(tint: c, texture: .init(t, sampler: PLWD.sampler)) } else { m.baseColor = .init(tint: c) }
         m.roughness = .init(floatLiteral: s.rough); m.metallic = .init(floatLiteral: s.metal)
         if let g = s.glow { m.emissiveColor = .init(color: PLWD.color(PLWD.rgb(g), sat: lookNow.saturation)); m.emissiveIntensity = s.glowK * lookNow.exposure }

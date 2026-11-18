@@ -113,8 +113,9 @@ import simd
         sun(90, from: [0, 20, 0], toward: [0, 0, -4], color: 0x8FA0C8)
         point(45_000, radius: 11, at: [0, 3.6, -4], color: 0x7E92B8)
         windowGlow = point(40_000, radius: 7, at: [-0.85, 2.2, -cl + 1.2], color: 0xB0D0FF)
-        beam = spot(0, radius: 16, from: [-0.4, 4.2, -cl + 0.5], toward: soil, color: 0xD8E6FF)
-        gold = point(0, radius: 6, at: soil + [0, 0.5, 0], color: 0xFFD700)
+        beam = spot(120_000, radius: 16, from: [-0.4, 4.2, -cl + 0.5], toward: soil, color: 0xD8E6FF)
+        gold = point(60_000, radius: 6, at: soil + [0, 0.5, 0], color: 0xFFD700)
+        level(beam, 0); level(gold, 0)
         level(windowGlow, 0.4)
 
         // keys, ports, the guiding path
@@ -161,22 +162,22 @@ import simd
         for (e, from) in bubbleParts where eqT >= 0 { setPicture(e, tex.bubble, tint: .white, opacity: PLWD.smooth(from, from + 1, eqT)) }
         level(windowGlow, 0.4 + 0.6 * PLWD.smooth(0, 5, max(0, eqT)))
         let ready = eqT >= 5
-        level(beam, PLWD.smooth(5, 6, max(0, eqT)) * 6)
+        level(beam, PLWD.smooth(5, 6, max(0, eqT)))
         if eqT >= 0, eqT < 6 { let w = PLWD.smooth(0, 0.6, eqT) * (1 - PLWD.smooth(5.2, 6, eqT)); out.append(.camera(position: p + [0, 0.5, 4.2], target: [-0.85, 3.2, -cl], weight: w)) }
         // the digging: kneel in the patch and hold ACT; the soil gives way, gold bleeds up, the dream rises into his hands
         if digT < 0, ready, onPatch, f.actHeld { digT = 0 }
         if digT >= 0, digT < 3 {
             digT += dt
             let brush = PLWD.smooth(0, 1.5, digT), lift = PLWD.smooth(1.5, 2.5, digT)
-            mound?.scale = [1, 0.2 * (1 - 0.85 * brush), 1]; level(gold, 5 * brush)
+            mound?.scale = [1, 0.2 * (1 - 0.85 * brush), 1]; level(gold, brush)
             if digT > 1.5 { orb?.isEnabled = true; orb?.position = simd_mix(soil + [0, 0.05, 0], p + [0, 1.1, 0], V3(repeating: lift)); out.append(.raiseDream(lift)) }
             out.append(.camera(position: p + [0, 2.2, 3.8], target: p + [0, 0.4, 0], weight: 0.8))
             if digT >= 2.5, !recovered { recovered = true; out.append(.dream(.recovered)) }
             if digT >= 3 { orb?.isEnabled = false; out += finish() }
         } else if digT >= 3 {
-            level(gold, 1); mound?.scale = [1, 0.03, 1]
+            level(gold, 0.25); mound?.scale = [1, 0.03, 1]
         } else {
-            level(gold, ready ? 0.8 + 0.3 * sin(clock * 2.5) : 0)
+            level(gold, ready ? 0.12 + 0.04 * sin(clock * 2.5) : 0)
         }
         if ready, digT < 0, onPatch { out += say("hold ACT to dig") } else if said == "hold ACT to dig" { _ = say("") }
         // his tree's eyes follow him
