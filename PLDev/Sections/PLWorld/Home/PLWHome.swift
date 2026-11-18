@@ -78,6 +78,8 @@ struct PLWHome: View {
         let b = Bundle.main
         let url = b.url(forResource: name, withExtension: "png") ?? b.url(forResource: name, withExtension: "png", subdirectory: "Models")
             ?? b.url(forResource: name, withExtension: "png", subdirectory: "Models/Clips")
-        return url.flatMap { UIImage(contentsOfFile: $0.path) }
+        guard let img = url.flatMap({ UIImage(contentsOfFile: $0.path) }), let cg = img.cgImage else { return nil }
+        let w = cg.width / 12, h = cg.height / 4 // sheet is 12 columns by 4 rows; first frame is the front pose
+        return cg.cropping(to: CGRect(x: 0, y: 0, width: w, height: h)).map { UIImage(cgImage: $0) }
     }
 }

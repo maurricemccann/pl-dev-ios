@@ -324,7 +324,10 @@ import simd
 
         camera.update(dt: dt, hero: player.position, camera: engine.camera, scene: engine.view?.scene)
         if caption != nil, clock > captionUntil { caption = nil }
-        if t.debug { readout = String(format: "x %.1f  y %.1f  z %.1f  %@  %.1f m/s", local.x, local.y, local.z, grounded ? "ground" : "air", speed) }
+        if t.debug {
+            let c = engine.camera.position(relativeTo: nil)
+            readout = String(format: "x %.1f  y %.1f  z %.1f  %@  %.1f m/s  cam %.0f %.0f %.0f  rooms %d (%@)", local.x, local.y, local.z, grounded ? "ground" : "air", speed, c.x, c.y, c.z, rooms.count, rooms.keys.map { "\($0)" }.sorted().joined(separator: ","))
+        }
     }
 
     /// The velocity that carries his feet along the rail's room-local points at its speed; clears the rail at the last point.

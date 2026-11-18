@@ -12,6 +12,7 @@ struct PLWView: View {
     init(store: PLWSaveStore, quiet: Bool = false, overview: Bool = false) {
         self.store = store; self.quiet = quiet; self.overview = overview
         _runtime = State(initialValue: PLWRuntime(store: store, quiet: quiet, overview: overview))
+        if ProcessInfo.processInfo.arguments.contains("-simLink") { PLWTuning.shared.debug = true }   // screenshot runs show the counter so a blank frame says why
     }
 
     var body: some View {
