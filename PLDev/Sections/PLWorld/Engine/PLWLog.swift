@@ -5,8 +5,8 @@ import Foundation
 /// PL World's error log (his ask 11-18: "a debug mode so I can just have it read all errors and I can send it to you").
 /// Every load that used to fail silently (`try?`) goes through here and leaves one line in the app's debug log
 /// (Settings > Log, sent to his own server log when Debug is on), naming what failed and why.
-@MainActor enum PLWLog {
-    static func note(_ s: String) { AppModel.shared.debug.note("plworld", s) }
+enum PLWLog {   // not main-actor: mesh builders call it off the main thread; only the log write hops to it
+    static func note(_ s: String) { Task { @MainActor in AppModel.shared.debug.note("plworld", s) } }
     static func fail(_ what: String, _ error: Error) { note("FAILED \(what): \(String(describing: error))") }
 
     static func mesh(from d: [MeshDescriptor], _ what: String = "mesh") -> MeshResource? {
