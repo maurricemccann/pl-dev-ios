@@ -35,7 +35,7 @@ import simd
     @ObservationIgnored private var triggerOwner: [String: PLWArea] = [:]
     @ObservationIgnored private var loading: Task<Void, Never>?               // at most one room is built at a time
     private var room: (any PLWRoom)? { rooms[current] }
-    private static let loadRadius: Float = 450, dropRadius: Float = 600       // metres to a room's centre (the hub counts from its rim)
+    private static let loadRadius: Float = 200, dropRadius: Float = 260      // metres to a room's centre (the hub counts from its rim)
     @ObservationIgnored private var subs: [Cancellable] = []
     @ObservationIgnored private var active: Set<String> = []    // triggers the player stands in
     @ObservationIgnored private var tunnels = 0
@@ -169,10 +169,11 @@ import simd
 
     /// Builds the nearest missing room inside the load radius (one at a time), drops those past the drop radius (never the current one).
     private func stream(_ p: SIMD3<Float>) {
-        for a in rooms.keys where a != current && centre(a, from: p) > Self.dropRadius { drop(a) }
-        guard loading == nil else { return }
-        let want = PLWArea.allCases.filter { rooms[$0] == nil && centre($0, from: p) < Self.loadRadius }.min { centre($0, from: p) < centre($1, from: p) }
-        if let a = want { loading = Task { [weak self] in await self?.build(a); self?.loading = nil } }
+        // his ask 11-18 "load one room at a time": the room he is in, plus only the nearest one ahead (so he never walks onto nothing)
+        let next = PLWArea.allCases.filter { $0 != current }.min { centre($0, from: p) < centre($1, from: p) }
+        for a in rooms.keys where a != current && (a != next || centre(a, from: p) > Self.dropRadius) { drop(a) }
+        guard loading == nil, let a = next, rooms[a] == nil, centre(a, from: p) < Self.loadRadius else { return }
+        loading = Task { [weak self] in await self?.build(a); self?.loading = nil }
     }
 
     private func switchTo(_ a: PLWArea) {
@@ -313,7 +314,7 @@ import simd
         visual.orientation = simd_quatf(angle: facing, axis: [0, 1, 0])
         let squash: SIMD3<Float> = heldPose == "curl" ? [1.15, 0.55, 1.15] : [1, 1, 1]
         visual.scale += (squash - visual.scale) * min(1, dt * 6)
-        figure.play(!grounded ? .jump : (speed > 0.4 ? .walking : .idle))
+        figure.play(!grounded ? .jump : (speed > 0.4 ? .walking : .idle)); figure.hold()
         dreamOrb.position = SIMD3(0.55, t.capsuleHeight / 2 + 0.35 + dreamRise * 1.1 + sin(clock * 1.8) * 0.06, 0)
 
         // the room

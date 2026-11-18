@@ -11,6 +11,7 @@ import UIKit
     private var anims: [Pose: AnimationResource] = [:]
     private var playing: Pose?
     private(set) var missing = false
+    private var armature: Entity?, bind = simd_quatf(ix: 0, iy: 0, iz: 0, r: 1), checked = 0
 
     /// The bundled model for a hero, or nil when the file is not in this build (GlyphGirl until her file is added).
     static func modelURL(_ hero: PLWHero) -> URL? {
@@ -34,6 +35,7 @@ import UIKit
         let fit = ThreeDModels.fitted(e, longest: height)
         root.addChild(fit)
         model = e
+        armature = e.findEntity(named: "Armature"); bind = armature?.orientation ?? bind
         for (pose, name) in [(Pose.idle, "idle"), (Pose.walking, "walking"), (Pose.jump, "jump")] {
             if let u = Self.clipURL(name), let ce = await PLWLog.entity(contentsOf: u), let a = ce.availableAnimations.first { anims[pose] = a }
         }
@@ -45,6 +47,20 @@ import UIKit
         guard p != playing, let model, let a = anims[p] else { return }
         playing = p
         model.playAnimation(p == .jump ? a : a.repeat(), transitionDuration: 0.2, startsPaused: false)
+    }
+
+    /// S350 (his "facing down like a stiff board"): the clip files' rig is turned 90 degrees from the model's (measured in Blender:
+    /// the model's Armature prim carries +90 deg X, every clip's carries none). If a clip drives that prim, counter-rotate the model
+    /// so his rig keeps its bind orientation. Called every frame; logs once what it found, so his device log settles the cause.
+    func hold() {
+        guard let model, let arm = armature else { return }
+        let now = arm.orientation
+        model.orientation = bind * now.inverse
+        checked += 1
+        if checked == 60 {
+            let off = 2 * acos(min(1, abs(simd_dot(bind.vector, now.vector)))) * 180 / .pi
+            PLWLog.note("hero rig: clip turns the Armature \(Int(off)) deg from the model's bind\(off > 5 ? "; corrected" : "; not the cause")")
+        }
     }
 
     func setVisible(_ on: Bool) { root.isEnabled = on }
