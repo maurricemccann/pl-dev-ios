@@ -4,25 +4,25 @@ import RealityKit
 /// Eyes for a session (his ask 11-18: "couldn't you get eyes through the debugger"). While PL World is open and Settings > Debug is on,
 /// the app asks its own debug door every 4 s for a command a session queued (pl-cron src/debug.ts, Remote inspect) and answers it:
 ///   shot  -> a small JPEG (base64) of the 3D view exactly as his screen shows it
-///   state -> fps, area and the debug readout
+///   everything else -> PLWRuntime.inspect (state, rooms, ports, go, walk, jump, act, look, tune, panel, hero, tree, log)
 /// Fixed commands only; nothing from the wire is ever run as code. Off with Debug, so nothing leaves the phone otherwise.
 @MainActor final class PLWEyes {
     private var task: Task<Void, Never>?
-    private struct Cmds: Decodable { struct C: Decodable { let id: Int; let cmd: String }; let cmds: [C]? }
+    private struct Cmds: Decodable { struct C: Decodable { let id: Int; let cmd: String; let arg: String? }; let cmds: [C]? }
     private struct Answer: Encodable { let id: Int; let ok: Bool; let result: String }
 
-    func start(engine: WorldEngine, state: @escaping @MainActor () -> String) {
+    func start(engine: WorldEngine, handle: @escaping @MainActor (String, String) async -> (Bool, String)) {
         task?.cancel()
         task = Task { [weak engine] in
             while !Task.isCancelled {
                 try? await Task.sleep(for: .seconds(4))
                 guard UserDefaults.standard.bool(forKey: "pldev.debug"), let engine else { continue }
                 for c in await Self.poll() {
-                    switch c.cmd {
-                    case "shot":
+                    if c.cmd == "shot" {
                         if let s = await Self.shot(engine) { await Self.answer(c.id, true, s) } else { await Self.answer(c.id, false, "no frame") }
-                    case "state": await Self.answer(c.id, true, state())
-                    default: await Self.answer(c.id, false, "unknown command " + c.cmd)
+                    } else {
+                        let (ok, out) = await handle(c.cmd, c.arg ?? "")
+                        await Self.answer(c.id, ok, out)
                     }
                 }
             }

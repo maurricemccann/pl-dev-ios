@@ -106,10 +106,7 @@ import simd
         if let scene = engine.view?.scene { listen(scene) }
         await enter(store.save.checkpointArea, port: store.save.checkpointPort)
         engine.onFrame = { [weak self] dt in self?.frame(dt) }
-        eyes.start(engine: engine) { [weak self] in
-            guard let self else { return "gone" }
-            return "\(self.fps) fps, \(self.frameMS) ms, worst \(self.worstMS) ms, area \(self.current), ready \(self.ready), \(self.readout)"
-        }
+        eyes.start(engine: engine) { [weak self] cmd, arg in await self?.inspect(cmd, arg) ?? (false, "gone") }
     }
 
     func stop() {
@@ -449,5 +446,65 @@ import simd
     private func kick(_ s: UIImpactFeedbackGenerator.FeedbackStyle) {
         guard PLHaptics.on else { return }
         (s == .soft ? softKick : lightKick).impactOccurred()
+    }
+}
+
+// MARK: remote inspect (his ask 11-18: "give yourself full [access] through the debugger for anything we need this whole build")
+
+extension PLWRuntime {
+    /// The fixed commands a session can send through PLWEyes while Debug is on. Every argument is parsed and clamped here;
+    /// nothing from the wire runs as code. Answers are plain text, kept under the door's 30,000 characters.
+    func inspect(_ cmd: String, _ arg: String) async -> (Bool, String) {
+        let w = arg.split(separator: " ").map(String.init)
+        func num(_ i: Int, _ lo: Float, _ hi: Float) -> Float? { i < w.count ? Float(w[i]).map { min(hi, max(lo, $0)) } : nil }
+        switch cmd {
+        case "state":
+            return (true, "\(fps) fps, \(frameMS) ms, worst \(worstMS) ms, area \(current), ready \(ready), loadFailed \(loadFailed), notice \(notice ?? "none"), \(readout)")
+        case "rooms":
+            return (true, rooms.keys.map { "\($0)" }.sorted().joined(separator: ", ") + "; current \(current)")
+        case "ports":
+            return (true, (room?.ports.keys.sorted() ?? []).joined(separator: ", "))
+        case "go":                                       // go <hub|p1..p11> [port]
+            guard let first = w.first?.lowercased() else { return (false, "go <hub|p1..p11> [port]") }
+            let area: PLWArea? = first == "hub" ? .hub : first.hasPrefix("p") ? Int(first.dropFirst()).flatMap { PLWArea(rawValue: $0) } : nil
+            guard let area else { return (false, "unknown area \(first)") }
+            await enter(area, port: w.count > 1 ? w[1] : "start")
+            return (true, "now in \(current), ready \(ready)")
+        case "walk":                                     // walk <x -1..1> <forward -1..1> <seconds 0..10>
+            guard let x = num(0, -1, 1), let y = num(1, -1, 1), let t = num(2, 0, 10) else { return (false, "walk <x> <forward> <seconds>") }
+            input.move = SIMD2(x, y)
+            try? await Task.sleep(for: .seconds(Double(t)))
+            input.move = .zero
+            return (true, "walked \(t) s; \(readout)")
+        case "jump": input.tapJump(); return (true, "jump pressed")
+        case "act": input.act(true); try? await Task.sleep(for: .milliseconds(150)); input.act(false); return (true, "act pressed")
+        case "look":                                     // look <yaw degrees> [pitch degrees]
+            guard let yaw = num(0, -720, 720) else { return (false, "look <yaw deg> [pitch deg]") }
+            camera.yaw = yaw * .pi / 180
+            if let p = num(1, -80, 80) { camera.pitch = p * .pi / 180 }
+            return (true, "camera yaw \(yaw) pitch \(camera.pitch * 180 / .pi)")
+        case "tune":                                     // tune walk|run <metres per second>
+            guard w.count == 2, let v = num(1, 1, 20) else { return (false, "tune walk|run <m/s>") }
+            switch w[0] { case "walk": tuning.walk = v; case "run": tuning.run = v; default: return (false, "tune walk|run") }
+            tuning.persist(); return (true, "walk \(tuning.walk) run \(tuning.run)")
+        case "panel":
+            tuning.debug = w.first != "off"; tuning.persist(); return (true, "debug panel \(tuning.debug ? "on" : "off")")
+        case "hero": return (true, figure.describe())
+        case "tree":                                     // tree: the current room's pieces, name, local position, size
+            guard let r = room else { return (false, "no room") }
+            var lines: [String] = []
+            func walkTree(_ e: Entity, _ depth: Int) {
+                guard lines.count < 400, depth < 4 else { return }
+                let b = e.visualBounds(relativeTo: r.root), p = e.position(relativeTo: r.root)
+                lines.append(String(repeating: "  ", count: depth) + "\(e.name.isEmpty ? "-" : e.name) at \(String(format: "%.1f %.1f %.1f", p.x, p.y, p.z)) size \(String(format: "%.1f %.1f %.1f", b.extents.x, b.extents.y, b.extents.z))\(e.isEnabled ? "" : " OFF")\(e.components.has(CollisionComponent.self) ? " solid" : "")")
+                for c in e.children { walkTree(c, depth + 1) }
+            }
+            walkTree(r.root, 0)
+            return (true, String(lines.joined(separator: "\n").prefix(29_000)))
+        case "log":
+            return (true, String(AppModel.shared.debug.lines.prefix(80).joined(separator: "\n").prefix(29_000)))
+        default:
+            return (false, "unknown command \(cmd); known: shot state rooms ports go walk jump act look tune panel hero tree log")
+        }
     }
 }

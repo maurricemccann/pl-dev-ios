@@ -109,5 +109,13 @@ import UIKit
         return nil
     }
 
+    /// One line for a session (PLWEyes "hero"): what plays, how many clips loaded and were re-fitted, how far the rig and hips sit from bind.
+    func describe() -> String {
+        func deg(_ a: simd_quatf, _ b: simd_quatf) -> Int { Int(2 * acos(min(1, abs(simd_dot(a.vector, b.vector)))) * 180 / .pi) }
+        let now = fit.flatMap { armature?.orientation(relativeTo: $0) } ?? bind
+        let hips = skin?.jointTransforms.first?.rotation ?? hipsBind
+        return "hero \(model == nil ? "MISSING" : "loaded"), playing \(playing.map { "\($0)" } ?? "nothing"), clips \(anims.count), re-fitted \(fitted.count), joints \(skin?.jointNames.count ?? 0), rig off bind \(deg(bind, now)) deg, hips off bind \(deg(hipsBind, hips)) deg, upright holder \(deg(upright.orientation, simd_quatf(ix: 0, iy: 0, iz: 0, r: 1))) deg, visible \(root.isEnabled)"
+    }
+
     func setVisible(_ on: Bool) { root.isEnabled = on }
 }
