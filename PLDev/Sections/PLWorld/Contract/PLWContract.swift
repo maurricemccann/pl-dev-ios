@@ -104,6 +104,8 @@ enum PLWCommand {
     case raiseDream(Float)                                                     // 0...1 the dream's rise (the gift)
     case lift(Float)                                                           // an upward acceleration in m/s^2 this frame (updraft float); the integrator clamps it
     case rail(points: [SIMD3<Float>], speed: Float)                            // the integrator carries the hero along room-local points (zip rail), input locked until the end
+    case heroPose(String)                                                      // "curl" (hold the pose until "stand"); the hero's clip/pose by name, unknown names are ignored
+    case dreamOrbVisible(Bool)                                                 // show or hide the integrator's carried dream orb (a room that draws its own pearl hides it)
     case caption(String)                                                       // one quiet line, his voice rules apply (copy only)
 }
 
