@@ -20,11 +20,13 @@ IN PROGRESS (compile pending: the GitHub API is rate limited until 10:08 PM PT, 
 | `P7/plw-x-1.png`, `-2`, `-3` | lifted from plate 07 | his three mauve X marks, colour-masked to alpha, line untouched; `-2` also stands as the P7 study tablet |
 | `P5/plw-carve5.png` | `curve-comp-09.svg` | his curve rasterised (ink to alpha), the carved seed under the P5 table |
 | `P6/plw-carve6.png` | `curve-comp-04.svg` | his curve rasterised, carved in the P6 root |
-| `P5/plw-key-glyph-guy.png`, `-love-yourself`, `-money`, `-smiley` | `pl-headless/public/glyphs` | the four Glyph Field glyphs, 256 px, used as the glyph keys |
+| `P5/plw-key-glyph-guy.png`, `-love-yourself`, `-money`, `-smiley` | `pl-headless/public/glyphs` | four Glyph Field glyphs, 256 px, used as glyph keys |
+| `P5/plw-key-poverty-to-luxury.png` | `pl-curves-gallery/public/glyphs/poverty-to-luxury.png` | glyph key (P7 slot 0), 512 px |
+| `P5/plw-key-money-grin.png` | `pl-headless/public/emblems/money-grin.png` | glyph key (P8 slot 2), 512 px |
 | `P5/plw-tile.png`, `plw-bubble5`, `plw-treeface5`, `plw-pupil`; `P6/plw-treeface6`; `P7/plw-bubble7`; `P8/plw-bolt8`, `plw-cloud8a`, `plw-cloud8b` | `plw-ref/brand` | his tile, bubbles, tree faces, clouds and bolt, as the web build used them |
 
 ## Still owed (named so he can be asked)
-1. Glyph keys `poverty-to-luxury` and `money-grin`: no art file found (rooms use the four glyphs that exist; the kit falls back to a gold gem for any missing key art).
+1. Glyph keys: all six now have art (the kit still falls back to a gold gem if one is missing).
 2. P7 X marks fade in; the web's stroke-by-stroke wipe is not done.
 3. P8 dome: his tile tinted gold on a translucent sphere; "clear between the lines" needs the tile as an alpha mask.
 4. All stone, plaster and rock are one tint or his curve tile; the Poly Haven PBR sets (about 3 m repeat) are not in the references, so no normal maps yet.

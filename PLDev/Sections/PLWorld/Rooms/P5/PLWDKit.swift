@@ -198,7 +198,7 @@ extension PLWDSkin { func twoSidedCopy() -> PLWDSkin { var s = self; s.twoSided 
     }
     /// Seats the glyph keys the room listed: his Glyph Field glyph as a turning picture when its art is bundled, else a gold gem.
     private func place() async {
-        let aspect: [PLWGlyph: Float] = [.glyphGuy: 0.4, .loveYourself: 0.93, .money: 0.76, .smiley: 0.81]
+        let aspect: [PLWGlyph: Float] = [.glyphGuy: 0.4, .loveYourself: 0.93, .money: 0.76, .smiley: 0.81, .povertyToLuxury: 1.58, .moneyGrin: 0.71]
         for g in glyphs {
             let holder = Entity(); holder.position = g.position; root.addChild(holder)
             if let t = await PLWD.texture("plw-key-\(g.glyph.rawValue)", "P5") {

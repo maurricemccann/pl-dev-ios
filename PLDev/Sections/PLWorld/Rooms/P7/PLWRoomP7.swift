@@ -135,7 +135,7 @@ import simd
         point(60_000, radius: 9, at: summit + [0, 2, back - summit.z + 1.5], color: 0x3D1EA8)
         ringLight = point(80_000, radius: 7, at: summit, color: 0x18F0D0); level(ringLight, 0)
 
-        key(0, .money, at: path[along(0.25)] + sideAt(along(0.25)) * 2.6 + [0, 1.0, 0]); key(1, .glyphGuy, at: studyPos + sideAt(si) * -1.2 + [0, 1.0, 0]); key(2, .loveYourself, at: summit + [3, 1.0, 2])
+        key(0, .povertyToLuxury, at: path[along(0.25)] + sideAt(along(0.25)) * 2.6 + [0, 1.0, 0]); key(1, .glyphGuy, at: studyPos + sideAt(si) * -1.2 + [0, 1.0, 0]); key(2, .loveYourself, at: summit + [3, 1.0, 2])
         port("start", at: [0, 0, -0.5]); port("exit", at: [summit.x, summit.y, back])
         var line: [V3] = [[0, 0, -0.5]]
         for k in stride(from: 0, to: path.count, by: 12) { line.append(path[k]) }
