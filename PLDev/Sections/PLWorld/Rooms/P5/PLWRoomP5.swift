@@ -16,7 +16,7 @@ import simd
     private var toHouse: V3 = [0, 0, 1], side: V3 = [1, 0, 0]
     private var tex: (bubble: TextureResource?, pupil: TextureResource?) = (nil, nil)
     private var eqT: Float = -1, digT: Float = -1, nearTable = false, onPatch = false, onSeed = false
-    private var seedFound = false, seedLit = false, said = "", recovered = false
+    private var carveTex: TextureResource?, seedFound = false, seedLit = false, said = "", recovered = false
 
     init() { super.init(.p5) }
 
@@ -51,7 +51,9 @@ import simd
         box([cw * 2, 0.2, cl], PLWDSkin(hex: 0xC0C8D0, rough: 0.5, tex: tile, uv: [cw * 2 / 2.25, cl / 2.25]), at: [0, -0.1, -cl / 2], round: 0)
         box([2.0, 0.6, 1.0], stone, at: table + [0, 0.3, 0])
         let slate = box([0.7, 0.04, 0.7], PLWDSkin(hex: 0x3A3F47, rough: 0.8), at: table + [0.75, 0.02, 0.55], solid: false, round: 0)
-        seed = add(.generateBox(size: [0.34, 0.012, 0.34], cornerRadius: 0.004), PLWDSkin(hex: 0x23262B, rough: 0.9, glow: 0xFFD27A, glowK: 0), at: [0, 0.026, 0], to: slate)
+        _ = slate
+        carveTex = await PLWD.texture("plw-carve5", "P5")
+        let sp = picture(carveTex, await PLWD.quad(0.45, 0.62), tint: UIColor(white: 0.06, alpha: 1), at: table + [0.75, 0.045, 0.55]); sp.orientation = simd_quatf(angle: -.pi / 2, axis: [1, 0, 0]); seed = sp
 
         // the walled garden: a half circle of 12 m behind the cottage, stone walls, pavers; the way out is a stone gate at its far end
         let ground = add(.generateCylinder(height: 0.2, radius: gr + 1.2), garden, at: [0, -0.11, -cl], shape: .generateBox(size: [(gr + 1.2) * 2, 0.2, (gr + 1.2) * 2]))
@@ -190,7 +192,7 @@ import simd
         }
         // the secret: his seed curve under the table
         if !seedFound, onSeed, f.actPressed { seedFound = true; out.append(.mark("p5.seed")); out += say("his seed, carved in slate") }
-        if !seedLit, seedFound || save.marks.contains("p5.seed"), let s = seed { seedLit = true; reskin(s, PLWDSkin(hex: 0x23262B, rough: 0.9, glow: 0xFFD27A, glowK: 0.7)) }
+        if !seedLit, seedFound || save.marks.contains("p5.seed"), let s = seed { seedLit = true; setPicture(s, carveTex, tint: UIColor(red: 1, green: 0.82, blue: 0.48, alpha: 1), opacity: 1) }
         return out
     }
 }

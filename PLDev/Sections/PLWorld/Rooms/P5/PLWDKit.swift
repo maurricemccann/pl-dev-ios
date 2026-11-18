@@ -193,16 +193,22 @@ extension PLWDSkin { func twoSidedCopy() -> PLWDSkin { var s = self; s.twoSided 
         guard !fetched else { return }
         fetched = true
         await build()
-        place()
+        await place()
         apply(lookNow)
     }
-    /// Seats the glyph keys the room listed; called once after build.
-    private func place() {
+    /// Seats the glyph keys the room listed: his Glyph Field glyph as a turning picture when its art is bundled, else a gold gem.
+    private func place() async {
+        let aspect: [PLWGlyph: Float] = [.glyphGuy: 0.4, .loveYourself: 0.93, .money: 0.76, .smiley: 0.81]
         for g in glyphs {
-            let gem = ModelEntity(mesh: .generateBox(size: [0.22, 0.34, 0.06], cornerRadius: 0.03), materials: [])
-            gem.orientation = simd_quatf(angle: .pi / 4, axis: [0, 0, 1])
-            let holder = Entity(); holder.position = g.position; holder.addChild(gem); root.addChild(holder)
-            skins.append((gem, PLWDSkin(hex: 0xFFD25A, rough: 0.25, metal: 0.6, glow: 0xFFC83D, glowK: 0.9)))
+            let holder = Entity(); holder.position = g.position; root.addChild(holder)
+            if let t = await PLWD.texture("plw-key-\(g.glyph.rawValue)", "P5") {
+                let h: Float = 0.8, e = ModelEntity(mesh: await PLWD.quad(h * (aspect[g.glyph] ?? 0.8), h), materials: [])
+                holder.addChild(e); setPicture(e, t, tint: .white, opacity: 1)
+            } else {
+                let gem = ModelEntity(mesh: .generateBox(size: [0.22, 0.34, 0.06], cornerRadius: 0.03), materials: [])
+                gem.orientation = simd_quatf(angle: .pi / 4, axis: [0, 0, 1]); holder.addChild(gem)
+                skins.append((gem, PLWDSkin(hex: 0xFFD25A, rough: 0.25, metal: 0.6, glow: 0xFFC83D, glowK: 0.9)))
+            }
             let l = Entity(); var pl = PointLightComponent(); pl.intensity = 9_000; pl.color = .world(0xFFD25A); pl.attenuationRadius = 3; l.components.set(pl); holder.addChild(l)
             lights.append((l, 9_000)); keyVisuals[g.key] = holder
         }

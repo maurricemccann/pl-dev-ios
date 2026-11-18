@@ -12,7 +12,7 @@ import simd
     private let faceY: Float = 8.6
     private var canopy: [ModelEntity] = [], turf: [ModelEntity] = [], bark: [ModelEntity] = []
     private var canopySkin = PLWDSkin(hex: 0x4F8A5A, rough: 0.85, pageMix: 0.1), turfSkin = PLWDSkin(hex: 0x243322, rough: 0.95, pageMix: 0.1), barkSkin = PLWDSkin(hex: 0x4A3B30, rough: 0.85)
-    private var face: ModelEntity?, wave: ModelEntity?, carve: ModelEntity?
+    private var carveTex: TextureResource?, face: ModelEntity?, wave: ModelEntity?, carve: ModelEntity?
     private var grin = Entity(), faceTex: TextureResource?
     private var pupils: [(e: ModelEntity, c: V3, tg: V3, u: Float, v: Float)] = []
     private var lookT: Float = -1, colour: Float = 0, lastColour: Float = -1, inLook = false, nearCarve = false, carveFound = false, said = ""
@@ -92,9 +92,11 @@ import simd
         // the emerald wave that climbs the trunk
         var wm = UnlitMaterial(color: UIColor.world(0x2EE676)); wm.blending = .transparent(opacity: .init(scale: 0.45))
         let w = ModelEntity(mesh: .generateCylinder(height: 0.4, radius: 5.2), materials: [wm]); w.position = tree + [0, 1, 0]; w.isEnabled = false; root.addChild(w); wave = w
-        // the secret: his curve carved into the thick root behind the trunk (the plaque stands in until his curve art is rasterised)
+        // the secret: his curve carved into the thick root behind the trunk (his curve, rasterised from curve-comp-04)
         carvePos = backRoot
-        carve = add(.generateBox(size: [0.9, 0.1, 1.2], cornerRadius: 0.02), PLWDSkin(hex: 0x2A211B, rough: 0.9, glow: 0xC8D8A8, glowK: 0), at: backRoot + [0, 0.5, 0])
+        carveTex = await PLWD.texture("plw-carve6", "P6")
+        add(.generateBox(size: [0.9, 0.1, 1.2], cornerRadius: 0.02), PLWDSkin(hex: 0x2A211B, rough: 0.9), at: backRoot + [0, 0.5, 0])
+        let cp = picture(carveTex, await PLWD.quad(0.8, 1.1), tint: UIColor(white: 0.08, alpha: 1), at: backRoot + [0, 0.56, 0]); cp.orientation = simd_quatf(angle: -.pi / 2, axis: [1, 0, 0]); carve = cp
 
         // the way out: an arch of root under the far wall
         let x0: V3 = [0, 0, bowl.z - radius - 0.2]
@@ -170,7 +172,7 @@ import simd
         }
         if !carveFound, nearCarve, f.actPressed {
             carveFound = true; out.append(.mark("p6.carving")); out += say("his curve, carved in the root")
-            if let c = carve { reskin(c, PLWDSkin(hex: 0x2A211B, rough: 0.9, glow: 0xC8D8A8, glowK: 0.6)) }
+            if let c = carve { setPicture(c, carveTex, tint: UIColor(red: 0.8, green: 0.92, blue: 0.65, alpha: 1), opacity: 1) }
         }
         return out
     }

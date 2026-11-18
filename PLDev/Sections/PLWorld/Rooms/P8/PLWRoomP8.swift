@@ -121,7 +121,7 @@ import simd
         point(60_000, radius: 12, at: goldCloud!.pos + [0, 1.5, 0], color: 0xFFB020)
         point(60_000, radius: 9, at: end + [0, 2, 1.5], color: PLWRing.pageHex[8])
 
-        key(0, .loveYourself, at: off(7.2, -9.9, 3.55) + [0, 1, 0]); key(1, .smiley, at: off(25.6, -9.9, 3.55) + [0, 1, 0]); key(2, .moneyGrin, at: end + [0, 1, 2])
+        key(0, .smiley, at: off(7.2, -9.9, 3.55) + [0, 1, 0]); key(1, .glyphGuy, at: off(25.6, -9.9, 3.55) + [0, 1, 0]); key(2, .money, at: end + [0, 1, 2])
         port("start", at: [0, 0, -1]); port("exit", at: end)
         var line: [V3] = []; for k in stride(from: 0, to: pts.count, by: 8) { line.append(pts[k]) }
         route = line + [end]

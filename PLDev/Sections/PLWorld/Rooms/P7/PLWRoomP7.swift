@@ -5,16 +5,16 @@ import simd
 // Page 7, The Transcendence (gemini-s340/07-the-transcendence-spec.md, web room7.js). A mauve-slate amphitheatre; a terraced teal hill against the back cliff with his curve tile
 // switching back up its face. Three doubters stand as carved stelae of stick figures; as he passes, a mauve X draws itself over each. A stone arch carries his plate 7 bubble,
 // lit as he passes under. At the summit a cyan ring forms round the dream, its first. Local frame: start at the origin facing -Z; the hill's summit gate is the exit at z = -47.1.
-// Stand-ins owed (his fig and X art are not in the reference folder): the stick figures are built from solids and the X from two lit bars.
+// His art here: stick figures lifted from plate 3 and the X marks from plate 7 of the Curve Who (small crops, his line kept exactly; see LANES-plw-d.md).
 
 @MainActor final class PLWRoomP7: PLWDRoom {
     private let re: Float = 24, cliff: Float = 26, hh: Float = 12
     private let centre: V3 = [0, 0, -24], summit: V3 = [0, 12, -42]
     private var path: [V3] = [], run: [Float] = []
     private var arch: V3 = .zero, archSide: V3 = [1, 0, 0], studyPos: V3 = .zero
-    private var stelae: [(holder: Entity, bars: [(e: ModelEntity, a: SIMD2<Float>, b: SIMD2<Float>)], head: ModelEntity, t: Float, base: V3)] = []
+    private var stelae: [(holder: Entity, x: ModelEntity, xTex: TextureResource?, t: Float, base: V3)] = []
     private var bubble: ModelEntity?, bubbleTex: TextureResource?, bubbleLight = Entity(), ringLight = Entity()
-    private var ring: ModelEntity?, study: ModelEntity?
+    private var ring: ModelEntity?, study: ModelEntity?, studyArt: TextureResource?
     private var under: Float = 0, bubT: Float = 0, crestT: Float = -1, ringOn = false, nearStudy = false, studyFound = false, onSummit = false, inArch = false, said = ""
 
     init() { super.init(.p7) }
@@ -91,31 +91,20 @@ import simd
         let gate = await PLWD.holedWall(hole: PLWD.arch(halfWidth: 2.25, base: 0, spring: 0, rise: 4.5, n: 28), outer: [[3.4, -0.5], [3.4, cliff - hh], [-3.4, cliff - hh], [-3.4, -0.5]], centre: [0, 2], at: back, origin: [summit.x, summit.y, 0])
         await solidMesh(gate, slate)
 
-        // the doubters: three stelae of stick figures on plinths beside the path; his mauve X draws over each as he passes
-        let darkSlate = PLWDSkin(hex: 0x3A2E40, rough: 0.7), ink = PLWDSkin(hex: 0x1A1A1D, rough: 0.8), paper = PLWDSkin(hex: 0xE2E8F0, rough: 0.7)
-        let mauve = PLWDSkin(hex: 0xC568A8, rough: 0.4, glow: 0xC568A8, glowK: 1.1)
+        // the doubters: three stelae carrying his own stick figures (lifted from plate 3 of the Curve Who) on pale limestone; his mauve X (lifted from plate 7) lights in over each as he passes
+        let tablet = PLWDSkin(hex: 0xD4D2DC, rough: 0.8, pageMix: 0.05), plinth = PLWDSkin(hex: 0x3A2E40, rough: 0.7)
+        let figAspect: [Float] = [262.0 / 360, 301.0 / 352, 360.0 / 330], xAspect: [Float] = [350.0 / 360, 235.0 / 360, 223.0 / 360]
         for (idx, (f, sd)) in [(Float(0.12), Float(1)), (0.42, -1), (0.7, 1)].enumerated() {
             let i = along(f), base = path[i] + sideAt(i) * (sd * 3.4), face = simd_normalize(V3(path[i].x - base.x, 0, path[i].z - base.z)), yaw = atan2(face.x, face.z)
             let holder = Entity(); holder.position = base; holder.orientation = simd_quatf(angle: yaw, axis: [0, 1, 0]); root.addChild(holder)
             let hgt: Float = 2.1
-            box([1.5, 0.6, 1.2], darkSlate, at: [0, 0.3, 0], to: holder)
+            box([1.5, 0.6, 1.2], plinth, at: [0, 0.3, 0], to: holder)
             let slab = ModelEntity(mesh: .generateBox(size: [1.7, hgt + 0.35, 0.28], cornerRadius: 0.02), materials: []); slab.position = [0, 0.6 + (hgt + 0.35) / 2, -0.2]; holder.addChild(slab)
-            slab.components.set(CollisionComponent(shapes: [.generateBox(size: [1.7, hgt + 0.35, 0.28])], isStatic: true)); reskin(slab, darkSlate)
-            func part(_ size: V3, _ skin: PLWDSkin, _ p: V3, roll: Float = 0, sphere: Bool = false) -> ModelEntity {
-                let e = ModelEntity(mesh: sphere ? .generateSphere(radius: size.x) : .generateBox(size: size, cornerRadius: 0.02), materials: [])
-                e.position = p; e.orientation = simd_quatf(angle: roll, axis: [0, 0, 1]); holder.addChild(e); reskin(e, skin); return e
-            }
-            let z: Float = -0.04
-            let head = part([0.3, 0, 0], paper, [0, 0.6 + hgt * 0.8, z], sphere: true)
-            _ = part([0.12, hgt * 0.42, 0.06], ink, [0, 0.6 + hgt * 0.5, z])
-            _ = part([0.08, 0.75, 0.06], ink, [0.3, 0.6 + hgt * 0.56, z], roll: 0.9); _ = part([0.08, 0.75, 0.06], ink, [-0.3, 0.6 + hgt * 0.56, z], roll: -0.9)
-            _ = part([0.09, 0.85, 0.06], ink, [0.16, 0.6 + hgt * 0.2, z], roll: 0.3); _ = part([0.09, 0.85, 0.06], ink, [-0.16, 0.6 + hgt * 0.2, z], roll: -0.3)
-            var bars: [(e: ModelEntity, a: SIMD2<Float>, b: SIMD2<Float>)] = []
-            let cy = 0.6 + hgt / 2, hw: Float = 0.55
-            for (a, b) in [(SIMD2<Float>(-hw, cy + hw * 1.6), SIMD2<Float>(hw, cy - hw * 1.6)), (SIMD2<Float>(hw, cy + hw * 1.6), SIMD2<Float>(-hw, cy - hw * 1.6))] {
-                let bar = ModelEntity(mesh: .generateBox(size: [0.07, 1, 0.03], cornerRadius: 0.01), materials: []); bar.isEnabled = false; holder.addChild(bar); reskin(bar, mauve); bars.append((bar, a, b))
-            }
-            stelae.append((holder, bars, head, -1, base))
+            slab.components.set(CollisionComponent(shapes: [.generateBox(size: [1.7, hgt + 0.35, 0.28])], isStatic: true)); reskin(slab, tablet)
+            let figTex = await PLWD.texture("plw-fig-\(idx + 1)", "P7"), xTex = await PLWD.texture("plw-x-\(idx + 1)", "P7")
+            let fp = ModelEntity(mesh: await PLWD.quad(hgt * 0.95 * figAspect[idx], hgt * 0.95), materials: []); fp.position = [0, 0.6 + hgt / 2, -0.04]; holder.addChild(fp); setPicture(fp, figTex, tint: .white, opacity: 1)
+            let xp = ModelEntity(mesh: await PLWD.quad(hgt * 1.05 * xAspect[idx], hgt * 1.05), materials: []); xp.position = [0, 0.6 + hgt / 2, -0.02]; holder.addChild(xp); setPicture(xp, xTex, tint: .white, opacity: 0)
+            stelae.append((holder, xp, xTex, -1, base))
             triggers.append(PLWTrigger(id: "p7.d\(idx)", center: base + [0, 1.5, 0], yaw: 0, halfExtents: [3.6, 3, 3.6]))
         }
 
@@ -130,7 +119,9 @@ import simd
         // the secret: his mauve study on a stone tablet in an alcove at the last turn
         let si = along(0.83); studyPos = path[si] - sideAt(si) * 3.1
         box([1.0, 1.2, 0.35], PLWDSkin(hex: 0xC8C4CC, rough: 0.8), at: studyPos + [0, 0.6, 0])
-        study = add(.generateBox(size: [0.5, 0.8, 0.02], cornerRadius: 0.005), PLWDSkin(hex: 0x4A3A52, rough: 0.8, glow: 0xC568A8, glowK: 0), at: studyPos + [0, 0.6, 0.19])
+        let sface = simd_normalize(V3(path[si].x - studyPos.x, 0, path[si].z - studyPos.z)), studyTex = await PLWD.texture("plw-x-2", "P7")
+        study = picture(studyTex, await PLWD.quad(0.55, 0.85), tint: UIColor(white: 0.5, alpha: 1), at: studyPos + [0, 0.6, 0] + sface * 0.19, yaw: atan2(sface.x, sface.z))
+        studyArt = studyTex
         triggers.append(PLWTrigger(id: "p7.study", center: studyPos + [0, 1, 0], yaw: 0, halfExtents: [2.2, 2, 2.2]))
         triggers.append(PLWTrigger(id: "p7.summit", center: summit + [0, 1, 0], yaw: 0, halfExtents: [3, 3, 3]))
         // the first ring: a thin cyan ring that orbits the dream, kept once earned
@@ -144,7 +135,7 @@ import simd
         point(60_000, radius: 9, at: summit + [0, 2, back - summit.z + 1.5], color: 0x3D1EA8)
         ringLight = point(80_000, radius: 7, at: summit, color: 0x18F0D0); level(ringLight, 0)
 
-        key(0, .povertyToLuxury, at: path[along(0.25)] + sideAt(along(0.25)) * 2.6 + [0, 1.0, 0]); key(1, .moneyGrin, at: studyPos + sideAt(si) * -1.2 + [0, 1.0, 0]); key(2, .glyphGuy, at: summit + [3, 1.0, 2])
+        key(0, .money, at: path[along(0.25)] + sideAt(along(0.25)) * 2.6 + [0, 1.0, 0]); key(1, .glyphGuy, at: studyPos + sideAt(si) * -1.2 + [0, 1.0, 0]); key(2, .loveYourself, at: summit + [3, 1.0, 2])
         port("start", at: [0, 0, -0.5]); port("exit", at: [summit.x, summit.y, back])
         var line: [V3] = [[0, 0, -0.5]]
         for k in stride(from: 0, to: path.count, by: 12) { line.append(path[k]) }
@@ -175,13 +166,7 @@ import simd
         for i in stelae.indices where stelae[i].t >= 0 && stelae[i].t < 4 {
             stelae[i].t += dt
             let t = stelae[i].t
-            for (k, bar) in stelae[i].bars.enumerated() {
-                let s = PLWD.smooth(Float(k) * 0.5, Float(k) * 0.5 + 0.5, min(t, 1.2) / 1.2)
-                guard s > 0.001 else { continue }
-                bar.e.isEnabled = true
-                let d = bar.b - bar.a, len = simd_length(d), c = bar.a + d * (s / 2)
-                bar.e.position = [c.x, c.y, 0.1]; bar.e.scale = [1, len * s, 1]; bar.e.orientation = simd_quatf(angle: atan2(-d.x, d.y), axis: [0, 0, 1])
-            }
+            setPicture(stelae[i].x, stelae[i].xTex, tint: .white, opacity: PLWD.smooth(0, 1.2, t))   // his X lit in (a fade; the stroke-by-stroke wipe is owed)
         }
         // the bubble: the thought appears over his head under the arch and stays 5 s after he leaves it
         if inArch { under = 5 } else { under = max(0, under - dt) }
@@ -204,7 +189,7 @@ import simd
         if ringOn, let r = ring { r.isEnabled = true; r.position = p + [0, 1.2, 0]; r.orientation = simd_quatf(angle: clock * 1.5, axis: [0, 1, 0]) * simd_quatf(angle: 0.5 + 0.2 * sin(clock * 1.1), axis: [1, 0, 0]); ringLight.position = r.position }
         if !studyFound, nearStudy, f.actPressed {
             studyFound = true; out.append(.mark("p7.study")); out += say("his mauve study")
-            if let s = study { reskin(s, PLWDSkin(hex: 0x4A3A52, rough: 0.8, glow: 0xC568A8, glowK: 0.8)) }
+            if let s = study { setPicture(s, studyArt, tint: .white, opacity: 1) }
         }
         return out
     }
