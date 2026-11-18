@@ -49,6 +49,8 @@ import simd
     @ObservationIgnored private var statFrames = 0
     @ObservationIgnored private var statWorst: Float = 0
     @ObservationIgnored private var started = false
+    @ObservationIgnored private var heldPose: String?                           // "curl" until a room says "stand"
+    @ObservationIgnored private var orbOverride: Bool?                          // a room that draws its own pearl hides ours
     @ObservationIgnored private var pendingLift: Float = 0                      // updraft acceleration a room asked for, used on the next frame
     @ObservationIgnored private var railPoints: [SIMD3<Float>] = []             // room-local zip path; empty = not on a rail
     @ObservationIgnored private var railIndex = 0
@@ -102,7 +104,7 @@ import simd
     /// Loads `area`, stands the hero on its `port` and applies the look. The previous room is unloaded first.
     func enter(_ area: PLWArea, port: String) async {
         ready = false
-        railPoints = []; pendingLift = 0
+        railPoints = []; pendingLift = 0; heldPose = nil; orbOverride = nil
         room?.unload(); markers = [:]; active = []; tunnels = 0; camera.lean = nil; camera.firstPerson = false
         let r = PLWRoomRegistry.make(area)
         do { try await r.load() } catch {
@@ -247,6 +249,8 @@ import simd
         let speed = simd_length(SIMD2(vel.x, vel.z))
         if mag > 0.05 { var d = atan2(wish.x, wish.z) + facingOffset - facing; d = atan2(sin(d), cos(d)); facing += d * min(1, dt * 10) }
         visual.orientation = simd_quatf(angle: facing, axis: [0, 1, 0])
+        let squash: SIMD3<Float> = heldPose == "curl" ? [1.15, 0.55, 1.15] : [1, 1, 1]
+        visual.scale += (squash - visual.scale) * min(1, dt * 6)
         figure.play(!grounded ? .jump : (speed > 0.4 ? .walking : .idle))
         dreamOrb.position = SIMD3(0.55, t.capsuleHeight / 2 + 0.35 + dreamRise * 1.1 + sin(clock * 1.8) * 0.06, 0)
 
@@ -332,6 +336,14 @@ import simd
             case .rail(let pts, let speed):
                 guard railPoints.isEmpty, (2...64).contains(pts.count), speed.isFinite, (0.5...40).contains(speed), pts.allSatisfy({ $0.x.isFinite && $0.y.isFinite && $0.z.isFinite }) else { continue }
                 railPoints = pts; railIndex = 0; railSpeed = speed; vel = .zero
+            case .heroPose(let name):
+                switch name {
+                case "curl": heldPose = "curl"     // no curl clip in the pack: the tucked squash below, no invented art
+                case "stand": heldPose = nil
+                default: break                     // unknown names are ignored
+                }
+            case .dreamOrbVisible(let on):
+                orbOverride = on; updateDreamOrb()
             case .raiseDream(let f):
                 dreamRise = f.isFinite ? max(0, min(1, f)) : 0
             case .caption(let s):
@@ -349,7 +361,7 @@ import simd
 
     private func updateDreamOrb() {
         let d = store.save.dream
-        dreamOrb.isEnabled = d == .carried || d == .recovered
+        dreamOrb.isEnabled = orbOverride ?? (d == .carried || d == .recovered)
         if d == .absent || d == .buried { dreamRise = 0 }
     }
 
