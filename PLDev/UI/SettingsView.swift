@@ -58,6 +58,7 @@ struct SettingsView: View {
                 ServerKeysRows(model: model)
                 sections
                 diagnostics
+                ChangesMadeSection()
                 forget
                 about
             }
