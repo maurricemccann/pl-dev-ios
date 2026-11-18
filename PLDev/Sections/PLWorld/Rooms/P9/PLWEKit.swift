@@ -205,6 +205,28 @@ struct PLWEPaint { let entity: ModelEntity; var mat: PLWEMat }
         return try? MeshResource.generate(from: [d])
     }
 
+    /// Runs of angles round a full circle with the door gaps left out (each run becomes one wall mesh).
+    static func angleRuns(doors: [Float], doorHalf: Float, n: Int) -> [[Float]] {
+        var runs = [[Float]](), cur = [Float]()
+        for i in 0...n { let a = Float(i) / Float(n) * 2 * .pi
+            if doors.contains(where: { abs(atan2(sin(a - $0), cos(a - $0))) < doorHalf }) { if !cur.isEmpty { runs.append(cur); cur = [] } } else { cur.append(a) } }
+        if !cur.isEmpty { runs.append(cur) }
+        return runs.filter { $0.count > 1 }
+    }
+
+    /// The same, with a different gap half-angle per door.
+    static func angleRuns(doors: [(a: Float, half: Float)], n: Int) -> [[Float]] {
+        var runs = [[Float]](), cur = [Float]()
+        for i in 0...n { let a = Float(i) / Float(n) * 2 * .pi
+            if doors.contains(where: { abs(atan2(sin(a - $0.a), cos(a - $0.a))) < $0.half }) { if !cur.isEmpty { runs.append(cur); cur = [] } } else { cur.append(a) } }
+        if !cur.isEmpty { runs.append(cur) }
+        return runs.filter { $0.count > 1 }
+    }
+    /// Half-ellipse arch points (mouth) round `c`, `right` along the wall.
+    static func arch(at c: PLWEV3, right R: PLWEV3, halfW: Float, h: Float, n: Int = 36) -> [PLWEV3] {
+        (0...n).map { i in let th = Float(i) / Float(n) * .pi; return c + R * (cos(th) * halfW) + PLWEV3(0, sin(th) * h, 0) }
+    }
+
     // MARK: collision
     /// Static collision for a solid piece (a static mesh shape needs the static physics body mode as well).
     static func solid(_ e: ModelEntity) async {
