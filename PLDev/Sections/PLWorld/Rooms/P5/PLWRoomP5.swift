@@ -45,7 +45,7 @@ import simd
         box([0.24, 3.6, 0.24], oak, at: [0.55, 1.8, -cl + 0.06], round: 0.1)
         let glass = ModelEntity(mesh: .generateBox(size: [2.75, 3.4, 0.02]), materials: [])
         glass.position = [-0.85, 1.75, -cl + 0.02]; root.addChild(glass)
-        var gm = UnlitMaterial(); gm.color = .init(tint: UIColor(red: 0.05, green: 0.1, blue: 0.2, alpha: 1)); gm.blending = .transparent(opacity: 0.22); glass.model?.materials = [gm]
+        var gm = UnlitMaterial(); gm.color = .init(tint: UIColor(red: 0.05, green: 0.1, blue: 0.2, alpha: 1)); gm.blending = .transparent(opacity: .init(scale: 0.22)); glass.model?.materials = [gm]
 
         // inside: his curve tile with silver grout, the stone table, the slate with his seed under it
         box([cw * 2, 0.2, cl], PLWDSkin(hex: 0xC0C8D0, rough: 0.5, tex: tile, uv: [cw * 2 / 2.25, cl / 2.25]), at: [0, -0.1, -cl / 2], round: 0)

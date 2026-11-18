@@ -87,10 +87,10 @@ import simd
         }
         updraft = tree + V3(sin(1.75) * 10.2, 0, cos(1.75) * 10.2)
         let col = ModelEntity(mesh: .generateCylinder(height: updraftH, radius: 2), materials: [])
-        var um = UnlitMaterial(color: UIColor.world(0x2EE676)); um.blending = .transparent(opacity: 0.25); um.faceCulling = .none; col.model?.materials = [um]
+        var um = UnlitMaterial(color: UIColor.world(0x2EE676)); um.blending = .transparent(opacity: .init(scale: 0.25)); um.faceCulling = .none; col.model?.materials = [um]
         col.position = updraft + [0, updraftH / 2, 0]; root.addChild(col)
         // the emerald wave that climbs the trunk
-        var wm = UnlitMaterial(color: UIColor.world(0x2EE676)); wm.blending = .transparent(opacity: 0.45)
+        var wm = UnlitMaterial(color: UIColor.world(0x2EE676)); wm.blending = .transparent(opacity: .init(scale: 0.45))
         let w = ModelEntity(mesh: .generateCylinder(height: 0.4, radius: 5.2), materials: [wm]); w.position = tree + [0, 1, 0]; w.isEnabled = false; root.addChild(w); wave = w
         // the secret: his curve carved into the thick root behind the trunk (the plaque stands in until his curve art is rasterised)
         carvePos = backRoot

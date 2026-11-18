@@ -93,7 +93,7 @@ import simd
 
         // the test at 18 m: a gold mark on the path; hold still and the dome forms, his bolt strikes and bends into the rock
         let ti = idx(18); test = pts[ti]; testSide = nrm(ti)
-        var mm = UnlitMaterial(color: UIColor.world(0xFFC000)); mm.blending = .transparent(opacity: 0)
+        var mm = UnlitMaterial(color: UIColor.world(0xFFC000)); mm.blending = .transparent(opacity: .init(scale: 0))
         let mk = ModelEntity(mesh: .generateCylinder(height: 0.02, radius: 1.3), materials: [mm]); mk.position = test + [0, 0.03, 0]; root.addChild(mk); mark = mk
         let dm = ModelEntity(mesh: .generateSphere(radius: 1.8), materials: []); dm.position = test; dm.isEnabled = false; root.addChild(dm); dome = dm
         setDome(0, hit: false)
