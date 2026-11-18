@@ -230,7 +230,7 @@ struct PathScreen: View {
             }
             // spaced return: shown only when something is due, never with a number
             if let first = course.units.first, case let due = record.dueRun(in: course), !due.isEmpty {
-                Button("Return to earlier work") { playing = LessonRun(unit: first, lesson: nil, exercises: due, isQuiz: false, isReview: true) }
+                Button("Review earlier work") { playing = LessonRun(unit: first, lesson: nil, exercises: due, isQuiz: false, isReview: true) }
                     .buttonStyle(CandleGhost()).frame(minHeight: 44)
             }
             if record.next(in: course) == nil, let u = course.units.first(where: { record.isOpen($0, in: course) && !record.isPrepared($0) }) {
