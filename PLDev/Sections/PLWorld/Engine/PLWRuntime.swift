@@ -31,7 +31,8 @@ import simd
     private let dreamOrb = ModelEntity()
     @ObservationIgnored private let ring = PLWRingWorld()
     @ObservationIgnored private var rooms: [PLWArea: any PLWRoom] = [:]       // the rooms built right now (streamed round him)
-    @ObservationIgnored private var current: PLWArea = .p1                    // the area he is in; kept while he is inside a tunnel
+    @ObservationIgnored private let eyes = PLWEyes()                            // a session's eyes while Debug is on (PLWEyes)
+    @ObservationIgnored private var current: PLWArea = .p1                   // the area he is in; kept while he is inside a tunnel
     @ObservationIgnored private var triggerOwner: [String: PLWArea] = [:]
     @ObservationIgnored private var loading: Task<Void, Never>?               // at most one room is built at a time
     private var room: (any PLWRoom)? { rooms[current] }
@@ -105,10 +106,15 @@ import simd
         if let scene = engine.view?.scene { listen(scene) }
         await enter(store.save.checkpointArea, port: store.save.checkpointPort)
         engine.onFrame = { [weak self] dt in self?.frame(dt) }
+        eyes.start(engine: engine) { [weak self] in
+            guard let self else { return "gone" }
+            return "\(self.fps) fps, \(self.frameMS) ms, worst \(self.worstMS) ms, area \(self.current), ready \(self.ready), \(self.readout)"
+        }
     }
 
     func stop() {
         engine.onFrame = { _ in }
+        eyes.stop()
         subs.forEach { $0.cancel() }; subs = []
         loading?.cancel(); loading = nil
         for r in rooms.values { r.unload() }
