@@ -159,6 +159,8 @@ struct CaptureTrailRoom: View {
             }
         }
 
+        CaptureNotesBlock(model: model)
+
         let deckIDs = Set(state.deck.map(\.id))
         let rows = state.trail.filter { !deckIDs.contains($0.id) }
         if !rows.isEmpty {
