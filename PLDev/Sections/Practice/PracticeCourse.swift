@@ -148,9 +148,8 @@ struct PathScreen: View {
                 ForEach(course.units) { u in
                     unitCard(u, course)
                     // his ruling 11-15: each unit's lessons as fields of six, lesson n riding stroke n of The Direction
-                    ForEach(PracticeChapter.of(u)) { ch in
-                        PracticeField(unit: u, chapter: ch, open: record.isOpen(u, in: course) && record.isPrepared(u)) { l in start(u, l, course) }
-                    }
+                    PathUnitFields(unit: u, open: record.isOpen(u, in: course) && record.isPrepared(u),
+                                   focus: record.next(in: course).flatMap { $0.0.n == u.n ? $0.1.n : nil }) { l in start(u, l, course) }
                 }
             } else if state.message == nil {
                 ProgressView().tint(Candle.gold).frame(maxWidth: .infinity).padding(.top, 40)
