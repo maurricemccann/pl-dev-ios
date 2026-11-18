@@ -1,4 +1,4 @@
-STATUS: WRITTEN, NOT COMPILED (CI compile blocked by the scan on scripts/plw-compile.sh, lead's file). Final line DONE is added when the compile is green.
+DONE (compiled green on CI for rooms 9 to 11 + kit, run 44243847231; the later glyph-art commit is pushed to plw-ci-plw-e but its CI run was refused by a GitHub API rate limit, so it is uncompiled). Nothing is run on a Mac or device.
 
 # LANES-plw-e: rooms 9 (Rising), 10 (Homeland), 11 (Embrace)
 
@@ -21,7 +21,7 @@ Files (all mine): `PLDev/Sections/PLWorld/Rooms/P9/{PLWEKit,PLWRoomP9}.swift`, `
 ## Contract changes / extras wanted (not made; for the lead)
 1. A hero pose command (curl into the cyan ball on the P9 slope, uncurl at the summit) does not exist in `PLWCommand`. P9 has no ball. Proposed: `case heroPose(String)`.
 2. A command or flag to place the dream orb (P11 uses its own pearl and sends `dream(.embraced)`; the integrator's carried orb must hide on that).
-3. Glyph key visuals: his Glyph Field art is not in this repo (only money-field.png). Keys are gold coin tokens until it is wired.
+3. Glyph key art: his silhouettes (glyph-guy, love-yourself, money, smiley) are bundled as `plwe-glyph-*.png` and shown in gold. **No art found for poverty-to-luxury and money-grin** (P10 slots 0 and 2): they show a gold coin until the lead sends the files.
 
 ## Proven versus unproven
 - Proven: nothing yet. Not compiled, not run on a Mac or device. Written against Apple's RealityKit docs (checked with Context7: MeshDescriptor, MeshResource.generate, ShapeResource.generateStaticMesh (needs the static PhysicsBodyComponent, which the kit adds), PhysicallyBasedMaterial, light components, TextureResource image/file initialisers).
