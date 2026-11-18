@@ -1,3 +1,4 @@
+import Metal
 import RealityKit
 import UIKit
 import simd
@@ -20,12 +21,20 @@ import simd
 
     private func stone(_ set: String, tint: SIMD3<Float>) async throws -> PhysicallyBasedMaterial {
         var m = PhysicallyBasedMaterial()
-        m.baseColor = .init(tint: Self.ui(tint), texture: .init(try await Self.load("plw-p1-\(set)-albedo", "jpg", .color)))
-        m.normal = .init(texture: .init(try await Self.load("plw-p1-\(set)-normal", "jpg", .normal)))
-        m.roughness = .init(scale: 1, texture: .init(try await Self.load("plw-p1-\(set)-rough", "jpg", .raw)))
+        m.baseColor = .init(tint: Self.ui(tint), texture: Self.tx(try await Self.load("plw-p1-\(set)-albedo", "jpg", .color)))
+        m.normal = .init(texture: Self.tx(try await Self.load("plw-p1-\(set)-normal", "jpg", .normal)))
+        m.roughness = .init(scale: 1, texture: Self.tx(try await Self.load("plw-p1-\(set)-rough", "jpg", .raw)))
         m.metallic = .init(floatLiteral: 0)
         return m
     }
+
+    /// A material texture that repeats (stone sets tile at metres per repeat) with mips, linear and anisotropic filtering.
+    static let repeating: MaterialParameters.Texture.Sampler = {
+        let d = MTLSamplerDescriptor()
+        d.sAddressMode = .repeat; d.tAddressMode = .repeat; d.minFilter = .linear; d.magFilter = .linear; d.mipFilter = .linear; d.maxAnisotropy = 8
+        return .init(d)
+    }()
+    static func tx(_ r: TextureResource) -> MaterialParameters.Texture { .init(r, sampler: repeating) }
 
     static func ui(_ c: SIMD3<Float>) -> UIColor { UIColor(red: CGFloat(c.x), green: CGFloat(c.y), blue: CGFloat(c.z), alpha: 1) }
 
@@ -39,7 +48,7 @@ import simd
         tints = [(\.rock, rockTint), (\.floor, floorTint), (\.sand, sandTint)]
 
         tier = cream
-        tier.baseColor = .init(tint: .white, texture: .init(try await Self.load("plw-p1-tiletier-albedo", "jpg", .color)))
+        tier.baseColor = .init(tint: .white, texture: Self.tx(try await Self.load("plw-p1-tiletier-albedo", "jpg", .color)))
         yellow.roughness = .init(scale: 0.9, texture: yellow.roughness.texture)
 
         polished.baseColor = .init(tint: Self.ui([1.0, 0.77, 0.33])); polished.metallic = .init(floatLiteral: 0.9); polished.roughness = .init(floatLiteral: 0.32)
@@ -47,8 +56,8 @@ import simd
         polished.faceCulling = .none
         gold = polished; gold.roughness = .init(floatLiteral: 0.5)
 
-        face.baseColor = .init(tint: .white, texture: .init(try await Self.load("plw-p1-face", "png", .color)))
-        face.normal = .init(texture: .init(try await Self.load("plw-p1-face-normal", "jpg", .normal)))
+        face.baseColor = .init(tint: .white, texture: Self.tx(try await Self.load("plw-p1-face", "png", .color)))
+        face.normal = .init(texture: Self.tx(try await Self.load("plw-p1-face-normal", "jpg", .normal)))
         face.roughness = .init(floatLiteral: 0.8); face.metallic = .init(floatLiteral: 0)
         face.blending = .transparent(opacity: .init(floatLiteral: 1)); face.opacityThreshold = 0.4
 
@@ -56,7 +65,7 @@ import simd
         water.emissiveColor = .init(color: Self.ui([0.55, 0.36, 0.1])); water.emissiveIntensity = 0.7
 
         orb.baseColor = .init(tint: Self.ui([0.1, 0.09, 0.08]))
-        orb.emissiveColor = .init(color: Self.ui([1, 0.85, 0.5]), texture: .init(try await Self.load("plw-p1-tiletier-albedo", "jpg", .color)))
+        orb.emissiveColor = .init(color: Self.ui([1, 0.85, 0.5]), texture: Self.tx(try await Self.load("plw-p1-tiletier-albedo", "jpg", .color)))
         orb.emissiveIntensity = 2.4; orb.roughness = .init(floatLiteral: 0.4)
 
         let h = try await Self.load("plw-p1-halo", "png", .color)

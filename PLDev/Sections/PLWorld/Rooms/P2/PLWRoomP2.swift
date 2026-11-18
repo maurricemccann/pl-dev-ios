@@ -79,9 +79,9 @@ import simd
         func tex(_ n: String, _ e: String, _ s: TextureResource.Semantic) async throws -> TextureResource { try await P1Materials.load(n, e, s) }
         func stone(_ set: String, tint: V) async throws -> PhysicallyBasedMaterial {
             var m = PhysicallyBasedMaterial()
-            m.baseColor = .init(tint: P1Materials.ui(tint), texture: .init(try await tex("plw-p2-\(set)-albedo", "jpg", .color)))
-            m.normal = .init(texture: .init(try await tex("plw-p2-\(set)-normal", "jpg", .normal)))
-            if set != "woven" && set != "ground" { m.roughness = .init(scale: 1, texture: .init(try await tex("plw-p2-\(set)-rough", "jpg", .raw))) } else { m.roughness = .init(floatLiteral: 0.62) }
+            m.baseColor = .init(tint: P1Materials.ui(tint), texture: P1Materials.tx(try await tex("plw-p2-\(set)-albedo", "jpg", .color)))
+            m.normal = .init(texture: P1Materials.tx(try await tex("plw-p2-\(set)-normal", "jpg", .normal)))
+            if set != "woven" && set != "ground" { m.roughness = .init(scale: 1, texture: P1Materials.tx(try await tex("plw-p2-\(set)-rough", "jpg", .raw))) } else { m.roughness = .init(floatLiteral: 0.62) }
             m.metallic = .init(floatLiteral: 0)
             return m
         }
@@ -89,7 +89,7 @@ import simd
         var rock = try await stone("rock", tint: copper); rock.faceCulling = .none   // the walls are seen from inside, and a culled back face casts no shadow
         let sand = try await stone("sand", tint: [1, 0.96, 0.9]), woven = try await stone("woven", tint: [1, 1, 1])
         var ground = PhysicallyBasedMaterial()
-        ground.baseColor = .init(tint: .white, texture: .init(try await tex("plw-p2-ground-albedo", "jpg", .color))); ground.roughness = .init(floatLiteral: 0.75); ground.metallic = .init(floatLiteral: 0)
+        ground.baseColor = .init(tint: .white, texture: P1Materials.tx(try await tex("plw-p2-ground-albedo", "jpg", .color))); ground.roughness = .init(floatLiteral: 0.75); ground.metallic = .init(floatLiteral: 0)
         ground.blending = .transparent(opacity: .init(floatLiteral: 1))
 
         func add(_ mesh: P1Mesh, _ m: PhysicallyBasedMaterial, shape: ShapeResource? = nil, name: String, tint: V? = nil) async throws -> ModelEntity {
@@ -184,7 +184,7 @@ import simd
 
         // set pieces, all seated: his heart mark in gold on a sandstone stele three times along the walls; five fallen boulders bedded in sand
         var gold = PhysicallyBasedMaterial()
-        gold.baseColor = .init(tint: P1Materials.ui([0.89, 0.65, 0.3]), texture: .init(try await tex("plw-p2-heart", "png", .color)))
+        gold.baseColor = .init(tint: P1Materials.ui([0.89, 0.65, 0.3]), texture: P1Materials.tx(try await tex("plw-p2-heart", "png", .color)))
         gold.metallic = .init(floatLiteral: 1); gold.roughness = .init(floatLiteral: 0.24)
         gold.blending = .transparent(opacity: .init(floatLiteral: 1)); gold.opacityThreshold = 0.5; gold.faceCulling = .none
         let hw: Float = 2.8, hh = hw / 1.232, sw = hw + 0.6, sh = hh + 0.7
@@ -233,12 +233,12 @@ import simd
         edge.position = clearC; edge.isEnabled = false; root.addChild(edge)
 
         // the keys: his glyph silhouettes in gold, upright over a soft halo
-        var halo = UnlitMaterial(); halo.color = .init(tint: .white, texture: .init(try await tex("plw-p1-halo", "png", .color))); halo.blending = .transparent(opacity: .init(floatLiteral: 0.9))
+        var halo = UnlitMaterial(); halo.color = .init(tint: .white, texture: P1Materials.tx(try await tex("plw-p1-halo", "png", .color))); halo.blending = .transparent(opacity: .init(floatLiteral: 0.9))
         let aspect: [PLWGlyph: Float] = [.glyphGuy: 256.0 / 640, .money: 484.0 / 640, .smiley: 521.0 / 640]
         for g in glyphs {
             var m = UnlitMaterial(); m.faceCulling = .none
             let file = g.glyph == .smiley ? "plw-p2-key-smiley" : "plw-p1-key-\(g.glyph.rawValue)"
-            m.color = .init(tint: .white, texture: .init(try await tex(file, "png", .color))); m.blending = .transparent(opacity: .init(floatLiteral: 1))
+            m.color = .init(tint: .white, texture: P1Materials.tx(try await tex(file, "png", .color))); m.blending = .transparent(opacity: .init(floatLiteral: 1))
             let k = Entity(), h: Float = 0.9
             k.components.set(ModelComponent(mesh: .generatePlane(width: h * (aspect[g.glyph] ?? 0.5), height: h), materials: [m]))
             let glow = Entity(); glow.components.set(ModelComponent(mesh: .generatePlane(width: 1.6, height: 1.6), materials: [halo])); glow.components.set(BillboardComponent())
