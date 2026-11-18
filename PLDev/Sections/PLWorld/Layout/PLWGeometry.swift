@@ -51,7 +51,7 @@ struct PLWMeshBuilder {
         d.normals = MeshBuffers.Normals(nor)
         d.textureCoordinates = MeshBuffers.TextureCoordinates(uv)
         d.primitives = .triangles(idx)
-        return PLWLog.mesh(from: [d])
+        return try? MeshResource.generate(from: [d])
     }
 
     /// A profile (radius, height) swept round the origin from a0 to a1 degrees. The solid lies to the RIGHT of travel, so the visible face is on the LEFT:

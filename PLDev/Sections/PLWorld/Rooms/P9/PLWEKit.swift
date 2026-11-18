@@ -134,7 +134,7 @@ struct PLWEPaint { let entity: ModelEntity; var mat: PLWEMat }
         var d = MeshDescriptor(name: "plwe")
         d.positions = MeshBuffers.Positions(pos); d.normals = MeshBuffers.Normals(nrm); d.textureCoordinates = MeshBuffers.TextureCoordinates(uvs)
         d.primitives = .triangles(idx)
-        return PLWLog.mesh(from: [d])
+        return try? MeshResource.generate(from: [d])
     }
 
     /// A round disc or dome: `height(x, z)` gives the surface, rings from the centre out. Faces up.
@@ -212,7 +212,7 @@ struct PLWEPaint { let entity: ModelEntity; var mat: PLWEMat }
         }
         var d = MeshDescriptor(name: "blobs")
         d.positions = MeshBuffers.Positions(pos); d.normals = MeshBuffers.Normals(nrm); d.textureCoordinates = MeshBuffers.TextureCoordinates(uv); d.primitives = .triangles(idx)
-        return PLWLog.mesh(from: [d])
+        return try? MeshResource.generate(from: [d])
     }
 
     /// Runs of angles round a full circle with the door gaps left out (each run becomes one wall mesh).
@@ -296,7 +296,7 @@ struct PLWEPaint { let entity: ModelEntity; var mat: PLWEMat }
     /// A turning gold token for one glyph key. (Stand-in form until his Glyph Field art is wired: see LANES-plw-e.md.)
     func addGlyphs(_ list: [PLWGlyphPlacement]) async {
         glyphs = list
-        let coin = PLWLog.mesh(from: [PLWEKit.glyphTokenDescriptor()])
+        let coin = try? MeshResource.generate(from: [PLWEKit.glyphTokenDescriptor()])
         var goldCoin = PLWEMat(0xE8B21A, rough: 0.28, metal: 0.9); goldCoin.emissive = PLWEKit.rgb(0xFFC83A); goldCoin.emissiveI = 0.35
         for g in list {
             let e: ModelEntity

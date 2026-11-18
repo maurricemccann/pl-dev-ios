@@ -63,7 +63,7 @@ import simd
         var hillMat = PLWEMat(0x181038, rough: 0.55); hillMat.curve = (PLWEKit.rgb(0xF2F0F8), PLWEKit.rgb(0x181038))
         await piece(PLWEKit.lathe(prof, segs: 120, centre: K, uvScale: 1.0 / 7), hillMat, name: "risingHill", solid: true)
         let sum = K + PLWEV3(0, HH, 0)
-        await piece(PLWLog.mesh(from: [PLWEKit.cylinderDescriptor(radius: TOP + 0.15, height: 0.5, sides: 48)]), PLWEMat(0xA0A6B2, rough: 0.75), name: "summitStone", solid: true, at: sum + [0, 0.05, 0])
+        await piece(try? MeshResource.generate(from: [PLWEKit.cylinderDescriptor(radius: TOP + 0.15, height: 0.5, sides: 48)]), PLWEMat(0xA0A6B2, rough: 0.75), name: "summitStone", solid: true, at: sum + [0, 0.05, 0])
         var inlay = PLWEMat(0xA0A6B2, rough: 0.6); inlay.curve = (PLWEKit.rgb(0xFFD700), PLWEKit.rgb(0xA0A6B2))
         await piece(PLWEKit.polar(radius: TOP, rings: 6, segs: 48, centre: sum + [0, 0.31, 0], uvScale: 0.7) { _, _ in 0 }, inlay, name: "summitInlay")
 
