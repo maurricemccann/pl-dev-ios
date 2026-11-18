@@ -95,8 +95,8 @@ struct Course: Decodable, Sendable { let version: Int; let units: [CourseUnit] }
         guard let prev = course.units.first(where: { $0.n == u.n - 1 }) else { return true }
         return prev.playableLessons.isEmpty || lessonsLeft(prev) == 0
     }
-    /// His ruling 11-17: a unit's lessons wait until its pages are read. A unit he already started stays playable.
-    func isPrepared(_ u: CourseUnit) -> Bool { pagesLeft(u) == 0 || lessonsLeft(u) < u.playableLessons.count }
+    /// His ruling 11-17: a unit's lessons wait until its pages are read (Codex: a started unit was let through; no longer).
+    func isPrepared(_ u: CourseUnit) -> Bool { pagesLeft(u) == 0 }
     func next(in course: Course) -> (CourseUnit, CourseLesson)? {
         for u in course.units where isOpen(u, in: course) && isPrepared(u) {
             if let l = u.playableLessons.first(where: { !isDone(u.n, $0.n) }) { return (u, l) }
@@ -340,7 +340,8 @@ struct LessonView: View {
     @ViewBuilder private func exercise(_ e: CourseExercise) -> some View {
         VStack(alignment: .leading, spacing: 14) {
             Text(e.prompt).font(.system(size: 13)).textCase(.uppercase).tracking(1).foregroundStyle(Candle.gold)
-            ExerciseBody(exercise: e, locked: answered != nil) { ok in
+            ExerciseBody(exercise: e, locked: answered != nil) { result in
+                let ok = result || !Self.graded(e)   // Codex: kept work never records a miss or plays the wrong sound
                 answered = ok
                 if ok { if Self.graded(e) { right += 1 }; streak += 1; buddy.react(streak % 3 == 0 ? .streak : .right); Task { await BuddyIsland.show("open", Self.graded(e) ? "Right." : "Kept.") } }
                 else { record.miss(e.item); streak = 0; buddy.react(.wrong); Task { await BuddyIsland.show("rest", "It comes back later.") } }
@@ -438,6 +439,7 @@ struct OptionExercise: View {
     let locked: Bool
     let answer: (Bool) -> Void
     @State private var picked: Int?
+    @Environment(\.accessibilityReduceMotion) private var reduceMotion
 
     var body: some View {
         VStack(alignment: .leading, spacing: 12) {
@@ -450,7 +452,8 @@ struct OptionExercise: View {
                         .frame(maxWidth: .infinity, minHeight: 52, alignment: .leading).padding(.horizontal, 16).padding(.vertical, 6)
                         .background { RoundedRectangle(cornerRadius: 14, style: .continuous).fill(filled(i) ? Candle.gold : Candle.ink.opacity(i == picked ? 0.1 : 0.03)) }
                         .overlay { RoundedRectangle(cornerRadius: 14, style: .continuous).strokeBorder(line(i), lineWidth: locked && i == correct ? 2 : 1) }
-                        .scaleEffect(i == picked ? 1.02 : 1)
+                        .scaleEffect(i == picked && !reduceMotion ? 1.02 : 1)
+                        .accessibilityAddTraits(i == picked ? .isSelected : [])
                         .contentShape(Rectangle())
                 }
                 .buttonStyle(.plain).disabled(locked)

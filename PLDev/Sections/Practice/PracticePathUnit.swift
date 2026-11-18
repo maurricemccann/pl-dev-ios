@@ -9,13 +9,15 @@ struct PathUnitFields: View {
     let focus: Int?
     let play: (CourseLesson) -> Void
     @State private var all = false
+    @Environment(\.accessibilityReduceMotion) private var reduceMotion
 
     var body: some View {
         let chapters = PracticeChapter.of(unit)
         let shown = all ? chapters : chapters.filter { ch in focus.map { n in ch.lessons.contains { $0.n == n } } ?? false }
         ForEach(shown) { ch in PracticeField(unit: unit, chapter: ch, open: open, play: play) }
-        if chapters.count > shown.count || all, chapters.count > 1 {
-            Button(all ? "Show less" : "All \(chapters.count) chapters") { withAnimation(.snappy) { all.toggle() } }
+        // Codex: a unit with no next lesson (done, or not yet open) still offers its chapters, one chapter included
+        if !chapters.isEmpty, chapters.count > shown.count || (all && focus != nil) {
+            Button(all ? "Show less" : chapters.count == 1 ? "Show the lessons" : "All \(chapters.count) chapters") { withAnimation(reduceMotion ? nil : .snappy) { all.toggle() } }
                 .buttonStyle(CandleGhost())
                 .frame(minHeight: 44)
         }

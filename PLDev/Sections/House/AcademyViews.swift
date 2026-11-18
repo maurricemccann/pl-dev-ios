@@ -320,10 +320,10 @@ struct AcademyReaderView: View {
                 HStack {
                     Text(sectionTitle).osEyebrow(10).foregroundStyle(PLOS.dim(scheme))
                     Spacer()
-                    Button(absorbed ? "Absorbed \u{25C6}" : "Mark absorbed") { Academy.toggleRead(doc.key); absorbed.toggle() }
-                        .buttonStyle(OSPill())
-                        .sensoryFeedback(PLHaptic.success, trigger: absorbed)
+                    // his ruling 11-17 (read before the lessons open): the only way to mark a page is after its last paragraph
+                    if absorbed { Text("Absorbed \u{25C6}").osEyebrow(10).foregroundStyle(PLOS.gold) }
                 }
+                .sensoryFeedback(PLHaptic.success, trigger: absorbed)
                 Text(doc.name).font(.system(.title, design: .serif)).foregroundStyle(PLOS.text(scheme))
                 if let blocks {
                     ForEach(Array(blocks.enumerated()), id: \.offset) { _, b in block(b) }
