@@ -125,7 +125,7 @@ struct PLWMeshBuilder {
     }
 }
 
-enum PLWSolid {
+@MainActor enum PLWSolid {
     /// Static collision the integrator's character controller walks on (blueprint: every solid piece carries one inside the room root).
     static func make(_ e: Entity, shapes: [ShapeResource]) {
         guard !shapes.isEmpty else { return }
