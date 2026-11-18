@@ -418,10 +418,10 @@ struct ShotCard: View {
                         }
                         Spacer()
                         if let x = ComposerExtras.shared.extra(aid), x.video, x.catalog == "Photos" {
-                            Button { trimming = x } label: { Image(systemName: "scissors").font(.system(size: 12)).foregroundStyle(x.trimmed ? CMP.gold : CMP.muted).frame(width: 36, height: 36).contentShape(Rectangle()) }
+                            Button { trimming = x } label: { Image(systemName: "scissors").font(.system(size: 12)).foregroundStyle(x.trimmed ? CMP.gold : CMP.muted).frame(width: 44, height: 44).contentShape(Rectangle()) }
                                 .buttonStyle(.plain).accessibilityLabel("Trim \(x.name)")
                         }
-                        Button { store.patch(shot.id) { $0.sourceIds.removeAll { $0 == aid } } } label: { Image(systemName: "xmark").font(.system(size: 11, weight: .semibold)).foregroundStyle(CMP.muted).frame(width: 36, height: 36).contentShape(Rectangle()) }
+                        Button { store.patch(shot.id) { $0.sourceIds.removeAll { $0 == aid } } } label: { Image(systemName: "xmark").font(.system(size: 11, weight: .semibold)).foregroundStyle(CMP.muted).frame(width: 44, height: 44).contentShape(Rectangle()) }
                             .buttonStyle(.plain).accessibilityLabel("Remove source")
                     }
                     .contextMenu {
