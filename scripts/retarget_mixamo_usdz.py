@@ -12,10 +12,13 @@ from mathutils import Matrix
 a = sys.argv[sys.argv.index("--") + 1:]
 glb, fbx, out, name = a[0], a[1], a[2], a[3]
 keep_h = "--keep-hips-height" in a
+head_k = float(a[a.index("--head") + 1]) if "--head" in a else 1.0   # 0..1: share of the neck and head turn kept (his head is oversized; a full bow swings it off his shoulders)
 bpy.ops.wm.read_homefile(use_empty=True)
 bpy.ops.import_scene.gltf(filepath=glb)
 tgt = next(o for o in bpy.data.objects if o.type == "ARMATURE")
 for act in list(bpy.data.actions): bpy.data.actions.remove(act)
+for o in [o for o in bpy.data.objects if o.type == "MESH" and not any(m.type == "ARMATURE" for m in o.modifiers)]:
+    bpy.data.objects.remove(o)   # the gallery glb carries a stray 2 m Icosphere (S350), not part of him
 bpy.ops.import_scene.fbx(filepath=fbx)
 src = next(o for o in bpy.data.objects if o.type == "ARMATURE" and o != tgt)
 sact = src.animation_data.action
@@ -38,12 +41,19 @@ print("RESULT rotation modes before", sorted(set(pb.rotation_mode for pb in tgt.
 for pb in tgt.pose.bones: pb.rotation_mode = "QUATERNION"   # the keys below are quaternions; a bone left in Euler would ignore them
 tgt.animation_data_create(); tact = bpy.data.actions.new(name); tgt.animation_data.action = tact
 sc = bpy.context.scene
+baked = {}                                            # what the bake set, per frame and bone (world rotation), for the playback check
 for f in range(f0, f1 + 1):
     sc.frame_set(f)
+    baked[f] = {}
     for pb, sp in pairs:
         srest, trest = rest[pb.name]
         spose = (src.matrix_world @ sp.matrix).to_quaternion()
-        want = (spose @ srest.inverted()) @ trest                          # the source bone's turn from rest, laid on his rest
+        delta = spose @ srest.inverted()
+        if head_k < 1 and key(pb.name) in ("Neck", "Head"):
+            parent_delta = (src.matrix_world @ sp.parent.matrix).to_quaternion() @ (src.matrix_world @ sp.parent.bone.matrix_local).to_quaternion().inverted()
+            own = parent_delta.inverted() @ delta                       # this bone's own turn on top of its parent's
+            delta = parent_delta @ __import__("mathutils").Quaternion().slerp(own, head_k)
+        want = delta @ trest                                               # the source bone's turn from rest, laid on his rest
         cur = tgt.matrix_world @ pb.matrix
         loc = cur.to_translation()
         if pb is hips_t and keep_h:
@@ -53,6 +63,7 @@ for f in range(f0, f1 + 1):
             loc = tgt.matrix_world @ hips_t.bone.head_local
         pb.matrix = tgt.matrix_world.inverted() @ Matrix.LocRotScale(loc, want, cur.to_scale())
         bpy.context.view_layer.update()
+        baked[f][pb.name] = want
         pb.keyframe_insert("rotation_quaternion", frame=f)
         if pb is hips_t: pb.keyframe_insert("location", frame=f)
     if "--debug" in a:
@@ -63,10 +74,7 @@ for f in range(f0, f1 + 1):
 
 # playback check: read the stored move back and compare each bone with what the bake set (fails loud past 5 degrees)
 import math
-want_by = {}
-for f in range(f0, f1 + 1):
-    sc.frame_set(f)
-    want_by[f] = {pb.name: ((spm := (src.matrix_world @ sp.matrix).to_quaternion()) @ rest[pb.name][0].inverted()) @ rest[pb.name][1] for pb, sp in pairs}
+want_by = baked
 bad = []
 for f in range(f0, f1 + 1):
     sc.frame_set(f)
