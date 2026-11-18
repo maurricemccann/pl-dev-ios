@@ -108,6 +108,17 @@ struct Course: Decodable, Sendable { let version: Int; let units: [CourseUnit] }
         }
         return nil
     }
+    /// The items whose time has come, as a short run of up to four. Nothing counts them aloud: a count of what is due is a debt.
+    func dueRun(in course: Course, limit: Int = 4) -> [CourseExercise] {
+        let due = SpacedReview.due()
+        guard !due.isEmpty else { return [] }
+        let met = course.units.flatMap { $0.lessons.flatMap(\.exercises) + $0.quiz }.filter { $0.isPlayable && LessonView.graded($0) }
+        var seen = Set<String>(), out: [CourseExercise] = []
+        for item in due where seen.insert(item).inserted {
+            if let e = met.first(where: { $0.item == item }) { out.append(e); if out.count == limit { break } }
+        }
+        return out
+    }
     /// One earlier exercise for review: the most-missed item first, then a shuffled deck over the rest.
     func review(for unit: CourseUnit, in course: Course) -> CourseExercise? {
         // spaced review first (SpacedReview): an item he has met whose time has come, from this unit or any before it
@@ -138,36 +149,48 @@ struct PathScreen: View {
     @State private var playing: LessonRun?
     @State private var goldPack: GoldPack?
     @State private var livePack = false
+    @State private var playRun: PracticePlayRun?
     /// His daily minutes (asked once here, changeable in Settings): a lesson is about three minutes.
     @AppStorage("course.minutes") private var minutes = 0
     @State private var pathBuddy = BuddyModel()
     /// Bumped each time the Path comes back into view, so pages read in the Academy reader count at once.
     @State private var seen = 0
+    /// Units he opened from their compact row.
+    @State private var opened: Set<Int> = []
     private let record = CourseRecord.shared
 
     var body: some View {
         let _ = seen
         VStack(spacing: 16) {
+            // a title on the Path itself, so it is named even when the bar's title is scrolled or hidden
+            Text("The Path").candleH2().accessibilityAddTraits(.isHeader).frame(maxWidth: .infinity, alignment: .leading)
             if let m = state.message { Text(m).candleHint().frame(maxWidth: .infinity, alignment: .leading) }
             // Gemini and Codex 11-17: one action first. The next lesson leads; the minutes question and the pack test follow it.
             if let course = state.course {
                 summary(course)
                 if minutes == 0 { goalCard }
+                // Phase 2 (S349): the current unit is drawn in full; every other unit is one compact row that opens on tap.
+                let current = record.next(in: course)?.0.n ?? course.units.first(where: { record.isOpen($0, in: course) && !record.isPrepared($0) })?.n
                 ForEach(course.units) { u in
-                    unitCard(u, course)
-                    // his ruling 11-15: each unit's lessons as fields of six, lesson n riding stroke n of The Direction
-                    PathUnitFields(unit: u, open: record.isOpen(u, in: course) && record.isPrepared(u),
-                                   focus: record.next(in: course).flatMap { $0.0.n == u.n ? $0.1.n : nil }) { l in start(u, l, course) }
+                    if u.n == current || opened.contains(u.n) {
+                        if u.n != current { unitRow(u, course) }
+                        unitCard(u, course)
+                        // his ruling 11-15: each unit's lessons as fields of six, lesson n riding stroke n of The Direction
+                        PathUnitFields(unit: u, open: record.isOpen(u, in: course) && record.isPrepared(u),
+                                       focus: record.next(in: course).flatMap { $0.0.n == u.n ? $0.1.n : nil }) { l in start(u, l, course) }
+                    } else { unitRow(u, course) }
                 }
             } else if state.message == nil {
                 ProgressView().tint(Candle.gold).frame(maxWidth: .infinity).padding(.top, 40)
             }
+            if let course = state.course { PracticePlayCard(course: course) { playRun = $0 } }
             Button("The pack \u{00b7} live test") { livePack = true }.buttonStyle(CandleGhost()).padding(.top, 8)
         }
         .onAppear { seen += 1 }
         .task { await state.load(model: model) }
         .fullScreenCover(item: $playing) { run in LessonView(model: model, run: run) { playing = nil } }
         .background { Color.clear.fullScreenCover(item: $goldPack) { g in PackScreen(model: model, key: "gold-\(g.unit)") { goldPack = nil } } }
+        .background { Color.clear.fullScreenCover(item: $playRun) { r in PracticePlayView(run: r) { playRun = nil } } }
         .background { Color.clear.fullScreenCover(isPresented: $livePack) { LivePackScreen { livePack = false } } }
     }
 
@@ -204,7 +227,13 @@ struct PathScreen: View {
             if minutes > 0 { Text("About \(max(1, minutes / 3)) \(minutes / 3 > 1 ? "lessons" : "lesson") a day for your \(minutes) minutes.").candleHint() }
             if let (u, l) = record.next(in: course) {
                 Button(record.place(u.n, l.n) > 0 ? "Continue: \(u.title), \(l.n)" : "Next lesson: \(u.title), \(l.n)") { start(u, l, course) }.buttonStyle(CandleButton()).padding(.top, 6)
-            } else if let u = course.units.first(where: { record.isOpen($0, in: course) && !record.isPrepared($0) }) {
+            }
+            // spaced return: shown only when something is due, never with a number
+            if let first = course.units.first, case let due = record.dueRun(in: course), !due.isEmpty {
+                Button("Review earlier work") { playing = LessonRun(unit: first, lesson: nil, exercises: due, isQuiz: false, isReview: true) }
+                    .buttonStyle(CandleGhost()).frame(minHeight: 44)
+            }
+            if record.next(in: course) == nil, let u = course.units.first(where: { record.isOpen($0, in: course) && !record.isPrepared($0) }) {
                 // the one next step is one tap: the first unread page opens straight from here
                 if let p = u.guidebook.first(where: { $0.key.map { Academy.read[$0] == nil } ?? false }), let key = p.key {
                     NavigationLink { AcademyReaderView(doc: AcademyHTML.Doc(key: key, name: p.title), sectionTitle: u.title).osScreen() } label: {
@@ -216,6 +245,26 @@ struct PathScreen: View {
             }
         }
         .candleCard()
+    }
+
+    /// A unit that is not the current one: title, where it stands, a chevron. Tap to open or close it (44 pt; the same row closes it).
+    private func unitRow(_ u: CourseUnit, _ course: Course) -> some View {
+        let isOpen = opened.contains(u.n)
+        let total = u.playableLessons.count, played = total - record.lessonsLeft(u)
+        let status = record.isGold(u) ? "Gold" : total == 0 ? "Lessons to come" : !record.isOpen(u, in: course) ? "Opens after the unit before" : "\(played) of \(total) lessons"
+        return Button { withAnimation(.snappy) { if isOpen { opened.remove(u.n) } else { opened.insert(u.n) } } } label: {
+            HStack(spacing: 10) {
+                VStack(alignment: .leading, spacing: 2) {
+                    Text("\(u.n) \u{00b7} \(u.title)").candleH2()
+                    Text(status).candleHint()
+                }
+                Spacer(minLength: 0)
+                Image(systemName: "chevron.down").font(.system(size: 12)).foregroundStyle(Candle.ink.opacity(0.5)).rotationEffect(.degrees(isOpen ? 180 : 0))
+            }
+            .frame(minHeight: 44).contentShape(Rectangle())
+        }
+        .buttonStyle(.plain).candleCard(padding: 14)
+        .accessibilityValue(isOpen ? "open" : "closed")
     }
 
     private func unitCard(_ u: CourseUnit, _ course: Course) -> some View {
@@ -282,7 +331,9 @@ struct LessonRun: Identifiable {
     let lesson: CourseLesson?
     let exercises: [CourseExercise]
     let isQuiz: Bool
-    var id: String { "\(unit.n)-\(lesson?.n ?? 0)-\(isQuiz)" }
+    /// Earlier items returning on their schedule: no unit, no lesson, no pack, nothing marked done (S349 phase 4).
+    var isReview = false
+    var id: String { "\(unit.n)-\(lesson?.n ?? 0)-\(isQuiz)-\(isReview)" }
 }
 
 struct LessonView: View {
@@ -295,6 +346,8 @@ struct LessonView: View {
     @State private var right = 0
     @State private var answered: Bool?
     @State private var finished = false
+    /// A good place to stop, offered after 3 to 5 interactions of a long lesson (S349 phase 4).
+    @State private var pausing = false
     /// false until the lesson's passages are read (his ruling 11-17)
     @State private var ready = false
     @State private var pack: PracticePack?
@@ -316,8 +369,9 @@ struct LessonView: View {
                     Text("\(min(index + 1, run.exercises.count)) / \(run.exercises.count)").font(.system(size: 12).monospacedDigit()).foregroundStyle(Candle.ink.opacity(0.6))
                 }
                 if finished { done }
+                else if pausing { pauseCard }
                 else if !ready, let p = run.lesson?.read, !p.isEmpty, !run.isQuiz { LessonReadStep(passages: p) { ready = true } }
-                else if index < run.exercises.count { exercise(run.exercises[index]) }
+                else if index < run.exercises.count { ScrollView { exercise(run.exercises[index]).padding(.bottom, 8) }.scrollIndicators(.hidden).scrollDismissesKeyboard(.interactively) }
                 Spacer(minLength: 0)
                 // his ruling 11-15: Buddy lives down in the empty space under the exercise (never over it), as large as the room left
                 // allows; a tap plays his next move
@@ -390,15 +444,35 @@ struct LessonView: View {
         }
     }
 
+    /// Four in five of the scored items (all, when fewer). Kept work (a reflection, a spoken line, a drawing) is never in the count.
+    private var quizOK: Bool { let g = run.exercises.filter(Self.graded).count; return g == 0 || right >= max(1, g - 1) }
+
+    /// Sessions of 3 to 5: a lesson of n interactions is cut into the fewest even parts of at most five.
+    static func sessionSize(_ n: Int) -> Int { let parts = (n + 4) / 5; return parts <= 1 ? n : (n + parts - 1) / parts }
+
+    private var pauseCard: some View {
+        VStack(spacing: 14) {
+            Text("A good place to stop.").plHand(26, relativeTo: .title).foregroundStyle(Candle.goldHi).multilineTextAlignment(.center)
+            Text("Your place is kept. The rest is here when you are.").candleHint().multilineTextAlignment(.center)
+            Button("Keep going") { pausing = false }.buttonStyle(CandleButton())
+            Button("Stop here") { close() }.buttonStyle(CandleGhost()).frame(minHeight: 44)
+        }
+        .frame(maxWidth: .infinity).padding(.top, 40)
+    }
+
     private func advance() {
         answered = nil
         if index + 1 < run.exercises.count {
             index += 1
-            if let l = run.lesson, !run.isQuiz { record.setPlace(run.unit.n, l.n, index) }
+            if let l = run.lesson, !run.isQuiz {
+                record.setPlace(run.unit.n, l.n, index)
+                if index % Self.sessionSize(run.exercises.count) == 0 { pausing = true }
+            }
             return
         }
         // a lesson counts once it is played through; the quiz passes at four in five (or all, when it is shorter)
-        if run.isQuiz { if right >= max(1, run.exercises.count - 1) { record.passQuiz(run.unit.n) } }
+        if run.isQuiz { if quizOK { record.passQuiz(run.unit.n) } }
+        else if run.isReview { }
         else if let l = run.lesson { record.finish(unit: run.unit.n, lesson: l.n); BuddyIsland.lessonDone() }
         finished = true
         PracticeSound.play(.done)
@@ -406,11 +480,11 @@ struct LessonView: View {
     }
 
     private var done: some View {
-        let passed = !run.isQuiz || right >= max(1, run.exercises.count - 1)
+        let passed = !run.isQuiz || quizOK
         return VStack(spacing: 14) {
             if let l = run.lesson, !run.isQuiz { LessonFinishCard(unit: run.unit, lesson: l) }
             else {
-                Text(passed ? "Quiz passed." : "Not yet. Take it again when you like.")
+                Text(run.isReview ? "Back with you." : passed ? "Quiz passed." : "Not yet. Take it again when you like.")
                     .plHand(26, relativeTo: .title).foregroundStyle(Candle.goldHi).multilineTextAlignment(.center)
             }
             let graded = run.exercises.filter(Self.graded).count
