@@ -49,6 +49,10 @@ import simd
     @ObservationIgnored private var statFrames = 0
     @ObservationIgnored private var statWorst: Float = 0
     @ObservationIgnored private var started = false
+    @ObservationIgnored private var pendingLift: Float = 0                      // updraft acceleration a room asked for, used on the next frame
+    @ObservationIgnored private var railPoints: [SIMD3<Float>] = []             // room-local zip path; empty = not on a rail
+    @ObservationIgnored private var railIndex = 0
+    @ObservationIgnored private var railSpeed: Float = 0
     private let softKick = UIImpactFeedbackGenerator(style: .soft)
     private let lightKick = UIImpactFeedbackGenerator(style: .light)
     /// glTF models face +Z. If a hero is seen walking backwards on device, this one value (set to .pi) fixes it.
@@ -98,6 +102,7 @@ import simd
     /// Loads `area`, stands the hero on its `port` and applies the look. The previous room is unloaded first.
     func enter(_ area: PLWArea, port: String) async {
         ready = false
+        railPoints = []; pendingLift = 0
         room?.unload(); markers = [:]; active = []; tunnels = 0; camera.lean = nil; camera.firstPerson = false
         let r = PLWRoomRegistry.make(area)
         do { try await r.load() } catch {
@@ -186,6 +191,8 @@ import simd
         tick(rawDt)
         var s = input.sample()
         camera.yaw += s.lookYaw; camera.pitch += s.lookPitch
+        let onRail = !railPoints.isEmpty
+        if onRail { s.move = .zero; s.jumpPressed = false; s.actPressed = false }   // input is locked until the rail ends
 
         // the orb: JUMP twice, then ACT within 1.3 s, and he rolls as the dream orb at three times the speed; the same again and he is himself
         if s.jumpPressed { jumpTimes.append(clock); if jumpTimes.count > 3 { jumpTimes.removeFirst() } }
@@ -226,7 +233,9 @@ import simd
                 vel.y = (2 * t.gravity * t.doubleJumpPeak).squareRoot(); jumpsUsed = 2; jumpBuffer = 0; airLock = 0.1; kick(.light)
             }
         }
-        if vel.y > 0, airLock == 0, let sv = state?.velocity.y, sv < vel.y * 0.2 { vel.y = 0 }   // his head met a ceiling
+        vel.y += pendingLift * dt; pendingLift = 0
+        if onRail { vel = railVelocity(room, dt) }
+        if vel.y > 0, !onRail, airLock == 0, let sv = state?.velocity.y, sv < vel.y * 0.2 { vel.y = 0 }   // his head met a ceiling
 
         player.moveCharacter(by: vel * dt, deltaTime: dt, relativeTo: nil)
         if grounded, !wasGrounded { kick(.soft) }
@@ -255,6 +264,19 @@ import simd
         camera.update(dt: dt, hero: player.position, camera: engine.camera, scene: engine.view?.scene)
         if caption != nil, clock > captionUntil { caption = nil }
         if t.debug { readout = String(format: "x %.1f  y %.1f  z %.1f  %@  %.1f m/s", local.x, local.y, local.z, grounded ? "ground" : "air", speed) }
+    }
+
+    /// The velocity that carries his feet along the rail's room-local points at its speed; clears the rail at the last point.
+    private func railVelocity(_ room: any PLWRoom, _ dt: Float) -> SIMD3<Float> {
+        let feet = player.position - SIMD3(0, tuning.capsuleHeight / 2, 0)
+        let d = room.root.convert(position: railPoints[railIndex], to: nil) - feet
+        let dist = simd_length(d), stride = railSpeed * dt
+        if dist <= stride {
+            railIndex += 1
+            if railIndex >= railPoints.count { railPoints = []; jumpsUsed = 0 }
+            return d / max(dt, 0.001)
+        }
+        return d / dist * railSpeed
     }
 
     private func respawn() async {
@@ -305,6 +327,11 @@ import simd
             case .camera(let p, let t, let w):
                 guard w.isFinite, p.x.isFinite, t.x.isFinite else { continue }
                 camera.lean = w > 0 ? PLWCameraRig.Lean(position: room.root.convert(position: p, to: nil), target: room.root.convert(position: t, to: nil), weight: min(1, w)) : nil
+            case .lift(let a):
+                if a.isFinite { pendingLift = max(0, min(30, a)) }
+            case .rail(let pts, let speed):
+                guard railPoints.isEmpty, (2...64).contains(pts.count), speed.isFinite, (0.5...40).contains(speed), pts.allSatisfy({ $0.x.isFinite && $0.y.isFinite && $0.z.isFinite }) else { continue }
+                railPoints = pts; railIndex = 0; railSpeed = speed; vel = .zero
             case .raiseDream(let f):
                 dreamRise = f.isFinite ? max(0, min(1, f)) : 0
             case .caption(let s):
