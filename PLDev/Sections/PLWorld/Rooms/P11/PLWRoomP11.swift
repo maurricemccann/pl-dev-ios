@@ -129,7 +129,7 @@ import simd
 
     override func stepRoom(_ f: PLWFrame) -> [PLWCommand] {
         var out = [PLWCommand]()
-        if !sentStart { sentStart = true; out.append(.checkpoint(.p11, port: "start")) }
+        if !sentStart { sentStart = true; out.append(.checkpoint(.p11, port: "start")); if embraced { out.append(.dreamOrbVisible(false)) } }   // a restored embrace keeps only the pearl
         let p = f.position, PE = C + [0, 0, 4.5]
         if embraced { ribbonHub.orientation = simd_quatf(angle: spin * 0.08, axis: [0, 1, 0]); if let o = orb, t >= 2.2 { o.position.y = C.y + 0.25 + 0.05 * sin(spin * 1.1) } }
         // The embrace: at the pier's end, holding still (or ACT) lets the dream go.
@@ -137,7 +137,7 @@ import simd
         still = atEnd && !embraced && (simd_length(f.velocity) < 0.25 || f.actPressed) ? still + f.dt : 0
         if atEnd, !embraced, !hinted { hinted = true; out.append(.caption("hold still")) } else if !atEnd { hinted = false }
         if !embraced, still > 1.0 {
-            embraced = true; t = 0; from = PE + [0, 1.2, 0]; orb?.isEnabled = true; out += [.dream(.embraced), .roomFlag(.p11, "embraced")]
+            embraced = true; t = 0; from = PE + [0, 1.2, 0]; orb?.isEnabled = true; out += [.dream(.embraced), .dreamOrbVisible(false), .roomFlag(.p11, "embraced")]
         }
         if embraced, t >= 0, t < 7 {
             t += f.dt

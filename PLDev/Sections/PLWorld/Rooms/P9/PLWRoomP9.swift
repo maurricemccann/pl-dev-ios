@@ -12,7 +12,7 @@ import simd
     static let steepestSlopeDegrees: Float = 36
     private let K = PLWEV3(0, 0, -PLWRoomP9.RR)
     private var valleyIdx: Int?, secretIdx: Int?
-    private var revealT: Float = -1, secretFoundT: Float = -1, sentStart = false, done = false, liftEnded = false, secretFound = false
+    private var revealT: Float = -1, secretFoundT: Float = -1, sentStart = false, done = false, liftEnded = false, secretFound = false, curled = false
 
     init() { super.init(area: .p9, defaultSaturation: 0.7) }
 
@@ -146,6 +146,9 @@ import simd
         var out = [PLWCommand]()
         if !sentStart { sentStart = true; out.append(.checkpoint(.p9, port: "start")) }
         let sum = K + PLWEV3(0, Self.HH, 0), p = f.position
+        // On the slope he is the ball (his curl, as motion); on the flat or the summit stone he stands.
+        let rr = hypot(p.x - K.x, p.z - K.z), onSlope = rr > Self.TOP + 0.1 && rr < Self.HR - 0.4 && p.y > 0.6
+        if onSlope != curled { curled = onSlope; out.append(.heroPose(onSlope ? "curl" : "stand")) }
         // The summit: he stands on the stone, lifts the dream, the valley lights up below.
         if revealT < 0, hypot(p.x - sum.x, p.z - sum.z) < Self.TOP, p.y > sum.y - 0.5 { revealT = 0 }
         if revealT >= 0, revealT < 90 {

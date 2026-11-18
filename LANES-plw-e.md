@@ -19,9 +19,9 @@ Files (all mine): `PLDev/Sections/PLWorld/Rooms/P9/{PLWEKit,PLWRoomP9}.swift`, `
 - Page hues come from `look.pageRGB`; vividness is `look.saturation` applied to every colour, never a multiply toward black; exposure scales the room's lights. His curve tile is recoloured on the CPU (512 px) and rebuilt when saturation moves.
 
 ## Contract changes / extras wanted (not made; for the lead)
-1. A hero pose command (curl into the cyan ball on the P9 slope, uncurl at the summit) does not exist in `PLWCommand`. P9 has no ball. Proposed: `case heroPose(String)`.
-2. A command or flag to place the dream orb (P11 uses its own pearl and sends `dream(.embraced)`; the integrator's carried orb must hide on that).
-3. Glyph key art: his silhouettes (glyph-guy, love-yourself, money, smiley) are bundled as `plwe-glyph-*.png` and shown in gold. **No art found for poverty-to-luxury and money-grin** (P10 slots 0 and 2): they show a gold coin until the lead sends the files.
+1. DONE (granted): P9 sends `heroPose("curl")` on the slope and `heroPose("stand")` off it.
+2. DONE (granted): P11 sends `dreamOrbVisible(false)` at the embrace (and on a restored embrace) and draws its own pearl.
+3. Glyph key art: all six silhouettes now bundled (`plwe-glyph-*.png`, P9 and P10 folders) and shown in gold; no coin stand-ins left.
 
 ## Proven versus unproven
 - Proven: nothing yet. Not compiled, not run on a Mac or device. Written against Apple's RealityKit docs (checked with Context7: MeshDescriptor, MeshResource.generate, ShapeResource.generateStaticMesh (needs the static PhysicsBodyComponent, which the kit adds), PhysicallyBasedMaterial, light components, TextureResource image/file initialisers).
