@@ -198,13 +198,21 @@ struct PathScreen: View {
                 }
                 .onAppear { pathBuddy.react(.returned) }
             }
-            Text("\(record.days.count) \(record.days.count == 1 ? "day" : "days") of lessons").font(.system(size: 22, weight: .semibold)).foregroundStyle(Candle.goldHi)
+            // Gemini 11-17: a big gold 0 reads as a score; day one says so instead
+            Text(record.days.isEmpty ? "Day one" : "\(record.days.count) \(record.days.count == 1 ? "day" : "days") of lessons").font(.system(size: 22, weight: .semibold)).foregroundStyle(Candle.goldHi)
             Text("\(gold) of \(course.units.count) units gold").candleHint()
             if minutes > 0 { Text("About \(max(1, minutes / 3)) \(minutes / 3 > 1 ? "lessons" : "lesson") a day for your \(minutes) minutes.").candleHint() }
             if let (u, l) = record.next(in: course) {
                 Button(record.place(u.n, l.n) > 0 ? "Continue: \(u.title), \(l.n)" : "Next lesson: \(u.title), \(l.n)") { start(u, l, course) }.buttonStyle(CandleButton()).padding(.top, 6)
             } else if let u = course.units.first(where: { record.isOpen($0, in: course) && !record.isPrepared($0) }) {
-                Text("Next: read \(u.title). Its lessons open when you have.").candleH2().padding(.top, 6)
+                // the one next step is one tap: the first unread page opens straight from here
+                if let p = u.guidebook.first(where: { $0.key.map { Academy.read[$0] == nil } ?? false }), let key = p.key {
+                    NavigationLink { AcademyReaderView(doc: AcademyHTML.Doc(key: key, name: p.title), sectionTitle: u.title).osScreen() } label: {
+                        Text("Read: \(p.title.capitalized)")
+                    }
+                    .buttonStyle(CandleButton()).padding(.top, 6)
+                }
+                Text("The lessons of \(u.title) open when its pages are read.").candleHint()
             }
         }
         .candleCard()
