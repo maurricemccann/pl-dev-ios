@@ -217,12 +217,16 @@ import simd
         motes.speed = 0.02
         dust.components.set(motes); dust.position = [0, 6, 7]; root.addChild(dust)
 
-        // the keys: gold medallions bearing his tile (the Glyph Field silhouettes are owed to the integrator), slowly turning
+        // the keys: his Glyph Field silhouettes in gold, standing upright over a soft halo, slowly turning (planes are double sided)
+        let aspect: [PLWGlyph: Float] = [.glyphGuy: 256.0 / 640, .loveYourself: 593.0 / 640, .money: 484.0 / 640]
         for g in glyphs {
-            let k = Entity()
-            k.components.set(ModelComponent(mesh: .generateCylinder(height: 0.06, radius: 0.34), materials: [mats.polished]))
-            k.orientation = simd_quatf(angle: .pi / 2, axis: [1, 0, 0])
-            let holder = Entity(); holder.position = g.position; holder.addChild(k)
+            var m = UnlitMaterial(); m.faceCulling = .none
+            m.color = .init(tint: .white, texture: .init(try await P1Materials.load("plw-p1-key-\(g.glyph.rawValue)", "png", .color)))
+            m.blending = .transparent(opacity: .init(floatLiteral: 1))
+            let h: Float = 0.9, k = Entity()
+            k.components.set(ModelComponent(mesh: .generatePlane(width: h * (aspect[g.glyph] ?? 0.5), height: h), materials: [m]))
+            let glow = Entity(); glow.components.set(ModelComponent(mesh: .generatePlane(width: 1.6, height: 1.6), materials: [mats.halo])); glow.components.set(BillboardComponent())
+            let holder = Entity(); holder.position = g.position; holder.addChild(k); holder.addChild(glow)
             root.addChild(holder); keyEntities[g.key.slot] = holder
         }
 
