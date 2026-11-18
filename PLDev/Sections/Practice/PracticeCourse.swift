@@ -110,6 +110,9 @@ struct Course: Decodable, Sendable { let version: Int; let units: [CourseUnit] }
     }
     /// One earlier exercise for review: the most-missed item first, then a shuffled deck over the rest.
     func review(for unit: CourseUnit, in course: Course) -> CourseExercise? {
+        // spaced review first (SpacedReview): an item he has met whose time has come, from this unit or any before it
+        let met = course.units.filter { $0.n <= unit.n }.flatMap { $0.lessons.flatMap(\.exercises) + $0.quiz }.filter { $0.isPlayable && LessonView.graded($0) }
+        for item in SpacedReview.due() { if let e = met.first(where: { $0.item == item }) { return e } }
         let pool = course.units.filter { $0.n < unit.n }.flatMap(\.quiz).filter(\.isPlayable)
         guard !pool.isEmpty else { return nil }
         if let worst = pool.max(by: { (misses[$0.item] ?? 0) < (misses[$1.item] ?? 0) }), (misses[worst.item] ?? 0) > 0 { return worst }
@@ -195,13 +198,21 @@ struct PathScreen: View {
                 }
                 .onAppear { pathBuddy.react(.returned) }
             }
-            Text("\(record.days.count) \(record.days.count == 1 ? "day" : "days") of lessons").font(.system(size: 22, weight: .semibold)).foregroundStyle(Candle.goldHi)
+            // Gemini 11-17: a big gold 0 reads as a score; day one says so instead
+            Text(record.days.isEmpty ? "Day one" : "\(record.days.count) \(record.days.count == 1 ? "day" : "days") of lessons").font(.system(size: 22, weight: .semibold)).foregroundStyle(Candle.goldHi)
             Text("\(gold) of \(course.units.count) units gold").candleHint()
             if minutes > 0 { Text("About \(max(1, minutes / 3)) \(minutes / 3 > 1 ? "lessons" : "lesson") a day for your \(minutes) minutes.").candleHint() }
             if let (u, l) = record.next(in: course) {
                 Button(record.place(u.n, l.n) > 0 ? "Continue: \(u.title), \(l.n)" : "Next lesson: \(u.title), \(l.n)") { start(u, l, course) }.buttonStyle(CandleButton()).padding(.top, 6)
             } else if let u = course.units.first(where: { record.isOpen($0, in: course) && !record.isPrepared($0) }) {
-                Text("Next: read \(u.title). Its lessons open when you have.").candleH2().padding(.top, 6)
+                // the one next step is one tap: the first unread page opens straight from here
+                if let p = u.guidebook.first(where: { $0.key.map { Academy.read[$0] == nil } ?? false }), let key = p.key {
+                    NavigationLink { AcademyReaderView(doc: AcademyHTML.Doc(key: key, name: p.title), sectionTitle: u.title).osScreen() } label: {
+                        Text("Read: \(p.title.capitalized)")
+                    }
+                    .buttonStyle(CandleButton()).padding(.top, 6)
+                }
+                Text("The lessons of \(u.title) open when its pages are read.").candleHint()
             }
         }
         .candleCard()
@@ -355,6 +366,7 @@ struct LessonView: View {
                 if ok { if Self.graded(e) { right += 1 }; streak += 1; buddy.react(streak % 3 == 0 ? .streak : .right); Task { await BuddyIsland.show("open", Self.graded(e) ? "Right." : "Kept.") } }
                 else { record.miss(e.item); streak = 0; buddy.react(.wrong); Task { await BuddyIsland.show("rest", "It comes back later.") } }
                 PracticeSound.play(ok ? .right : .wrong)   // his picks by ear 11-15
+                if Self.graded(e) { SpacedReview.record(e.item, right: ok) }
             }
             .id(e.id + "\(index)")
             if let answered {
