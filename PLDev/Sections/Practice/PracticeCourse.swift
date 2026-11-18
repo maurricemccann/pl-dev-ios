@@ -269,6 +269,8 @@ struct LessonRun: Identifiable {
 }
 
 struct LessonView: View {
+    /// Codex review 11-17: a reflection, a spoken line, a drawing or a rewrite is kept, never scored right or wrong.
+    static func graded(_ e: CourseExercise) -> Bool { !["reflect", "say-it", "draw-it", "rewrite"].contains(e.kind) }
     let model: AppModel
     let run: LessonRun
     let close: () -> Void
@@ -339,14 +341,14 @@ struct LessonView: View {
             Text(e.prompt).font(.system(size: 13)).textCase(.uppercase).tracking(1).foregroundStyle(Candle.gold)
             ExerciseBody(exercise: e, locked: answered != nil) { ok in
                 answered = ok
-                if ok { right += 1; streak += 1; buddy.react(streak % 3 == 0 ? .streak : .right); Task { await BuddyIsland.show("open", "Right.") } }
+                if ok { if Self.graded(e) { right += 1 }; streak += 1; buddy.react(streak % 3 == 0 ? .streak : .right); Task { await BuddyIsland.show("open", Self.graded(e) ? "Right." : "Kept.") } }
                 else { record.miss(e.item); streak = 0; buddy.react(.wrong); Task { await BuddyIsland.show("rest", "It comes back later.") } }
                 PracticeSound.play(ok ? .right : .wrong)   // his picks by ear 11-15
             }
             .id(e.id + "\(index)")
             if let answered {
                 VStack(alignment: .leading, spacing: 8) {
-                    Text(answered ? "Right." : "Not this time. It comes back later.").font(.system(size: 15, weight: .medium)).foregroundStyle(answered ? Candle.goldHi : Candle.ink)
+                    Text(answered ? (Self.graded(e) ? "Right." : "Kept.") : "Not this time. It comes back later.").font(.system(size: 15, weight: .medium)).foregroundStyle(answered ? Candle.goldHi : Candle.ink)
                     if !answered, let a = shown(e) { Text(a).font(.system(size: 14)).foregroundStyle(Candle.ink) }
                     if let why = e.why { Text(why).font(.system(size: 14, design: .serif).italic()).foregroundStyle(Candle.goldHi).lineSpacing(3) }
                     Button(index + 1 < run.exercises.count ? "Continue" : "Finish") { advance() }.buttonStyle(CandleButton())
@@ -381,7 +383,8 @@ struct LessonView: View {
         return VStack(spacing: 14) {
             Text(run.isQuiz ? (passed ? "Quiz passed." : "Not yet. Take it again when you like.") : "Lesson done.")
                 .plHand(26, relativeTo: .title).foregroundStyle(Candle.goldHi).multilineTextAlignment(.center)
-            Text("\(right) of \(run.exercises.count) right").candleHint()
+            let graded = run.exercises.filter(Self.graded).count
+            if graded > 0 { Text("\(right) of \(graded) right").candleHint() }
             if let pack { PackOpening(model: model, cards: pack.cards, animate: pack.new).frame(height: 380) }
             else if let packNote { Text(packNote).candleHint().multilineTextAlignment(.center) }
             if let g = arcade.randomElement() { Button("Take a break: \(g.title)") { playingArcade = g }.buttonStyle(CandleGhost()) }
