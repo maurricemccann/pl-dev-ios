@@ -43,7 +43,8 @@ extension PLWDSkin { func twoSidedCopy() -> PLWDSkin { var s = self; s.twoSided 
 
     static func texture(_ name: String, _ folder: String) async -> TextureResource? {
         guard let url = Bundle.main.url(forResource: name, withExtension: "png") ?? Bundle.main.url(forResource: name, withExtension: "png", subdirectory: "PLWorld/\(folder)") else { return nil }
-        return try? await TextureResource(contentsOf: url)
+        guard let cg = UIImage(contentsOfFile: url.path)?.cgImage else { return nil }
+        return try? await TextureResource(image: cg, options: .init(semantic: .color))
     }
 
     /// A texture drawn in code (grass, plaster): the closure paints a size x size square, seeded so it is the same every run.
