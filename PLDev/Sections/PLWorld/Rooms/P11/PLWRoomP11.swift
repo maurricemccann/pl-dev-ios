@@ -14,7 +14,7 @@ import simd
     private struct Mouth { let a: Float; let hw: Float; let hh: Float; let col: UInt32; let name: String }
     private let mouths = [Mouth(a: -.pi / 2 - 0.62, hw: 3.0, hh: 5.2, col: 0x3FAE5A, name: "forest"), Mouth(a: -.pi / 2, hw: 3.0, hh: 5.2, col: 0x3A55C8, name: "exit"),
                           Mouth(a: -.pi / 2 + 0.62, hw: 3.0, hh: 5.2, col: 0xE0B040, name: "luxe")]
-    private var ribbonHub = Entity(), orb: ModelEntity?, seals: [Entity] = [], sealMats: [(idx: Int, base: PLWEMat)] = [], dreamLight: Int?
+    private var ribbonHub = Entity(), orb: ModelEntity?, seals: [ModelEntity] = [], sealMats: [(idx: Int, base: PLWEMat)] = [], dreamLight: Int?
     private var embraced = false, t: Float = -1, still: Float = 0, from = PLWEV3.zero, sentStart = false, done = false, hinted = false
 
     init() { super.init(area: .p11, defaultSaturation: 0.7) }

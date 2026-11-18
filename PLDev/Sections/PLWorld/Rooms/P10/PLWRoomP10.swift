@@ -9,9 +9,9 @@ import simd
     static let HL: Float = 21, HW: Float = 15, WALLH: Float = 16, GAP: Float = 0.19
     private let G = PLWEV3(0, 0, -21)
     private var ZR: Float { G.z + 1 }
-    private struct Being { let anchor: Entity, body: Entity, at: PLWEV3, yaw: Float, paint: Int; var tilt: Float = 0 }
+    private struct Being { let anchor: Entity, body: ModelEntity, at: PLWEV3, yaw: Float, paint: Int; var tilt: Float = 0 }
     private var beings: [Being] = []
-    private var sunEntity: Entity?, sunMat: UnlitMaterial?, secretIdx: Int?
+    private var sunEntity: ModelEntity?, sunMat: UnlitMaterial?, secretIdx: Int?
     private var lastSunB: Float = 0, greetT: Float = -1, sentStart = false, done = false, secretFound = false
 
     init() { super.init(area: .p10, defaultSaturation: 0.7) }
