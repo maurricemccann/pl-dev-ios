@@ -120,3 +120,31 @@ enum PLWCommand {
     func apply(_ look: PLWLook)
     func unload()
 }
+
+/// The ring geometry and page colours, frozen from the shipped web build (`area12.js`, `main.js` PAGE, RING-DESIGN.md). Map metres: u east, v north,
+/// origin at the hub's centre. Compass angle theta runs clockwise from north; u = r sin(theta), v = r cos(theta).
+enum PLWRing {
+    /// The Curve Who's colour on each page, page 1 first. These ARE the page hues (the dominant colour of each area); Gemini's hexes are accents only.
+    static let pageHex: [UInt32] = [0xC7AF52, 0xAF6D4B, 0x971701, 0x42347F, 0x7174AB, 0x2E5A4B, 0x4DA6A2, 0x153566, 0x5FB1C7, 0x039AF3, 0xE8B21A]
+    static let hubRadius: Float = 330, moatOuter: Float = 366, ridgeOuter: Float = 390, ringOuter: Float = 1000, centerpieceRadius: Float = 680
+    /// Page i (1...11) centre angle in degrees: 210 + 30 (i - 1), modulo 360. The entrance gap is centred at 180 (165 to 195).
+    static func centerAngle(page: Int) -> Float { Float((210 + 30 * (page - 1)) % 360) }
+    static func point(radius r: Float, angleDegrees t: Float) -> SIMD2<Float> {
+        let a = t * .pi / 180
+        return SIMD2<Float>(r * sin(a), r * cos(a))
+    }
+}
+
+/// The one switch for gating (his ruling 11-17: "all open for testing, we'll gate stuff later once the build is good"). Default off: every gate opens
+/// and no quota applies; moments still record completion. Flip `enforced` (lane A reads it from one place) to turn the gates on without touching a room.
+enum PLWGating { static let enforced = false }
+
+extension PLWGate {
+    func isOpen(_ save: PLWSave) -> Bool {
+        guard PLWGating.enforced else { return true }
+        switch rule {
+        case .open: return true
+        case .completed(let page): return save.completed.contains(page)
+        }
+    }
+}
