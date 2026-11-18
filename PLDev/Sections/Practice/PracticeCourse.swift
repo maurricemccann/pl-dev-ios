@@ -80,7 +80,12 @@ struct Course: Decodable, Sendable { let version: Int; let units: [CourseUnit] }
     }
     func key(_ unit: Int, _ lesson: Int) -> String { "\(unit)-\(lesson)" }
     func isDone(_ unit: Int, _ lesson: Int) -> Bool { lessonsDone.contains(key(unit, lesson)) }
-    func finish(unit: Int, lesson: Int) { lessonsDone.insert(key(unit, lesson)); days.insert(today()); save() }
+    func finish(unit: Int, lesson: Int) { lessonsDone.insert(key(unit, lesson)); days.insert(today()); store.removeObject(forKey: placeKey(unit, lesson)); save() }
+    /// Where he left a lesson (council 11-17: resumable, the place saved on every move); 0 = not started.
+    /// shortcut: the review item inserted at play time is drawn fresh on resume, so it may differ; freeze the run order if that matters.
+    func place(_ unit: Int, _ lesson: Int) -> Int { store.integer(forKey: placeKey(unit, lesson)) }
+    func setPlace(_ unit: Int, _ lesson: Int, _ i: Int) { store.set(i, forKey: placeKey(unit, lesson)) }
+    private func placeKey(_ unit: Int, _ lesson: Int) -> String { "course.place.\(key(unit, lesson))" }
     func passQuiz(_ unit: Int) { quizPassed.insert(unit); days.insert(today()); save() }
     func miss(_ item: String) { misses[item, default: 0] += 1; save() }
 
@@ -194,7 +199,7 @@ struct PathScreen: View {
             Text("\(gold) of \(course.units.count) units gold").candleHint()
             if minutes > 0 { Text("About \(max(1, minutes / 3)) \(minutes / 3 > 1 ? "lessons" : "lesson") a day for your \(minutes) minutes.").candleHint() }
             if let (u, l) = record.next(in: course) {
-                Button("Next lesson: \(u.title), \(l.n)") { start(u, l, course) }.buttonStyle(CandleButton()).padding(.top, 6)
+                Button(record.place(u.n, l.n) > 0 ? "Continue: \(u.title), \(l.n)" : "Next lesson: \(u.title), \(l.n)") { start(u, l, course) }.buttonStyle(CandleButton()).padding(.top, 6)
             } else if let u = course.units.first(where: { record.isOpen($0, in: course) && !record.isPrepared($0) }) {
                 Text("Next: read \(u.title). Its lessons open when you have.").candleH2().padding(.top, 6)
             }
@@ -318,7 +323,11 @@ struct LessonView: View {
         .simultaneousGesture(DragGesture(minimumDistance: 0, coordinateSpace: .global).onChanged { buddy.look($0.location) })
         .sensoryFeedback(PLHaptic.success, trigger: right)
         .sensoryFeedback(PLHaptic.warning, trigger: answered == false)
-        .onAppear { buddy.react(.open) }
+        .onAppear {
+            buddy.react(.open)
+            // resume where he left it; the passages were already read to get there
+            if let l = run.lesson, !run.isQuiz, case let p = record.place(run.unit.n, l.n), p > 0, p < run.exercises.count { index = p; ready = true }
+        }
         .task(id: index) {
             // Gemini: "think" once, after a reading pause of 8-12 s, never looped
             try? await Task.sleep(for: .seconds(10))
@@ -371,7 +380,11 @@ struct LessonView: View {
 
     private func advance() {
         answered = nil
-        if index + 1 < run.exercises.count { index += 1; return }
+        if index + 1 < run.exercises.count {
+            index += 1
+            if let l = run.lesson, !run.isQuiz { record.setPlace(run.unit.n, l.n, index) }
+            return
+        }
         // a lesson counts once it is played through; the quiz passes at four in five (or all, when it is shorter)
         if run.isQuiz { if right >= max(1, run.exercises.count - 1) { record.passQuiz(run.unit.n) } }
         else if let l = run.lesson { record.finish(unit: run.unit.n, lesson: l.n); BuddyIsland.lessonDone() }
