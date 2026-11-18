@@ -57,7 +57,7 @@ import simd
         gold = polished; gold.roughness = .init(floatLiteral: 0.5)
 
         face.baseColor = .init(tint: .white, texture: Self.tx(try await Self.load("plw-p1-face", "png", .color)))
-        face.normal = .init(texture: Self.tx(try await Self.load("plw-p1-face-normal", "jpg", .normal)))
+        face.normal = .init(texture: Self.tx(try await Self.load("plw-p1-face-normal", "png", .normal)))
         face.roughness = .init(floatLiteral: 0.8); face.metallic = .init(floatLiteral: 0)
         face.blending = .transparent(opacity: .init(floatLiteral: 1)); face.opacityThreshold = 0.4
 
