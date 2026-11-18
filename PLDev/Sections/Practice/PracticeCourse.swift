@@ -149,6 +149,7 @@ struct PathScreen: View {
     @State private var playing: LessonRun?
     @State private var goldPack: GoldPack?
     @State private var livePack = false
+    @State private var playRun: PracticePlayRun?
     /// His daily minutes (asked once here, changeable in Settings): a lesson is about three minutes.
     @AppStorage("course.minutes") private var minutes = 0
     @State private var pathBuddy = BuddyModel()
@@ -180,12 +181,14 @@ struct PathScreen: View {
             } else if state.message == nil {
                 ProgressView().tint(Candle.gold).frame(maxWidth: .infinity).padding(.top, 40)
             }
+            if let course = state.course { PracticePlayCard(course: course) { playRun = $0 } }
             Button("The pack \u{00b7} live test") { livePack = true }.buttonStyle(CandleGhost()).padding(.top, 8)
         }
         .onAppear { seen += 1 }
         .task { await state.load(model: model) }
         .fullScreenCover(item: $playing) { run in LessonView(model: model, run: run) { playing = nil } }
         .background { Color.clear.fullScreenCover(item: $goldPack) { g in PackScreen(model: model, key: "gold-\(g.unit)") { goldPack = nil } } }
+        .background { Color.clear.fullScreenCover(item: $playRun) { r in PracticePlayView(run: r) { playRun = nil } } }
         .background { Color.clear.fullScreenCover(isPresented: $livePack) { LivePackScreen { livePack = false } } }
     }
 
