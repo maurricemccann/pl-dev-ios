@@ -383,14 +383,17 @@ struct LessonView: View {
     private var done: some View {
         let passed = !run.isQuiz || right >= max(1, run.exercises.count - 1)
         return VStack(spacing: 14) {
-            Text(run.isQuiz ? (passed ? "Quiz passed." : "Not yet. Take it again when you like.") : "Lesson done.")
-                .plHand(26, relativeTo: .title).foregroundStyle(Candle.goldHi).multilineTextAlignment(.center)
+            if let l = run.lesson, !run.isQuiz { LessonFinishCard(unit: run.unit, lesson: l) }
+            else {
+                Text(passed ? "Quiz passed." : "Not yet. Take it again when you like.")
+                    .plHand(26, relativeTo: .title).foregroundStyle(Candle.goldHi).multilineTextAlignment(.center)
+            }
             let graded = run.exercises.filter(Self.graded).count
             if graded > 0 { Text("\(right) of \(graded) right").candleHint() }
             if let pack { PackOpening(model: model, cards: pack.cards, animate: pack.new).frame(height: 380) }
             else if let packNote { Text(packNote).candleHint().multilineTextAlignment(.center) }
             if let g = arcade.randomElement() { Button("Take a break: \(g.title)") { playingArcade = g }.buttonStyle(CandleGhost()) }
-            Button("Back to the path") { close() }.buttonStyle(CandleButton())
+            Button("Done") { close() }.buttonStyle(CandleButton())
         }
         .frame(maxWidth: .infinity).padding(.top, 20)
     }
