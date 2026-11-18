@@ -4,13 +4,17 @@ import UIKit
 /// The hero in the world: his GlyphGuy v4 (the world USDZ, never redrawn) or GlyphGirl (derived from it by the `buildHer` recipe, same rig, same clips).
 /// The clip pack in `Models/Clips` is retargeted by joint names, so both heroes play the same animations. Feet sit on y = 0 of `root`.
 @MainActor final class PLWHeroFigure {
-    enum Pose { case idle, walking, jump }
+    enum Pose { case idle, walking, jog, run, jump }
+    /// Ground speed each moving clip was made at (m/s), so the clip runs at the rate his feet need. shortcut: estimated from Mixamo's
+    /// human-height moves at his 1.7 m; the feel pass (spec 1.5) measures foot slide in `shot` and corrects these.
+    static let clipSpeed: [Pose: Float] = [.walking: 1.4, .jog: 3.2, .run: 5.8]
 
     let root = Entity()
     private(set) var model: Entity?
     private var anims: [Pose: AnimationResource] = [:]
     private var fitted: [Pose: AnimationResource] = [:]   // the same clips re-fitted onto his own rig by RealityKit (played on the skinned mesh)
     private var playing: Pose?
+    private var controller: AnimationPlaybackController?
     private(set) var missing = false
     private var armature: Entity?, bind = simd_quatf(ix: 0, iy: 0, iz: 0, r: 1), checked = 0
     private let upright = Entity()   // the rig correction lives here: no clip animates this entity
@@ -42,7 +46,7 @@ import UIKit
         model = e
         armature = e.findEntity(named: "Armature"); bind = armature?.orientation(relativeTo: fit) ?? bind
         skin = Self.firstSkinned(e); hipsBind = skin?.jointTransforms.first?.rotation ?? hipsBind
-        for (pose, name) in [(Pose.idle, "idle"), (Pose.walking, "walking"), (Pose.jump, "jump")] {
+        for (pose, name) in [(Pose.idle, "idle"), (Pose.walking, "walking"), (Pose.jog, "jogging"), (Pose.run, "running"), (Pose.jump, "jump")] {
             if let u = Self.clipURL(name), let ce = await PLWLog.entity(contentsOf: u), let a = ce.availableAnimations.first {
                 anims[pose] = a
                 if let r = retarget(a, from: ce, name, model: e) { fitted[pose] = r }
@@ -52,15 +56,27 @@ import UIKit
         play(.idle)
     }
 
-    /// Switches the clip; the engine blends over 0.2 s.
-    func play(_ p: Pose) {
-        guard p != playing, let model, let a = anims[p] else { return }
+    /// The clip for a ground speed: idle, walk, jog, run (a missing jog or run clip falls back to walk).
+    func pose(grounded: Bool, speed: Float) -> Pose {
+        if !grounded { return .jump }
+        let want: Pose = speed < 0.4 ? .idle : speed < 2.4 ? .walking : speed < 6.5 ? .jog : .run
+        return anims[want] != nil ? want : (speed < 0.4 ? .idle : .walking)
+    }
+
+    /// Switches the clip (the engine blends over 0.2 s) and keeps a moving clip's rate matched to his ground speed.
+    func play(_ p: Pose, speed: Float = 0) {
+        if p == playing {
+            if let c = controller, let base = Self.clipSpeed[p] { c.speed = min(1.8, max(0.7, speed / base)) }
+            return
+        }
+        guard let model, let a = anims[p] else { return }
         playing = p
         if let r = fitted[p], let skin {     // Apple's retargeting: joints only, so nothing tips the rig over
-            skin.playAnimation(p == .jump ? r : r.repeat(), transitionDuration: 0.2, startsPaused: false)
+            controller = skin.playAnimation(p == .jump ? r : r.repeat(), transitionDuration: 0.2, startsPaused: false)
         } else {
-            model.playAnimation(p == .jump ? a : a.repeat(), transitionDuration: 0.2, startsPaused: false)
+            controller = model.playAnimation(p == .jump ? a : a.repeat(), transitionDuration: 0.2, startsPaused: false)
         }
+        if let base = Self.clipSpeed[p] { controller?.speed = min(1.8, max(0.7, speed / base)) }
     }
 
     /// S350 (his "facing down like a stiff board"): the clip files' rig is turned 90 degrees from the model's (measured in Blender:
@@ -114,7 +130,7 @@ import UIKit
         func deg(_ a: simd_quatf, _ b: simd_quatf) -> Int { Int(2 * acos(min(1, abs(simd_dot(a.vector, b.vector)))) * 180 / .pi) }
         let now = fit.flatMap { armature?.orientation(relativeTo: $0) } ?? bind
         let hips = skin?.jointTransforms.first?.rotation ?? hipsBind
-        return "hero \(model == nil ? "MISSING" : "loaded"), playing \(playing.map { "\($0)" } ?? "nothing"), clips \(anims.count), re-fitted \(fitted.count), joints \(skin?.jointNames.count ?? 0), rig off bind \(deg(bind, now)) deg, hips off bind \(deg(hipsBind, hips)) deg, upright holder \(deg(upright.orientation, simd_quatf(ix: 0, iy: 0, iz: 0, r: 1))) deg, visible \(root.isEnabled)"
+        return "hero \(model == nil ? "MISSING" : "loaded"), playing \(playing.map { "\($0)" } ?? "nothing"), clips \(anims.count), re-fitted \(fitted.count), joints \(skin?.jointNames.count ?? 0), rig off bind \(deg(bind, now)) deg, hips off bind \(deg(hipsBind, hips)) deg, upright holder \(deg(upright.orientation, simd_quatf(ix: 0, iy: 0, iz: 0, r: 1))) deg, rate \(controller?.speed ?? 0), visible \(root.isEnabled)"
     }
 
     func setVisible(_ on: Bool) { root.isEnabled = on }

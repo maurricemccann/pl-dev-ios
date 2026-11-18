@@ -317,7 +317,7 @@ import simd
         visual.orientation = simd_quatf(angle: facing, axis: [0, 1, 0])
         let squash: SIMD3<Float> = heldPose == "curl" ? [1.15, 0.55, 1.15] : [1, 1, 1]
         visual.scale += (squash - visual.scale) * min(1, dt * 6)
-        figure.play(!grounded ? .jump : (speed > 0.4 ? .walking : .idle)); figure.hold()
+        figure.play(figure.pose(grounded: grounded, speed: speed), speed: speed); figure.hold()
         dreamOrb.position = SIMD3(0.55, t.capsuleHeight / 2 + 0.35 + dreamRise * 1.1 + sin(clock * 1.8) * 0.06, 0)
 
         // the room
