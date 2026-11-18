@@ -349,7 +349,7 @@ struct LessonView: View {
     @ViewBuilder private func exercise(_ e: CourseExercise) -> some View {
         VStack(alignment: .leading, spacing: 14) {
             Text(e.prompt).font(.system(size: 13)).textCase(.uppercase).tracking(1).foregroundStyle(Candle.gold)
-            ExerciseBody(exercise: e, locked: answered != nil) { result in
+            ExerciseBody(exercise: e, locked: answered != nil, model: model) { result in
                 let ok = result || !Self.graded(e)   // Codex: kept work never records a miss or plays the wrong sound
                 answered = ok
                 if ok { if Self.graded(e) { right += 1 }; streak += 1; buddy.react(streak % 3 == 0 ? .streak : .right); Task { await BuddyIsland.show("open", Self.graded(e) ? "Right." : "Kept.") } }
@@ -417,6 +417,7 @@ struct LessonView: View {
 struct ExerciseBody: View {
     let exercise: CourseExercise
     let locked: Bool
+    var model: AppModel? = nil
     let answer: (Bool) -> Void
 
     var body: some View {
@@ -442,7 +443,7 @@ struct ExerciseBody: View {
         case "draw-it":
             DrawItExercise(glyphName: exercise.glyph ?? "", locked: locked, answer: answer)
         default:
-            ReflectExercise(text: exercise.text ?? "", locked: locked, answer: answer)
+            ReflectExercise(text: exercise.text ?? "", locked: locked, model: model, answer: answer)
         }
     }
 }
@@ -556,14 +557,21 @@ struct BannedWordExercise: View {
 struct ReflectExercise: View {
     let text: String
     let locked: Bool
+    var model: AppModel? = nil
     let answer: (Bool) -> Void
     @State private var line = ""
     var body: some View {
         VStack(alignment: .leading, spacing: 12) {
             Text(text).font(.system(size: 19)).foregroundStyle(Candle.ink).lineSpacing(4).fixedSize(horizontal: false, vertical: true)
             PField(prompt: "One line.", text: $line, lines: 3)
-            if !locked { Button("Done") { answer(true) }.buttonStyle(CandleButton()).disabled(line.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty) }
+            if !locked { Button("Done") { keep(); answer(true) }.buttonStyle(CandleButton()).disabled(line.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty) }
         }
+    }
+    /// Codex 11-17: "Kept" must mean kept. The line goes to his Practice notes with its prompt, queued when offline (the lesson cards' route).
+    private func keep() {
+        guard let model else { return }
+        let t = text + "\n" + line.trimmingCharacters(in: .whitespacesAndNewlines)
+        Task { _ = try? await Practice.postQueued("notes", ["text": t], model: model) }
     }
 }
 
