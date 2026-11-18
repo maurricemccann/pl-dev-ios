@@ -13,3 +13,10 @@ PHONE-REVIEW ITEMS: light levels, collision feel, face decal orientation. Nothin
 
 ## Lines the lead must wire
 - `PLWRoomRegistry`: `.p1: PLWRoomP1()`.
+
+## Room 2 Look (`PLWorld/Rooms/P2/`, `Resources/PLWorld/P2/`)
+- `PLWRoomP2`. The room starts at the origin where Room 1's tunnel arrives and runs south: S-curve canyon about 63 m, 18 m walls displaced by his tile as relief (the 12 SVG comps were not usable: several carry filled backgrounds, so the tile is the relief source), woven tile path, 10 m clearing, red-lined exit tunnel. Ports (facing out): `start` (0,0,-1), `entry` (0,0,0) rotated 180 deg, `exit` at the exit tunnel end.
+- Moment: hold ACT within 3 m of the clearing centre for 3 s. The camera goes over the shoulder via `.camera` (weight 0 to 1), the white-on-indigo Curve ground spreads out as 1 m rings to 18 m, then `completeMoment(.p2)`. Keys: smiley, money, glyph-guy (gold silhouettes, ACT).
+- Left out: the web's light-rail ride (the contract has no ride verb; the floor is always the way). Walls carry no vertex colour (RealityKit meshes have none), so the carved grooves read through the normal map and light only.
+- Phone-review items: sun and fill lumens (`Tune`), relief legibility at phone scale, camera blend, collision on the carved walls.
+- Reuses lane C's `P1Mesh` and `P1Materials.load`; lines for the lead: `PLWRoomRegistry` `.p2: PLWRoomP2()`.
