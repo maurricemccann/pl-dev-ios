@@ -63,6 +63,16 @@ struct PLWEPaint { let entity: ModelEntity; var mat: PLWEMat }
         guard let done = out.makeImage() else { return nil }
         return try? await TextureResource(image: done, options: .init(semantic: .color))
     }
+    /// His glyph silhouette (`plwe-glyph-<name>.png`) recoloured gold, alpha kept.
+    static func glyphArt(_ name: String) async -> (tex: TextureResource, aspect: Float)? {
+        guard let src = tileImage("plwe-glyph-" + name) else { return nil }
+        let w = src.width, h = src.height
+        guard let ctx = CGContext(data: nil, width: w, height: h, bitsPerComponent: 8, bytesPerRow: 0, space: CGColorSpaceCreateDeviceRGB(), bitmapInfo: CGImageAlphaInfo.premultipliedLast.rawValue) else { return nil }
+        let r = CGRect(x: 0, y: 0, width: w, height: h)
+        ctx.draw(src, in: r); ctx.setBlendMode(.sourceIn); ctx.setFillColor(ui(rgb(0xFFC83A)).cgColor); ctx.fill(r)
+        guard let img = ctx.makeImage(), let tex = try? await TextureResource(image: img, options: .init(semantic: .color)) else { return nil }
+        return (tex, Float(w) / Float(h))
+    }
     static func plainTexture(_ name: String) async -> TextureResource? {
         guard let url = Bundle.main.url(forResource: name, withExtension: "png") else { return nil }
         return try? await TextureResource(contentsOf: url, options: .init(semantic: .color))
@@ -286,9 +296,17 @@ struct PLWEPaint { let entity: ModelEntity; var mat: PLWEMat }
     /// A turning gold token for one glyph key. (Stand-in form until his Glyph Field art is wired: see LANES-plw-e.md.)
     func addGlyphs(_ list: [PLWGlyphPlacement]) async {
         glyphs = list
-        let mesh = try? MeshResource.generate(from: [PLWEKit.glyphTokenDescriptor()])
+        let coin = try? MeshResource.generate(from: [PLWEKit.glyphTokenDescriptor()])
+        var goldCoin = PLWEMat(0xE8B21A, rough: 0.28, metal: 0.9); goldCoin.emissive = PLWEKit.rgb(0xFFC83A); goldCoin.emissiveI = 0.35
         for g in list {
-            let e = ModelEntity(mesh: mesh ?? .generateSphere(radius: 0.3), materials: [PLWEKit.material({ var m = PLWEMat(0xE8B21A, rough: 0.28, metal: 0.9); m.emissive = PLWEKit.rgb(0xFFC83A); m.emissiveI = 0.35; return m }(), look: look, tex: nil)])
+            let e: ModelEntity
+            if let art = await PLWEKit.glyphArt(g.glyph.rawValue) {   // his own silhouette, in gold, turning (never redrawn)
+                var m = PLWEKit.material({ var q = PLWEMat(0xFFFFFF, rough: 0.4); q.emissive = PLWEKit.rgb(0xFFC83A); q.emissiveI = 0.5; q.twoSided = true; return q }(), look: look, tex: art.tex)
+                m.blending = .transparent(opacity: .init(floatLiteral: 1.0))
+                e = ModelEntity(mesh: .generatePlane(width: 0.75 * art.aspect, height: 0.75), materials: [m])
+            } else {   // no art for this glyph in the repo yet: a gold coin until it arrives
+                e = ModelEntity(mesh: coin ?? .generateSphere(radius: 0.3), materials: [PLWEKit.material(goldCoin, look: look, tex: nil)])
+            }
             e.name = "glyph-\(g.glyph.rawValue)-\(g.key.slot)"; e.position = g.position
             root.addChild(e); glyphNodes[g.key] = e
         }
