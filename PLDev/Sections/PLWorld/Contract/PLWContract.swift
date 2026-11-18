@@ -102,6 +102,8 @@ enum PLWCommand {
     case checkpoint(PLWArea, port: String)
     case camera(position: SIMD3<Float>, target: SIMD3<Float>, weight: Float)   // expires when the room unloads or the weight is 0
     case raiseDream(Float)                                                     // 0...1 the dream's rise (the gift)
+    case lift(Float)                                                           // an upward acceleration in m/s^2 this frame (updraft float); the integrator clamps it
+    case rail(points: [SIMD3<Float>], speed: Float)                            // the integrator carries the hero along room-local points (zip rail), input locked until the end
     case caption(String)                                                       // one quiet line, his voice rules apply (copy only)
 }
 
