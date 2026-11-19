@@ -85,33 +85,41 @@ struct CompanionScene: View {
                     if s.shine > 0 {   // his ruling 11-08: desires and Helds give the glow; a Held or a came-true swells it for 3 s
                         RadialGradient(colors: [PLG.gold.opacity(0.43 * s.shine), .clear], center: UnitPoint(x: 0.5, y: 0.75), startRadius: 0, endRadius: g.size.width * 0.55)
                     }
-                    if let sheet = CompanionSprites.sheet(s.who, s.act), let cg = sheet.frame(s.frame) {
-                        let k = CGFloat(max(1, min(8, Int(min(g.size.height * 0.8, g.size.width * 0.8) / CGFloat(max(sheet.fh, sheet.fw))))))
-                        Image(decorative: cg, scale: 1).interpolation(.none).resizable()
-                            .frame(width: CGFloat(sheet.fw) * k, height: CGFloat(sheet.fh) * k)
-                            .overlay(alignment: .topLeading) {
-                                ForEach(s.worn, id: \.self) { item in
-                                    if let L = CompanionSprites.layer(s.who, item, s.act), let lc = L.frame(s.frame) {
-                                        Image(decorative: lc, scale: 1).interpolation(.none).resizable()
-                                            .frame(width: CGFloat(L.fw) * k, height: CGFloat(L.fh) * k)
-                                            .offset(x: CGFloat(L.ox - sheet.ox) * k, y: CGFloat(L.oy - sheet.oy) * k)
-                                    }
-                                }
-                            }
-                            .rotationEffect(.degrees(s.lying ? 90 : 0))
-                            .saturation(s.saturation)
-                            .position(x: g.size.width / 2, y: g.size.height - (s.lying ? CGFloat(sheet.fw) * k / 2 : CGFloat(sheet.fh) * k / 2) - 18)
+                    if s.who == "both" {
+                        figure("him", s, s.frame, x: g.size.width / 4, room: g.size.width / 2, g)
+                        figure("her", s, (s.frame + 7) % 36, x: g.size.width * 3 / 4, room: g.size.width / 2, g)
+                    } else {
+                        figure(s.who, s, s.frame, x: g.size.width / 2, room: g.size.width, g)
                     }
                     Color.black.opacity(1 - s.light).allowsHitTesting(false)
                 }
             }
         }
-        .contentShape(Rectangle())
-        .onTapGesture { if tapForLights && store.record != nil { store.lightsOut.toggle() } }
+        .lightsTap(tapForLights && store.record != nil) { store.lightsOut.toggle() }   // home only: elsewhere the scene takes no taps (his 11-19 "hard click" on the choose screen)
         .accessibilityElement(children: .ignore)
         .accessibilityLabel("Your companion")
         .accessibilityAddTraits(tapForLights ? .isButton : [])
         .accessibilityHint(tapForLights ? "Turns the lights out or on" : "")
+    }
+
+    @ViewBuilder private func figure(_ who: String, _ s: S, _ frame: Int, x: CGFloat, room: CGFloat, _ g: GeometryProxy) -> some View {
+        if let sheet = CompanionSprites.sheet(who, s.act), let cg = sheet.frame(frame) {
+            let k = CGFloat(max(1, min(8, Int(min(g.size.height * 0.8, room * 0.8) / CGFloat(max(sheet.fh, sheet.fw))))))
+            Image(decorative: cg, scale: 1).interpolation(.none).resizable()
+                .frame(width: CGFloat(sheet.fw) * k, height: CGFloat(sheet.fh) * k)
+                .overlay(alignment: .topLeading) {
+                    ForEach(s.worn, id: \.self) { item in
+                        if let L = CompanionSprites.layer(who, item, s.act), let lc = L.frame(frame) {
+                            Image(decorative: lc, scale: 1).interpolation(.none).resizable()
+                                .frame(width: CGFloat(L.fw) * k, height: CGFloat(L.fh) * k)
+                                .offset(x: CGFloat(L.ox - sheet.ox) * k, y: CGFloat(L.oy - sheet.oy) * k)
+                        }
+                    }
+                }
+                .rotationEffect(.degrees(s.lying ? 90 : 0))
+                .saturation(s.saturation)
+                .position(x: x, y: g.size.height - (s.lying ? CGFloat(sheet.fw) * k / 2 : CGFloat(sheet.fh) * k / 2) - 18)
+        }
     }
 
     private struct S { var who: String; var act: String; var frame: Int; var light: Double; var lying: Bool; var saturation: Double; var shine: Double = 0; var worn: [String] = [] }
@@ -193,24 +201,7 @@ struct CompanionView: View {
         .onAppear { store.scheduleNudge() }
     }
 
-    private var birth: some View {
-        ScrollView {
-            VStack(spacing: 18) {
-                Text("Choose who keeps you company.").font(.title3).foregroundStyle(PLG.ink(scheme)).padding(.top, 24)
-                HStack(spacing: 14) {
-                    ForEach(["him", "her"], id: \.self) { w in
-                        Button { _ = store.born(who: w, colours: ["bone-blue"]) } label: {
-                            CompanionScene(store: store, who: w).frame(height: 220).clipShape(RoundedRectangle(cornerRadius: PLG.radius))
-                        }
-                        .buttonStyle(.plain)
-                        .accessibilityLabel(w == "him" ? "GlyphGuy" : "GlyphGirl")
-                    }
-                }
-                if !store.error.isEmpty { Text(store.error).font(.footnote).foregroundStyle(PLG.red) }
-            }.padding(16)
-        }
-        .background(PLG.bg(scheme))
-    }
+    private var birth: some View { CompanionOpening(store: store) }
 
     private var home: some View {
         let now = CompanionStore.nowMs()
@@ -372,6 +363,75 @@ struct CompanionArchiveView: View {
     }
 }
 
+/// The R1 opening (PetView "intro" then "choose"): "psyched luxuries" in his hand fades in and out on black (4.4 s; a tap skips it),
+/// then "choose a companion": GlyphGuy, GlyphGirl or both, the chosen one clapping above, and confirm.
+struct CompanionOpening: View {
+    let store: CompanionStore
+    @State private var start = Date()
+    @State private var choosing = false
+    @State private var choice = "him"
+    private func label(_ id: String) -> String { id == "him" ? "GlyphGuy" : id == "her" ? "GlyphGirl" : "both" }
+
+    var body: some View {
+        if choosing { choose } else { intro }
+    }
+
+    private var intro: some View {
+        TimelineView(.animation) { ctx in
+            let t = ctx.date.timeIntervalSince(start)
+            let a = max(0, min(1, min((t - 0.6) / 1.2, (4.2 - t) / 1.0)))
+            ZStack {
+                Color.black.ignoresSafeArea()
+                Text("psyched luxuries").plHand(34, relativeTo: .largeTitle).foregroundStyle(PLG.gold).opacity(a)
+            }
+            .onChange(of: t > 4.4) { _, done in if done { choosing = true } }
+        }
+        .contentShape(Rectangle())
+        .onTapGesture { choosing = true }
+        .accessibilityElement(children: .ignore)
+        .accessibilityLabel("psyched luxuries")
+        .accessibilityAddTraits(.isButton)
+        .accessibilityHint("Skips the opening")
+    }
+
+    private var choose: some View {
+        let day = !CompanionRules.asleep(Date(), sleep: 360, wake: 900)
+        return ScrollView {
+            VStack(spacing: 14) {
+                Text("choose a companion").plHand(30, relativeTo: .title).foregroundStyle(PLG.gold).padding(.top, 20)
+                CompanionScene(store: store, who: choice).frame(height: 220).clipShape(RoundedRectangle(cornerRadius: PLG.radius))
+                ForEach(["him", "her", "both"], id: \.self) { id in
+                    Button { choice = id; UISelectionFeedbackGenerator().selectionChanged() } label: {
+                        Text(label(id)).plHand(28, relativeTo: .title2).foregroundStyle(choice == id ? PLG.gold : Color(hex: 0xefe6d2))
+                            .frame(maxWidth: .infinity, minHeight: 64)
+                            .background(Color(hex: 0x1a1a1a), in: RoundedRectangle(cornerRadius: 24))
+                            .overlay(RoundedRectangle(cornerRadius: 24).stroke(choice == id ? PLG.gold : .clear, lineWidth: 2))
+                            .contentShape(RoundedRectangle(cornerRadius: 24))
+                    }
+                    .buttonStyle(.plain)
+                    .accessibilityAddTraits(choice == id ? .isSelected : [])
+                }
+                Button {
+                    if store.born(who: choice, colours: ["bone-blue"]) { UINotificationFeedbackGenerator().notificationOccurred(.success) }
+                } label: {
+                    Text("Confirm").font(.headline).frame(maxWidth: .infinity, minHeight: 50)
+                }
+                .buttonStyle(.borderedProminent).tint(PLG.gold)
+                if !store.error.isEmpty { Text(store.error).font(.footnote).foregroundStyle(PLG.red) }
+            }
+            .padding(16)
+        }
+        .background((day ? Color(hex: 0x0F1D3A) : Color(hex: 0x080810)).ignoresSafeArea())   // the R1 sky: day blue, night near-black
+    }
+}
+
+private extension View {
+    /// A tap only where it belongs: off, the view takes no gesture at all, so a button around or under it gets every touch.
+    @ViewBuilder func lightsTap(_ on: Bool, _ action: @escaping () -> Void) -> some View {
+        if on { contentShape(Rectangle()).onTapGesture(perform: action) } else { self }
+    }
+}
+
 /// Settings: the one way to start over (the record is never deleted any other way).
 struct CompanionSettingsRows: View {
     @Bindable var store: CompanionStore
@@ -387,7 +447,7 @@ struct CompanionSettingsRows: View {
     var body: some View {
         if let r = store.record {
             Picker("Companion", selection: Binding(get: { r.who }, set: { store.setWho($0) })) {
-                Text("GlyphGuy").tag("him"); Text("GlyphGirl").tag("her")
+                Text("GlyphGuy").tag("him"); Text("GlyphGirl").tag("her"); Text("Both").tag("both")
             }
             DatePicker("Wakes", selection: time({ $0.wake }, { store.setTimes(wake: $0) }), displayedComponents: .hourAndMinute)
             DatePicker("Rests", selection: time({ $0.sleep }, { store.setTimes(sleep: $0) }), displayedComponents: .hourAndMinute)
