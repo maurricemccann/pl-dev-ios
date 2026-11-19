@@ -158,7 +158,7 @@ struct CompanionMeter: View {
     @Environment(\.colorScheme) private var scheme
     var body: some View {
         HStack(spacing: 6) {
-            Text(name).font(.footnote).foregroundStyle(PLG.dim(scheme)).frame(width: 36, alignment: .leading)
+            Text(name).font(.footnote).foregroundStyle(PLG.dim(scheme)).lineLimit(1).fixedSize().frame(minWidth: 44, alignment: .leading)   // his 8:07 AM screenshot: "Glow" wrapped at a large text size
             ForEach(0..<4, id: \.self) { i in
                 Capsule().fill(i < value ? tint : PLG.line(scheme)).frame(height: 6)
             }
