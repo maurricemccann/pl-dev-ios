@@ -4,10 +4,11 @@ import UIKit
 /// The hero in the world: his GlyphGuy v4 (the world USDZ, never redrawn) or GlyphGirl (derived from it by the `buildHer` recipe, same rig, same clips).
 /// The clip pack in `Models/Clips` is retargeted by joint names, so both heroes play the same animations. Feet sit on y = 0 of `root`.
 @MainActor final class PLWHeroFigure {
-    enum Pose { case idle, walking, jog, run, jump }
+    enum Pose { case idle, walking, jog, run, jump, land, stop }
     /// Ground speed each moving clip was made at (m/s), so the clip runs at the rate his feet need. shortcut: estimated from Mixamo's
     /// human-height moves at his 1.7 m; the feel pass (spec 1.5) measures foot slide in `shot` and corrects these.
     static let clipSpeed: [Pose: Float] = [.walking: 1.4, .jog: 3.2, .run: 5.8]
+    static let once: Set<Pose> = [.jump, .land, .stop]   // played through once, never looped
 
     let root = Entity()
     private(set) var model: Entity?
@@ -20,6 +21,7 @@ import UIKit
     private let upright = Entity()   // the rig correction lives here: no clip animates this entity
     private var fit: Entity?
     private var skin: ModelEntity?, hipsBind = simd_quatf(ix: 0, iy: 0, iz: 0, r: 1)
+    private var airTime: Float = 0, sinceRun: Float = 9, oneShot: (pose: Pose, left: Float)?   // a landing or a stop plays through once
 
     /// The bundled model for a hero, or nil when the file is not in this build (GlyphGirl until her file is added).
     static func modelURL(_ hero: PLWHero) -> URL? {
@@ -46,7 +48,7 @@ import UIKit
         model = e
         armature = e.findEntity(named: "Armature"); bind = armature?.orientation(relativeTo: fit) ?? bind
         skin = Self.firstSkinned(e); hipsBind = skin?.jointTransforms.first?.rotation ?? hipsBind
-        for (pose, name) in [(Pose.idle, "idle"), (Pose.walking, "walking"), (Pose.jog, "jogging"), (Pose.run, "running"), (Pose.jump, "jump")] {
+        for (pose, name) in [(Pose.idle, "idle"), (Pose.walking, "walking"), (Pose.jog, "jogging"), (Pose.run, "running"), (Pose.jump, "jump"), (Pose.land, "landing"), (Pose.stop, "run-stop")] {
             if let u = Self.clipURL(name), let ce = await PLWLog.entity(contentsOf: u), let a = ce.availableAnimations.first {
                 anims[pose] = a
                 if let r = retarget(a, from: ce, name, model: e) { fitted[pose] = r }
@@ -56,9 +58,19 @@ import UIKit
         play(.idle)
     }
 
-    /// The clip for a ground speed: idle, walk, jog, run (a missing jog or run clip falls back to walk).
-    func pose(grounded: Bool, speed: Float) -> Pose {
-        if !grounded { return .jump }
+    /// The clip for this frame: in the air the jump; touching down after 0.35 s of air, the landing; stopping within 0.5 s of a run,
+    /// the run-to-stop; otherwise idle, walk, jog or run by ground speed (a missing jog or run clip falls back to walk). A landing or stop
+    /// plays through once, and gives way the moment he moves off at walking pace or faster.
+    func pose(grounded: Bool, speed: Float, dt: Float) -> Pose {
+        if !grounded { airTime += dt; oneShot = nil; return .jump }
+        sinceRun = speed >= 4.5 ? 0 : sinceRun + dt
+        if airTime > 0.35, let d = anims[.land]?.definition.duration { oneShot = (.land, Float(d)) }
+        else if oneShot == nil, playing == .run || playing == .jog, speed < 1, sinceRun < 0.5, let d = anims[.stop]?.definition.duration { oneShot = (.stop, Float(d)) }
+        airTime = 0
+        if let o = oneShot {
+            if o.left > dt, speed < 2.4 { oneShot = (o.pose, o.left - dt); return o.pose }
+            oneShot = nil
+        }
         let want: Pose = speed < 0.4 ? .idle : speed < 2.4 ? .walking : speed < 6.5 ? .jog : .run
         return anims[want] != nil ? want : (speed < 0.4 ? .idle : .walking)
     }
@@ -72,9 +84,9 @@ import UIKit
         guard let model, let a = anims[p] else { return }
         playing = p
         if let r = fitted[p], let skin {     // Apple's retargeting: joints only, so nothing tips the rig over
-            controller = skin.playAnimation(p == .jump ? r : r.repeat(), transitionDuration: 0.2, startsPaused: false)
+            controller = skin.playAnimation(Self.once.contains(p) ? r : r.repeat(), transitionDuration: 0.2, startsPaused: false)
         } else {
-            controller = model.playAnimation(p == .jump ? a : a.repeat(), transitionDuration: 0.2, startsPaused: false)
+            controller = model.playAnimation(Self.once.contains(p) ? a : a.repeat(), transitionDuration: 0.2, startsPaused: false)
         }
         if let base = Self.clipSpeed[p] { controller?.speed = min(1.8, max(0.7, speed / base)) }
     }

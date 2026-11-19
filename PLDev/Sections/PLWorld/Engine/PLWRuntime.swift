@@ -45,6 +45,7 @@ import simd
     @ObservationIgnored private var jumpsUsed = 0
     @ObservationIgnored private var coyote: Float = 0
     @ObservationIgnored private var jumpBuffer: Float = 0
+    @ObservationIgnored private var jumpRising = false              // a jump he made is still going up; letting go cuts it short
     @ObservationIgnored private var airLock: Float = 0
     @ObservationIgnored private var wasGrounded = true
     @ObservationIgnored private var facing: Float = 0
@@ -292,11 +293,13 @@ import simd
         if grounded && vel.y <= 0 { vel.y = -1 } else { vel.y -= t.gravity * dt }
         if jumpBuffer > 0 {
             if (grounded || coyote > 0) && jumpsUsed == 0 {
-                vel.y = (2 * t.gravity * t.jumpPeak).squareRoot(); jumpsUsed = 1; jumpBuffer = 0; coyote = 0; airLock = 0.12; kick(.light)
+                vel.y = (2 * t.gravity * t.jumpPeak).squareRoot(); jumpRising = true; jumpsUsed = 1; jumpBuffer = 0; coyote = 0; airLock = 0.12; kick(.light)
             } else if !grounded && jumpsUsed < 2 {
-                vel.y = (2 * t.gravity * t.doubleJumpPeak).squareRoot(); jumpsUsed = 2; jumpBuffer = 0; airLock = 0.1; kick(.light)
+                vel.y = (2 * t.gravity * t.doubleJumpPeak).squareRoot(); jumpRising = true; jumpsUsed = 2; jumpBuffer = 0; airLock = 0.1; kick(.light)
             }
         }
+        if jumpRising, vel.y <= 0 || grounded && airLock == 0 { jumpRising = false }
+        if jumpRising, !s.jumpHeld, airLock == 0 { vel.y *= 0.5; jumpRising = false }   // hold to jump higher: a tap is a hop, a hold the full height
         vel.y += pendingLift * dt; pendingLift = 0
         if onRail { vel = railVelocity(room, dt) }
         if vel.y > 0, !onRail, airLock == 0, let sv = state?.velocity.y, sv < vel.y * 0.2 { vel.y = 0 }   // his head met a ceiling
@@ -317,7 +320,7 @@ import simd
         visual.orientation = simd_quatf(angle: facing, axis: [0, 1, 0])
         let squash: SIMD3<Float> = heldPose == "curl" ? [1.15, 0.55, 1.15] : [1, 1, 1]
         visual.scale += (squash - visual.scale) * min(1, dt * 6)
-        figure.play(figure.pose(grounded: grounded, speed: speed), speed: speed); figure.hold()
+        figure.play(figure.pose(grounded: grounded, speed: speed, dt: dt), speed: speed); figure.hold()
         dreamOrb.position = SIMD3(0.55, t.capsuleHeight / 2 + 0.35 + dreamRise * 1.1 + sin(clock * 1.8) * 0.06, 0)
 
         // the room
