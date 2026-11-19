@@ -48,6 +48,7 @@ import simd
     @ObservationIgnored private var airLock: Float = 0
     @ObservationIgnored private var wasGrounded = true
     @ObservationIgnored private var facing: Float = 0
+    @ObservationIgnored private var lookIdle: Float = 9                   // seconds since the right thumb last turned the view
     @ObservationIgnored private var clock: Float = 0
     @ObservationIgnored private var jumpTimes: [Float] = []
     @ObservationIgnored private var asBall = false
@@ -255,6 +256,7 @@ import simd
         tick(rawDt)
         var s = input.sample()
         camera.yaw += s.lookYaw; camera.pitch += s.lookPitch
+        lookIdle = s.lookYaw != 0 || s.lookPitch != 0 ? 0 : lookIdle + rawDt
         let onRail = !railPoints.isEmpty
         if onRail { s.move = .zero; s.jumpPressed = false; s.actPressed = false }   // input is locked until the rail ends
 
@@ -330,7 +332,11 @@ import simd
         apply(cmds, from: room)
         if s.actPressed { collectNearest(room, around: local + SIMD3(0, 0.9, 0)) }
 
-        camera.update(dt: dt, hero: player.position, camera: engine.camera, scene: engine.view?.scene)
+        // the camera comes round behind him only while he heads away from it: not while the thumb looks (and 0.8 s after), not on a strafe, not running at it
+        let steer: Float = lookIdle < 0.8 || onRail ? 0 : max(0, min(1, s.move.y * 1.25))
+        let close = camera.tooClose
+        camera.update(dt: dt, hero: player.position, travel: SIMD3(vel.x, 0, vel.z), steer: steer, camera: engine.camera, scene: engine.view?.scene)
+        if camera.tooClose != close { figure.setVisible(!camera.tooClose && !camera.firstPerson && !asBall) }
         if caption != nil, clock > captionUntil { caption = nil }
         if t.debug {
             let c = engine.camera.position(relativeTo: nil)
