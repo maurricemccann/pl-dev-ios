@@ -97,7 +97,7 @@ enum CompanionRules {
     }
 
     /// The wardrobe: items unlock by active days (the same clock as the stages), never bought. (id, label, unlock day)
-    struct Wear: Identifiable { let id: String; let label: String; let day: Int }
+    struct Wear: Identifiable, Sendable { let id: String; let label: String; let day: Int }
     static let wardrobe: [Wear] = [
         Wear(id: "binky", label: "Binky", day: 0), Wear(id: "crayon", label: "Crayon", day: 7), Wear(id: "bottle", label: "Water bottle", day: 21), Wear(id: "laptop", label: "Laptop", day: 25), Wear(id: "notebook", label: "Notebook", day: 30),
         Wear(id: "book", label: "Book", day: 35), Wear(id: "cart", label: "Shopping cart", day: 40), Wear(id: "brush", label: "Paintbrush", day: 45), Wear(id: "tapegun", label: "Tape gun", day: 50), Wear(id: "mic", label: "Microphone", day: 55),
