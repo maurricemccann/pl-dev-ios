@@ -66,6 +66,9 @@ struct CompanionScene: View {
             GeometryReader { g in
                 ZStack {
                     Color.black
+                    if s.shine > 0 {   // his ruling 11-08: desires and Helds give the glow; a Held or a came-true swells it for 3 s
+                        RadialGradient(colors: [PLG.gold.opacity(0.43 * s.shine), .clear], center: UnitPoint(x: 0.5, y: 0.75), startRadius: 0, endRadius: g.size.width * 0.55)
+                    }
                     if let sheet = CompanionSprites.sheet(s.who, s.act), let cg = sheet.frame(s.frame) {
                         let k = CGFloat(max(1, min(8, Int(min(g.size.height * 0.8, g.size.width * 0.8) / CGFloat(max(sheet.fh, sheet.fw))))))
                         Image(decorative: cg, scale: 1).interpolation(.none).resizable()
@@ -82,7 +85,7 @@ struct CompanionScene: View {
         .accessibilityLabel("Your companion")
     }
 
-    private struct S { var who: String; var act: String; var frame: Int; var light: Double; var lying: Bool; var saturation: Double }
+    private struct S { var who: String; var act: String; var frame: Int; var light: Double; var lying: Bool; var saturation: Double; var shine: Double = 0 }
 
     private func state(at date: Date) -> S {
         let r = store.record
@@ -112,7 +115,9 @@ struct CompanionScene: View {
         var frame = CompanionRules.spriteFrame(elapsedMs: clip ? age : now, fps: fps, frames: 36)
         if !clip && (sleep && stage != "adult" || (glow == 0 || resting) && stage != "adult") { frame = 0 }   // R1: still when unfed, resting or asleep
         let light = min(sleep && !clip ? 0.55 : 1, away)
-        return S(who: who, act: act, frame: frame, light: light, lying: sleep && !clip, saturation: 0.35 + 0.65 * Double(glow) / 4)
+        var shine = sleep ? 0 : Double(CompanionRules.meter(nowMs: now, lastMs: r?.lastHeld ?? 0)) / 4
+        if clip && (store.event == "held" || store.event == "real") { shine = max(shine, sin(.pi * age / clipMs)) }
+        return S(who: who, act: act, frame: frame, light: light, lying: sleep && !clip, saturation: 0.35 + 0.65 * Double(glow) / 4, shine: shine)
     }
 }
 
@@ -205,6 +210,12 @@ struct CompanionView: View {
                     }
                     if !store.error.isEmpty { Text(store.error).font(.footnote).foregroundStyle(PLG.red) }
                 }
+                VStack(spacing: 0) {
+                    NavigationLink { CompanionDesiresView(store: store) } label: { row("Desires", "\(store.activeDesires) of 12") }
+                    Divider().overlay(PLG.line(scheme))
+                    NavigationLink { CompanionArchiveView(store: store) } label: { row("Archive", "") }
+                }
+                .background(PLG.surface(scheme), in: RoundedRectangle(cornerRadius: 12))
                 if !todays.isEmpty {
                     VStack(alignment: .leading, spacing: 6) {
                         ForEach(todays.reversed()) { g in
@@ -217,6 +228,117 @@ struct CompanionView: View {
         }
         .scrollDismissesKeyboard(.interactively)
         .background(PLG.bg(scheme))
+    }
+
+    private func row(_ title: String, _ detail: String) -> some View {
+        HStack {
+            Text(title).foregroundStyle(PLG.ink(scheme))
+            Spacer()
+            Text(detail).font(.footnote).monospacedDigit().foregroundStyle(PLG.dim(scheme))
+            Image(systemName: "chevron.right").font(.footnote).foregroundStyle(PLG.dim(scheme))
+        }
+        .padding(.horizontal, 14).frame(minHeight: 48).contentShape(Rectangle())
+    }
+}
+
+/// Desires: up to twelve active. Held once a practice day lights Pull; Came true asks first and plays the cheer; Archive keeps it in the record.
+struct CompanionDesiresView: View {
+    @Bindable var store: CompanionStore
+    @State private var draft = ""
+    @State private var confirmReal: Int?
+    @Environment(\.colorScheme) private var scheme
+    @Environment(\.dismiss) private var dismiss
+
+    var body: some View {
+        let ds = store.record?.desires ?? []
+        let active = ds.indices.filter { ds[$0].status == "active" }
+        ScrollView {
+            VStack(alignment: .leading, spacing: 14) {
+                CompanionScene(store: store).frame(height: 180).clipShape(RoundedRectangle(cornerRadius: PLG.radius))
+                if store.activeDesires < 12 {
+                    TextField("Name a desire", text: $draft)
+                        .padding(12).background(PLG.surface(scheme), in: RoundedRectangle(cornerRadius: 12))
+                        .onChange(of: draft) { _, v in if v.count > 80 { draft = String(v.prefix(80)) } }
+                        .submitLabel(.done).onSubmit(keep)
+                    HStack {
+                        Text("\(draft.count)/80").font(.caption).monospacedDigit().foregroundStyle(PLG.dim(scheme))
+                        Spacer()
+                        Button("Keep desire", action: keep).buttonStyle(.borderedProminent).tint(PLG.gold).frame(minHeight: 44)
+                            .disabled(draft.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty)
+                    }
+                } else {
+                    Text("Twelve desires held.").font(.footnote).foregroundStyle(PLG.dim(scheme))
+                }
+                if !store.error.isEmpty { Text(store.error).font(.footnote).foregroundStyle(PLG.red) }
+                ForEach(active, id: \.self) { i in
+                    let d = ds[i], level = store.desireLevel(ds[i])
+                    VStack(alignment: .leading, spacing: 8) {
+                        Text(d.name).plHand(22, relativeTo: .body).foregroundStyle(PLG.ink(scheme)).opacity(level == 2 ? 0.45 : level == 1 ? 0.65 : 1)
+                        HStack(spacing: 8) {
+                            Button("Held") { if store.held(i) { UIImpactFeedbackGenerator(style: .soft).impactOccurred() } }
+                                .buttonStyle(.borderedProminent).tint(PLG.teal)
+                            Button("Came true") { confirmReal = i }.buttonStyle(.bordered).tint(PLG.gold)
+                            Spacer()
+                            Button("Archive") { store.archive(i) }.buttonStyle(.bordered).tint(PLG.dim(scheme))
+                        }
+                        .frame(minHeight: 44)
+                    }
+                    .padding(12).background(PLG.surface(scheme), in: RoundedRectangle(cornerRadius: 12))
+                }
+            }
+            .padding(16)
+        }
+        .scrollDismissesKeyboard(.interactively)
+        .background(PLG.bg(scheme))
+        .navigationTitle("Desires").navigationBarTitleDisplayMode(.inline)
+        .confirmationDialog(confirmReal.flatMap { ds.indices.contains($0) ? ds[$0].name : nil } ?? "Came true",
+                            isPresented: Binding(get: { confirmReal != nil }, set: { if !$0 { confirmReal = nil } }), titleVisibility: .visible) {
+            Button("Record it came true") {
+                if let i = confirmReal, store.real(i, true) { UINotificationFeedbackGenerator().notificationOccurred(.success); dismiss() }
+                confirmReal = nil
+            }
+            Button("Back", role: .cancel) { confirmReal = nil }
+        }
+    }
+
+    private func keep() { if store.desire(draft) { draft = "" } }
+}
+
+/// The record: every desire that came true (with its undo) or was archived, then every gratitude, newest first. Nothing is ever deleted.
+struct CompanionArchiveView: View {
+    @Bindable var store: CompanionStore
+    @Environment(\.colorScheme) private var scheme
+
+    var body: some View {
+        let ds = store.record?.desires ?? [], gs = store.record?.gratitudes ?? []
+        let closed = ds.indices.reversed().filter { ds[$0].status != "active" }
+        ScrollView {
+            LazyVStack(alignment: .leading, spacing: 12) {
+                if gs.isEmpty && closed.isEmpty {
+                    Text("The record begins with one line.").foregroundStyle(PLG.dim(scheme)).padding(.top, 24)
+                }
+                ForEach(closed, id: \.self) { i in
+                    HStack(alignment: .firstTextBaseline) {
+                        VStack(alignment: .leading, spacing: 2) {
+                            Text(ds[i].name).plHand(20, relativeTo: .body).foregroundStyle(PLG.ink(scheme))
+                            Text(ds[i].status == "real" ? "Came true" : "Archived").font(.caption).foregroundStyle(ds[i].status == "real" ? PLG.gold : PLG.dim(scheme))
+                        }
+                        Spacer()
+                        if ds[i].status == "real" { Button("Undo") { store.real(i, false) }.buttonStyle(.bordered).frame(minHeight: 44) }
+                    }
+                }
+                if !store.error.isEmpty { Text(store.error).font(.footnote).foregroundStyle(PLG.red) }
+                ForEach(gs.reversed()) { g in
+                    VStack(alignment: .leading, spacing: 2) {
+                        Text(g.day).font(.caption).monospacedDigit().foregroundStyle(PLG.dim(scheme))
+                        Text(g.text).plHand(20, relativeTo: .body).foregroundStyle(PLG.ink(scheme))
+                    }
+                }
+            }
+            .padding(16)
+        }
+        .background(PLG.bg(scheme))
+        .navigationTitle("Archive").navigationBarTitleDisplayMode(.inline)
     }
 }
 
