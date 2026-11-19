@@ -1,5 +1,6 @@
 import Foundation
 import Observation
+import UserNotifications
 
 /// One gratitude line, kept forever.
 struct CompanionGratitude: Codable, Equatable, Identifiable {
@@ -39,6 +40,31 @@ struct CompanionRecord: Codable, Equatable {
     var nudgeTime = 1260            // 21:00
     var lastNudge = ""
     var animationFps = 12
+    var off: [String] = []          // wardrobe items he switched off
+
+    init() {}
+    /// Every field optional on read: a record saved by an older build (fewer fields) still opens; only a broken file is unreadable.
+    init(from decoder: Decoder) throws {
+        let c = try decoder.container(keyedBy: CodingKeys.self)
+        let d = CompanionRecord()
+        v = try c.decodeIfPresent(Int.self, forKey: .v) ?? d.v
+        who = try c.decodeIfPresent(String.self, forKey: .who) ?? d.who
+        born = try c.decodeIfPresent(Double.self, forKey: .born) ?? d.born
+        stage = try c.decodeIfPresent(String.self, forKey: .stage) ?? d.stage
+        days = try c.decodeIfPresent([String].self, forKey: .days) ?? d.days
+        order = try c.decodeIfPresent([String].self, forKey: .order) ?? d.order
+        gratitudes = try c.decodeIfPresent([CompanionGratitude].self, forKey: .gratitudes) ?? d.gratitudes
+        desires = try c.decodeIfPresent([CompanionDesire].self, forKey: .desires) ?? d.desires
+        lastGratitude = try c.decodeIfPresent(Double.self, forKey: .lastGratitude) ?? d.lastGratitude
+        lastHeld = try c.decodeIfPresent(Double.self, forKey: .lastHeld) ?? d.lastHeld
+        wake = try c.decodeIfPresent(Int.self, forKey: .wake) ?? d.wake
+        sleep = try c.decodeIfPresent(Int.self, forKey: .sleep) ?? d.sleep
+        nudge = try c.decodeIfPresent(Bool.self, forKey: .nudge) ?? d.nudge
+        nudgeTime = try c.decodeIfPresent(Int.self, forKey: .nudgeTime) ?? d.nudgeTime
+        lastNudge = try c.decodeIfPresent(String.self, forKey: .lastNudge) ?? d.lastNudge
+        animationFps = try c.decodeIfPresent(Int.self, forKey: .animationFps) ?? d.animationFps
+        off = try c.decodeIfPresent([String].self, forKey: .off) ?? d.off
+    }
 }
 
 /// One transactional file: a change is applied to a copy, written atomically, and only then becomes the pet. A failed write never advances it.
@@ -80,7 +106,7 @@ struct CompanionRecord: Codable, Equatable {
         guard !unreadable, record == nil else { return false }
         var r = CompanionRecord(); r.who = who; r.born = Self.nowMs(); r.order = colours.shuffled()
         record = r
-        if change({ _ in }) { return true }
+        if change({ _ in }) { scheduleNudge(); return true }
         record = nil; return false
     }
 
@@ -106,7 +132,7 @@ struct CompanionRecord: Codable, Equatable {
             s.lastGratitude = ms
             s.stage = CompanionRules.nextStage(s.stage, days: s.days.count)
         }
-        if ok { mark("gratitude") }
+        if ok { mark("gratitude"); scheduleNudge() }
         return ok
     }
 
@@ -153,6 +179,49 @@ struct CompanionRecord: Codable, Equatable {
         CompanionRules.desireLevel(nowMs: now, lastHeldOrCreated: d.lastHeld ?? d.created, lastGratitude: record?.lastGratitude ?? 0)
     }
 
+    // MARK: C3, time and growth
+
+    /// The test hook (his C3 check): shows the scene at another day count without touching the record. Not saved.
+    var previewDays: Int?
+    /// Lights out: a tap on the scene; the pet lies down at 15 % light. Not saved, like the R1's.
+    var lightsOut = false
+    var shownDays: Int { previewDays ?? activeDays }
+    var shownStage: String { previewDays.map(CompanionRules.stage) ?? record?.stage ?? "baby" }
+    /// Unlocked wardrobe items he has not switched off, in draw order.
+    var worn: [String] { CompanionRules.wardrobe.filter { shownDays >= $0.day && !(record?.off.contains($0.id) ?? false) }.map { $0.id } }
+
+    @discardableResult func setWho(_ w: String) -> Bool { change { $0.who = w } }
+    @discardableResult func setTimes(wake: Int? = nil, sleep: Int? = nil, nudgeTime: Int? = nil, nudge: Bool? = nil) -> Bool {
+        let ok = change { s in
+            if let wake { s.wake = wake }; if let sleep { s.sleep = sleep }
+            if let nudgeTime { s.nudgeTime = nudgeTime }; if let nudge { s.nudge = nudge }
+        }
+        if ok { scheduleNudge() }
+        return ok
+    }
+    @discardableResult func setWorn(_ id: String, _ on: Bool) -> Bool {
+        change { s in s.off.removeAll { $0 == id }; if !on { s.off.append(id) } }
+    }
+
+    /// The one soft nudge a day: a local notification at his time, only on a practice day not yet fed and never during rest.
+    /// Rescheduled on open, on each gratitude and on each settings change, so it never stacks and never fires after a gratitude.
+    func scheduleNudge() {
+        let center = UNUserNotificationCenter.current(), id = "companion.nudge"
+        center.removePendingNotificationRequests(withIdentifiers: [id])
+        guard let r = record, r.nudge else { return }
+        let cal = Calendar.current, now = Date()
+        for ahead in 0...2 {
+            guard let base = cal.date(byAdding: .day, value: ahead, to: cal.startOfDay(for: now)),
+                  let at = cal.date(byAdding: .minute, value: r.nudgeTime, to: base), at > now else { continue }
+            if asleep(at) { return }   // his time sits inside rest: no nudge (the R1 rule)
+            if day(at) == day(now) && fed(now) { continue }
+            let c = UNMutableNotificationContent(); c.title = "Companion"; c.body = "A moment for one gratitude."; c.sound = .default
+            let parts = cal.dateComponents([.year, .month, .day, .hour, .minute], from: at)
+            center.add(UNNotificationRequest(identifier: id, content: c, trigger: UNCalendarNotificationTrigger(dateMatching: parts, repeats: false)))
+            return
+        }
+    }
+
     /// The only delete: his own reset from Settings, which removes the file and starts over.
     @discardableResult func reset() -> Bool {
         do {
@@ -175,6 +244,10 @@ struct CompanionRecord: Codable, Equatable {
         if s.record?.lastHeld == 0 || s.record?.days.count != 1 { bad.append("Held lights Pull without a second day") }
         let reopened = CompanionStore(url: tmp)
         if reopened.record != s.record { bad.append("the record did not survive a reopen") }
+        // a record saved by the first build (no `off` field) must still open
+        let old = Data(#"{"v":3,"who":"her","born":1,"stage":"baby","days":["2026-11-19"],"order":[],"gratitudes":[],"desires":[],"lastGratitude":0,"lastHeld":0,"wake":900,"sleep":360,"nudge":true,"nudgeTime":1260,"lastNudge":"","animationFps":12}"#.utf8)
+        if (try? JSONDecoder().decode(CompanionRecord.self, from: old))?.who != "her" { bad.append("an older record would not open") }
+        if CompanionRules.wardrobe.filter({ 21 >= $0.day }).map({ $0.id }) != ["binky", "crayon", "bottle"] { bad.append("wardrobe unlocks by day") }
         return bad
     }
 }

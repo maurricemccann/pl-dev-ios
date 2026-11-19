@@ -97,10 +97,11 @@ enum CompanionRules {
     }
 
     /// The wardrobe: items unlock by active days (the same clock as the stages), never bought. (id, label, unlock day)
-    static let wardrobe: [(id: String, label: String, day: Int)] = [
-        ("binky", "Binky", 0), ("crayon", "Crayon", 7), ("bottle", "Water bottle", 21), ("laptop", "Laptop", 25), ("notebook", "Notebook", 30),
-        ("book", "Book", 35), ("cart", "Shopping cart", 40), ("brush", "Paintbrush", 45), ("tapegun", "Tape gun", 50), ("mic", "Microphone", 55),
-        ("cup", "Coffee", 66), ("vest", "Safety vest", 68), ("scanner", "Hand scanner", 70)]
+    struct Wear: Identifiable { let id: String; let label: String; let day: Int }
+    static let wardrobe: [Wear] = [
+        Wear(id: "binky", label: "Binky", day: 0), Wear(id: "crayon", label: "Crayon", day: 7), Wear(id: "bottle", label: "Water bottle", day: 21), Wear(id: "laptop", label: "Laptop", day: 25), Wear(id: "notebook", label: "Notebook", day: 30),
+        Wear(id: "book", label: "Book", day: 35), Wear(id: "cart", label: "Shopping cart", day: 40), Wear(id: "brush", label: "Paintbrush", day: 45), Wear(id: "tapegun", label: "Tape gun", day: 50), Wear(id: "mic", label: "Microphone", day: 55),
+        Wear(id: "cup", label: "Coffee", day: 66), Wear(id: "vest", label: "Safety vest", day: 68), Wear(id: "scanner", label: "Hand scanner", day: 70)]
 
     /// Assert-style self-check of the rules that carry his design (run from the Status probes). Returns the failed checks, empty when all pass.
     static func selfCheck() -> [String] {

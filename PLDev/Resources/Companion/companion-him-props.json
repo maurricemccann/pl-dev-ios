@@ -1,0 +1,280 @@
+{
+ "note": "wardrobe layers (S346): drawn over the act with the same frame index; colour-independent",
+ "layers": {
+  "cup:adult-drink": {
+   "file": "cup-adult-drink.png",
+   "frame_w": 18,
+   "frame_h": 33,
+   "cols": 6,
+   "frames": 36,
+   "offset_in_160x224": [
+    70,
+    126
+   ]
+  },
+  "cart:adult-cart": {
+   "file": "cart-adult-cart.png",
+   "frame_w": 72,
+   "frame_h": 91,
+   "cols": 6,
+   "frames": 36,
+   "offset_in_160x224": [
+    63,
+    133
+   ]
+  },
+  "brush:adult-paint": {
+   "file": "brush-adult-paint.png",
+   "frame_w": 31,
+   "frame_h": 42,
+   "cols": 6,
+   "frames": 36,
+   "offset_in_160x224": [
+    115,
+    131
+   ]
+  },
+  "cart:teen-cart": {
+   "file": "cart-teen-cart.png",
+   "frame_w": 54,
+   "frame_h": 63,
+   "cols": 6,
+   "frames": 36,
+   "offset_in_160x224": [
+    66,
+    161
+   ]
+  },
+  "bottle:teen-drink": {
+   "file": "bottle-teen-drink.png",
+   "frame_w": 11,
+   "frame_h": 27,
+   "cols": 6,
+   "frames": 36,
+   "offset_in_160x224": [
+    74,
+    153
+   ]
+  },
+  "brush:teen-paint": {
+   "file": "brush-teen-paint.png",
+   "frame_w": 14,
+   "frame_h": 31,
+   "cols": 6,
+   "frames": 36,
+   "offset_in_160x224": [
+    104,
+    158
+   ]
+  },
+  "notebook:teen-think": {
+   "file": "notebook-teen-think.png",
+   "frame_w": 22,
+   "frame_h": 23,
+   "cols": 6,
+   "frames": 36,
+   "offset_in_160x224": [
+    79,
+    171
+   ]
+  },
+  "laptop:teen-type": {
+   "file": "laptop-teen-type.png",
+   "frame_w": 30,
+   "frame_h": 20,
+   "cols": 6,
+   "frames": 36,
+   "offset_in_160x224": [
+    66,
+    180
+   ]
+  },
+  "tapegun:adult-parcel": {
+   "file": "tapegun-adult-parcel.png",
+   "frame_w": 18,
+   "frame_h": 13,
+   "cols": 6,
+   "frames": 36,
+   "offset_in_160x224": [
+    68,
+    130
+   ]
+  },
+  "book:adult-yawn": {
+   "file": "book-adult-yawn.png",
+   "frame_w": 26,
+   "frame_h": 28,
+   "cols": 6,
+   "frames": 36,
+   "offset_in_160x224": [
+    83,
+    152
+   ]
+  },
+  "tapegun:teen-parcel": {
+   "file": "tapegun-teen-parcel.png",
+   "frame_w": 14,
+   "frame_h": 11,
+   "cols": 6,
+   "frames": 36,
+   "offset_in_160x224": [
+    71,
+    157
+   ]
+  },
+  "book:teen-yawn": {
+   "file": "book-teen-yawn.png",
+   "frame_w": 19,
+   "frame_h": 21,
+   "cols": 6,
+   "frames": 36,
+   "offset_in_160x224": [
+    81,
+    174
+   ]
+  },
+  "binky:baby-crawl": {
+   "file": "binky-baby-crawl.png",
+   "frame_w": 5,
+   "frame_h": 13,
+   "cols": 6,
+   "frames": 36,
+   "offset_in_160x224": [
+    42,
+    195
+   ]
+  },
+  "crayon:baby-crawl": {
+   "file": "crayon-baby-crawl.png",
+   "frame_w": 28,
+   "frame_h": 19,
+   "cols": 6,
+   "frames": 36,
+   "offset_in_160x224": [
+    45,
+    203
+   ]
+  },
+  "binky:baby-clap": {
+   "file": "binky-baby-clap.png",
+   "frame_w": 7,
+   "frame_h": 7,
+   "cols": 6,
+   "frames": 36,
+   "offset_in_160x224": [
+    77,
+    174
+   ]
+  },
+  "crayon:baby-clap": {
+   "file": "crayon-baby-clap.png",
+   "frame_w": 10,
+   "frame_h": 6,
+   "cols": 6,
+   "frames": 36,
+   "offset_in_160x224": [
+    71,
+    182
+   ]
+  },
+  "binky:baby-reach": {
+   "file": "binky-baby-reach.png",
+   "frame_w": 16,
+   "frame_h": 7,
+   "cols": 6,
+   "frames": 36,
+   "offset_in_160x224": [
+    74,
+    174
+   ]
+  },
+  "crayon:baby-reach": {
+   "file": "crayon-baby-reach.png",
+   "frame_w": 16,
+   "frame_h": 27,
+   "cols": 6,
+   "frames": 36,
+   "offset_in_160x224": [
+    78,
+    174
+   ]
+  },
+  "binky:baby-shake": {
+   "file": "binky-baby-shake.png",
+   "frame_w": 8,
+   "frame_h": 7,
+   "cols": 6,
+   "frames": 36,
+   "offset_in_160x224": [
+    73,
+    174
+   ]
+  },
+  "crayon:baby-shake": {
+   "file": "crayon-baby-shake.png",
+   "frame_w": 6,
+   "frame_h": 9,
+   "cols": 6,
+   "frames": 36,
+   "offset_in_160x224": [
+    87,
+    189
+   ]
+  },
+  "mic:adult-sing": {
+   "file": "mic-adult-sing.png",
+   "frame_w": 16,
+   "frame_h": 35,
+   "cols": 6,
+   "frames": 36,
+   "offset_in_160x224": [
+    70,
+    108
+   ]
+  },
+  "mic:teen-sing": {
+   "file": "mic-teen-sing.png",
+   "frame_w": 13,
+   "frame_h": 26,
+   "cols": 6,
+   "frames": 36,
+   "offset_in_160x224": [
+    72,
+    143
+   ]
+  },
+  "vest:adult-ride": {
+   "file": "vest-adult-ride.png",
+   "frame_w": 19,
+   "frame_h": 44,
+   "cols": 6,
+   "frames": 36,
+   "offset_in_160x224": [
+    60,
+    121
+   ]
+  },
+  "scanner:adult-ride": {
+   "file": "scanner-adult-ride.png",
+   "frame_w": 10,
+   "frame_h": 15,
+   "cols": 6,
+   "frames": 36,
+   "offset_in_160x224": [
+    75,
+    147
+   ]
+  },
+  "vest:adult-parcel": {
+   "file": "vest-adult-parcel.png",
+   "frame_w": 33,
+   "frame_h": 40,
+   "cols": 6,
+   "frames": 36,
+   "offset_in_160x224": [
+    64,
+    129
+   ]
+  }
+ }
+}

@@ -17,7 +17,7 @@ import UserNotifications
     static func settingsRows(model: AppModel) -> AnyView? { AnyView(CompanionSettingsRows(store: .shared)) }
     static func notificationCategories() -> Set<UNNotificationCategory> { [] }
     static func handle(link: DeepLink, model: AppModel) -> Bool { true }
-    static func refresh(model: AppModel) async -> SectionRefresh { SectionRefresh(badge: nil, notify: []) }
+    static func refresh(model: AppModel) async -> SectionRefresh { CompanionStore.shared.scheduleNudge(); return SectionRefresh(badge: nil, notify: []) }
 }
 
 // MARK: sprites
@@ -26,6 +26,7 @@ import UserNotifications
 struct CompanionSheet {
     let image: CGImage
     let fw: Int, fh: Int, cols: Int, frames: Int
+    var ox = 0, oy = 0          // offset_in_160x224: where this strip sits in the shared cell
     func frame(_ i: Int) -> CGImage? {
         let f = max(0, min(frames - 1, i))
         return image.cropping(to: CGRect(x: f % cols * fw, y: f / cols * fh, width: fw, height: fh))
@@ -33,21 +34,35 @@ struct CompanionSheet {
 }
 
 @MainActor enum CompanionSprites {
-    private struct Act: Decodable { let file: String; let frame_w: Int; let frame_h: Int; let cols: Int; let frames: Int }
+    private struct Act: Decodable { let file: String; let frame_w: Int; let frame_h: Int; let cols: Int; let frames: Int; let offset_in_160x224: [Int]? }
     private struct Book: Decodable { let acts: [String: Act] }
+    private struct Props: Decodable { let layers: [String: Act] }
     private static var books: [String: Book] = [:]
-    private static var cache: [String: CompanionSheet] = [:]
+    private static var props: [String: Props] = [:]
+    private static var cache: [String: CompanionSheet?] = [:]
+
+    private static func url(_ name: String, _ ext: String) -> URL? {
+        Bundle.main.url(forResource: name, withExtension: ext) ?? Bundle.main.url(forResource: name, withExtension: ext, subdirectory: "Companion")
+    }
+    private static func make(_ a: Act, _ name: String) -> CompanionSheet? {
+        guard let u = url(name, "png"), let img = UIImage(contentsOfFile: u.path)?.cgImage else { return nil }
+        let o = a.offset_in_160x224 ?? [0, 0]
+        return CompanionSheet(image: img, fw: a.frame_w, fh: a.frame_h, cols: a.cols, frames: a.frames, ox: o.first ?? 0, oy: o.count > 1 ? o[1] : 0)
+    }
+    /// A wardrobe item baked for this act (`props/props.json`, key "item:act"), or nil when it has none.
+    static func layer(_ who: String, _ item: String, _ act: String) -> CompanionSheet? {
+        let key = who + "/prop/" + item + ":" + act
+        if let s = cache[key] { return s }
+        if props[who] == nil, let u = url("companion-\(who)-props", "json"), let d = try? Data(contentsOf: u) { props[who] = try? JSONDecoder().decode(Props.self, from: d) }
+        let s = props[who]?.layers[item + ":" + act].flatMap { make($0, "companion-\(who)-prop-" + ($0.file as NSString).deletingPathExtension) }
+        cache[key] = s; return s
+    }
 
     static func sheet(_ who: String, _ act: String) -> CompanionSheet? {
         let key = who + "/" + act
         if let s = cache[key] { return s }
-        if books[who] == nil, let u = Bundle.main.url(forResource: "companion-\(who)", withExtension: "json") ?? Bundle.main.url(forResource: "companion-\(who)", withExtension: "json", subdirectory: "Companion"),
-           let d = try? Data(contentsOf: u) { books[who] = try? JSONDecoder().decode(Book.self, from: d) }
-        guard let a = books[who]?.acts[act] else { return nil }
-        let name = "companion-\(who)-" + (a.file as NSString).deletingPathExtension
-        guard let u = Bundle.main.url(forResource: name, withExtension: "png") ?? Bundle.main.url(forResource: name, withExtension: "png", subdirectory: "Companion"),
-              let img = UIImage(contentsOfFile: u.path)?.cgImage else { return nil }
-        let s = CompanionSheet(image: img, fw: a.frame_w, fh: a.frame_h, cols: a.cols, frames: a.frames)
+        if books[who] == nil, let u = url("companion-\(who)", "json"), let d = try? Data(contentsOf: u) { books[who] = try? JSONDecoder().decode(Book.self, from: d) }
+        let s = books[who]?.acts[act].flatMap { make($0, "companion-\(who)-" + ($0.file as NSString).deletingPathExtension) }
         cache[key] = s; return s
     }
 }
@@ -58,6 +73,7 @@ struct CompanionSheet {
 struct CompanionScene: View {
     let store: CompanionStore
     var who: String? = nil       // the birth screen's preview
+    var tapForLights = false     // home only: a tap turns the lights out (and on)
     private let clipMs = 3000.0  // 36 frames at 12 fps
 
     var body: some View {
@@ -73,6 +89,15 @@ struct CompanionScene: View {
                         let k = CGFloat(max(1, min(8, Int(min(g.size.height * 0.8, g.size.width * 0.8) / CGFloat(max(sheet.fh, sheet.fw))))))
                         Image(decorative: cg, scale: 1).interpolation(.none).resizable()
                             .frame(width: CGFloat(sheet.fw) * k, height: CGFloat(sheet.fh) * k)
+                            .overlay(alignment: .topLeading) {
+                                ForEach(s.worn, id: \.self) { item in
+                                    if let L = CompanionSprites.layer(s.who, item, s.act), let lc = L.frame(s.frame) {
+                                        Image(decorative: lc, scale: 1).interpolation(.none).resizable()
+                                            .frame(width: CGFloat(L.fw) * k, height: CGFloat(L.fh) * k)
+                                            .offset(x: CGFloat(L.ox - sheet.ox) * k, y: CGFloat(L.oy - sheet.oy) * k)
+                                    }
+                                }
+                            }
                             .rotationEffect(.degrees(s.lying ? 90 : 0))
                             .saturation(s.saturation)
                             .position(x: g.size.width / 2, y: g.size.height - (s.lying ? CGFloat(sheet.fw) * k / 2 : CGFloat(sheet.fh) * k / 2) - 18)
@@ -81,22 +106,26 @@ struct CompanionScene: View {
                 }
             }
         }
+        .contentShape(Rectangle())
+        .onTapGesture { if tapForLights && store.record != nil { store.lightsOut.toggle() } }
         .accessibilityElement(children: .ignore)
         .accessibilityLabel("Your companion")
+        .accessibilityAddTraits(tapForLights ? .isButton : [])
+        .accessibilityHint(tapForLights ? "Turns the lights out or on" : "")
     }
 
-    private struct S { var who: String; var act: String; var frame: Int; var light: Double; var lying: Bool; var saturation: Double; var shine: Double = 0 }
+    private struct S { var who: String; var act: String; var frame: Int; var light: Double; var lying: Bool; var saturation: Double; var shine: Double = 0; var worn: [String] = [] }
 
     private func state(at date: Date) -> S {
         let r = store.record
         let who = who ?? r?.who ?? "him"
-        let stage = r?.stage ?? "baby"
+        let stage = store.shownStage
         let fps = CompanionRules.animationFps(r?.animationFps ?? 12)
         if r == nil { return S(who: who, act: "baby-clap", frame: CompanionRules.spriteFrame(elapsedMs: date.timeIntervalSince1970 * 1000, fps: fps, frames: 36), light: 1, lying: false, saturation: 1) }
         let now = CompanionStore.nowMs(date)
         let age = (date.timeIntervalSince(store.eventAt)) * 1000
         let clip = !store.event.isEmpty && age >= 0 && age < clipMs
-        let sleep = store.asleep(date)
+        let sleep = store.lightsOut || store.asleep(date)
         let resting = CompanionRules.resting(nowMs: now, lastActive: store.lastActive)
         let glow = CompanionRules.meter(nowMs: now, lastMs: r?.lastGratitude ?? 0)
         var away = CompanionRules.absenceLight(nowMs: now, lastActive: store.lastActive)
@@ -105,7 +134,7 @@ struct CompanionScene: View {
         var act: String
         if clip {
             act = stage == "baby"
-                ? CompanionRules.babyGesture(activeDays: store.activeDays, event: store.event, roll: store.eventAt.timeIntervalSince1970.truncatingRemainder(dividingBy: 1))
+                ? CompanionRules.babyGesture(activeDays: store.shownDays, event: store.event, roll: store.eventAt.timeIntervalSince1970.truncatingRemainder(dividingBy: 1))
                 : CompanionRules.acknowledgement(stage: stage, event: store.event)
         } else if sleep {
             act = stage == "adult" ? "adult-quiet" : stage == "teen" ? "teen-headtilt" : "baby-clap"   // R1: asleep it lies down in its idle pose
@@ -114,10 +143,10 @@ struct CompanionScene: View {
         }
         var frame = CompanionRules.spriteFrame(elapsedMs: clip ? age : now, fps: fps, frames: 36)
         if !clip && (sleep && stage != "adult" || (glow == 0 || resting) && stage != "adult") { frame = 0 }   // R1: still when unfed, resting or asleep
-        let light = min(sleep && !clip ? 0.55 : 1, away)
+        let light = min(sleep && !clip ? (store.lightsOut ? 0.15 : 0.55) : 1, away)
         var shine = sleep ? 0 : Double(CompanionRules.meter(nowMs: now, lastMs: r?.lastHeld ?? 0)) / 4
         if clip && (store.event == "held" || store.event == "real") { shine = max(shine, sin(.pi * age / clipMs)) }
-        return S(who: who, act: act, frame: frame, light: light, lying: sleep && !clip, saturation: 0.35 + 0.65 * Double(glow) / 4, shine: shine)
+        return S(who: who, act: act, frame: frame, light: light, lying: sleep && !clip, saturation: 0.35 + 0.65 * Double(glow) / 4, shine: shine, worn: who == nil || r != nil ? store.worn : [])
     }
 }
 
@@ -161,6 +190,7 @@ struct CompanionView: View {
         }
         .navigationTitle("Companion")
         .navigationBarTitleDisplayMode(.inline)
+        .onAppear { store.scheduleNudge() }
     }
 
     private var birth: some View {
@@ -189,7 +219,7 @@ struct CompanionView: View {
         let todays = r.gratitudes.filter { $0.day == today }
         return ScrollView {
             VStack(alignment: .leading, spacing: 14) {
-                CompanionScene(store: store).frame(height: 320).clipShape(RoundedRectangle(cornerRadius: PLG.radius))
+                CompanionScene(store: store, tapForLights: true).frame(height: 320).clipShape(RoundedRectangle(cornerRadius: PLG.radius))
                 VStack(spacing: 8) {
                     CompanionMeter(name: "Glow", value: CompanionRules.meter(nowMs: now, lastMs: r.lastGratitude), tint: PLG.gold)
                     CompanionMeter(name: "Pull", value: CompanionRules.meter(nowMs: now, lastMs: r.lastHeld), tint: PLG.teal)
@@ -346,7 +376,34 @@ struct CompanionArchiveView: View {
 struct CompanionSettingsRows: View {
     @Bindable var store: CompanionStore
     @State private var confirm = false
+
+    private func time(_ get: @escaping (CompanionRecord) -> Int, _ set: @escaping (Int) -> Void) -> Binding<Date> {
+        Binding(get: {
+            let m = store.record.map(get) ?? 0
+            return Calendar.current.date(bySettingHour: m / 60, minute: m % 60, second: 0, of: Date()) ?? Date()
+        }, set: { d in set(CompanionRules.minutes(d, .current)) })
+    }
+
     var body: some View {
+        if let r = store.record {
+            Picker("Companion", selection: Binding(get: { r.who }, set: { store.setWho($0) })) {
+                Text("GlyphGuy").tag("him"); Text("GlyphGirl").tag("her")
+            }
+            DatePicker("Wakes", selection: time({ $0.wake }, { store.setTimes(wake: $0) }), displayedComponents: .hourAndMinute)
+            DatePicker("Rests", selection: time({ $0.sleep }, { store.setTimes(sleep: $0) }), displayedComponents: .hourAndMinute)
+            Toggle("One gratitude nudge a day", isOn: Binding(get: { r.nudge }, set: { store.setTimes(nudge: $0) }))
+            if r.nudge {
+                DatePicker("Nudge at", selection: time({ $0.nudgeTime }, { store.setTimes(nudgeTime: $0) }), displayedComponents: .hourAndMinute)
+            }
+            ForEach(CompanionRules.wardrobe.filter { store.shownDays >= $0.day }, id: \.id) { item in
+                Toggle(item.label, isOn: Binding(get: { !(store.record?.off.contains(item.id) ?? false) }, set: { store.setWorn(item.id, $0) }))
+            }
+            VStack(alignment: .leading) {
+                Text(store.previewDays.map { "Preview at day \($0)" } ?? "Preview growth (test hook, saves nothing)")
+                Slider(value: Binding(get: { Double(store.previewDays ?? store.activeDays) }, set: { store.previewDays = Int($0) }), in: 0...70, step: 1)
+                if store.previewDays != nil { Button("End the preview") { store.previewDays = nil } }
+            }
+        }
         Button("Start the companion over", role: .destructive) { confirm = true }
             .disabled(store.record == nil && !store.unreadable)
             .confirmationDialog("Start over? Every gratitude and desire in the Companion is removed from this phone.", isPresented: $confirm, titleVisibility: .visible) {
