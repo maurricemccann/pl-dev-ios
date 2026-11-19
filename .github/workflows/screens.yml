@@ -55,7 +55,7 @@ jobs:
           DATA=$(xcrun simctl get_app_container "$DEV" "$BID" data)
           mkdir -p "$DATA/Documents"
           cat > "$DATA/Documents/sim-config.json" <<'JSON'
-          {"v":1,"sections":["plworld","house","capture","curate","library","pick","composer","town","paint","shop","congregation","practice","glyphbot","status"],
+          {"v":1,"sections":["plworld","companion","house","capture","curate","library","pick","composer","town","paint","shop","congregation","practice","glyphbot","status"],
            "origins":{"cron":{"base":"https://pl-cron.psychedluxuries.com/"},"console":{"base":"https://pl-cron.psychedluxuries.com/"},
              "gallery":{"base":"https://pl-curve-library.psychedluxuries.workers.dev/"},"site":{"base":"https://psychedluxuries.com/"},
              "composer":{"base":"https://pl-composer.psychedluxuries.workers.dev/"},"os":{"base":"https://plos.beta.psychedluxuries.com/"},

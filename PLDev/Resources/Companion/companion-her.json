@@ -1,0 +1,904 @@
+{
+ "fps": 12,
+ "style": "town pixel; body bone-blue, crown gold",
+ "colour": "bone-blue",
+ "acts": {
+  "baby-crawl": {
+   "file": "baby-crawl.png",
+   "frame_w": 59,
+   "frame_h": 40,
+   "cols": 6,
+   "frames": 36,
+   "clip": "Crawling",
+   "head": "still",
+   "offset_in_160x224": [
+    40,
+    184
+   ]
+  },
+  "baby-clap": {
+   "file": "baby-clap.png",
+   "frame_w": 36,
+   "frame_h": 65,
+   "cols": 6,
+   "frames": 36,
+   "clip": "Clapping",
+   "head": "still",
+   "offset_in_160x224": [
+    62,
+    159
+   ]
+  },
+  "teen-cheer": {
+   "file": "teen-cheer.png",
+   "frame_w": 49,
+   "frame_h": 91,
+   "cols": 6,
+   "frames": 36,
+   "clip": "Cheering",
+   "head": "blown",
+   "offset_in_160x224": [
+    59,
+    133
+   ]
+  },
+  "teen-headtilt": {
+   "file": "teen-headtilt.png",
+   "frame_w": 39,
+   "frame_h": 94,
+   "cols": 6,
+   "frames": 36,
+   "clip": "Head_Gesture",
+   "head": "uplift",
+   "offset_in_160x224": [
+    60,
+    130
+   ]
+  },
+  "adult-rest": {
+   "file": "adult-rest.png",
+   "frame_w": 54,
+   "frame_h": 160,
+   "cols": 6,
+   "frames": 36,
+   "clip": "Happy_Idle",
+   "head": "still",
+   "offset_in_160x224": [
+    54,
+    64
+   ]
+  },
+  "adult-cheer": {
+   "file": "adult-cheer.png",
+   "frame_w": 68,
+   "frame_h": 159,
+   "cols": 6,
+   "frames": 36,
+   "clip": "Cheering",
+   "head": "blown",
+   "offset_in_160x224": [
+    52,
+    65
+   ]
+  },
+  "adult-quiet": {
+   "file": "adult-quiet.png",
+   "frame_w": 52,
+   "frame_h": 159,
+   "cols": 6,
+   "frames": 36,
+   "clip": "Breathing_Idle",
+   "head": "drippy",
+   "offset_in_160x224": [
+    54,
+    65
+   ]
+  },
+  "adult-thumbs": {
+   "file": "adult-thumbs.png",
+   "frame_w": 92,
+   "frame_h": 162,
+   "cols": 6,
+   "frames": 36,
+   "clip": "Giving_Thumbs_Up_While_Standing",
+   "head": "uplift",
+   "offset_in_160x224": [
+    53,
+    62
+   ]
+  },
+  "baby-reach": {
+   "file": "baby-reach.png",
+   "frame_w": 35,
+   "frame_h": 64,
+   "cols": 6,
+   "frames": 36,
+   "clip": "Reaching_Out",
+   "head": "still",
+   "offset_in_160x224": [
+    62,
+    160
+   ]
+  },
+  "baby-shake": {
+   "file": "baby-shake.png",
+   "frame_w": 35,
+   "frame_h": 64,
+   "cols": 6,
+   "frames": 36,
+   "clip": "Head_Gesture",
+   "head": "still",
+   "offset_in_160x224": [
+    62,
+    160
+   ]
+  },
+  "baby-raise": {
+   "file": "baby-raise.png",
+   "frame_w": 36,
+   "frame_h": 64,
+   "cols": 6,
+   "frames": 36,
+   "clip": "Hand_Raising",
+   "head": "still",
+   "offset_in_160x224": [
+    62,
+    160
+   ]
+  },
+  "baby-show": {
+   "file": "baby-show.png",
+   "frame_w": 38,
+   "frame_h": 64,
+   "cols": 6,
+   "frames": 36,
+   "clip": "Acknowledging_Gesture",
+   "head": "still",
+   "offset_in_160x224": [
+    62,
+    160
+   ]
+  },
+  "baby-wave": {
+   "file": "baby-wave.png",
+   "frame_w": 46,
+   "frame_h": 64,
+   "cols": 6,
+   "frames": 36,
+   "clip": "Emotional_Waving_Forward",
+   "head": "still",
+   "offset_in_160x224": [
+    56,
+    160
+   ]
+  },
+  "baby-point": {
+   "file": "baby-point.png",
+   "frame_w": 46,
+   "frame_h": 64,
+   "cols": 6,
+   "frames": 36,
+   "clip": "Pointing_Gesture",
+   "head": "still",
+   "offset_in_160x224": [
+    56,
+    160
+   ]
+  },
+  "baby-kiss": {
+   "file": "baby-kiss.png",
+   "frame_w": 36,
+   "frame_h": 64,
+   "cols": 6,
+   "frames": 36,
+   "clip": "Blow_A_Kiss",
+   "head": "still",
+   "offset_in_160x224": [
+    62,
+    160
+   ]
+  },
+  "baby-shh": {
+   "file": "baby-shh.png",
+   "frame_w": 44,
+   "frame_h": 64,
+   "cols": 6,
+   "frames": 36,
+   "clip": "Telling_A_Secret",
+   "head": "still",
+   "offset_in_160x224": [
+    55,
+    160
+   ]
+  },
+  "baby-nod": {
+   "file": "baby-nod.png",
+   "frame_w": 43,
+   "frame_h": 65,
+   "cols": 6,
+   "frames": 36,
+   "clip": "Hard_Head_Nod",
+   "head": "still",
+   "offset_in_160x224": [
+    55,
+    159
+   ]
+  },
+  "baby-dunno": {
+   "file": "baby-dunno.png",
+   "frame_w": 41,
+   "frame_h": 65,
+   "cols": 6,
+   "frames": 36,
+   "clip": "Shrugging",
+   "head": "still",
+   "offset_in_160x224": [
+    57,
+    159
+   ]
+  },
+  "baby-victory": {
+   "file": "baby-victory.png",
+   "frame_w": 49,
+   "frame_h": 64,
+   "cols": 6,
+   "frames": 36,
+   "clip": "Victory",
+   "head": "still",
+   "offset_in_160x224": [
+    49,
+    160
+   ]
+  },
+  "adult-ride": {
+   "file": "adult-ride.png",
+   "frame_w": 142,
+   "frame_h": 168,
+   "cols": 6,
+   "frames": 36,
+   "clip": "Skateboarding_Idle on the pallet jack (his short 1Ec1vSBEVnI)",
+   "head": "still",
+   "offset_in_160x224": [
+    7,
+    56
+   ]
+  },
+  "baby-laugh": {
+   "file": "baby-laugh.png",
+   "frame_w": 36,
+   "frame_h": 64,
+   "cols": 6,
+   "frames": 36,
+   "clip": "Laughing_Standing",
+   "head": "still",
+   "offset_in_160x224": [
+    62,
+    160
+   ]
+  },
+  "baby-bow": {
+   "file": "baby-bow.png",
+   "frame_w": 37,
+   "frame_h": 65,
+   "cols": 6,
+   "frames": 36,
+   "clip": "Quick_Informal_Bow",
+   "head": "still",
+   "offset_in_160x224": [
+    61,
+    159
+   ]
+  },
+  "baby-dance": {
+   "file": "baby-dance.png",
+   "frame_w": 36,
+   "frame_h": 65,
+   "cols": 6,
+   "frames": 36,
+   "clip": "Locking_Hip_Hop_Dance",
+   "head": "still",
+   "offset_in_160x224": [
+    62,
+    159
+   ]
+  },
+  "baby-tumble": {
+   "file": "baby-tumble.png",
+   "frame_w": 36,
+   "frame_h": 65,
+   "cols": 6,
+   "frames": 36,
+   "clip": "Falling_Flat_On_Face",
+   "head": "still",
+   "offset_in_160x224": [
+    62,
+    159
+   ]
+  },
+  "baby-jump": {
+   "file": "baby-jump.png",
+   "frame_w": 40,
+   "frame_h": 64,
+   "cols": 6,
+   "frames": 36,
+   "clip": "Joyful_Jump",
+   "head": "still",
+   "offset_in_160x224": [
+    59,
+    160
+   ]
+  },
+  "baby-excited": {
+   "file": "baby-excited.png",
+   "frame_w": 42,
+   "frame_h": 59,
+   "cols": 6,
+   "frames": 36,
+   "clip": "Excited",
+   "head": "still",
+   "offset_in_160x224": [
+    58,
+    165
+   ]
+  },
+  "baby-stomp": {
+   "file": "baby-stomp.png",
+   "frame_w": 40,
+   "frame_h": 65,
+   "cols": 6,
+   "frames": 36,
+   "clip": "Stomping",
+   "head": "still",
+   "offset_in_160x224": [
+    58,
+    159
+   ]
+  },
+  "baby-spin": {
+   "file": "baby-spin.png",
+   "frame_w": 37,
+   "frame_h": 65,
+   "cols": 6,
+   "frames": 36,
+   "clip": "Spin_In_Place",
+   "head": "still",
+   "offset_in_160x224": [
+    62,
+    159
+   ]
+  },
+  "baby-dizzy": {
+   "file": "baby-dizzy.png",
+   "frame_w": 50,
+   "frame_h": 64,
+   "cols": 6,
+   "frames": 36,
+   "clip": "Dizzy_Idle",
+   "head": "still",
+   "offset_in_160x224": [
+    62,
+    160
+   ]
+  },
+  "baby-yawn": {
+   "file": "baby-yawn.png",
+   "frame_w": 53,
+   "frame_h": 65,
+   "cols": 6,
+   "frames": 36,
+   "clip": "Yawn",
+   "head": "still",
+   "offset_in_160x224": [
+    59,
+    159
+   ]
+  },
+  "baby-stretch": {
+   "file": "baby-stretch.png",
+   "frame_w": 36,
+   "frame_h": 65,
+   "cols": 6,
+   "frames": 36,
+   "clip": "Arm_Stretching",
+   "head": "still",
+   "offset_in_160x224": [
+    62,
+    159
+   ]
+  },
+  "baby-scared": {
+   "file": "baby-scared.png",
+   "frame_w": 36,
+   "frame_h": 65,
+   "cols": 6,
+   "frames": 36,
+   "clip": "Scared",
+   "head": "still",
+   "offset_in_160x224": [
+    62,
+    159
+   ]
+  },
+  "baby-twist": {
+   "file": "baby-twist.png",
+   "frame_w": 36,
+   "frame_h": 64,
+   "cols": 6,
+   "frames": 36,
+   "clip": "Silly_Dancing",
+   "head": "still",
+   "offset_in_160x224": [
+    62,
+    160
+   ]
+  },
+  "baby-chicken": {
+   "file": "baby-chicken.png",
+   "frame_w": 36,
+   "frame_h": 65,
+   "cols": 6,
+   "frames": 36,
+   "clip": "Chicken_Dance",
+   "head": "still",
+   "offset_in_160x224": [
+    62,
+    159
+   ]
+  },
+  "adult-drink": {
+   "file": "adult-drink.png",
+   "frame_w": 52,
+   "frame_h": 159,
+   "cols": 6,
+   "frames": 36,
+   "clip": "Drinking",
+   "head": "still",
+   "offset_in_160x224": [
+    54,
+    65
+   ]
+  },
+  "adult-cart": {
+   "file": "adult-cart.png",
+   "frame_w": 62,
+   "frame_h": 159,
+   "cols": 6,
+   "frames": 36,
+   "clip": "Shopping_Cart_Dance",
+   "head": "still",
+   "offset_in_160x224": [
+    56,
+    65
+   ]
+  },
+  "adult-ymca": {
+   "file": "adult-ymca.png",
+   "frame_w": 114,
+   "frame_h": 160,
+   "cols": 6,
+   "frames": 36,
+   "clip": "Ymca_Dance",
+   "head": "still",
+   "offset_in_160x224": [
+    38,
+    64
+   ]
+  },
+  "adult-pump": {
+   "file": "adult-pump.png",
+   "frame_w": 53,
+   "frame_h": 160,
+   "cols": 6,
+   "frames": 36,
+   "clip": "Fist_Pump",
+   "head": "still",
+   "offset_in_160x224": [
+    53,
+    64
+   ]
+  },
+  "adult-yawn": {
+   "file": "adult-yawn.png",
+   "frame_w": 58,
+   "frame_h": 160,
+   "cols": 6,
+   "frames": 36,
+   "clip": "Yawn",
+   "head": "still",
+   "offset_in_160x224": [
+    49,
+    64
+   ]
+  },
+  "teen-drink": {
+   "file": "teen-drink.png",
+   "frame_w": 40,
+   "frame_h": 92,
+   "cols": 6,
+   "frames": 36,
+   "clip": "Drinking",
+   "head": "still",
+   "offset_in_160x224": [
+    60,
+    132
+   ]
+  },
+  "teen-cart": {
+   "file": "teen-cart.png",
+   "frame_w": 43,
+   "frame_h": 91,
+   "cols": 6,
+   "frames": 36,
+   "clip": "Shopping_Cart_Dance",
+   "head": "still",
+   "offset_in_160x224": [
+    63,
+    133
+   ]
+  },
+  "teen-ymca": {
+   "file": "teen-ymca.png",
+   "frame_w": 66,
+   "frame_h": 92,
+   "cols": 6,
+   "frames": 36,
+   "clip": "Ymca_Dance",
+   "head": "still",
+   "offset_in_160x224": [
+    51,
+    132
+   ]
+  },
+  "teen-pump": {
+   "file": "teen-pump.png",
+   "frame_w": 40,
+   "frame_h": 92,
+   "cols": 6,
+   "frames": 36,
+   "clip": "Fist_Pump",
+   "head": "still",
+   "offset_in_160x224": [
+    60,
+    132
+   ]
+  },
+  "teen-yawn": {
+   "file": "teen-yawn.png",
+   "frame_w": 40,
+   "frame_h": 92,
+   "cols": 6,
+   "frames": 36,
+   "clip": "Yawn",
+   "head": "still",
+   "offset_in_160x224": [
+    59,
+    132
+   ]
+  },
+  "adult-think": {
+   "file": "adult-think.png",
+   "frame_w": 57,
+   "frame_h": 159,
+   "cols": 6,
+   "frames": 36,
+   "clip": "Thinking",
+   "head": "still",
+   "offset_in_160x224": [
+    52,
+    65
+   ]
+  },
+  "adult-sit": {
+   "file": "adult-sit.png",
+   "frame_w": 73,
+   "frame_h": 118,
+   "cols": 6,
+   "frames": 36,
+   "clip": "Breathing_Idle + cross-legged (S325 crossLegs)",
+   "head": "still",
+   "offset_in_160x224": [
+    43,
+    106
+   ]
+  },
+  "adult-thanks": {
+   "file": "adult-thanks.png",
+   "frame_w": 55,
+   "frame_h": 158,
+   "cols": 6,
+   "frames": 36,
+   "clip": "Thankful",
+   "head": "still",
+   "offset_in_160x224": [
+    50,
+    66
+   ]
+  },
+  "adult-wipe": {
+   "file": "adult-wipe.png",
+   "frame_w": 56,
+   "frame_h": 147,
+   "cols": 6,
+   "frames": 36,
+   "clip": "Wiping_Sweat",
+   "head": "still",
+   "offset_in_160x224": [
+    45,
+    77
+   ]
+  },
+  "adult-parcel": {
+   "file": "adult-parcel.png",
+   "frame_w": 52,
+   "frame_h": 160,
+   "cols": 6,
+   "frames": 36,
+   "clip": "Box_Idle",
+   "head": "still",
+   "offset_in_160x224": [
+    54,
+    64
+   ]
+  },
+  "adult-type": {
+   "file": "adult-type.png",
+   "frame_w": 52,
+   "frame_h": 127,
+   "cols": 6,
+   "frames": 36,
+   "clip": "Typing",
+   "head": "still",
+   "offset_in_160x224": [
+    54,
+    97
+   ]
+  },
+  "teen-think": {
+   "file": "teen-think.png",
+   "frame_w": 42,
+   "frame_h": 92,
+   "cols": 6,
+   "frames": 36,
+   "clip": "Thinking",
+   "head": "still",
+   "offset_in_160x224": [
+    59,
+    132
+   ]
+  },
+  "teen-sit": {
+   "file": "teen-sit.png",
+   "frame_w": 51,
+   "frame_h": 66,
+   "cols": 6,
+   "frames": 36,
+   "clip": "Breathing_Idle + cross-legged (S325 crossLegs)",
+   "head": "still",
+   "offset_in_160x224": [
+    54,
+    158
+   ]
+  },
+  "teen-thanks": {
+   "file": "teen-thanks.png",
+   "frame_w": 40,
+   "frame_h": 91,
+   "cols": 6,
+   "frames": 36,
+   "clip": "Thankful",
+   "head": "still",
+   "offset_in_160x224": [
+    59,
+    133
+   ]
+  },
+  "teen-wipe": {
+   "file": "teen-wipe.png",
+   "frame_w": 41,
+   "frame_h": 87,
+   "cols": 6,
+   "frames": 36,
+   "clip": "Wiping_Sweat",
+   "head": "still",
+   "offset_in_160x224": [
+    55,
+    137
+   ]
+  },
+  "teen-parcel": {
+   "file": "teen-parcel.png",
+   "frame_w": 40,
+   "frame_h": 92,
+   "cols": 6,
+   "frames": 36,
+   "clip": "Box_Idle",
+   "head": "still",
+   "offset_in_160x224": [
+    60,
+    132
+   ]
+  },
+  "teen-type": {
+   "file": "teen-type.png",
+   "frame_w": 40,
+   "frame_h": 72,
+   "cols": 6,
+   "frames": 36,
+   "clip": "Typing",
+   "head": "still",
+   "offset_in_160x224": [
+    60,
+    152
+   ]
+  },
+  "adult-paint": {
+   "file": "adult-paint.png",
+   "frame_w": 95,
+   "frame_h": 158,
+   "cols": 6,
+   "frames": 36,
+   "clip": "Breathing_Idle",
+   "head": "still",
+   "offset_in_160x224": [
+    54,
+    66
+   ]
+  },
+  "teen-paint": {
+   "file": "teen-paint.png",
+   "frame_w": 72,
+   "frame_h": 91,
+   "cols": 6,
+   "frames": 36,
+   "clip": "Breathing_Idle",
+   "head": "still",
+   "offset_in_160x224": [
+    60,
+    133
+   ]
+  },
+  "adult-greet": {
+   "file": "adult-greet.png",
+   "frame_w": 54,
+   "frame_h": 160,
+   "cols": 6,
+   "frames": 36,
+   "clip": "m2m-greeting",
+   "head": "still",
+   "offset_in_160x224": [
+    52,
+    64
+   ]
+  },
+  "adult-sing": {
+   "file": "adult-sing.png",
+   "frame_w": 53,
+   "frame_h": 160,
+   "cols": 6,
+   "frames": 36,
+   "clip": "m2m-singing",
+   "head": "still",
+   "offset_in_160x224": [
+    54,
+    64
+   ]
+  },
+  "adult-shiver": {
+   "file": "adult-shiver.png",
+   "frame_w": 56,
+   "frame_h": 116,
+   "cols": 6,
+   "frames": 36,
+   "clip": "m2m-shiver",
+   "head": "still",
+   "offset_in_160x224": [
+    51,
+    108
+   ]
+  },
+  "teen-greet": {
+   "file": "teen-greet.png",
+   "frame_w": 40,
+   "frame_h": 92,
+   "cols": 6,
+   "frames": 36,
+   "clip": "m2m-greeting",
+   "head": "still",
+   "offset_in_160x224": [
+    60,
+    132
+   ]
+  },
+  "teen-sing": {
+   "file": "teen-sing.png",
+   "frame_w": 40,
+   "frame_h": 92,
+   "cols": 6,
+   "frames": 36,
+   "clip": "m2m-singing",
+   "head": "still",
+   "offset_in_160x224": [
+    60,
+    132
+   ]
+  },
+  "teen-shiver": {
+   "file": "teen-shiver.png",
+   "frame_w": 40,
+   "frame_h": 73,
+   "cols": 6,
+   "frames": 36,
+   "clip": "m2m-shiver",
+   "head": "still",
+   "offset_in_160x224": [
+    60,
+    151
+   ]
+  },
+  "baby-cheer": {
+   "file": "baby-cheer.png",
+   "frame_w": 42,
+   "frame_h": 58,
+   "cols": 6,
+   "frames": 36,
+   "clip": "Cheering",
+   "head": "still",
+   "offset_in_160x224": [
+    58,
+    166
+   ]
+  },
+  "baby-dab": {
+   "file": "baby-dab.png",
+   "frame_w": 40,
+   "frame_h": 64,
+   "cols": 6,
+   "frames": 36,
+   "clip": "m2m-dab",
+   "head": "still",
+   "offset_in_160x224": [
+    59,
+    160
+   ]
+  },
+  "baby-moonwalk": {
+   "file": "baby-moonwalk.png",
+   "frame_w": 41,
+   "frame_h": 65,
+   "cols": 6,
+   "frames": 36,
+   "clip": "m2m-moonwalk",
+   "head": "still",
+   "offset_in_160x224": [
+    61,
+    159
+   ]
+  },
+  "baby-charleston": {
+   "file": "baby-charleston.png",
+   "frame_w": 42,
+   "frame_h": 64,
+   "cols": 6,
+   "frames": 36,
+   "clip": "m2m-dance-charleston",
+   "head": "still",
+   "offset_in_160x224": [
+    61,
+    160
+   ]
+  },
+  "baby-jacks": {
+   "file": "baby-jacks.png",
+   "frame_w": 36,
+   "frame_h": 63,
+   "cols": 6,
+   "frames": 36,
+   "clip": "m2m-jumping-jacks",
+   "head": "still",
+   "offset_in_160x224": [
+    62,
+    161
+   ]
+  }
+ }
+}
