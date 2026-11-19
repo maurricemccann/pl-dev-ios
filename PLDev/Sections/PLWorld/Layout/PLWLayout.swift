@@ -47,12 +47,15 @@ enum PLWLayout {
     static func roomTransform(page: Int) -> Transform {
         let th = PLWRing.centerAngle(page: page)
         let t = tangent(th)
-        return Transform(scale: .one, rotation: PLWMath.rot(PLWMath.yaw(facing: t)), translation: PLWMath.world(PLWRing.centerpieceRadius, th) - 30 * t)
+        return Transform(scale: .one, rotation: PLWMath.rot(PLWMath.yaw(facing: t)), translation: PLWMath.world(PLWRing.centerpieceRadius, th, y: roomLift) - 30 * t)
     }
     static func toWorld(page: Int, local p: SIMD3<Float>) -> SIMD3<Float> { let t = roomTransform(page: page); return simd_act(t.rotation, p) + t.translation }
     static func toLocal(page: Int, world p: SIMD3<Float>) -> SIMD3<Float> { let t = roomTransform(page: page); return simd_act(t.rotation.inverse, p - t.translation) }
 
     /// Puts a room's root where it belongs and parents it. The hub stays at the origin. Idempotent.
+    /// Rooms sit 4 cm above the ring's sector ground: both floors at exactly 0 made the GPU flip between them every frame (his 11-18 "the floor
+    /// tile blinks/clips itself"). Far under the 0.4 m step limit, so the tunnel mouths still walk flat; inside the layout self-check's 5 cm.
+    static let roomLift: Float = 0.04
     @MainActor static func place(_ room: PLWRoom, under parent: Entity) {
         if let page = room.id.page { room.root.transform = roomTransform(page: page) } else { room.root.transform = Transform() }
         if room.root.parent !== parent { parent.addChild(room.root) }

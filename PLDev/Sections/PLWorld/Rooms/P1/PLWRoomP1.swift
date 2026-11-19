@@ -109,8 +109,9 @@ import simd
                 return ([sin(a) * T.tunnelR, cos(a) * T.tunnelR, z0 + (z1 - z0) * Float(j) / 8], [Float(i) / 40 * 2 * .pi * T.tunnelR / 4, Float(j) / 8 * T.tunnelLen / 4])
             }
             try add(tube, mats.tunnel, shape: try await staticShape(tube), name: s < 0 ? "tunnelExit" : "tunnelEntry")
-            let sz: Float = s * (T.caveR + T.tunnelLen / 2)
-            try add(.box([T.tunnelR * 2, 0.5, T.tunnelLen + 1], at: [0, -0.25, sz], metres: 4), mats.floor, shape: .generateBox(size: [T.tunnelR * 2, 0.5, T.tunnelLen + 1]).offsetBy(translation: [0, -0.25, sz]), name: "tunnelFloor")
+            // the stub floor starts where the 52 m room floor ends (26 m), not inside it: the old 2.5 m overlap was a second pair of same-height faces
+            let len = T.caveR + T.tunnelLen - 26, sz: Float = s * (26 + len / 2)
+            try add(.box([T.tunnelR * 2, 0.5, len], at: [0, -0.25, sz], metres: 4), mats.floor, shape: .generateBox(size: [T.tunnelR * 2, 0.5, len]).offsetBy(translation: [0, -0.25, sz]), name: "tunnelFloor")
         }
 
         // the statue: three plinth tiers (cream, his tile, cream) with gold trim, a yellow-marble barrel with a rolled rim and a hollow head
