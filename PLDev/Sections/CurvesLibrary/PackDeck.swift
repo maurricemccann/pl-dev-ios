@@ -2,7 +2,7 @@ import Foundation
 
 /// One card the Pack can deal: `pack/cards.json` (stills and videos = keep + fav; archive = keep) plus, for Prism, the archive
 /// pieces he starred in Curate (`/api/taste?favs=1`, S349 SPEC: FAVOURITE MARK IN CURATE). With no star, Prism is empty and says so.
-struct PackCard: Codable, Equatable, Sendable, Identifiable {
+struct PackShowCard: Codable, Equatable, Sendable, Identifiable {
     var id: String
     var tier: String
     var piece: String
@@ -41,7 +41,7 @@ struct PackDecks: Codable, Sendable {
 
     /// The next pull: tier by the odds (no long run of black; a Prism never more than `pity` packs away; Prism never faked from
     /// keeps), piece by the tier's pile. The modifier roll is the caller's, on its own seed.
-    mutating func pull(_ cards: [PackCard], odds O: PackSettings.Odds) -> PackCard? {
+    mutating func pull(_ cards: [PackShowCard], odds O: PackSettings.Odds) -> PackShowCard? {
         guard !cards.isEmpty else { return nil }
         var r = PackRNG(seed + n * 977 + 5)
         let tot = max(1, O.obsidian + O.champagne + O.prism), x = r() * tot

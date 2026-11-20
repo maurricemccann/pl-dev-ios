@@ -19,7 +19,7 @@ enum PackSheet: String, Identifiable { case collection, editor; var id: String {
     var failure: String?
     var said = ""
     private(set) var prismEmpty = false
-    private(set) var cards: [PackCard] = []
+    private(set) var cards: [PackShowCard] = []
     private(set) var opened: [String] = []
     private(set) var countText = ""
     var settings = PackSettings.load()
@@ -32,40 +32,57 @@ enum PackSheet: String, Identifiable { case collection, editor; var id: String {
     // the scene
     @ObservationIgnored let root = Entity()
     @ObservationIgnored private let camera = Entity()
-    @ObservationIgnored private let packGroup = Entity(), stripGroup = Entity(), hero = Entity(), slabGroup = Entity()
-    @ObservationIgnored private var card: ModelEntity?, slabFront: ModelEntity?, slabBack: ModelEntity?, label: ModelEntity?, labelBack: ModelEntity?
-    @ObservationIgnored private var packE: [ModelEntity] = [], stripE: [ModelEntity] = []
-    @ObservationIgnored private var packMesh: PackMesh?, stripMesh: PackMesh?
+    @ObservationIgnored private let packGroup = Entity()
+    @ObservationIgnored private let stripGroup = Entity()
+    @ObservationIgnored private let hero = Entity()
+    @ObservationIgnored private let slabGroup = Entity()
+    @ObservationIgnored private var card: ModelEntity?
+    @ObservationIgnored private var slabFront: ModelEntity?
+    @ObservationIgnored private var slabBack: ModelEntity?
+    @ObservationIgnored private var label: ModelEntity?
+    @ObservationIgnored private var labelBack: ModelEntity?
+    @ObservationIgnored private var packE: [ModelEntity] = []
+    @ObservationIgnored private var stripE: [ModelEntity] = []
+    @ObservationIgnored private var packMesh: PackMesh?
+    @ObservationIgnored private var stripMesh: PackMesh?
     @ObservationIgnored private let flare = Entity()
     @ObservationIgnored private var videoPlane: ModelEntity?
-    @ObservationIgnored private var player: AVQueuePlayer?, looper: AVPlayerLooper?
+    @ObservationIgnored private var player: AVQueuePlayer?
+    @ObservationIgnored private var looper: AVPlayerLooper?
     @ObservationIgnored private var subscription: EventSubscription?
     @ObservationIgnored private var art: PackArt?
     @ObservationIgnored private var tex: [String: TextureResource] = [:]
     @ObservationIgnored private var M: [String: PhysicallyBasedMaterial] = [:]
     @ObservationIgnored private var G = PackGeometry()
     @ObservationIgnored private var decks = PackDecks.fresh(0)
-    @ObservationIgnored private(set) var current: PackCard?
+    @ObservationIgnored private(set) var current: PackShowCard?
     @ObservationIgnored private var artCache: [String: CGImage] = [:]
     @ObservationIgnored private var model: AppModel?
     @ObservationIgnored private var base = ""
 
     // the motion
-    @ObservationIgnored private var tState = 0.0, front = -1.0, fall = 0.0, autoTear = false
-    @ObservationIgnored private var yaw = -0.42, pitch = 0.06, yawHome = false, swayK = 0.0
+    @ObservationIgnored private var tState = 0.0
+    @ObservationIgnored private var front = -1.0
+    @ObservationIgnored private var fall = 0.0
+    @ObservationIgnored private var autoTear = false
+    @ObservationIgnored private var yaw = -0.42
+    @ObservationIgnored private var pitch = 0.06
+    @ObservationIgnored private var yawHome = false
+    @ObservationIgnored private var swayK = 0.0
     @ObservationIgnored private var dragging: (tear: Bool, x: CGFloat, y: CGFloat, t: Date, moved: CGFloat)?
     @ObservationIgnored private var busy = false
-    @ObservationIgnored private var resume: (state: PackState, card: PackCard?, seed: Int, mod: String?)?
+    @ObservationIgnored private var resume: (state: PackState, card: PackShowCard?, seed: Int, mod: String?)?
     @ObservationIgnored private var frame = 0
     @ObservationIgnored private var stageQ = simd_quatf(angle: 0, axis: [0, 1, 0])
     @ObservationIgnored private var size = CGSize(width: 390, height: 844)
     @ObservationIgnored private var camZ: Float = 0.4
     @ObservationIgnored var still = false
-    @ObservationIgnored private(set) var bgClock = 40.0, bgK = 0.22
+    @ObservationIgnored private(set) var bgClock = 40.0
+    @ObservationIgnored private(set) var bgK = 0.22
     @ObservationIgnored private var redrawTask: Task<Void, Never>?
 
     var ground: Color { Color(PackMath.ui(settings.colour.ground)) }
-    func imageURL(_ c: PackCard) -> URL? { PackPaths.url(c.img, base: base) }
+    func imageURL(_ c: PackShowCard) -> URL? { PackPaths.url(c.img, base: base) }
 
     // MARK: start
 
@@ -87,17 +104,22 @@ enum PackSheet: String, Identifiable { case collection, editor; var id: String {
             async let mrD = http.send(RequestPlan(origin: "gallery", path: "pack/pack_mr.png"), timeout: 30)
             async let glbD = http.send(RequestPlan(origin: "gallery", path: "pack/pack.glb"), timeout: 90)
             async let cardsD = http.send(RequestPlan(origin: "gallery", path: "pack/cards.json"), timeout: 30)
-            struct Deck: Decodable { let cards: [PackCard] }
+            struct Deck: Decodable { let cards: [PackShowCard] }
             var all = try JSONDecoder().decode(Deck.self, from: try await cardsD).cards
             guard !all.isEmpty else { throw PackGLB.Failure(description: "no cards") }
             // Prism = the archive pieces he starred in Curate, nothing else; cards.json's own Prism cards only lend their small image.
-            let local = Dictionary(all.filter { $0.tier == "exclusive" }.map { ($0.id, $0) }, uniquingKeysWith: { a, _ in a })
-            var favs: [PackCard] = [], favFailed = false
+            var local: [String: PackShowCard] = [:]
+            for c in all where c.tier == "exclusive" { local[c.id] = local[c.id] ?? c }
+            var favs: [PackShowCard] = [], favFailed = false
             do {
                 struct Favs: Decodable { struct Item: Decodable { let id: String; let name: String?; let src: String? }; let items: [Item]? }
                 let d = try await http.send(RequestPlan(origin: "gallery", path: "api/taste", query: ["favs": "1"]), timeout: 30, cache: false)
-                favs = (try JSONDecoder().decode(Favs.self, from: d).items ?? []).compactMap { f in
-                    local[f.id] ?? f.src.map { PackCard(id: f.id, tier: "exclusive", piece: f.id + " \u{00b7} " + String((f.name ?? "").uppercased().prefix(22)), img: $0) }
+                let items: [Favs.Item] = try JSONDecoder().decode(Favs.self, from: d).items ?? []
+                for f in items {
+                    if let l = local[f.id] { favs.append(l); continue }
+                    guard let src = f.src else { continue }
+                    let name: String = String((f.name ?? "").uppercased().prefix(22))
+                    favs.append(PackShowCard(id: f.id, tier: "exclusive", piece: f.id + " \u{00b7} " + name, img: src))
                 }
             } catch { favFailed = true; failure = "Prism could not read your favourites: \(Self.plain(error))" }   // one note at a time: the failure, not also "empty"
             all = all.filter { $0.tier != "exclusive" } + favs
@@ -105,7 +127,7 @@ enum PackSheet: String, Identifiable { case collection, editor; var id: String {
             cards = all
             if let gd = try? await http.send(RequestPlan(origin: "gallery", path: "pack/pack.json"), timeout: 30), let g = try? JSONDecoder().decode(PackGeometry.self, from: gd) { G = g }   // the defaults are the same numbers
             decks = PackDecks.load() ?? .fresh(Int(Date().timeIntervalSince1970 * 1000) % 100_000)
-            let sig = all.filter { $0.tier == "exclusive" }.map(\.id).joined(separator: ",")
+            let sig = all.filter { $0.tier == "exclusive" }.map { $0.id }.joined(separator: ",")
             if decks.prismSig != sig { decks.piles["exclusive"] = nil; decks.prismSig = sig }   // the Prism pile holds indices: rebuild it when the favourites change
             if decks.cur.map({ $0 >= all.count }) == true { decks.cur = nil }
             opened = decks.opened
@@ -293,7 +315,7 @@ enum PackSheet: String, Identifiable { case collection, editor; var id: String {
 
     // MARK: dressing the card
 
-    private func artFor(_ c: PackCard) async -> CGImage? {
+    private func artFor(_ c: PackShowCard) async -> CGImage? {
         if let i = artCache[c.id] { return i }
         guard let http = model?.http else { return nil }
         let d: Data?
@@ -318,7 +340,7 @@ enum PackSheet: String, Identifiable { case collection, editor; var id: String {
         upload("front", art.front.image); uploadMR("front", art.frontMR); uploadMR("back", art.backMR); upload("label", art.label.image)
     }
 
-    private func setCard(_ c: PackCard, seed: Int, mod: String?) async {
+    private func setCard(_ c: PackShowCard, seed: Int, mod: String?) async {
         guard let art else { return }
         art.set = settings
         art.mod = mod.map { (name: $0, seed: (seed & 0xFFFF_FFFF) % 100_000) }
@@ -334,7 +356,7 @@ enum PackSheet: String, Identifiable { case collection, editor; var id: String {
     }
 
     /// A video card plays in its window, on its front (a plane over the art window, cropped to cover as the page's coverInto does).
-    private func setVideo(_ c: PackCard, art img: CGImage?) {
+    private func setVideo(_ c: PackShowCard, art img: CGImage?) {
         player?.pause(); looper = nil; player = nil
         videoPlane?.removeFromParent(); videoPlane = nil
         guard let v = c.video, let url = PackPaths.url(v, base: base), let card else { return }
@@ -408,7 +430,7 @@ enum PackSheet: String, Identifiable { case collection, editor; var id: String {
     private func sealedPack() async {
         guard !cards.isEmpty else { return }
         busy = true
-        let c: PackCard
+        let c: PackShowCard
         if let i = decks.cur, cards.indices.contains(i) { c = cards[i] }
         else if let p = decks.pull(cards, odds: settings.odds) {
             var mr = PackRNG(decks.seed + decks.n * 977 + 11)   // the second, rarer roll, on its own stream
@@ -557,7 +579,7 @@ enum PackSheet: String, Identifiable { case collection, editor; var id: String {
     }
 
     /// One card on its own, to turn in the hand.
-    func view(_ c: PackCard, keepSheet: Bool = false) async {
+    func view(_ c: PackShowCard, keepSheet: Bool = false) async {
         guard !busy, [.sealed, .slabbed, .viewing].contains(state) else { return }
         busy = true
         if !keepSheet { sheet = nil }

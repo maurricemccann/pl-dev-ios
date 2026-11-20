@@ -169,7 +169,7 @@ struct PackCollectionSheet: View {
         }
     }
 
-    @ViewBuilder private func cell(_ c: PackCard) -> some View {
+    @ViewBuilder private func cell(_ c: PackShowCard) -> some View {
         let name = PackTier.name(c.tier), shape = RoundedRectangle(cornerRadius: 8, style: .continuous)
         if engine.opened.contains(c.id) {
             Button { Task { await engine.view(c) } } label: {
@@ -198,30 +198,30 @@ enum PackControl {
     case colour(String, WritableKeyPath<PackSettings, String>)
 
     @MainActor static let sections: [(String, [PackControl])] = [
-        ("PATTERN", [.range("Tile size", \.pattern.size, 0.3, 3, 0.05)]),
-        ("SHEEN", [.range("Shiny part", \.sheen.shiny, 0.02, 0.5, 0.01), .range("Matte black", \.sheen.matte, 0.3, 1, 0.01), .range("Matte gold", \.sheen.goldMatte, 0.2, 1, 0.01),
-                   .range("Pack gloss", \.sheen.clearcoat, 0, 1, 0.01), .range("Studio light", \.sheen.light, 0, 3, 0.01), .range("Idle sway", \.sheen.sway, 0, 3, 0.05),
-                   .range("Prism shimmer (web only)", \.sheen.iridescence, 0, 1, 0.01)]),
-        ("COLOUR", [.colour("Gold", \.colour.champagne), .colour("Black", \.colour.obsidian), .colour("Heart", \.colour.heart), .colour("Silver", \.colour.silver),
-                    .colour("Page ground", \.colour.ground), .colour("Curves", \.colour.curves)]),
-        ("PRISM", [.range("Rainbow, ground", \.colour.prismRainbow, 0, 1, 0.01), .range("Rainbow, curves", \.colour.prismCurveRainbow, 0, 1, 0.01),
-                   .range("Saturation", \.colour.prismSaturation, 0, 1, 0.01), .range("Bands", \.colour.prismBands, 0.5, 6, 0.1)]),
-        ("BACKGROUND", [.range("At rest", \.background.rest, 0, 0.6, 0.01), .range("While opening", \.background.during, 0, 0.6, 0.01),
-                        .range("As it seats", \.background.slab, 0, 0.6, 0.01), .range("Speed", \.background.speed, 0, 3, 0.05)]),
-        ("ANIMATION (seconds)", [.range("Tap tear", \.timing.tearAuto, 0.2, 2, 0.01), .range("Card emerges", \.timing.emerge, 0.05, 1, 0.01), .range("Pull", \.timing.pull, 0.05, 1, 0.01),
-                                 .range("Catch", \.timing.`catch`, 0, 0.5, 0.01), .range("Wrapper leaves", \.timing.clear, 0.2, 2, 0.01), .range("Poise", \.timing.poise, 0, 1.5, 0.01),
-                                 .range("Reveal", \.timing.reveal, 0.3, 3, 0.01), .range("Clean art", \.timing.clean, 0, 2, 0.01), .range("Slab seats", \.timing.slab, 0.3, 2.5, 0.01),
-                                 .range("Next card", \.timing.deal, 0.2, 2, 0.01)]),
-        ("REVEAL", [.range("Curves", \.reveal.curves, 3, 15, 1), .range("Rim width", \.reveal.rim, 0, 10, 0.5), .range("Channel", \.reveal.channel, 0, 60, 1),
-                    .range("Heart unravels", \.reveal.heartUnravel, 0, 1, 1), .range("Lattice cell", \.reveal.cell, 18, 48, 1), .range("Lattice jitter", \.reveal.jitter, 0, 0.45, 0.01),
-                    .range("Wander", \.reveal.wander, 0, 8, 0.1), .range("Smoothing", \.reveal.smooth, 1, 5, 1), .range("Swell", \.reveal.swell, 0, 0.25, 0.01),
-                    .range("Hand (his sweep)", \.reveal.hand, 0, 1, 0.01), .range("Grow time", \.reveal.grow, 0.15, 0.8, 0.01), .range("Stagger", \.reveal.stagger, 0, 0.3, 0.01),
-                    .range("Opening starts", \.reveal.openAt, 0, 0.7, 0.01)]),
-        ("TEAR (mm)", [.range("Coil radius", \.tear.coil, 1, 8, 0.1), .range("Lip push", \.tear.lip, 0, 5, 0.1)]),
-        ("MODIFIERS", [.range("Chance per pack (%)", \.modifier.chance, 0, 100, 1), .range("Blend", \.modifier.blend, 0, 1, 0.01),
-                       .range("Pattern scale", \.modifier.scale, 0.3, 3, 0.05), .range("Edge softness", \.modifier.soft, 0.02, 0.6, 0.01)]),
-        ("ODDS (per pack)", [.range("Obsidian", \.odds.obsidian, 0, 100, 1), .range("Champagne", \.odds.champagne, 0, 100, 1), .range("Prism", \.odds.prism, 0, 100, 1),
-                             .range("Prism at least every", \.odds.pity, 0, 40, 1), .range("Champagne after N black", \.odds.champagneAfter, 0, 20, 1)]),
+        ("PATTERN", [.range("Tile size", \PackSettings.pattern.size, 0.3, 3, 0.05)]),
+        ("SHEEN", [.range("Shiny part", \PackSettings.sheen.shiny, 0.02, 0.5, 0.01), .range("Matte black", \PackSettings.sheen.matte, 0.3, 1, 0.01), .range("Matte gold", \PackSettings.sheen.goldMatte, 0.2, 1, 0.01),
+                   .range("Pack gloss", \PackSettings.sheen.clearcoat, 0, 1, 0.01), .range("Studio light", \PackSettings.sheen.light, 0, 3, 0.01), .range("Idle sway", \PackSettings.sheen.sway, 0, 3, 0.05),
+                   .range("Prism shimmer (web only)", \PackSettings.sheen.iridescence, 0, 1, 0.01)]),
+        ("COLOUR", [.colour("Gold", \PackSettings.colour.champagne), .colour("Black", \PackSettings.colour.obsidian), .colour("Heart", \PackSettings.colour.heart), .colour("Silver", \PackSettings.colour.silver),
+                    .colour("Page ground", \PackSettings.colour.ground), .colour("Curves", \PackSettings.colour.curves)]),
+        ("PRISM", [.range("Rainbow, ground", \PackSettings.colour.prismRainbow, 0, 1, 0.01), .range("Rainbow, curves", \PackSettings.colour.prismCurveRainbow, 0, 1, 0.01),
+                   .range("Saturation", \PackSettings.colour.prismSaturation, 0, 1, 0.01), .range("Bands", \PackSettings.colour.prismBands, 0.5, 6, 0.1)]),
+        ("BACKGROUND", [.range("At rest", \PackSettings.background.rest, 0, 0.6, 0.01), .range("While opening", \PackSettings.background.during, 0, 0.6, 0.01),
+                        .range("As it seats", \PackSettings.background.slab, 0, 0.6, 0.01), .range("Speed", \PackSettings.background.speed, 0, 3, 0.05)]),
+        ("ANIMATION (seconds)", [.range("Tap tear", \PackSettings.timing.tearAuto, 0.2, 2, 0.01), .range("Card emerges", \PackSettings.timing.emerge, 0.05, 1, 0.01), .range("Pull", \PackSettings.timing.pull, 0.05, 1, 0.01),
+                                 .range("Catch", \PackSettings.timing.`catch`, 0, 0.5, 0.01), .range("Wrapper leaves", \PackSettings.timing.clear, 0.2, 2, 0.01), .range("Poise", \PackSettings.timing.poise, 0, 1.5, 0.01),
+                                 .range("Reveal", \PackSettings.timing.reveal, 0.3, 3, 0.01), .range("Clean art", \PackSettings.timing.clean, 0, 2, 0.01), .range("Slab seats", \PackSettings.timing.slab, 0.3, 2.5, 0.01),
+                                 .range("Next card", \PackSettings.timing.deal, 0.2, 2, 0.01)]),
+        ("REVEAL", [.range("Curves", \PackSettings.reveal.curves, 3, 15, 1), .range("Rim width", \PackSettings.reveal.rim, 0, 10, 0.5), .range("Channel", \PackSettings.reveal.channel, 0, 60, 1),
+                    .range("Heart unravels", \PackSettings.reveal.heartUnravel, 0, 1, 1), .range("Lattice cell", \PackSettings.reveal.cell, 18, 48, 1), .range("Lattice jitter", \PackSettings.reveal.jitter, 0, 0.45, 0.01),
+                    .range("Wander", \PackSettings.reveal.wander, 0, 8, 0.1), .range("Smoothing", \PackSettings.reveal.smooth, 1, 5, 1), .range("Swell", \PackSettings.reveal.swell, 0, 0.25, 0.01),
+                    .range("Hand (his sweep)", \PackSettings.reveal.hand, 0, 1, 0.01), .range("Grow time", \PackSettings.reveal.grow, 0.15, 0.8, 0.01), .range("Stagger", \PackSettings.reveal.stagger, 0, 0.3, 0.01),
+                    .range("Opening starts", \PackSettings.reveal.openAt, 0, 0.7, 0.01)]),
+        ("TEAR (mm)", [.range("Coil radius", \PackSettings.tear.coil, 1, 8, 0.1), .range("Lip push", \PackSettings.tear.lip, 0, 5, 0.1)]),
+        ("MODIFIERS", [.range("Chance per pack (%)", \PackSettings.modifier.chance, 0, 100, 1), .range("Blend", \PackSettings.modifier.blend, 0, 1, 0.01),
+                       .range("Pattern scale", \PackSettings.modifier.scale, 0.3, 3, 0.05), .range("Edge softness", \PackSettings.modifier.soft, 0.02, 0.6, 0.01)]),
+        ("ODDS (per pack)", [.range("Obsidian", \PackSettings.odds.obsidian, 0, 100, 1), .range("Champagne", \PackSettings.odds.champagne, 0, 100, 1), .range("Prism", \PackSettings.odds.prism, 0, 100, 1),
+                             .range("Prism at least every", \PackSettings.odds.pity, 0, 40, 1), .range("Champagne after N black", \PackSettings.odds.champagneAfter, 0, 20, 1)]),
     ]
 }
 
