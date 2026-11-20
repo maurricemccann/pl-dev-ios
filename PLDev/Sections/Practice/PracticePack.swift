@@ -1,5 +1,4 @@
 import SwiftUI
-import WebKit
 
 // One Teacher (S348·9a3e): the pack. A finished lesson earns one card of his art; a unit that turns gold earns a pack of one or
 // two cards, each his art or a game card that unlocks that game. The Worker deals them (`POST /api/pack`, one pack per key, for
@@ -193,45 +192,5 @@ struct PackScreen: View {
         failure = nil
         do { pack = try await Packs.open(key, model: model); buddy.react(key.hasPrefix("gold-") ? .gold : .pack) }
         catch { failure = "Could not reach the practice. Your pack is kept; open it when you are back online." }
-    }
-}
-
-/// The pack as it stands on the test page (his word 11-16: "Publish what you have for now ... to pl dev the iOS app"): the live 3D pack,
-/// its three tiers, the odds and the editor, shown in a web view until the RealityKit build replaces it. The page is public and holds
-/// no key; there is no script bridge to the app. Videos play inline (Champagne cards play when opened).
-struct LivePackWeb: UIViewRepresentable {
-    func makeUIView(context: Context) -> WKWebView {
-        let config = WKWebViewConfiguration()
-        config.allowsInlineMediaPlayback = true
-        config.mediaTypesRequiringUserActionForPlayback = []
-        let web = WKWebView(frame: .zero, configuration: config)
-        web.isOpaque = false
-        web.backgroundColor = .black
-        web.scrollView.backgroundColor = .black
-        web.scrollView.bounces = false
-        web.scrollView.contentInsetAdjustmentBehavior = .never
-        if let url = URL(string: "https://pl-curve-library.psychedluxuries.workers.dev/pack/") {
-            web.load(URLRequest(url: url, cachePolicy: .reloadIgnoringLocalCacheData))
-        }
-        return web
-    }
-    func updateUIView(_ view: WKWebView, context: Context) {}
-}
-
-struct LivePackScreen: View {
-    let close: () -> Void
-    var body: some View {
-        VStack(spacing: 0) {
-            HStack(spacing: 8) {
-                Button { close() } label: { Image(systemName: "xmark").font(.system(size: 15, weight: .medium)).foregroundStyle(Candle.ink).frame(width: 44, height: 44) }
-                    .accessibilityLabel("Close")
-                Text("The pack \u{00b7} live test").candleHint()
-                Spacer()
-            }
-            .padding(.horizontal, 8)
-            LivePackWeb()
-        }
-        .background(Color.black.ignoresSafeArea())
-        .preferredColorScheme(.dark)
     }
 }

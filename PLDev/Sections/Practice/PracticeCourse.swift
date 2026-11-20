@@ -191,7 +191,7 @@ struct PathScreen: View {
         .fullScreenCover(item: $playing) { run in LessonView(model: model, run: run) { playing = nil } }
         .background { Color.clear.fullScreenCover(item: $goldPack) { g in PackScreen(model: model, key: "gold-\(g.unit)") { goldPack = nil } } }
         .background { Color.clear.fullScreenCover(item: $playRun) { r in PracticePlayView(run: r) { playRun = nil } } }
-        .background { Color.clear.fullScreenCover(isPresented: $livePack) { LivePackScreen { livePack = false } } }
+        .background { Color.clear.fullScreenCover(isPresented: $livePack) { CurvesPackRoom(model: model) { livePack = false } } }
     }
 
     /// First open: his daily goal in minutes sizes what Today suggests.
