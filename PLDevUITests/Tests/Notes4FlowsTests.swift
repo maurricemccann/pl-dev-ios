@@ -162,8 +162,8 @@ final class Notes4FlowsTests: XCTestCase {
             appearance(ap)
             launch(extra, page: 1)
             wait(10)
-            let tile = app.buttons["Library"].firstMatch
-            XCTAssertTrue(tile.waitForExistence(timeout: 30), "the Library tile is on the apps page")
+            let tile = app.buttons["Gallery"].firstMatch
+            XCTAssertTrue(tile.waitForExistence(timeout: 30), "the Gallery tile is on the apps page")
             tile.tap(); wait(7)
             halfPop(name + "-library")
             wait(2)

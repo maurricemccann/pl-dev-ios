@@ -13,7 +13,7 @@ import WidgetKit
 }
 
 struct GalleryRoomEntity: IndexedEntity {
-    static let typeDisplayRepresentation: TypeDisplayRepresentation = "Curve Library Room"
+    static let typeDisplayRepresentation: TypeDisplayRepresentation = "Gallery Room"
     static let defaultQuery = GalleryRoomQuery()
     let id: String
     let title: String
@@ -29,7 +29,7 @@ struct GalleryRoomQuery: EntityStringQuery {
 }
 
 struct OpenGalleryRoomIntent: OpenIntent {
-    static let title: LocalizedStringResource = "Open a Curve Library Room"
+    static let title: LocalizedStringResource = "Open a Gallery Room"
     @Parameter(title: "Room") var target: GalleryRoomEntity
     init() {}
     init(target: GalleryRoomEntity) { self.target = target }

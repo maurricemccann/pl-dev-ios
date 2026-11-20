@@ -24,7 +24,7 @@ import UserNotifications
         "practice": "Practice evening reminder",
         "apple.stack": "Stack health failed",
         "apple.pc": "The PC: hot, low disk or memory",
-        "apple.curate": "New Curate batch (Library)",
+        "apple.curate": "New Curate batch (Gallery)",
     ]
     static func label(for type: String) -> String { labels[type] ?? type }
 

@@ -115,7 +115,7 @@ struct LabCardsView: View {
     var body: some View {
         ScrollView {
             VStack(spacing: 18) {
-                Text("NFT Candidates — GlyphGuy × the Curve Library").gTitle(22, relativeTo: .title2).foregroundStyle(Color(hex: 0xf0ece2)).multilineTextAlignment(.center)
+                Text("NFT Candidates — GlyphGuy × the Gallery").gTitle(22, relativeTo: .title2).foregroundStyle(Color(hex: 0xf0ece2)).multilineTextAlignment(.center)
                 Text("First pass, not a generator — one fixed character, flat color + camera angle as the variation. Lab route, nothing minted, nothing final.")
                     .font(.footnote).foregroundStyle(Color(hex: 0xf0ece2).opacity(0.55)).multilineTextAlignment(.center)
                 ForEach(only == nil ? cards : cards.filter { $0.id == only }) { c in

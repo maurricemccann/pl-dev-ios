@@ -453,16 +453,16 @@ struct LabComponentsView: View {
                 section("Liquid Glass — The Prism", "public/scripts/pieces.js · shaderPiece 'prism' · GLSL fbm caustics + chromatic aberration · S138") {
                     Group { if let prism { LabMetalView(scene: prism) } else { LabGPUMissing() } }
                         .aspectRatio(2, contentMode: .fit).clipShape(RoundedRectangle(cornerRadius: 12, style: .continuous))
-                    openPiece("open The Prism in the library", "prism")
+                    openPiece("open The Prism in the gallery", "prism")
                 }
                 section("Glass Card", "app/globals.css · .glass-card — the house glass surface (pl-os token language)") {
                     Text("The standard glass surface every panel in the inner tongue sits on.").font(.system(size: 16, design: .serif).italic()).foregroundStyle(PLG.ink(scheme)).gCard(padding: 28, radius: 14)
                 }
                 section("Countdown, Ten Down", "public/scripts/pieces-s305b.js · piece s5b-motion-count · the count is the preparation and the last word is the proof") {
-                    openPiece("open Ten Down in the library", "s5b-motion-count")
+                    openPiece("open Ten Down in the gallery", "s5b-motion-count")
                 }
                 section("Countdown, Five Down", "public/scripts/pieces-s305b.js · piece s5b-qm-count · each number turns over into the one that is left") {
-                    openPiece("open Five Down in the library", "s5b-qm-count")
+                    openPiece("open Five Down in the gallery", "s5b-qm-count")
                 }
                 section("Type — the founder's hands", "public/fonts · MaurriceMccannPsychedHandwrit (PLHand) + Curvedabc — both founder-drawn") {
                     VStack(alignment: .leading, spacing: 8) {

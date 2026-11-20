@@ -128,7 +128,7 @@ struct LibraryView: View {
             }
         }
         .gScreen()
-        .navigationTitle("Library").navigationBarTitleDisplayMode(.inline)
+        .navigationTitle("Gallery").navigationBarTitleDisplayMode(.inline)
         .toolbar { toolbar(all: all) }
         .sheet(isPresented: $showTag) { TagSheet(data: data, model: model, picked: $picked, selecting: $selecting) }
         .sensoryFeedback(.impact(weight: .medium), trigger: tick)
@@ -149,11 +149,11 @@ struct LibraryView: View {
 
     private func header(counts: [Verdict: Int], total: Int) -> some View {
         VStack(alignment: .leading, spacing: 10) {
-            GalleryHeading(eyebrow: "The Curve Library", title: "Library")
+            GalleryHeading(eyebrow: "The Curve Library", title: "Gallery")
             if failed && !data.marksLoaded {
                 ContentUnavailableView("YOUR MARKS DID NOT LOAD", systemImage: "exclamationmark.triangle", description: Text("Nothing can be marked until they do. \(failReason ?? "") Pull to try again."))
             } else if data.items.isEmpty {
-                ProgressView("Opening the library…").frame(maxWidth: .infinity).padding(.top, 60)
+                ProgressView("Opening the gallery…").frame(maxWidth: .infinity).padding(.top, 60)
             }
             if !data.items.isEmpty { shelf }
             sources

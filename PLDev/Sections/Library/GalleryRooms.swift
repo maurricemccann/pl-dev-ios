@@ -2,10 +2,10 @@ import AVKit
 import CryptoKit
 import SwiftUI
 
-// The Curve Library in full (his order 11-13; inventory of pl-curves-gallery at 1af6cabd). Everything with data is native.
-// The code art (live pieces, the VJ instrument, Forge, the 3D worlds, the labs) is written as browser code (Canvas 2D,
-// WebGL, Three.js: about 40k lines), so it plays in a full-screen web canvas inside native chrome, signed in with the same
-// pl_lib cookie the gallery's own /unlock sets (SHA-256 of "pl-lib-unlock:" + the vault key), so his key is never in a page.
+// The Gallery (the curve library) in full (his order 11-13; inventory of pl-curves-gallery at 1af6cabd). Every room is native:
+// the code art runs his piece code in JavaScriptCore and draws it natively (CodeArt/PieceRuntime.swift); the worlds and labs are
+// SwiftUI, Metal and RealityKit. No web view. Rooms that call the gallery sign in with the same pl_lib cookie its /unlock sets
+// (SHA-256 of "pl-lib-unlock:" + the vault key), so his key is never in a page.
 
 // MARK: - Rooms
 
@@ -33,7 +33,7 @@ enum GalleryRoom: String, CaseIterable, Identifiable, Hashable {
     var line: String {
         switch self {
         case .curves: return "Every live piece, running"; case .live: return "The VJ instrument"; case .forge: return "Write a piece with AI"
-        case .vault: return "Everything filed, by kind"; case .archive: return "1,347 works"; case .space: return "The archive as a room"
+        case .vault: return "Everything filed, by kind"; case .archive: return "The complete works"; case .space: return "The archive as a room"
         case .generated: return "Every still"; case .cinematic: return "Every clip"; case .printful: return "Template triage"
         case .classify: return "Name and file the archive"; case .kit: return "Colours, fonts, symbols"; case .tools: return "The code behind every piece"
         case .labs: return "Experiments"; case .worlds: return "The Haul, the Money Room, the Weight"; case .town: return "The pixel town"
@@ -62,9 +62,11 @@ enum GalleryRoom: String, CaseIterable, Identifiable, Hashable {
 
 }
 
-/// The Curve Library's rooms: the gallery's More sheet, native.
+/// The Gallery's rooms: the gallery's More sheet, native.
 struct GalleryRoomsView: View {
     let model: AppModel
+    /// The archive's real count, read from its manifest (was "1,347 works" written into the code).
+    @State private var works: String?
     var body: some View {
         List {
             Section("See") { ForEach([GalleryRoom.curves, .live, .archive, .space, .generated, .cinematic]) { row($0) } }
@@ -73,18 +75,24 @@ struct GalleryRoomsView: View {
             Section("Play") { ForEach([GalleryRoom.worlds, .labs, .town]) { row($0) } }
         }
         .gScreen()
-        .navigationTitle("Curve Library")
+        .navigationTitle("Gallery")
+        .task {
+            guard works == nil, let http = model.http else { return }
+            struct M: Decodable { let pieces: [ArchiveRoom.Piece] }
+            do {
+                let d = try await http.send(RequestPlan(origin: "gallery", path: "archive/manifest.json"), timeout: 60)
+                works = "\(try JSONDecoder().decode(M.self, from: d).pieces.count.formatted()) works"
+            } catch { works = "Count not read. \(plainSentence(error))" }
+        }
     }
     private func row(_ r: GalleryRoom) -> some View {
         NavigationLink { r.view(model) } label: {
-            Label { VStack(alignment: .leading) { Text(r.title); Text(r.line).font(.caption).foregroundStyle(.secondary) } } icon: { Image(systemName: r.symbol) }
+            Label { VStack(alignment: .leading) { Text(r.title); Text(r == .archive ? (works ?? r.line) : r.line).font(.caption).foregroundStyle(.secondary) } } icon: { Image(systemName: r.symbol) }
         }
     }
 }
 
-// MARK: - The web canvas for code art
-
-// MARK: - Curves: every live piece, liked filter, full-screen live
+// MARK: - Source: one piece's code
 
 struct SourceView: View {
     let model: AppModel
@@ -319,70 +327,7 @@ struct CinematicRoom: View {
     }
 }
 
-// MARK: - The vault (filed objects, by kind)
-
-struct VaultRoom: View {
-    let model: AppModel
-    struct File: Decodable, Identifiable { let name: String; let key: String; let size: Int?; let uploaded: String?; var id: String { key } }
-    struct L: Decodable { let groups: [String: [File]] }
-    @State private var data = LibraryData.shared
-
-    var body: some View {
-        let byClass = Dictionary(grouping: data.items, by: \.class).mapValues(\.count)
-        Loaded(load: {
-            guard let http = model.http else { throw Console.Problem.notSetUp }
-            return try JSONDecoder().decode(L.self, from: try await http.send(RequestPlan(origin: "gallery", path: "api/vault-list"), timeout: 60)).groups
-        }) { groups, _ in
-            List {
-                Section {
-                    LazyVGrid(columns: [GridItem(.flexible()), GridItem(.flexible())], spacing: 10) {
-                        vaultTile("GENERATED", "\(byClass["still"] ?? 0)", "stills", .generated)
-                        vaultTile("CINEMATIC", "\(byClass["cinematic"] ?? 0)", "scored and timelapse", .cinematic)
-                        vaultTile("ARCHIVE", "\(byClass["archive-work"] ?? 0)", "the complete works", .archive)
-                        vaultTile("CURVES", "LIVE", "the living set", .curves)
-                        vaultTile("FORGE", "OPEN", "shader studio", .forge)
-                        vaultTile("TOOLS", "REG", "provenance registry", .tools)
-                    }
-                    .listRowInsets(EdgeInsets(top: 8, leading: 8, bottom: 8, trailing: 8))
-                } header: { Text("Everything in one place. Open a folder, open a file.") }
-                Section("What the library holds") {
-                    ForEach(byClass.keys.sorted(), id: \.self) { k in LabeledContent(k, value: "\(byClass[k] ?? 0)") }
-                }
-                Section("Filed in the private vault") {
-                    ForEach(groups.keys.sorted(), id: \.self) { g in
-                        NavigationLink {
-                            List(groups[g] ?? []) { f in
-                                NavigationLink { VaultFileView(model: model, key: f.key, name: f.name) } label: {
-                                    VStack(alignment: .leading) {
-                                        Text(f.name).lineLimit(1)
-                                        Text([f.size.map { ByteCountFormatter.string(fromByteCount: Int64($0), countStyle: .file) }, f.uploaded.map { String($0.prefix(10)) }].compactMap { $0 }.joined(separator: " · "))
-                                            .font(.caption).foregroundStyle(.secondary)
-                                    }
-                                }
-                            }
-                            .navigationTitle(g)
-                        } label: { LabeledContent(g, value: "\(groups[g]?.count ?? 0)") }
-                    }
-                }
-            }
-        }
-        .gScreen()
-        .navigationTitle("The Vault")
-        .task { if data.items.isEmpty { try? await data.load(model: model) } }
-    }
-
-    private func vaultTile(_ kind: String, _ big: String, _ line: String, _ room: GalleryRoom) -> some View {
-        NavigationLink { room.view(model) } label: {
-            VStack(alignment: .leading, spacing: 4) {
-                Text(kind).gEyebrow(9.5).foregroundStyle(PLG.goldDim(.dark))
-                Text(big).font(.system(size: 28, weight: .regular, design: .serif).italic()).monospacedDigit().foregroundStyle(PLG.gold)
-                Text(line).font(.system(size: 11, design: .monospaced)).foregroundStyle(PLG.dim(.dark))
-            }
-            .gCard(padding: 12, radius: 16)
-        }
-        .buttonStyle(.plain)
-    }
-}
+// The vault lives in VaultRoom.swift.
 
 // MARK: - Printful triage
 
@@ -588,7 +533,53 @@ struct KitRoom: View {
     }
 }
 
+/// The web's /tools and /source as one room: the reference text (ToolsReference.swift), then every piece's code.
 struct ToolsRoom: View {
+    let model: AppModel
+    /// A Registry entry to open at ("reg-<shelf>"), as the Vault's shelf links land on /tools#reg-<shelf>.
+    var focus: String? = nil
+    @State private var data = LibraryData.shared
+    @Environment(\.colorScheme) private var scheme
+
+    var body: some View {
+        ScrollViewReader { proxy in
+            ScrollView {
+                VStack(alignment: .leading, spacing: 22) {
+                    GalleryHeading(eyebrow: "PL Creative Lab · Tools", title: "Languages and Tools")
+                    Text("What this project uses, what it can use, and where everything lives. A model reading this page has everything it needs to build a feature or transplant a technique.")
+                        .font(.system(size: 15)).foregroundStyle(PLG.dim(scheme)).plReading()
+                    NavigationLink { ToolsPiecesView(model: model) } label: {
+                        HStack {
+                            VStack(alignment: .leading, spacing: 4) {
+                                Text("Every piece's code").gEyebrow(11).foregroundStyle(PLG.goldDim(scheme))
+                                Text(data.items.isEmpty ? "From /api/source" : "\(data.items.filter { $0.class == "code-piece" || $0.class == "lab" }.count.formatted()) pieces and labs, from /api/source")
+                                    .font(.system(size: 13)).foregroundStyle(PLG.dim(scheme))
+                            }
+                            Spacer()
+                            Image(systemName: "chevron.right").foregroundStyle(PLG.goldDim(scheme))
+                        }
+                        .frame(minHeight: 44)
+                        .gCard(padding: 16, radius: 8)
+                    }
+                    .buttonStyle(.plain)
+                    ToolsReferenceBlocks()
+                }
+                .padding(.horizontal, 16).padding(.vertical, 12)
+            }
+            .task {
+                guard let focus else { return }
+                try? await Task.sleep(for: .milliseconds(250))   // let the blocks lay out before the jump
+                withAnimation { proxy.scrollTo(ToolsReference.registry.contains { "reg-" + $0.key == focus } ? focus : "registry", anchor: .top) }
+            }
+        }
+        .gScreen()
+        .navigationTitle("Tools and source").navigationBarTitleDisplayMode(.inline)
+        .task { if data.items.isEmpty { try? await data.load(model: model) } }
+    }
+}
+
+/// Every piece's full code: touch one to read it, or share it.
+struct ToolsPiecesView: View {
     let model: AppModel
     @State private var data = LibraryData.shared
     @State private var search = ""
@@ -596,6 +587,9 @@ struct ToolsRoom: View {
         let pieces = data.items.filter { ($0.class == "code-piece" || $0.class == "lab") && (search.isEmpty || ($0.name ?? "").localizedCaseInsensitiveContains(search) || $0.item_id.localizedCaseInsensitiveContains(search)) }
         List {
             Section { Text("Every piece's full code, from /api/source. Touch a piece to read it, or share it.").font(.footnote).foregroundStyle(.secondary) }
+            if pieces.isEmpty && search.isEmpty {
+                Text(data.loading ? "Opening the gallery…" : "The pieces did not load. Pull back and open this again.").foregroundStyle(.secondary)
+            }
             ForEach(pieces) { p in
                 NavigationLink { SourceView(model: model, id: p.item_id) } label: {
                     VStack(alignment: .leading) { Text(p.name ?? p.item_id); Text(p.item_id).font(.caption.monospaced()).foregroundStyle(.secondary) }
@@ -604,7 +598,7 @@ struct ToolsRoom: View {
         }
         .gScreen()
         .searchable(text: $search, prompt: "Piece")
-        .navigationTitle("Tools and source")
+        .navigationTitle("Every piece's code")
         .task { if data.items.isEmpty { try? await data.load(model: model) } }
     }
 }

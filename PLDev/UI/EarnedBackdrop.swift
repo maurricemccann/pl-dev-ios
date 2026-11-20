@@ -50,7 +50,7 @@ struct EarnedBackdrop: View {
                 }
                 .buttonStyle(.plain)
                 .plGlass(in: RoundedRectangle(cornerRadius: PLRadius.card, style: .continuous))
-                .accessibilityLabel("Your latest keeps, \(urls.count) pieces. Opens the Library")
+                .accessibilityLabel("Your latest keeps, \(urls.count) pieces. Opens the Gallery")
             }
         }
         .task { if library.items.isEmpty { try? await library.load(model: model) } }

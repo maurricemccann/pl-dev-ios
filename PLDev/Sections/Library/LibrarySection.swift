@@ -145,7 +145,7 @@ import UserNotifications
 
 /// Library: every piece with its verdict; filter by verdict, class and name; open one full screen to mark it.
 @MainActor enum LibrarySection: PLSection {
-    static let manifest = SectionManifest(id: "library", title: "Library", symbol: "square.grid.3x3", needsKeys: ["vault"], needsOrigins: ["gallery"])
+    static let manifest = SectionManifest(id: "library", title: "Gallery", symbol: "square.grid.3x3", needsKeys: ["vault"], needsOrigins: ["gallery"])
     static func makeRoot(model: AppModel) -> AnyView { AnyView(LibraryView(model: model)) }
     static func probes(model: AppModel) -> [ProbeModel.Item] { [] }
     static func settingsRows(model: AppModel) -> AnyView? { nil }

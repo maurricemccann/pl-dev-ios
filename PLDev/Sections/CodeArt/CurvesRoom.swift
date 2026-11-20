@@ -165,7 +165,7 @@ struct NativeCurvesRoom: View {
             ScrollView {
                 if list.isEmpty {
                     ContentUnavailableView(onlyLiked ? "Nothing liked yet" : "No pieces", systemImage: "scribble.variable",
-                                           description: Text(onlyLiked ? "Touch and hold a piece and choose Like." : "The pieces appear here when the library loads."))
+                                           description: Text(onlyLiked ? "Touch and hold a piece and choose Like." : "The pieces appear here when the gallery loads."))
                 } else {
                     let running = liveSet
                     TipView(CodeArtHoldTip()).padding(.horizontal, 6)

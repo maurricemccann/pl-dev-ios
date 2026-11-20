@@ -253,7 +253,7 @@ struct LabHeroView: View {
         let counts = tally(st)
         ScrollView {
             VStack(alignment: .leading, spacing: 14) {
-                Text("Curve Library · lab · Phase 1 of the trained hero").gEyebrow(10).foregroundStyle(PLG.dim(.dark))
+                Text("Gallery · lab · Phase 1 of the trained hero").gEyebrow(10).foregroundStyle(PLG.dim(.dark))
                 Text("Trained hero, both sides of the system").gTitle(26, relativeTo: .title).foregroundStyle(PLG.ink(.dark))
                 Text("Top: the public render. Below it: the settings panel as it will sit in pl-os, and the JSON it will write. Still random, trained on the painting's shapes.")
                     .font(.footnote).foregroundStyle(PLG.dim(.dark))
