@@ -226,6 +226,10 @@ enum PackControl {
 }
 
 struct PackEditorSheet: View {
+    static let credit: AttributedString = {
+        let md = "Pack shape adapted from \"Trading Card Pack\" by Mhew2 Creations ([Sketchfab](\(PackLook.sketchfab))), [CC BY 4.0](https://creativecommons.org/licenses/by/4.0/). Changed: re-modelled, re-textured, original artwork removed."
+        return (try? AttributedString(markdown: md)) ?? AttributedString("Pack shape adapted from Trading Card Pack by Mhew2 Creations, CC BY 4.0.")
+    }()
     @Bindable var engine: PackEngine
     @State private var palette = ""
 
@@ -253,7 +257,7 @@ struct PackEditorSheet: View {
                     heading("HAND IT OVER")
                     buttons([("Copy settings", engine.copySettings), ("Apply pasted", engine.applyPasted), ("Defaults", engine.defaults), ("New decks", { Task { await engine.newDecks() } })])
                     Text(engine.said).font(PackLook.font()).foregroundStyle(PackLook.champ.opacity(0.85)).frame(minHeight: 18).padding(.top, 8).accessibilityAddTraits(.updatesFrequently)
-                    Text((try? AttributedString(markdown: "Pack shape adapted from \"Trading Card Pack\" by Mhew2 Creations ([Sketchfab](\(PackLook.sketchfab))), [CC BY 4.0](https://creativecommons.org/licenses/by/4.0/). Changed: re-modelled, re-textured, original artwork removed."))) ?? AttributedString("Pack shape adapted from \"Trading Card Pack\" by Mhew2 Creations, CC BY 4.0."))
+                    Text(Self.credit)
                         .font(PackLook.font(11)).foregroundStyle(PackLook.champ.opacity(0.6)).tint(PackLook.champ).padding(.top, 14)
                     TextEditor(text: $engine.json)
                         .font(.custom(PLFace.label, size: 12, relativeTo: .caption)).foregroundStyle(PackLook.champ)
