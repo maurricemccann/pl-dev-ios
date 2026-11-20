@@ -104,20 +104,17 @@ private struct BoardCard: ViewModifier {
 private extension View { func boardCard(padding: CGFloat = 16, radius: CGFloat = 18, top: Color? = nil) -> some View { modifier(BoardCard(padding: padding, radius: radius, top: top)) } }
 
 /// Counts up to its target, the page's `useCountUp` (1.1 s, ease-out cubic).
-private struct CountText: View, Animatable {
-    var value: Double
-    var prefix = ""
-    var animatableData: Double { get { value } set { value = newValue } }
-    var body: some View { Text(prefix + BD.n(Int(value.rounded()))) }
-}
 private struct CountValue: View {
     let target: Int
     var prefix = ""
-    @State private var shown = 0.0
+    @State private var start = Date()
     @Environment(\.accessibilityReduceMotion) private var reduce
     var body: some View {
-        CountText(value: shown, prefix: prefix)
-            .onAppear { if reduce { shown = Double(target) } else { withAnimation(.timingCurve(0.215, 0.61, 0.355, 1, duration: 1.1)) { shown = Double(target) } } }
+        TimelineView(.animation(paused: reduce)) { t in
+            let p = reduce ? 1 : min(1, t.date.timeIntervalSince(start) / 1.1)
+            let eased = 1 - pow(1 - p, 3)
+            Text(prefix + BD.n(Int((Double(target) * eased).rounded())))
+        }
     }
 }
 
