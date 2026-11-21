@@ -116,6 +116,7 @@ struct PracticeHabit: Decodable, Identifiable, Sendable, Equatable {
 }
 
 struct PracticeLog: Decodable, Identifiable, Sendable { let id: String; let kind: String; let text: String; let created_at: String? }
+struct PracticeLogSummary: Decodable, Sendable { struct First: Decodable, Sendable { let kind: String; let text: String }; let total: Int; let first: First? }
 struct PracticeNote: Decodable, Identifiable, Sendable { let id: String; let text: String; let created_at: String? }
 struct PracticePin: Decodable, Identifiable, Sendable { let url: String; let alt: String?; var id: String { url } }
 struct PracticeMessage: Decodable, Identifiable, Sendable { let id: String; let role: String; let text: String; let created_at: String? }

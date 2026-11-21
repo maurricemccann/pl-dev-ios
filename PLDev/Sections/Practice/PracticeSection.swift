@@ -234,7 +234,6 @@ struct PracticeView: View {
         .overlay { if state.entryDone, let rope { BuddyRope(buddy: buddy, rig: rope).ignoresSafeArea().allowsHitTesting(false) } }
         .overlay { if !state.entryDone { PracticeEntry(model: model, state: state).transition(.opacity) } }
         .sensoryFeedback(PLHaptic.commit, trigger: state.tick)
-        .onChange(of: state.entryDone) { _, done in if done && !PracticeFirstRun.sheetSeen { showSettings = true } }
         .sheet(isPresented: $showSettings) { PracticeSettingsSheet() }
         .navigationDestination(isPresented: $state.preview) { VisionPreviewView() }
         .task { await PracticeOutbox.flush(model: model); await state.loadToday(model: model) }

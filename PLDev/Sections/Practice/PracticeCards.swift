@@ -111,6 +111,7 @@ struct WinsCard: View {
     let model: AppModel
     let state: PracticeModel
     @State private var logs: [PracticeLog] = []
+    @State private var summary: PracticeLogSummary?
     @State private var text = ""
     @State private var result: String?
     @State private var failed = false
@@ -126,6 +127,10 @@ struct WinsCard: View {
             .disabled(text.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty)
             CandleResult(text: result)
             if failed && logs.isEmpty { Text(PracticeWords.loadFailed("the log")).candleHint() }
+            // S350, his pick 11-21 ("Show the log growing"): the whole log's size and the first line ever kept
+            if let s = summary, s.total > 0 {
+                Text("\(s.total) kept" + (s.first.map { " \u{00B7} first: \u{201C}\($0.text)\u{201D}" } ?? "")).candleHint().lineLimit(2)
+            }
             VStack(spacing: 0) {
                 ForEach(logs) { l in
                     CandleRule()
@@ -143,6 +148,7 @@ struct WinsCard: View {
 
     private func load() async {
         if let l = try? await Practice.get("logs", [PracticeLog].self, model: model) { logs = l; failed = false } else { failed = true }
+        summary = try? await Practice.get("logs/summary", PracticeLogSummary.self, model: model)   // older server: no line, never a wrong count
     }
 
     private func add(_ kind: String) async {

@@ -5,10 +5,6 @@ import SwiftUI
 /// site's own flow) and what stays where. A real line, never a placeholder. The spoken line itself is untouched: it still speaks on every open.
 @MainActor enum PracticeFirstRun {
     private static let plantedKey = "practice.firstMemory.planted"
-    private static let sheetKey = "practice.firstRun.sheetSeen"
-
-    static var sheetSeen: Bool { UserDefaults.standard.bool(forKey: sheetKey) }
-    static func markSheetSeen() { UserDefaults.standard.set(true, forKey: sheetKey) }
 
     /// Plants `line` as a "noticed" entry, once, and only when his log holds nothing yet (a returning user is never touched).
     /// Offline it queues like any other entry. The flag is set only after the server (or the queue) took it.
@@ -25,8 +21,8 @@ import SwiftUI
     }
 }
 
-/// The Practice's own settings. Opens from the gear at the top left of the Practice, and once by itself on the first open
-/// (non-blocking: swipe down or Done closes it). Two things only: the account, and what stays where.
+/// The Practice's own settings. Opens only from the gear at the top left of the Practice (his pick 11-21, "Open on the practice":
+/// the first open goes straight to the practice, no sheet in the way). Two things only: the account, and what stays where.
 struct PracticeSettingsSheet: View {
     @Environment(\.dismiss) private var dismiss
     @State private var account = SiteAccount.shared
@@ -57,7 +53,6 @@ struct PracticeSettingsSheet: View {
         .preferredColorScheme(.dark)
         .presentationDetents([.large])
         .presentationDragIndicator(.visible)
-        .onDisappear { PracticeFirstRun.markSheetSeen() }
         .task { if !account.checked { await account.refresh() } }
     }
 
