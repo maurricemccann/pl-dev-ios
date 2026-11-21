@@ -17,7 +17,7 @@ struct HomeDashboard: View {
             var date: Date { ISO8601DateFormatter().date(from: time) ?? .distantPast }
         }
         struct Pool: Decodable { let time: String; let nonpaged_mb: Int; let paged_mb: Int; var gb: Double { Double(nonpaged_mb + paged_mb) / 1024 } }
-        let thermal: [Reading]?; let disk_free_gb: Double?; let disk_total_gb: Double?; let uptime_h: Double?; let sessions: Int?; let pool: [Pool]?
+        let thermal: [Reading]?; let disk_free_gb: Double?; let disk_total_gb: Double?; let uptime_h: Double?; let sessions: Int?; let pool: [Pool]?; let drive_up: Bool?; let drive_days: Int?
     }
     struct HouseGlanceNumbers { var needs = 0; var approve = 0; var standing = 0; var queued = 0; var week = 0 }
 
@@ -294,6 +294,8 @@ struct HomeDashboard: View {
                     stat("Free RAM", icon: "memorychip", "\(last.free_ram_gb) GB", Double(last.free_ram_gb).map { PLStatus.lowerIsWorse($0, warn: 4, bad: 2) })
                     stat("Disk free", icon: "internaldrive", pc?.disk_free_gb.map { "\(Int($0)) GB" } ?? "·", (pc?.disk_free_gb).map { PLStatus.lowerIsWorse($0, warn: 80, bad: 30) })
                     stat("Up", icon: "clock", pc?.uptime_h.map { $0 >= 48 ? "\(Int($0 / 24)) d" : "\(Int($0)) h" } ?? "·", nil)
+                    // PL DRIVE backup (S350, his ask 11-20): days since the weekly copy ran; amber at 8 days, red at 15; "Off" in the name when unplugged
+                    stat(pc?.drive_up == false ? "Drive (off)" : "Drive", icon: "externaldrive", pc?.drive_days.map { $0 == 0 ? "Today" : "\($0) d" } ?? "Never", pc?.drive_days.map { PLStatus.higherIsWorse(Double($0), warn: 8, bad: 15) } ?? PLStatus.bad)
                     // kernel pool: grows with file activity and only a reboot clears it; amber at 3 GB, red (reboot) at 5 GB (his ask 11-13)
                     if let k = pc?.pool?.last {
                         stat("Kernel pool", icon: "square.stack.3d.down.right", String(format: "%.1f GB", k.gb), PLStatus.higherIsWorse(k.gb, warn: 3, bad: 5))
@@ -386,7 +388,7 @@ struct HomeDashboard: View {
         var rows: [PCStats.Reading] = []
         for i in 0..<12 { rows.append(r(60 + i * 2, 40 + (i % 5) * 9, 5.2 - Double(i) * 0.15, ISO8601DateFormatter().string(from: .now.addingTimeInterval(Double(-(60 - i * 5)) * 60)))) }
         rows.append(r(78, 93, 1.6, now))
-        pc = PCStats(thermal: rows, disk_free_gb: 412, disk_total_gb: 953, uptime_h: 61, sessions: 3, pool: [.init(time: now, nonpaged_mb: 1800, paged_mb: 1700)])
+        pc = PCStats(thermal: rows, disk_free_gb: 412, disk_total_gb: 953, uptime_h: 61, sessions: 3, pool: [.init(time: now, nonpaged_mb: 1800, paged_mb: 1700)], drive_up: true, drive_days: 3)
         house = HouseGlanceNumbers(needs: 0, approve: 230, standing: 71, queued: 38, week: 142)
         pcFailed = false
     }
