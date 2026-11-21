@@ -1,8 +1,8 @@
 import SwiftUI
 
 /// First open of the Practice (S350, from the "One Year" teardown, App Breakdown #91): the line he just heard is planted as the first
-/// entry in Wins & Noticed, so the practice is never an empty room, and one quiet sheet says what stays where. A real line, never a
-/// placeholder. Once only each. The spoken line itself is untouched: it still speaks on every open (`PracticeEntry`).
+/// entry in Wins & Noticed, so the practice is never an empty room, and the Practice gets its own settings: his account (Google, the
+/// site's own flow) and what stays where. A real line, never a placeholder. The spoken line itself is untouched: it still speaks on every open.
 @MainActor enum PracticeFirstRun {
     private static let plantedKey = "practice.firstMemory.planted"
     private static let sheetKey = "practice.firstRun.sheetSeen"
@@ -25,39 +25,55 @@ import SwiftUI
     }
 }
 
-/// "What stays where": non-blocking (a sheet over the open practice, swipe or button closes it), one screen, only what the code does.
-struct PracticeFirstRunSheet: View {
+/// The Practice's own settings. Opens from the gear at the top left of the Practice, and once by itself on the first open
+/// (non-blocking: swipe down or Done closes it). Two things only: the account, and what stays where.
+struct PracticeSettingsSheet: View {
     @Environment(\.dismiss) private var dismiss
-    @State private var signIn = false
+    @State private var account = SiteAccount.shared
 
     var body: some View {
-        ZStack {
-            Candle.bg.ignoresSafeArea()
-            ScrollView {
-                VStack(alignment: .leading, spacing: 16) {
-                    Text("before you begin").plHand(28, relativeTo: .title).foregroundStyle(Candle.goldHi)
-                    line("Everything you write here is saved to your own practice server, the address in your config.")
-                    line("No advertising or analytics company is in this app.")
-                    line("Each cold start sends your server one note: that you opened it, and the hour of the day. Nothing else.")
-                    line("Signing in with Google is optional. It connects the Shop, the Congregation and your orders. The practice works without it.")
-                    VStack(spacing: 10) {
-                        Button { signIn = true } label: { Text("Continue with Google").frame(maxWidth: .infinity, minHeight: 44) }
-                            .buttonStyle(CandleGhost())
-                        Button { dismiss() } label: { Text("Got it").frame(maxWidth: .infinity, minHeight: 44) }
-                            .buttonStyle(CandleButton())
+        NavigationStack {
+            ZStack {
+                Candle.bg.ignoresSafeArea()
+                ScrollView {
+                    VStack(alignment: .leading, spacing: 22) {
+                        accountBlock
+                        VStack(alignment: .leading, spacing: 14) {
+                            Text("what stays where").plHand(24, relativeTo: .title2).foregroundStyle(Candle.goldHi)
+                            line("Everything you write here is saved to your own practice server, the address in your config.")
+                            line("No advertising or analytics company is in this app.")
+                            line("Each cold start sends your server one note: that you opened it, and the hour of the day. Nothing else.")
+                        }
                     }
-                    .padding(.top, 8)
+                    .padding(24)
+                    .frame(maxWidth: 560, alignment: .leading)
+                    .frame(maxWidth: .infinity)
                 }
-                .padding(24)
-                .frame(maxWidth: 560, alignment: .leading)
-                .frame(maxWidth: .infinity)
             }
+            .navigationTitle("Practice settings")
+            .navigationBarTitleDisplayMode(.inline)
+            .toolbar { ToolbarItem(placement: .topBarTrailing) { Button("Done") { dismiss() }.frame(minWidth: 44, minHeight: 44) } }
         }
         .preferredColorScheme(.dark)
-        .presentationDetents([.medium, .large])
+        .presentationDetents([.large])
         .presentationDragIndicator(.visible)
         .onDisappear { PracticeFirstRun.markSheetSeen() }
-        .sheet(isPresented: $signIn) { NavigationStack { AccountSignInSheet(account: SiteAccount.shared) } }
+        .task { if !account.checked { await account.refresh() } }
+    }
+
+    private var accountBlock: some View {
+        VStack(alignment: .leading, spacing: 12) {
+            Text("your account").plHand(24, relativeTo: .title2).foregroundStyle(Candle.goldHi)
+            if account.signedIn {
+                line(account.me?.handle.map { "Signed in to Psyched Luxuries as @" + $0 } ?? account.me?.email ?? "Signed in to Psyched Luxuries")
+                Button { Task { await account.signOut() } } label: { Text("Sign out").frame(maxWidth: .infinity, minHeight: 44) }
+                    .buttonStyle(CandleGhost())
+            } else {
+                line("Sign in once with Google: the Shop, the Congregation and your orders use it. The practice works without it.")
+                NavigationLink { AccountSignInSheet(account: account) } label: { Text("Continue with Google").frame(maxWidth: .infinity, minHeight: 44) }
+                    .buttonStyle(CandleButton())
+            }
+        }
     }
 
     private func line(_ s: String) -> some View {
