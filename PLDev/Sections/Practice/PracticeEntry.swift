@@ -59,6 +59,7 @@ struct PracticeEntry: View {
         if items.isEmpty, let l = try? await Practice.get("affirmations", PracticeAffirmations.self, model: model) { items = l.items }
         guard let a = pick() else { return close() }
         line = a.text; hint = ""
+        Task { await PracticeFirstRun.plant(line: a.text, model: model) }   // first open only: the line he hears becomes his first entry
         guard let audio = a.audio else { try? await Task.sleep(for: .seconds(4)); return close() }
         if await clips.toggle(a.key, path: audio, model: model) != nil { try? await Task.sleep(for: .seconds(4)); return close() }
         clips.onFinish = { Task { try? await Task.sleep(for: .seconds(1.2)); close() } }

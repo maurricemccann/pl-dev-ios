@@ -169,6 +169,7 @@ struct PracticeView: View {
     @State private var started = false
     @State private var buddy = BuddyModel()   // Buddy lives top-right of Practice (his circle, 11-15), his drawn faces only
     @State private var rope: BuddyRopeRig?     // his rope, built once the bar item's place on screen is known
+    @State private var showFirstRun = false
 
     var body: some View {
         ScrollViewReader { proxy in
@@ -229,6 +230,8 @@ struct PracticeView: View {
         .overlay { if state.entryDone, let rope { BuddyRope(buddy: buddy, rig: rope).ignoresSafeArea().allowsHitTesting(false) } }
         .overlay { if !state.entryDone { PracticeEntry(model: model, state: state).transition(.opacity) } }
         .sensoryFeedback(PLHaptic.commit, trigger: state.tick)
+        .onChange(of: state.entryDone) { _, done in if done && !PracticeFirstRun.sheetSeen { showFirstRun = true } }
+        .sheet(isPresented: $showFirstRun) { PracticeFirstRunSheet() }
         .navigationDestination(isPresented: $state.preview) { VisionPreviewView() }
         .task { await PracticeOutbox.flush(model: model); await state.loadToday(model: model) }
     }
