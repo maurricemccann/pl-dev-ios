@@ -206,12 +206,6 @@ struct TrackView: View {
         .tabViewStyle(.page(indexDisplayMode: .never))
         .navigationTitle(track.title)
         .navigationBarTitleDisplayMode(.inline)
-        .toolbar {
-            ToolbarItem(placement: .topBarTrailing) {
-                Text(page == 0 ? "pads" : "\(page) / \(track.slides.count)").font(.subheadline.monospacedDigit()).foregroundStyle(.secondary)
-                    .contentTransition(.numericText())
-            }
-        }
         .safeAreaInset(edge: .bottom) { bar }
         .sheet(isPresented: $notes) {
             NavigationStack {
@@ -243,7 +237,13 @@ struct TrackView: View {
                     .frame(width: 44, height: 44)
                 }
                 .accessibilityLabel(on ? "Pause \(c.name)" : "Play \(c.name)")
-                Text(c.name).lineLimit(1).frame(maxWidth: .infinity, alignment: .leading)
+                VStack(alignment: .leading, spacing: 1) {
+                    // the step counter lives here, not in the top bar: there it pushed the track's name out on the longer Beat titles (S351 frames)
+                    Text(page == 0 ? "pads" : "step \(page) of \(track.slides.count)").font(.caption.monospacedDigit()).foregroundStyle(.secondary)
+                        .contentTransition(.numericText())
+                    Text(c.name).lineLimit(1)
+                }
+                .frame(maxWidth: .infinity, alignment: .leading)
                 if !currentNotes.isEmpty {
                     Button("Notes") { notes = true }.buttonStyle(.bordered).frame(minHeight: 44)
                 }
