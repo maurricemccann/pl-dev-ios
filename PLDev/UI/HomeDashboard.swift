@@ -18,6 +18,8 @@ struct HomeDashboard: View {
         }
         struct Pool: Decodable { let time: String; let nonpaged_mb: Int; let paged_mb: Int; var gb: Double { Double(nonpaged_mb + paged_mb) / 1024 } }
         let thermal: [Reading]?; let disk_free_gb: Double?; let disk_total_gb: Double?; let uptime_h: Double?; let sessions: Int?; let pool: [Pool]?; let drive_up: Bool?; let drive_days: Int?
+        // S352 (OI-073): the last refresh's verdict, its failed folders, and a run that started but never finished
+        let drive_at: String?; let drive_ok: Bool?; let drive_failed: [String]?; let drive_cut: Bool?
     }
     struct HouseGlanceNumbers { var needs = 0; var approve = 0; var standing = 0; var queued = 0; var week = 0 }
 
@@ -294,13 +296,12 @@ struct HomeDashboard: View {
                     stat("Free RAM", icon: "memorychip", "\(last.free_ram_gb) GB", Double(last.free_ram_gb).map { PLStatus.lowerIsWorse($0, warn: 4, bad: 2) })
                     stat("Disk free", icon: "internaldrive", pc?.disk_free_gb.map { "\(Int($0)) GB" } ?? "·", (pc?.disk_free_gb).map { PLStatus.lowerIsWorse($0, warn: 80, bad: 30) })
                     stat("Up", icon: "clock", pc?.uptime_h.map { $0 >= 48 ? "\(Int($0 / 24)) d" : "\(Int($0)) h" } ?? "·", nil)
-                    // PL DRIVE backup (S350, his ask 11-20): days since the weekly copy ran; amber at 8 days, red at 15; "Off" in the name when unplugged
-                    stat(pc?.drive_up == false ? "Drive (off)" : "Drive", icon: "externaldrive", pc?.drive_days.map { $0 == 0 ? "Today" : "\($0) d" } ?? "Never", pc?.drive_days.map { PLStatus.higherIsWorse(Double($0), warn: 8, bad: 15) } ?? PLStatus.bad)
                     // kernel pool: grows with file activity and only a reboot clears it; amber at 3 GB, red (reboot) at 5 GB (his ask 11-13)
                     if let k = pc?.pool?.last {
                         stat("Kernel pool", icon: "square.stack.3d.down.right", String(format: "%.1f GB", k.gb), PLStatus.higherIsWorse(k.gb, warn: 3, bad: 5))
                     }
                 }
+                driveCard
                 if let rows = pc?.thermal, rows.count > 2 {
                     Chart(rows) { r in
                         LineMark(x: .value("Time", r.date), y: .value("Heat", Double(r.temp_c) ?? 0), series: .value("", "Heat")).foregroundStyle(PLTone.accent)
@@ -355,6 +356,34 @@ struct HomeDashboard: View {
 
     /// A tile the way the tile dashboards draw one (How We Feel, Bevel on Mobbin, 11-13): the icon, the number, the word. A known
     /// good or bad (his note 11-14) tints the number, washes the tile and hints the name; no level, no tint.
+    // MARK: PL DRIVE (S352, his ask 11-22, OI-073): replaces the Drive tile. Every problem by name; red when unplugged, a folder failed,
+    // a copy was cut off partway, or 15 days pass with no good run; amber at 8 days.
+    private var driveCard: some View {
+        let days = pc?.drive_days, failed = pc?.drive_failed ?? [], cut = pc?.drive_cut == true, up = pc?.drive_up != false
+        let level: PLStatus = (!up || cut || !failed.isEmpty || pc?.drive_ok == false || days == nil) ? .bad : PLStatus.higherIsWorse(Double(days ?? 0), warn: 8, bad: 15)
+        var problems: [String] = []
+        if !up { problems.append("Not plugged in. Plug in the PL DRIVE; the next refresh copies everything since.") }
+        if cut { problems.append("The last copy started but never finished (cut off partway).") }
+        problems += failed.map { "Failed: \($0)" }
+        if days == nil { problems.append("No refresh has ever finished on this PC.") }
+        return VStack(alignment: .leading, spacing: 6) {
+            HStack(spacing: 6) {
+                Image(systemName: "externaldrive").foregroundStyle(level.tone)
+                Text("PL DRIVE").plLabel(11).plStatusName(level)
+                Spacer()
+                Text(days.map { $0 == 0 ? "last run today" : "last run \($0) d ago" } ?? "never run").font(.caption.monospacedDigit()).foregroundStyle(level.tone)
+            }
+            if problems.isEmpty {
+                Text("Plugged in. Every folder copied on the last run.").font(.caption).foregroundStyle(.secondary)
+            } else {
+                ForEach(problems, id: \.self) { Text($0).font(.caption).fixedSize(horizontal: false, vertical: true) }
+            }
+        }
+        .padding(.horizontal, 8).padding(.vertical, 6)
+        .plStatusTile(level)
+        .accessibilityElement(children: .combine)
+    }
+
     private func stat(_ name: String, icon: String, _ value: String, _ level: PLStatus?) -> some View {
         VStack(alignment: .leading, spacing: 3) {
             Image(systemName: icon).font(.system(size: 13, weight: .semibold)).foregroundStyle(level?.tone ?? PLTone.accent).frame(height: 16)
@@ -388,7 +417,7 @@ struct HomeDashboard: View {
         var rows: [PCStats.Reading] = []
         for i in 0..<12 { rows.append(r(60 + i * 2, 40 + (i % 5) * 9, 5.2 - Double(i) * 0.15, ISO8601DateFormatter().string(from: .now.addingTimeInterval(Double(-(60 - i * 5)) * 60)))) }
         rows.append(r(78, 93, 1.6, now))
-        pc = PCStats(thermal: rows, disk_free_gb: 412, disk_total_gb: 953, uptime_h: 61, sessions: 3, pool: [.init(time: now, nonpaged_mb: 1800, paged_mb: 1700)], drive_up: true, drive_days: 3)
+        pc = PCStats(thermal: rows, disk_free_gb: 412, disk_total_gb: 953, uptime_h: 61, sessions: 3, pool: [.init(time: now, nonpaged_mb: 1800, paged_mb: 1700)], drive_up: true, drive_days: 3, drive_at: nil, drive_ok: false, drive_failed: ["PL WIP/Vault: FAILED (robocopy exit 8)"], drive_cut: false)
         house = HouseGlanceNumbers(needs: 0, approve: 230, standing: 71, queued: 38, week: 142)
         pcFailed = false
     }
