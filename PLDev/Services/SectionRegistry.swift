@@ -5,7 +5,7 @@ import Foundation
 @MainActor enum SectionRegistry {
     // ComposerSection dropped from PL DEV (his ruling 11-14 ~5:35 AM PT); its code stays, adding it back here restores it
     static var all: [any PLSection.Type] {
-        [StatusSection.self, HouseSection.self, CaptureSection.self, CurateSection.self, LibrarySection.self, TownSection.self, PickSection.self, PaintSection.self, ShopSection.self, CongregationSection.self, PracticeSection.self, GlyphBotSection.self, CompanionSection.self, PLWorldSection.self]
+        [StatusSection.self, HouseSection.self, CaptureSection.self, CurateSection.self, LibrarySection.self, TownSection.self, PickSection.self, PaintSection.self, ShopSection.self, CongregationSection.self, PracticeSection.self, GlyphBotSection.self, CompanionSection.self, PLWorldSection.self, SchoolSection.self]
     }
 
     static func section(_ id: String) -> (any PLSection.Type)? {

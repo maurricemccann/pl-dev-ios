@@ -1,0 +1,2123 @@
+{
+ "v": 2,
+ "title": "PL Prod",
+ "tracks": [
+  {
+   "id": "loop",
+   "title": "First Loop",
+   "sub": "D♭ major · 91 · curve.kit",
+   "slides": [
+    "cover",
+    "setup",
+    "kick",
+    "snare",
+    "hat",
+    "e808",
+    "keys",
+    "bar",
+    "bars",
+    "moves"
+   ],
+   "ref": "loop-ref",
+   "refName": "the curve.kit demo",
+   "clips": {}
+  },
+  {
+   "id": "b1",
+   "title": "Beat 1 · Weight",
+   "sub": "C♯ minor · 144, feels 72",
+   "slides": [
+    "ch1-cover",
+    "ch1-halftime",
+    "ch1-clap",
+    "ch1-kick",
+    "ch1-hats",
+    "ch1-808",
+    "ch1-keys",
+    "ch1-weight",
+    "ch1-intro",
+    "ch1-mumble",
+    "ch1-check"
+   ],
+   "ref": "b1-ref",
+   "refName": "finished beat 1",
+   "clips": {
+    "ch1-clap": [
+     "b1-s1",
+     "stage 1, clap and snare"
+    ],
+    "ch1-kick": [
+     "b1-s2",
+     "stage 2, plus kick"
+    ],
+    "ch1-hats": [
+     "b1-s3",
+     "stage 3, plus hats"
+    ],
+    "ch1-808": [
+     "b1-s4",
+     "stage 4, plus 808"
+    ],
+    "ch1-keys": [
+     "b1-s5",
+     "stage 5, plus piano"
+    ]
+   }
+  },
+  {
+   "id": "b2",
+   "title": "Beat 2 · Arrangement",
+   "sub": "D♭ major · 85",
+   "slides": [
+    "ch2-cover",
+    "ch2-straight",
+    "ch2-drums",
+    "ch2-808",
+    "ch2-keys",
+    "ch2-hook",
+    "ch2-weight",
+    "ch2-flow",
+    "ch2-check"
+   ],
+   "ref": "b2-ref",
+   "refName": "finished beat 2",
+   "clips": {
+    "ch2-straight": [
+     "b2-s1",
+     "stage 1, verse drums"
+    ],
+    "ch2-drums": [
+     "b2-s1",
+     "stage 1, verse drums"
+    ],
+    "ch2-808": [
+     "b2-s2",
+     "stage 2, plus 808"
+    ],
+    "ch2-keys": [
+     "b2-s3",
+     "stage 3, keys underwater"
+    ],
+    "ch2-hook": [
+     "b2-s4",
+     "stage 4, the hook opens"
+    ]
+   }
+  },
+  {
+   "id": "b3",
+   "title": "Beat 3 · The Blend",
+   "sub": "B♭ minor · 94",
+   "slides": [
+    "ch3-cover",
+    "ch3-guitar",
+    "ch3-strings",
+    "ch3-drop",
+    "ch3-808",
+    "ch3-long",
+    "ch3-voice",
+    "ch3-mix",
+    "ch3-master",
+    "ch3-check"
+   ],
+   "ref": "b3-ref",
+   "refName": "finished beat 3",
+   "clips": {
+    "ch3-guitar": [
+     "b3-s1",
+     "stage 1, the guitar alone"
+    ],
+    "ch3-drop": [
+     "b3-s2",
+     "stage 2, the drop"
+    ]
+   }
+  }
+ ],
+ "his": [
+  {
+   "id": "his-1106",
+   "title": "Your first beat",
+   "sub": "11-06"
+  },
+  {
+   "id": "his-1107",
+   "title": "PL one",
+   "sub": "11-07"
+  }
+ ],
+ "lessons": [
+  {
+   "id": "cover",
+   "eyebrow": "Psyched Luxuries · curve.kit",
+   "title": "First Loop",
+   "chips": [],
+   "grids": [
+    {
+     "label": "",
+     "steps": [
+      true,
+      false,
+      false,
+      false,
+      false,
+      false,
+      false,
+      true,
+      false,
+      false,
+      true,
+      false,
+      false,
+      false,
+      false,
+      false
+     ],
+     "color": "#c9a84c"
+    }
+   ],
+   "blocks": [
+    {
+     "head": "",
+     "text": "D♭ major · 91 BPM · one bar, five rows, then four bars"
+    },
+    {
+     "head": "",
+     "text": "The kick row. Every slide shows one row this way: gold boxes are the taps."
+    }
+   ],
+   "table": [],
+   "notes": "The loop is built from curve.kit, the kit he kept in FL Studio Mobile. Each slide is one row of FL's step grid, drawn the way it should look when it is right."
+  },
+  {
+   "id": "setup",
+   "eyebrow": "Before the first box",
+   "title": "Three things, once",
+   "chips": [],
+   "grids": [],
+   "blocks": [
+    {
+     "head": "Tempo 91",
+     "text": "Tap the BPM number at the bottom and set it to 91. This loop nods; the Starter Kit at 68 dragged."
+    },
+    {
+     "head": "One row per sound",
+     "text": "Tap + for each row and pick the file from curve.kit. Five rows, plus a second 808 and keys row per bar later."
+    },
+    {
+     "head": "Count the boxes",
+     "text": "16 boxes make a bar. The shaded groups of four are the beats. The snare lives on beats 2 and 4: boxes 5 and 13."
+    }
+   ],
+   "table": [],
+   "notes": "Tempo first, every time: a pattern tapped at the wrong tempo feels wrong even when every box is right."
+  },
+  {
+   "id": "kick",
+   "eyebrow": "Row 1 of 5",
+   "title": "Kick",
+   "chips": [
+    "PL kick-punch.wav"
+   ],
+   "grids": [
+    {
+     "label": "",
+     "steps": [
+      true,
+      false,
+      false,
+      false,
+      false,
+      false,
+      false,
+      true,
+      false,
+      false,
+      true,
+      false,
+      false,
+      false,
+      false,
+      false
+     ],
+     "color": "#c9a84c"
+    }
+   ],
+   "blocks": [
+    {
+     "head": "",
+     "text": "Boxes 1, 8 and 11. Box 1 is the floor of the bar. Box 8 is the push into beat 3. Box 11 answers the snare that just hit on 13's side."
+    },
+    {
+     "head": "",
+     "text": "Lower on a box does nothing in the grid; every tap is the same hit. Dynamics come later, from the pads."
+    }
+   ],
+   "table": [],
+   "notes": "Box 8 is a sixteenth before beat 3. It is what makes this loop bounce instead of march."
+  },
+  {
+   "id": "snare",
+   "eyebrow": "Row 2 of 5 · this one is TWO rows in FL",
+   "title": "Snare + Snap",
+   "chips": [],
+   "grids": [
+    {
+     "label": "SNARE · PL snare-crack.wav",
+     "steps": [
+      false,
+      false,
+      false,
+      false,
+      true,
+      false,
+      false,
+      false,
+      false,
+      false,
+      false,
+      false,
+      true,
+      false,
+      false,
+      false
+     ],
+     "color": "#b0b8c8"
+    },
+    {
+     "label": "SNAP · PL snap.wav",
+     "steps": [
+      false,
+      false,
+      false,
+      false,
+      true,
+      false,
+      false,
+      false,
+      false,
+      false,
+      false,
+      false,
+      true,
+      false,
+      false,
+      false
+     ],
+     "color": "#b0b8c8"
+    }
+   ],
+   "blocks": [
+    {
+     "head": "",
+     "text": "Tap + twice in FL: one row for the snare, one for the snap. On both rows, tap boxes 5 and 13. They hit together, on beats 2 and 4."
+    },
+    {
+     "head": "",
+     "text": "Why two: the snap is a thin layer on top of the snare. Its own row means its own slider, so you can pull it down if it gets sharp. Skip it at first if you like; the snare alone works."
+    }
+   ],
+   "table": [],
+   "notes": "The slide used to show one grid with two file names, which read as one row. It is two rows in FL with the same boxes."
+  },
+  {
+   "id": "hat",
+   "eyebrow": "Row 3 of 5",
+   "title": "Hat",
+   "chips": [
+    "PL hat-tight.wav"
+   ],
+   "grids": [
+    {
+     "label": "",
+     "steps": [
+      true,
+      false,
+      true,
+      false,
+      true,
+      false,
+      true,
+      false,
+      true,
+      false,
+      true,
+      false,
+      true,
+      false,
+      true,
+      false
+     ],
+     "color": "#e7cf86"
+    }
+   ],
+   "blocks": [
+    {
+     "head": "",
+     "text": "Every other box: 1, 3, 5, 7, 9, 11, 13, 15. The motor of the loop. It is the same picture as your first beat."
+    },
+    {
+     "head": "",
+     "text": "On bars 2 and 4, hold boxes 15 and 16 to split them into a roll: FL turns one box into fast hits. That roll is the lift into the next bar."
+    }
+   ],
+   "table": [],
+   "notes": "Eight hats a bar. If it feels too busy later, drop boxes 3, 7, 11 and 15 and it halves without losing the pulse."
+  },
+  {
+   "id": "e808",
+   "eyebrow": "Row 4 of 5",
+   "title": "808",
+   "chips": [
+    "PL 808-Cs1.wav (bar 1)"
+   ],
+   "grids": [
+    {
+     "label": "",
+     "steps": [
+      true,
+      false,
+      false,
+      false,
+      false,
+      false,
+      false,
+      false,
+      true,
+      false,
+      false,
+      false,
+      false,
+      false,
+      false,
+      false
+     ],
+     "color": "#d98a6a"
+    }
+   ],
+   "blocks": [
+    {
+     "head": "",
+     "text": "Box 1 and box 9. Box 1 rings long under the chord. Box 9 is a second, shorter touch on beat 3, so the low end breathes twice a bar."
+    },
+    {
+     "head": "",
+     "text": "The 808 follows the chord: a different file in each of the four bars (two slides on). If it swallows the keys, this row's slider comes down first."
+    }
+   ],
+   "table": [],
+   "notes": "808-Cs1 is the note C-sharp, the same note as D-flat, one octave down from the keys. The 's' in the file name means sharp."
+  },
+  {
+   "id": "keys",
+   "eyebrow": "Row 5 of 5",
+   "title": "Keys",
+   "chips": [
+    "PL keys-Db.wav (bar 1)"
+   ],
+   "grids": [
+    {
+     "label": "",
+     "steps": [
+      true,
+      false,
+      false,
+      false,
+      false,
+      false,
+      false,
+      false,
+      false,
+      false,
+      false,
+      false,
+      false,
+      false,
+      false,
+      false
+     ],
+     "color": "#b8c2f0"
+    }
+   ],
+   "blocks": [
+    {
+     "head": "",
+     "text": "Box 1 only. The chord is one bar long and fades out just as the next one starts, so one box per bar is the whole part."
+    },
+    {
+     "head": "",
+     "text": "The keys lead this kit. The drums sit under them. If you hear the chord clearly over the hats, the balance is right."
+    }
+   ],
+   "table": [],
+   "notes": "Each chord file is cut to one bar at 91 BPM. Change the tempo and the chords stop lining up; that is why the tempo came first."
+  },
+  {
+   "id": "bar",
+   "eyebrow": "One bar, all five rows",
+   "title": "What the whole grid looks like",
+   "chips": [],
+   "grids": [
+    {
+     "label": "KICK",
+     "steps": [
+      true,
+      false,
+      false,
+      false,
+      false,
+      false,
+      false,
+      true,
+      false,
+      false,
+      true,
+      false,
+      false,
+      false,
+      false,
+      false
+     ],
+     "color": "#c9a84c"
+    },
+    {
+     "label": "SNARE",
+     "steps": [
+      false,
+      false,
+      false,
+      false,
+      true,
+      false,
+      false,
+      false,
+      false,
+      false,
+      false,
+      false,
+      true,
+      false,
+      false,
+      false
+     ],
+     "color": "#b0b8c8"
+    },
+    {
+     "label": "SNAP",
+     "steps": [
+      false,
+      false,
+      false,
+      false,
+      true,
+      false,
+      false,
+      false,
+      false,
+      false,
+      false,
+      false,
+      true,
+      false,
+      false,
+      false
+     ],
+     "color": "#b0b8c8"
+    },
+    {
+     "label": "HAT",
+     "steps": [
+      true,
+      false,
+      true,
+      false,
+      true,
+      false,
+      true,
+      false,
+      true,
+      false,
+      true,
+      false,
+      true,
+      false,
+      true,
+      false
+     ],
+     "color": "#e7cf86"
+    },
+    {
+     "label": "808",
+     "steps": [
+      true,
+      false,
+      false,
+      false,
+      false,
+      false,
+      false,
+      false,
+      true,
+      false,
+      false,
+      false,
+      false,
+      false,
+      false,
+      false
+     ],
+     "color": "#d98a6a"
+    },
+    {
+     "label": "KEYS",
+     "steps": [
+      true,
+      false,
+      false,
+      false,
+      false,
+      false,
+      false,
+      false,
+      false,
+      false,
+      false,
+      false,
+      false,
+      false,
+      false,
+      false
+     ],
+     "color": "#b8c2f0"
+    }
+   ],
+   "blocks": [
+    {
+     "head": "",
+     "text": "Press play here. One bar loops. When it nods, go on to four bars."
+    }
+   ],
+   "table": [],
+   "notes": "This is the picture to match against FL's screen, row by row. Send a screenshot and it gets checked box by box."
+  },
+  {
+   "id": "bars",
+   "eyebrow": "Then four bars",
+   "title": "The chords walk, the drums stay",
+   "chips": [],
+   "grids": [],
+   "blocks": [
+    {
+     "head": "",
+     "text": "Kick, snare, snap and hat: the same boxes in all four bars. Tap them again in bars 2, 3 and 4, the same picture each time."
+    },
+    {
+     "head": "",
+     "text": "Each keys and 808 file is its own row, and each row gets one box: the first box of its bar. Eight rows for the chords, five for the drums."
+    }
+   ],
+   "table": [
+    [
+     "Bar",
+     "Chord",
+     "Keys row, box 1",
+     "808 row, boxes 1 and 9"
+    ],
+    [
+     "1",
+     "D♭",
+     "PL keys-Db.wav",
+     "PL 808-Cs1.wav"
+    ],
+    [
+     "2",
+     "B♭ minor",
+     "PL keys-Bbm.wav",
+     "PL 808-As0.wav"
+    ],
+    [
+     "3",
+     "G♭",
+     "PL keys-Gb.wav",
+     "PL 808-Fs0.wav"
+    ],
+    [
+     "4",
+     "A♭",
+     "PL keys-Ab.wav",
+     "PL 808-Gs0.wav"
+    ]
+   ],
+   "notes": "The letters in the file names: s means sharp. Cs1 is C-sharp, the same note as D-flat. Fs0 is G-flat, Gs0 is A-flat, As0 is B-flat."
+  },
+  {
+   "id": "moves",
+   "eyebrow": "When the four bars loop",
+   "title": "Three moves, then send it",
+   "chips": [],
+   "grids": [],
+   "blocks": [
+    {
+     "head": "The roll",
+     "text": "Hat row, bars 2 and 4: hold boxes 15 and 16 until FL splits them. Fast hits into the next bar."
+    },
+    {
+     "head": "The open hat",
+     "text": "New row, PL hat-open.wav, one box: 16 of bar 4. A lift right before the loop comes back around."
+    },
+    {
+     "head": "The drop",
+     "text": "Clear the drum boxes from bar 1 only. Keys and 808 open alone, and the beat lands on bar 2. The space is the sound."
+    },
+    {
+     "head": "",
+     "text": "Export as WAV (the fruit icon, then Export) and send it. It gets measured and filed with your first beat."
+    }
+   ],
+   "table": [],
+   "notes": "The drop is the house move: the Starter Kit demo opens the same way, two bars of pads before the drums."
+  },
+  {
+   "id": "ch1-cover",
+   "eyebrow": "Psyched Luxuries · Production School · Chapter 1",
+   "title": "Weight",
+   "chips": [],
+   "grids": [],
+   "blocks": [
+    {
+     "head": "",
+     "text": "C# minor · FL at 144, half-time (it feels like 72) · eight bars"
+    },
+    {
+     "head": "Load",
+     "text": "PL 808.sf2 and PL Felt Piano.sf2 in two SoundFont Players. Drums from the Deep kit."
+    },
+    {
+     "head": "Hear it first",
+     "text": "Play “Reference - finished beat 1”. That is where this chapter ends."
+    },
+    {
+     "head": "The rule",
+     "text": "Snares first. Eight bars. Four parts. The 808 owns the low end."
+    },
+    {
+     "head": "",
+     "text": "Chapter 1 · Weight · C# minor · FL at 144, half-time"
+    }
+   ],
+   "table": [],
+   "notes": "Chapter 1 of the Production School. The crowned beat 1 (11-07), matched to the weight of the references. Files: Music/PL Kits/_school/Beat 1 - Cs minor 144 (72 feel)/."
+  },
+  {
+   "id": "ch1-halftime",
+   "eyebrow": "Before you tap anything",
+   "title": "Half-time: one snare per bar",
+   "chips": [],
+   "grids": [
+    {
+     "label": "SNARE · half-time",
+     "steps": [
+      false,
+      false,
+      false,
+      false,
+      false,
+      false,
+      false,
+      false,
+      true,
+      false,
+      false,
+      false,
+      false,
+      false,
+      false,
+      false
+     ],
+     "color": "#c9a84c"
+    },
+    {
+     "label": "SNARE · (normal)",
+     "steps": [
+      false,
+      false,
+      false,
+      false,
+      true,
+      false,
+      false,
+      false,
+      false,
+      false,
+      false,
+      false,
+      true,
+      false,
+      false,
+      false
+     ],
+     "color": "#c9a84c"
+    }
+   ],
+   "blocks": [
+    {
+     "head": "",
+     "text": "Set FL to 144. Put the snare on box 9 only, once per bar. That is half-time."
+    },
+    {
+     "head": "",
+     "text": "At 144 a snare on 5 and 13 runs fast. One snare on 9 makes the same tempo feel like 72: slow, heavy, room for the voice. The hats still move at 144, so it never drags."
+    },
+    {
+     "head": "",
+     "text": "Chapter 1 · Weight · C# minor · FL at 144, half-time"
+    }
+   ],
+   "table": [],
+   "notes": "Teach the counting, not just the button. Box 9 is beat 3. The normal row is shown only for contrast; do not tap it."
+  },
+  {
+   "id": "ch1-clap",
+   "eyebrow": "Row 1 · snares first, to get the head bob going",
+   "title": "Clap + Snare",
+   "chips": [],
+   "grids": [
+    {
+     "label": "CLAP · PL clap.wav",
+     "steps": [
+      false,
+      false,
+      false,
+      false,
+      false,
+      false,
+      false,
+      false,
+      true,
+      false,
+      false,
+      false,
+      false,
+      false,
+      false,
+      false
+     ],
+     "color": "#c9a84c"
+    },
+    {
+     "label": "SNARE · PL snare.wav",
+     "steps": [
+      false,
+      false,
+      false,
+      false,
+      false,
+      false,
+      false,
+      false,
+      true,
+      false,
+      false,
+      false,
+      false,
+      false,
+      false,
+      false
+     ],
+     "color": "#c9a84c"
+    }
+   ],
+   "blocks": [
+    {
+     "head": "",
+     "text": "Two rows, both on box 9, every bar. Then put Reverb 2 on the clap channel and turn the wet up until the clap fills the space behind it."
+    },
+    {
+     "head": "",
+     "text": "Layering: the snare alone is thin, the clap alone is soft. Together they are one hit. Neither has to sound good by itself. Play “Stage 1 clap and snare”."
+    },
+    {
+     "head": "",
+     "text": "Chapter 1 · Weight · C# minor · FL at 144, half-time"
+    }
+   ],
+   "table": [],
+   "notes": "From the study: snares and claps first; a clap filled out with reverb; layer parts so the whole works, not each part."
+  },
+  {
+   "id": "ch1-kick",
+   "eyebrow": "Row 2",
+   "title": "Kick",
+   "chips": [],
+   "grids": [
+    {
+     "label": "KICK · bars 1-3, 5-7",
+     "steps": [
+      true,
+      false,
+      false,
+      false,
+      false,
+      false,
+      false,
+      true,
+      false,
+      false,
+      true,
+      false,
+      false,
+      false,
+      false,
+      false
+     ],
+     "color": "#c9a84c"
+    },
+    {
+     "label": "KICK · bars 4 and 8",
+     "steps": [
+      true,
+      false,
+      false,
+      false,
+      false,
+      false,
+      false,
+      false,
+      false,
+      false,
+      true,
+      false,
+      false,
+      false,
+      false,
+      false
+     ],
+     "color": "#c9a84c"
+    }
+   ],
+   "blocks": [
+    {
+     "head": "",
+     "text": "Boxes 1, 8 and 11. In bars 4 and 8, only 1 and 11: the gap makes room for the turn."
+    },
+    {
+     "head": "",
+     "text": "The kick on 8 lands just before the snare on 9, a push into it. Play “Stage 2 plus kick”."
+    },
+    {
+     "head": "",
+     "text": "Chapter 1 · Weight · C# minor · FL at 144, half-time"
+    }
+   ],
+   "table": [],
+   "notes": "Bars 4 and 8 are the fill bars across the whole chapter: the kick thins out and the hats gallop."
+  },
+  {
+   "id": "ch1-hats",
+   "eyebrow": "Row 3",
+   "title": "Hats, then the gallop",
+   "chips": [],
+   "grids": [
+    {
+     "label": "HAT · most bars",
+     "steps": [
+      true,
+      false,
+      true,
+      false,
+      true,
+      false,
+      true,
+      false,
+      true,
+      false,
+      true,
+      false,
+      true,
+      false,
+      true,
+      false
+     ],
+     "color": "#c9a84c"
+    },
+    {
+     "label": "HAT · bars 4 and 8",
+     "steps": [
+      true,
+      false,
+      true,
+      false,
+      true,
+      false,
+      true,
+      false,
+      true,
+      false,
+      true,
+      false,
+      true,
+      true,
+      true,
+      true
+     ],
+     "color": "#c9a84c"
+    },
+    {
+     "label": "OPEN HAT · bars 2 and 6",
+     "steps": [
+      false,
+      false,
+      false,
+      false,
+      false,
+      false,
+      true,
+      false,
+      false,
+      false,
+      false,
+      false,
+      false,
+      false,
+      false,
+      false
+     ],
+     "color": "#c9a84c"
+    }
+   ],
+   "blocks": [
+    {
+     "head": "",
+     "text": "Every other box in most bars. In bars 4 and 8, fill 13 to 16 so the hats gallop into the next bar. One open hat on box 7 in bars 2 and 6."
+    },
+    {
+     "head": "",
+     "text": "Pull the hat slider down until you feel it more than hear it. Play “Stage 3 plus hats”."
+    },
+    {
+     "head": "",
+     "text": "Chapter 1 · Weight · C# minor · FL at 144, half-time"
+    }
+   ],
+   "table": [],
+   "notes": "Galloped hats are a trait from the study."
+  },
+  {
+   "id": "ch1-808",
+   "eyebrow": "Row 4 · the weight",
+   "title": "808",
+   "chips": [],
+   "grids": [],
+   "blocks": [
+    {
+     "head": "Bar 1",
+     "text": "C#1, box 1 to box 10"
+    },
+    {
+     "head": "Bar 2",
+     "text": "A0, box 1 to 10, plus a short A1 on box 11"
+    },
+    {
+     "head": "Bar 3",
+     "text": "F#1, box 1 to 10"
+    },
+    {
+     "head": "Bar 4",
+     "text": "G#0, box 1 to 10, plus a short G#1 on box 11"
+    },
+    {
+     "head": "",
+     "text": "In the SoundFont Player with PL 808, draw one long note per bar in the piano roll. Bars 5 to 8 repeat 1 to 4. Or import 808.mid."
+    },
+    {
+     "head": "",
+     "text": "The 808 plays the root of every chord, so the piano does not have to. Turn it up until it is the loudest thing in the room. Play “Stage 4 plus 808”."
+    },
+    {
+     "head": "",
+     "text": "Chapter 1 · Weight · C# minor · FL at 144, half-time"
+    }
+   ],
+   "table": [],
+   "notes": "Roots: C#1 A0 F#1 G#0. Lengths: 10 boxes. Pickups an octave up on box 11 of bars 2, 4, 6 and 8."
+  },
+  {
+   "id": "ch1-keys",
+   "eyebrow": "Row 5",
+   "title": "Felt piano, underwater",
+   "chips": [],
+   "grids": [],
+   "blocks": [
+    {
+     "head": "C#m9",
+     "text": "G#3 B3 D#4 E4 G#4"
+    },
+    {
+     "head": "Amaj9",
+     "text": "G#3 B3 C#4 E4 G#4"
+    },
+    {
+     "head": "F#m9",
+     "text": "A3 C#4 E4 G#4"
+    },
+    {
+     "head": "G#7sus4",
+     "text": "F#3 C#4 D#4 G#4. Bar 8: G#7, F#3 B#3 D#4 G#4"
+    },
+    {
+     "head": "",
+     "text": "One chord per bar, held the whole bar , in PL Felt Piano (or import chords.mid). Then a Filter on the piano: low-pass, about 1,400 Hz. Then Reverb 2, big."
+    },
+    {
+     "head": "",
+     "text": "No root notes: the 808 has them. The piano sits up and dark, behind the weight. Play “Stage 5 plus piano”: that is the skeleton."
+    },
+    {
+     "head": "",
+     "text": "Chapter 1 · Weight · C# minor · FL at 144, half-time"
+    }
+   ],
+   "table": [],
+   "notes": "Every chord is original to this course. B# is the same key as C: it pulls the last bar home to C#m."
+  },
+  {
+   "id": "ch1-weight",
+   "eyebrow": "Why it sounds heavy",
+   "title": "The weight lesson",
+   "chips": [],
+   "grids": [],
+   "blocks": [
+    {
+     "head": "Take 1: too airy",
+     "text": "808 and kick 40% of the sound. Piano 17%, up front. You heard light."
+    },
+    {
+     "head": "Take 2: crowned",
+     "text": "808 and kick 96%. Piano 0.7%, filtered and drenched. The reference sits at 94%."
+    },
+    {
+     "head": "The move",
+     "text": "Piano voiced up and filtered dark. 808 turned up. Nothing else changed."
+    },
+    {
+     "head": "",
+     "text": "When it sounds light, the piano is too loud and too bright. Not the 808 too quiet."
+    },
+    {
+     "head": "",
+     "text": "Check it: put the Analyzer on the master. Heavy beats read most of their energy at the bottom."
+    },
+    {
+     "head": "",
+     "text": "Chapter 1 · Weight · C# minor · FL at 144, half-time"
+    }
+   ],
+   "table": [],
+   "notes": "Measured 11-07. Take 1 is kept in the code history as the light route."
+  },
+  {
+   "id": "ch1-intro",
+   "eyebrow": "Arrange",
+   "title": "Four bars before the drop",
+   "chips": [],
+   "grids": [],
+   "blocks": [
+    {
+     "head": "Bars 1-4",
+     "text": "Piano only, filter closed lower (about 600 Hz), quiet. No drums, no 808."
+    },
+    {
+     "head": "Bar 5",
+     "text": "Everything lands at once: clap, kick, hats, 808, piano opened up."
+    },
+    {
+     "head": "Next time",
+     "text": "Try 16 bars. Three of five reference beats wait 15 to 19 seconds before the drop."
+    },
+    {
+     "head": "",
+     "text": "Copy the piano pattern to bars 1-4 alone in the playlist, then the full pattern after."
+    },
+    {
+     "head": "",
+     "text": "The space before the drop is what makes the drop heavy. Play the reference again and count."
+    },
+    {
+     "head": "",
+     "text": "Chapter 1 · Weight · C# minor · FL at 144, half-time"
+    }
+   ],
+   "table": [],
+   "notes": "From the study: long intros on 3 of 5 reference beats; the house move of pads before drums."
+  },
+  {
+   "id": "ch1-mumble",
+   "eyebrow": "Flow",
+   "title": "The mumble pass",
+   "chips": [],
+   "grids": [],
+   "blocks": [
+    {
+     "head": "1 · Record",
+     "text": "Loop the skeleton. Record yourself humming and mumbling over it: sounds, vowels, no words."
+    },
+    {
+     "head": "2 · Keep",
+     "text": "Listen back. Keep the best two seconds, the part where your voice and the beat lock."
+    },
+    {
+     "head": "3 · Fit",
+     "text": "Write your own words into that rhythm, like a puzzle. Then record it for real."
+    },
+    {
+     "head": "",
+     "text": "Your words, always. The pocket comes from your voice on this beat."
+    },
+    {
+     "head": "",
+     "text": "From the study: the melody first, then the words fitted to it."
+    },
+    {
+     "head": "",
+     "text": "Chapter 1 · Weight · C# minor · FL at 144, half-time"
+    }
+   ],
+   "table": [],
+   "notes": "Study 3b. Practise on his own lines only."
+  },
+  {
+   "id": "ch1-check",
+   "eyebrow": "Done when",
+   "title": "Two checks, then send it",
+   "chips": [],
+   "grids": [],
+   "blocks": [
+    {
+     "head": "Acapella Drop",
+     "text": "Mute everything but the kick and your voice. If the delivery does not hold alone, record it again."
+    },
+    {
+     "head": "No clipping",
+     "text": "Analyzer on the master: true peak under -1 dB. Loudness is your ear's call; read the number and send it."
+    },
+    {
+     "head": "Send it",
+     "text": "Export as WAV and send it. It gets measured against the reference and filed."
+    },
+    {
+     "head": "",
+     "text": "Then the Transfer test: a blank project, no slides, no MIDI. Sixteen bars of your own."
+    },
+    {
+     "head": "",
+     "text": "Chapter 1 · Weight · C# minor · FL at 144, half-time"
+    }
+   ],
+   "table": [],
+   "notes": "Acceptance tests from the spec: the Acapella Drop and the Transfer test. No loudness target (his ruling 11-07)."
+  },
+  {
+   "id": "ch2-cover",
+   "eyebrow": "Psyched Luxuries · Production School · Chapter 2",
+   "title": "Arrangement",
+   "chips": [],
+   "grids": [],
+   "blocks": [
+    {
+     "head": "",
+     "text": "Db major · FL at 85, straight time · 20 bars: 4 intro, 8 verse, 8 hook"
+    },
+    {
+     "head": "Load",
+     "text": "PL Keys.sf2, PL 808.sf2, PL Nylon Guitar.sf2, PL Strings.sf2. Drums from the Rise kit."
+    },
+    {
+     "head": "Hear it first",
+     "text": "Play “Reference - finished beat 2”. Count the 4 quiet bars, then the verse, then the hook opening up."
+    },
+    {
+     "head": "The lesson",
+     "text": "A major key made dark. The verse sits underwater; the hook opens the filter. Heavy, but you can hear the top on a phone."
+    },
+    {
+     "head": "",
+     "text": "Chapter 2 · Arrangement · Db major · FL at 85, straight"
+    }
+   ],
+   "table": [],
+   "notes": "Chapter 2 of the Production School. Beat 2, crowned 11-07. Built on the weight line from the study: sub about 80%, a melody and hats that read on a phone speaker. Files: Music/PL Kits/_school/Beat 2 - Db major 85/."
+  },
+  {
+   "id": "ch2-straight",
+   "eyebrow": "Before you tap anything",
+   "title": "Straight time: snare on 2 and 4",
+   "chips": [],
+   "grids": [
+    {
+     "label": "CLAP · PL clap.wav",
+     "steps": [
+      false,
+      false,
+      false,
+      false,
+      true,
+      false,
+      false,
+      false,
+      false,
+      false,
+      false,
+      false,
+      true,
+      false,
+      false,
+      false
+     ],
+     "color": "#c9a84c"
+    },
+    {
+     "label": "SNARE · PL snare.wav",
+     "steps": [
+      false,
+      false,
+      false,
+      false,
+      true,
+      false,
+      false,
+      false,
+      false,
+      false,
+      false,
+      false,
+      true,
+      false,
+      false,
+      false
+     ],
+     "color": "#c9a84c"
+    }
+   ],
+   "blocks": [
+    {
+     "head": "",
+     "text": "Set FL to 85. Clap and snare together on boxes 5 and 13, every bar from bar 5 on. Bars 1-4 have no drums at all."
+    },
+    {
+     "head": "",
+     "text": "Chapter 1 was half-time: one snare per bar at 144. This is the other count: two per bar at 85. Same weight, more bounce. Play “Stage 1 verse drums”."
+    },
+    {
+     "head": "",
+     "text": "Chapter 2 · Arrangement · Db major · FL at 85, straight"
+    }
+   ],
+   "table": [],
+   "notes": "The tempo of his most-played (85 feel). The clap gets Reverb 2 as in chapter 1, a little less wet."
+  },
+  {
+   "id": "ch2-drums",
+   "eyebrow": "Rows 2 and 3",
+   "title": "Kick and hats, verse then hook",
+   "chips": [],
+   "grids": [
+    {
+     "label": "KICK · verse",
+     "steps": [
+      true,
+      false,
+      false,
+      false,
+      false,
+      false,
+      false,
+      true,
+      false,
+      false,
+      true,
+      false,
+      false,
+      false,
+      false,
+      false
+     ],
+     "color": "#c9a84c"
+    },
+    {
+     "label": "KICK · hook",
+     "steps": [
+      true,
+      false,
+      false,
+      false,
+      false,
+      false,
+      false,
+      true,
+      false,
+      false,
+      true,
+      false,
+      false,
+      false,
+      true,
+      false
+     ],
+     "color": "#c9a84c"
+    },
+    {
+     "label": "KICK · bars 4, 8, 12, 16, 20",
+     "steps": [
+      true,
+      false,
+      false,
+      false,
+      false,
+      false,
+      false,
+      false,
+      false,
+      false,
+      true,
+      false,
+      false,
+      false,
+      false,
+      false
+     ],
+     "color": "#c9a84c"
+    },
+    {
+     "label": "HAT · every bar",
+     "steps": [
+      true,
+      false,
+      true,
+      false,
+      true,
+      false,
+      true,
+      false,
+      true,
+      false,
+      true,
+      false,
+      true,
+      false,
+      true,
+      false
+     ],
+     "color": "#c9a84c"
+    },
+    {
+     "label": "HAT · turn bars add",
+     "steps": [
+      false,
+      false,
+      false,
+      false,
+      false,
+      false,
+      false,
+      false,
+      false,
+      false,
+      false,
+      false,
+      false,
+      true,
+      false,
+      true
+     ],
+     "color": "#c9a84c"
+    }
+   ],
+   "blocks": [
+    {
+     "head": "",
+     "text": "The hook adds one kick on box 15. Every fourth bar is a turn: the kick thins to 1 and 11, the hats add 14 and 16."
+    },
+    {
+     "head": "",
+     "text": "In the hook only: an open hat on box 15 and a shaker on every odd box, quiet. Pull both down until you feel them. Play “Stage 1 verse drums” again and listen for the turn."
+    },
+    {
+     "head": "",
+     "text": "Chapter 2 · Arrangement · Db major · FL at 85, straight"
+    }
+   ],
+   "table": [],
+   "notes": "Shaker and open hat belong to the hook: they are what makes the hook feel bigger without a new melody."
+  },
+  {
+   "id": "ch2-808",
+   "eyebrow": "Row 4 · the weight",
+   "title": "808, verse and hook",
+   "chips": [],
+   "grids": [],
+   "blocks": [
+    {
+     "head": "Bar order",
+     "text": "Db1, Bb0, Gb1, Ab0, repeating. One note per bar in PL 808."
+    },
+    {
+     "head": "Verse",
+     "text": "Box 1, held 12 boxes. Long and plain. Nothing else moves down there."
+    },
+    {
+     "head": "Hook",
+     "text": "Box 1 held 8 boxes, then a second note on box 11 held 6: the octave up on odd bars, the root again on even bars. The hook bounces."
+    },
+    {
+     "head": "Or import",
+     "text": "808.mid carries all 16 bars of it."
+    },
+    {
+     "head": "",
+     "text": "Turn it up until it is the loudest thing in the room, then back off one notch. This beat leaves room for the melody."
+    },
+    {
+     "head": "",
+     "text": "Chapter 1's 808 owned 96% of the sound. Here it owns about 80%: the keys and the guitar need the rest. Play “Stage 2 plus 808”."
+    },
+    {
+     "head": "",
+     "text": "Chapter 2 · Arrangement · Db major · FL at 85, straight"
+    }
+   ],
+   "table": [],
+   "notes": "Roots: Db1=25, Bb0=22, Gb1=30, Ab0=20 in MIDI. The hook's pickup note alternates octave / root."
+  },
+  {
+   "id": "ch2-keys",
+   "eyebrow": "Row 5",
+   "title": "Keys, underwater in the verse",
+   "chips": [],
+   "grids": [],
+   "blocks": [
+    {
+     "head": "Dbmaj9",
+     "text": "F4 Ab4 C5 Eb5"
+    },
+    {
+     "head": "Bbm9",
+     "text": "F4 Ab4 C5 Db5"
+    },
+    {
+     "head": "Gbmaj7#11",
+     "text": "F4 Bb4 C5 Db5"
+    },
+    {
+     "head": "Ab7sus4",
+     "text": "Bb4 Db5 Eb5 Gb5"
+    },
+    {
+     "head": "",
+     "text": "One chord per bar, all 20 bars, in PL Keys (or import chords.mid). Put a Filter on the keys: low-pass, about 900 Hz for bars 1-12. Then Reverb 2, big."
+    },
+    {
+     "head": "",
+     "text": "No root notes, no low notes: the 808 has the bottom. The first take put these an octave lower and the whole mix went muddy. Four chords, close together, is what makes a major key feel dark. Play “Stage 3 plus keys underwater”."
+    },
+    {
+     "head": "",
+     "text": "Chapter 2 · Arrangement · Db major · FL at 85, straight"
+    }
+   ],
+   "table": [],
+   "notes": "Every chord is original to the course. The intro (bars 1-4) is the keys alone, filter even lower (600 Hz) and quieter."
+  },
+  {
+   "id": "ch2-hook",
+   "eyebrow": "Bar 13 · the filter opens",
+   "title": "The hook",
+   "chips": [],
+   "grids": [],
+   "blocks": [
+    {
+     "head": "1 · Open the filter",
+     "text": "From bar 13, move the keys' low-pass from 900 Hz up to about 4,200 Hz. Automate it, or use two patterns."
+    },
+    {
+     "head": "2 · The guitar answer",
+     "text": "PL Nylon Guitar plays the falling line in hook.mid: a four-bar phrase, twice. It answers the chords; it never sits on top of a vocal."
+    },
+    {
+     "head": "3 · The strings bed",
+     "text": "PL Strings, the two lowest chord notes an octave down, quiet, reverb big. The air under the hook."
+    },
+    {
+     "head": "",
+     "text": "Mute everything but keys and 808, then unmute the hook parts one by one. Hear what each one adds. If a part adds nothing, leave it out."
+    },
+    {
+     "head": "",
+     "text": "This is arrangement: the same four chords, and the song still moves, because what is around them changes. Play “Stage 4 the hook opens”."
+    },
+    {
+     "head": "",
+     "text": "Chapter 2 · Arrangement · Db major · FL at 85, straight"
+    }
+   ],
+   "table": [],
+   "notes": "The guitar motif is written fresh for this course (hook.mid). Strings on the two lowest chord tones only, voiced down an octave."
+  },
+  {
+   "id": "ch2-weight",
+   "eyebrow": "Why this one is lighter than beat 1, on purpose",
+   "title": "Two weights",
+   "chips": [],
+   "grids": [],
+   "blocks": [
+    {
+     "head": "Beat 1, the heavy line",
+     "text": "808 and kick 96% of the sound. Nothing above 2 kHz. Matched to the references."
+    },
+    {
+     "head": "Beat 2, the phone line",
+     "text": "808 and kick 81%. Melody 8%. Hats and clap 3%. The reference was five beats measured at the same line (72-83%)."
+    },
+    {
+     "head": "The rule",
+     "text": "Pick the weight for where it will be heard. A phone speaker loses a 96% mix; a club loses an 81% one."
+    },
+    {
+     "head": "",
+     "text": "Levels were not guessed. Each group's energy was measured and solved to the line. The first mix had the keys at 86% in the mud and the hats inaudible."
+    },
+    {
+     "head": "",
+     "text": "Check yours with the Analyzer on the master: most of the energy at the bottom, a visible band in the middle, a little at the top."
+    },
+    {
+     "head": "",
+     "text": "Chapter 2 · Arrangement · Db major · FL at 85, straight"
+    }
+   ],
+   "table": [],
+   "notes": "Study 3c holds both lines. Beat 3 (Flex, 94) will sit on the phone line too."
+  },
+  {
+   "id": "ch2-flow",
+   "eyebrow": "Flow",
+   "title": "The mumble pass, verse and hook",
+   "chips": [],
+   "grids": [],
+   "blocks": [
+    {
+     "head": "Verse",
+     "text": "Loop bars 5-12. Mumble over it: short phrases, space between them. Keep the two seconds that lock."
+    },
+    {
+     "head": "Hook",
+     "text": "Loop bars 13-20. Mumble again: longer notes now, riding the guitar's answer. Keep the best bar."
+    },
+    {
+     "head": "Fit",
+     "text": "Your words into both. The verse talks; the hook declares. Two deliveries, one voice."
+    },
+    {
+     "head": "",
+     "text": "Your words, always. A verse that talks and a hook that sings is the contrast the study found in the rap/sung reference."
+    },
+    {
+     "head": "",
+     "text": "Record the two separately. Chapter 3 mixes them: vocal first, beat under it."
+    },
+    {
+     "head": "",
+     "text": "Chapter 2 · Arrangement · Db major · FL at 85, straight"
+    }
+   ],
+   "table": [],
+   "notes": "Study 3b: rap and sung side by side. Practise on his own lines only."
+  },
+  {
+   "id": "ch2-check",
+   "eyebrow": "Done when",
+   "title": "Three checks, then send it",
+   "chips": [],
+   "grids": [],
+   "blocks": [
+    {
+     "head": "The drop",
+     "text": "Play from bar 1. If bar 13 does not feel like a door opening, the verse filter is not closed enough."
+    },
+    {
+     "head": "Acapella Drop",
+     "text": "Mute all but kick and your voice. Verse and hook both have to hold."
+    },
+    {
+     "head": "No clipping",
+     "text": "Analyzer on the master: true peak under -1 dB. Read the loudness number and send it with the WAV."
+    },
+    {
+     "head": "",
+     "text": "Then the Transfer test again, on this count: a blank project at 85, no slides, no MIDI, sixteen bars with a verse and a hook."
+    },
+    {
+     "head": "",
+     "text": "Chapter 2 · Arrangement · Db major · FL at 85, straight"
+    }
+   ],
+   "table": [],
+   "notes": "Acceptance tests from the spec: the Acapella Drop, the Transfer test, no loudness target by his ruling."
+  },
+  {
+   "id": "ch3-cover",
+   "eyebrow": "Psyched Luxuries · Production School · Chapter 3",
+   "title": "The Blend",
+   "chips": [],
+   "grids": [],
+   "blocks": [
+    {
+     "head": "",
+     "text": "Bb minor · FL at 94, straight · 24 bars: 8 guitar alone, 8 drop, 8 long form"
+    },
+    {
+     "head": "Load",
+     "text": "PL Nylon Guitar.sf2, PL 808.sf2, PL Strings.sf2. Drums from the Flex kit."
+    },
+    {
+     "head": "Hear it first",
+     "text": "Play “Reference - finished beat 3”. Count 8 quiet bars; the drop lands on bar 9."
+    },
+    {
+     "head": "The lesson",
+     "text": "Two sides in one beat: a guitar that carries a story, and a drop with the weight. Then your voice, mixed. Then the master, by ear."
+    },
+    {
+     "head": "",
+     "text": "Chapter 3 · The Blend · Bb minor · FL at 94, straight"
+    }
+   ],
+   "table": [],
+   "notes": "Chapter 3. Beat 3 crowned 11-07: the dark heavy blend of the two references' traits, every note original. Files: Music/PL Kits/_school/Beat 3 - Bb minor 94/."
+  },
+  {
+   "id": "ch3-guitar",
+   "eyebrow": "Bars 1-8 · the guitar alone",
+   "title": "The figure",
+   "chips": [],
+   "grids": [
+    {
+     "label": "GUITAR · bar 1, Bbm9",
+     "steps": [
+      true,
+      false,
+      false,
+      true,
+      false,
+      true,
+      false,
+      false,
+      true,
+      false,
+      true,
+      false,
+      false,
+      true,
+      false,
+      false
+     ],
+     "color": "#c9a84c"
+    }
+   ],
+   "blocks": [
+    {
+     "head": "",
+     "text": "Six notes a bar in PL Nylon Guitar, boxes 1, 4, 6, 9, 11, 14. Bar 1 plays F4, C5, Ab4, Db5, C5, F4: the chord's own notes, low to high and back. Or import guitar.mid."
+    },
+    {
+     "head": "",
+     "text": "The figure follows each bar's chord: Bbm9, Gbmaj7, Ebm9, F7sus4, and F7 on every fourth bar. Put a Filter on the guitar, low-pass about 3,800 Hz, and Reverb 2, big. Dark and roomy. Play “Stage 1 the guitar alone”."
+    },
+    {
+     "head": "",
+     "text": "Chapter 3 · The Blend · Bb minor · FL at 94, straight"
+    }
+   ],
+   "table": [],
+   "notes": "Chord tones per bar: Bbm9 F Ab C Db · Gbmaj7 Gb Bb Db F · Ebm9 Gb Bb Db Eb · F7sus4 F Bb C Eb · F7 F A C Eb. The figure's order of tones is 1 3 2 4 3 1."
+  },
+  {
+   "id": "ch3-strings",
+   "eyebrow": "Bar 5",
+   "title": "The strings creep in",
+   "chips": [],
+   "grids": [],
+   "blocks": [
+    {
+     "head": "What",
+     "text": "PL Strings, the two lowest chord notes an octave down, one chord per bar from bar 5 to the end."
+    },
+    {
+     "head": "How quiet",
+     "text": "Half level in bars 5-8. Full from the drop. Reverb 2, big."
+    },
+    {
+     "head": "Why",
+     "text": "The build he named in his favourite: a quiet start that gets heavier before the drums ever arrive."
+    },
+    {
+     "head": "",
+     "text": "Nothing else enters before bar 9. Eight bars of space is the point; do not fill it."
+    },
+    {
+     "head": "",
+     "text": "If the quiet start feels empty on your phone, that is right. The drop is heavy because of what is missing before it."
+    },
+    {
+     "head": "",
+     "text": "Chapter 3 · The Blend · Bb minor · FL at 94, straight"
+    }
+   ],
+   "table": [],
+   "notes": "Study 5: his ear on the reference was the build and the guitar and chords."
+  },
+  {
+   "id": "ch3-drop",
+   "eyebrow": "Bar 9 · the drop",
+   "title": "Drums",
+   "chips": [],
+   "grids": [
+    {
+     "label": "CLAP + SNARE",
+     "steps": [
+      false,
+      false,
+      false,
+      false,
+      true,
+      false,
+      false,
+      false,
+      false,
+      false,
+      false,
+      false,
+      true,
+      false,
+      false,
+      false
+     ],
+     "color": "#c9a84c"
+    },
+    {
+     "label": "KICK",
+     "steps": [
+      true,
+      false,
+      false,
+      false,
+      false,
+      false,
+      false,
+      true,
+      false,
+      false,
+      true,
+      false,
+      false,
+      false,
+      false,
+      false
+     ],
+     "color": "#c9a84c"
+    },
+    {
+     "label": "KICK, bars 12/16/20/24",
+     "steps": [
+      true,
+      false,
+      false,
+      false,
+      false,
+      false,
+      false,
+      false,
+      false,
+      false,
+      true,
+      false,
+      false,
+      false,
+      false,
+      false
+     ],
+     "color": "#c9a84c"
+    },
+    {
+     "label": "HAT",
+     "steps": [
+      true,
+      false,
+      true,
+      false,
+      true,
+      false,
+      true,
+      false,
+      true,
+      false,
+      true,
+      false,
+      true,
+      false,
+      true,
+      false
+     ],
+     "color": "#c9a84c"
+    },
+    {
+     "label": "HAT, turn bars add",
+     "steps": [
+      false,
+      false,
+      false,
+      false,
+      false,
+      false,
+      false,
+      false,
+      false,
+      false,
+      false,
+      false,
+      false,
+      true,
+      false,
+      true
+     ],
+     "color": "#c9a84c"
+    }
+   ],
+   "blocks": [
+    {
+     "head": "",
+     "text": "From bar 9 only. Clap and snare together on 5 and 13, straight time. Every fourth bar is a turn."
+    },
+    {
+     "head": "",
+     "text": "Reverb 2 on the clap, as always. Pull the hats down until you feel them. Play “Stage 2 the drop”."
+    },
+    {
+     "head": "",
+     "text": "Chapter 3 · The Blend · Bb minor · FL at 94, straight"
+    }
+   ],
+   "table": [],
+   "notes": "Straight time at 94: the bounce side. Same drum grammar as chapter 2, new tempo."
+  },
+  {
+   "id": "ch3-808",
+   "eyebrow": "Bar 9 · the weight",
+   "title": "808",
+   "chips": [],
+   "grids": [],
+   "blocks": [
+    {
+     "head": "Roots",
+     "text": "Bb0, Gb0, Eb1, F1, one per bar, repeating."
+    },
+    {
+     "head": "Drop (bars 9-16)",
+     "text": "Box 1, held 10 boxes. Plain and long."
+    },
+    {
+     "head": "Long form (17-24)",
+     "text": "Box 1 held 8, then a pickup on box 11 held 5: the octave up on odd bars, the root on even."
+    },
+    {
+     "head": "Level",
+     "text": "Louder than chapter 2, quieter than chapter 1: the guitar has to stay audible over it. Or import 808.mid."
+    },
+    {
+     "head": "",
+     "text": "The drop sits at the heavy weight (808 and kick about 92% of the sound) with the guitar still heard at about 5%."
+    },
+    {
+     "head": "",
+     "text": "The first mix buried the guitar completely. Levels were measured and set so both sides survive. Check yours on the Analyzer."
+    },
+    {
+     "head": "",
+     "text": "Chapter 3 · The Blend · Bb minor · FL at 94, straight"
+    }
+   ],
+   "table": [],
+   "notes": "Gate: sub >= 80%, guitar mids >= 1% on the drop. Measured 92% / 4.5%."
+  },
+  {
+   "id": "ch3-long",
+   "eyebrow": "Bars 17-24",
+   "title": "The long form",
+   "chips": [],
+   "grids": [],
+   "blocks": [
+    {
+     "head": "The figure moves up",
+     "text": "Same six notes, an octave higher. The story climbs."
+    },
+    {
+     "head": "The 808 bounces",
+     "text": "The pickup note arrives on box 11."
+    },
+    {
+     "head": "Open hat",
+     "text": "Box 15 on even bars only. A lift, not a pattern."
+    },
+    {
+     "head": "",
+     "text": "Nothing new is added; what is there changes. That is the long form: the same material, moved."
+    },
+    {
+     "head": "",
+     "text": "Play the reference from bar 17 and listen for the three changes."
+    },
+    {
+     "head": "",
+     "text": "Chapter 3 · The Blend · Bb minor · FL at 94, straight"
+    }
+   ],
+   "table": [],
+   "notes": "The story side: long-form over hook-form. The chords never change; the register and the bounce do."
+  },
+  {
+   "id": "ch3-voice",
+   "eyebrow": "Flow",
+   "title": "Spoken, then sung",
+   "chips": [],
+   "grids": [],
+   "blocks": [
+    {
+     "head": "Bars 1-8",
+     "text": "Mumble over the guitar alone: close to speech, low, unhurried. Keep the two seconds that lock."
+    },
+    {
+     "head": "Bars 9-16",
+     "text": "Mumble again over the drop: longer notes now, riding the 808. Keep the best bar."
+    },
+    {
+     "head": "Bars 17-24",
+     "text": "Both at once: a spoken line that lifts into a sung one inside the same bar. That is the switch."
+    },
+    {
+     "head": "",
+     "text": "Your words, always. The spoken-to-sung switch inside one song is the trait both references share; the words are yours."
+    },
+    {
+     "head": "",
+     "text": "Record the three parts separately, then once straight through."
+    },
+    {
+     "head": "",
+     "text": "Chapter 3 · The Blend · Bb minor · FL at 94, straight"
+    }
+   ],
+   "table": [],
+   "notes": "Study 3b and 5: rap and sung side by side; one voice carrying a whole story."
+  },
+  {
+   "id": "ch3-mix",
+   "eyebrow": "Mix",
+   "title": "Your voice first, the beat under it",
+   "chips": [],
+   "grids": [],
+   "blocks": [
+    {
+     "head": "1 · Set the voice",
+     "text": "Vocal track up until every word is clear with the beat muted. Do not touch it again."
+    },
+    {
+     "head": "2 · Bring the beat up",
+     "text": "Unmute. Raise the beat under the voice until the 808 hits but the words still win. Stop there."
+    },
+    {
+     "head": "3 · Dry start, wet drop",
+     "text": "Bars 1-8: the voice nearly dry, close. Bars 9-24: Reverb 2 on the voice, a little, so it sits in the room with the drums."
+    },
+    {
+     "head": "",
+     "text": "Doubles on chosen words only , not the whole take. A second take under three or four words of the hook is a stack; under everything it is mud."
+    },
+    {
+     "head": "",
+     "text": "Phone recording: a hand's width from the mic, the room quiet, no clipping on the loudest word. One bad take is cheaper than a bad mix."
+    },
+    {
+     "head": "",
+     "text": "Chapter 3 · The Blend · Bb minor · FL at 94, straight"
+    }
+   ],
+   "table": [],
+   "notes": "Codex's mix pass: recording distance, room noise, clipping, take selection, kick and 808 masking, restrained effects."
+  },
+  {
+   "id": "ch3-master",
+   "eyebrow": "Master",
+   "title": "By ear, with two numbers",
+   "chips": [],
+   "grids": [],
+   "blocks": [
+    {
+     "head": "Keep the unmastered export",
+     "text": "the referenceder it first. Every change after is compared against it at the same loudness."
+    },
+    {
+     "head": "Find the problem, then the tool",
+     "text": "Muddy: Parametric EQ, cut 200-400 Hz on the beat, not the voice. Spiky: Compressor, gentle. Then the Limiter last, ceiling -1 dB."
+    },
+    {
+     "head": "Read, do not chase",
+     "text": "Analyzer on the master: integrated LUFS and true peak. No target number. The only hard line: true peak under -1 dB."
+    },
+    {
+     "head": "",
+     "text": "If the mastered version only sounds better because it is louder, it is not better. Match the levels and listen again."
+    },
+    {
+     "head": "",
+     "text": "His ruling: no loudness target. Read the number, send it with the WAV."
+    },
+    {
+     "head": "",
+     "text": "Chapter 3 · The Blend · Bb minor · FL at 94, straight"
+    }
+   ],
+   "table": [],
+   "notes": "Codex's master pass; his ruling 11-07, no target."
+  },
+  {
+   "id": "ch3-check",
+   "eyebrow": "Done when",
+   "title": "Three checks, then the real test",
+   "chips": [],
+   "grids": [],
+   "blocks": [
+    {
+     "head": "Acapella Drop",
+     "text": "Mute all but kick and voice: the quiet-start voice and the drop voice both hold."
+    },
+    {
+     "head": "No clipping",
+     "text": "True peak under -1 dB on the master; the loudness number sent with the WAV."
+    },
+    {
+     "head": "The reference",
+     "text": "Play yours and the reference back to back at the same level. Name one thing yours does better."
+    },
+    {
+     "head": "",
+     "text": "Then the Transfer test, the real one: a blank project at any tempo, no slides, no MIDI, sixteen bars with a quiet start, a drop, and your voice on it."
+    },
+    {
+     "head": "",
+     "text": "Chapter 3 · The Blend · Bb minor · FL at 94, straight"
+    }
+   ],
+   "table": [],
+   "notes": "Acceptance tests from the spec. The Transfer test is the pass; a loudness number alone earns nothing."
+  }
+ ]
+}
