@@ -204,8 +204,7 @@ struct TrackView: View {
             }
         }
         .tabViewStyle(.page(indexDisplayMode: .never))
-        .navigationTitle(track.title)
-        .navigationBarTitleDisplayMode(.inline)
+        .plScreenTitle(track.title)   // S352: the plain nav title dropped out on some step pages opened directly (b1 kick, b3 drop); the house title slot holds
         .safeAreaInset(edge: .bottom) { bar }
         .sheet(isPresented: $notes) {
             NavigationStack {
