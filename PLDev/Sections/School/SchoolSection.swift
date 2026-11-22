@@ -1,13 +1,18 @@
 import SwiftUI
-import AVKit
+import AVFoundation
 import UserNotifications
 
-/// Production School (S351): the beat course from the Production School deck, one lesson per slide, to build the three
-/// crowned beats in FL Studio Mobile. The lessons ship in `school.json` (ported from the deck by the vault's
-/// `pl-school-port.py`); the stage audio is his unreleased work, so it never ships in this repo: it is read once from the
-/// PL DEV door (`api/pldev/school/<key>`, private bucket) and kept in Caches.
+/// PL Prod (S351): the R1 School app (`pl-r1-school`) retrofitted for iOS, the way the other R1 apps came over. He builds in
+/// FL Studio on the iPad and reads the lesson here on the phone, his second screen. Same screens as the R1: the track list
+/// (First Loop, Beats 1 to 3, then his own beats), a track opens on the whole-track pads, then one lesson step per page,
+/// and the bar plays the step's clip (the stage clip where the step names one, else the finished beat). Double press on
+/// the R1 = the Notes button here. The phone adds what the R1 could not: swipe paging and the screen kept awake in a track.
+///
+/// Content: `school.json`, ported from the R1 app by the vault's `pl-school-port.py`. Audio is his unreleased work, so it
+/// never ships in this public repo: each file is read once through the PL DEV door (`api/pldev/school/<id>.m4a`, a private
+/// bucket) and kept in Caches.
 @MainActor enum SchoolSection: PLSection {
-    static let manifest = SectionManifest(id: "school", title: "Production School", symbol: "pianokeys",
+    static let manifest = SectionManifest(id: "school", title: "PL Prod", symbol: "pianokeys",
                                           needsKeys: ["pldev"], needsOrigins: ["console"])
     static let state = SchoolModel()
 
@@ -15,68 +20,125 @@ import UserNotifications
     static func probes(model: AppModel) -> [ProbeModel.Item] { [] }
     static func settingsRows(model: AppModel) -> AnyView? { nil }
     static func notificationCategories() -> Set<UNNotificationCategory> { [] }
-    static func handle(link: DeepLink, model: AppModel) -> Bool { true }
+    /// `pldev://section/school/<track>[/<step id>]` opens that track, on that step when given.
+    static func handle(link: DeepLink, model: AppModel) -> Bool {
+        if case .section(_, let path, _) = link, let id = path.first, let t = state.tracks.first(where: { $0.id == id }) {
+            if path.count > 1, let i = t.slides.firstIndex(of: path[1]) { state.setPage(t, i + 1) }
+            state.open = t
+        }
+        return true
+    }
     static func refresh(model: AppModel) async -> SectionRefresh { SectionRefresh(badge: nil, notify: []) }
 }
 
+// MARK: - Content (the R1 app's own shapes)
+
+struct SchoolTrack: Decodable, Identifiable, Hashable {
+    let id, title, sub, ref, refName: String
+    let slides: [String]
+    let clips: [String: [String]]          // step id -> [audio id, spoken name]
+}
+struct SchoolBeat: Decodable, Identifiable, Hashable { let id, title, sub: String }
 struct SchoolLesson: Decodable, Identifiable, Hashable {
     struct GridRow: Decodable, Hashable { let label: String; let steps: [Bool]; let color: String? }
     struct Block: Decodable, Hashable { let head: String; let text: String }
-    struct Audio: Decodable, Hashable { let title: String; let key: String }
-    let id, chapter, eyebrow, title, notes: String
+    let id, eyebrow, title, notes: String
     let chips: [String]
     let grids: [GridRow]
     let blocks: [Block]
     let table: [[String]]
-    let audio: [Audio]
 }
+private struct SchoolFile: Decodable { let v: Int; let tracks: [SchoolTrack]; let his: [SchoolBeat]; let lessons: [SchoolLesson] }
 
-private struct SchoolFile: Decodable { let v: Int; let lessons: [SchoolLesson] }
+/// One pad row on the whole-track page.
+struct PadRow: Hashable { let heading: String; let label: String; let steps: [Bool]; let color: String? }
 
 @MainActor @Observable final class SchoolModel {
-    private(set) var lessons: [SchoolLesson] = []
+    private(set) var tracks: [SchoolTrack] = []
+    private(set) var his: [SchoolBeat] = []
     private(set) var loadError: String?
-    private(set) var done: Set<String> = Set(UserDefaults.standard.stringArray(forKey: "school.done") ?? [])
+    private var byId: [String: SchoolLesson] = [:]
+    var open: SchoolTrack?
+    let player = SchoolPlayer()
 
     init() {
         let url = Bundle.main.url(forResource: "school", withExtension: "json")
             ?? Bundle.main.url(forResource: "school", withExtension: "json", subdirectory: "School")
-        guard let url, let data = try? Data(contentsOf: url), let f = try? JSONDecoder().decode(SchoolFile.self, from: data), f.v == 1 else {
-            loadError = "The course file is missing from this build."; return
+        guard let url, let data = try? Data(contentsOf: url), let f = try? JSONDecoder().decode(SchoolFile.self, from: data), f.v == 2 else {
+            loadError = "The lessons are missing from this build."; return
         }
-        lessons = f.lessons
+        tracks = f.tracks; his = f.his
+        byId = Dictionary(f.lessons.map { ($0.id, $0) }, uniquingKeysWith: { a, _ in a })
     }
 
-    /// Chapters in course order: "0" is the first loop, then the three beats.
-    var chapters: [String] { lessons.map(\.chapter).reduce(into: []) { if !$0.contains($1) { $0.append($1) } } }
-    func lessons(in ch: String) -> [SchoolLesson] { lessons.filter { $0.chapter == ch } }
-    /// The chapter's name is its first slide's title (the deck's cover for each chapter).
-    func name(of ch: String) -> String { lessons(in: ch).first?.title ?? "Chapter \(ch)" }
-    func progress(_ ch: String) -> Double {
-        let l = lessons(in: ch); return l.isEmpty ? 0 : Double(l.filter { done.contains($0.id) }.count) / Double(l.count)
-    }
-    func next(after l: SchoolLesson) -> SchoolLesson? {
-        guard let i = lessons.firstIndex(of: l), i + 1 < lessons.count else { return nil }
-        return lessons[i + 1]
-    }
-    func toggle(_ id: String) {
-        if done.contains(id) { done.remove(id) } else { done.insert(id) }
-        UserDefaults.standard.set(Array(done), forKey: "school.done")
+    func lesson(_ id: String) -> SchoolLesson? { byId[id] }
+    /// Page 0 is the whole-track pads; page n is step n. Kept per track, as the R1 keeps `school.at.<track>`.
+    func page(_ t: SchoolTrack) -> Int { min(UserDefaults.standard.integer(forKey: "school.at.\(t.id)"), t.slides.count) }
+    func setPage(_ t: SchoolTrack, _ p: Int) { UserDefaults.standard.set(p, forKey: "school.at.\(t.id)") }
+
+    /// The clip a step plays: its stage clip where the step names one, else the track's finished beat.
+    func clip(_ t: SchoolTrack, page: Int) -> (id: String, name: String) {
+        if page > 0, let c = t.clips[t.slides[page - 1]], c.count == 2 { return (c[0], c[1]) }
+        return (t.ref, t.refName)
     }
 
-    /// The stage file on this phone, fetched once through the PL DEV key. Keys come from the bundled course file only.
-    func localFile(_ key: String, model: AppModel) async throws -> URL {
+    /// Every pad row of the track on one page (the R1's fullView): covers skipped, contrast rows marked "(normal)" skipped,
+    /// a row repeated on a later step shown once.
+    func padRows(_ t: SchoolTrack) -> [PadRow] {
+        var seen = Set<String>(), out: [PadRow] = []
+        for sid in t.slides where !sid.hasSuffix("cover") {
+            guard let l = byId[sid] else { continue }
+            for g in l.grids where g.steps.count == 16 {
+                let label = g.label.isEmpty ? l.title + (l.chips.first.map { " · " + $0 } ?? "") : g.label
+                if label.lowercased().contains("(normal)") { continue }
+                let key = (label.split(whereSeparator: { " ·,".contains($0) }).first.map(String.init) ?? "").lowercased() + g.steps.map { $0 ? "1" : "0" }.joined()
+                if seen.insert(key).inserted { out.append(PadRow(heading: l.title, label: label, steps: g.steps, color: g.color)) }
+            }
+        }
+        return out
+    }
+
+    /// The file on this phone, fetched once through the PL DEV key. Ids come from the bundled lessons only.
+    func localFile(_ id: String, model: AppModel) async throws -> URL {
         let dir = FileManager.default.urls(for: .cachesDirectory, in: .userDomainMask)[0].appending(path: "school", directoryHint: .isDirectory)
-        let file = dir.appending(path: key.replacingOccurrences(of: "/", with: "_"))
+        let file = dir.appending(path: id + ".m4a")
         if FileManager.default.fileExists(atPath: file.path) { return file }
         guard let http = model.http else { throw Console.Problem.notSetUp }
-        let data = try await http.send(RequestPlan(origin: "console", path: "api/pldev/school/\(key)"), timeout: 60)
-        guard data.count > 1000 else { throw Console.Problem.refused("The stage did not come down whole.") }
+        let data = try await http.send(RequestPlan(origin: "console", path: "api/pldev/school/\(id).m4a"), timeout: 60)
+        guard data.count > 1000 else { throw Console.Problem.refused("The clip did not come down whole.") }
         try FileManager.default.createDirectory(at: dir, withIntermediateDirectories: true)
         try data.write(to: file, options: .atomic)
         return file
     }
 }
+
+/// One clip at a time, as the R1's single Audio element: press plays, press again pauses, a new clip starts from the top.
+@MainActor @Observable final class SchoolPlayer {
+    private(set) var playing: String?
+    private(set) var loading: String?
+    var result: String?
+    private var audio: AVAudioPlayer?
+
+    var isOn: Bool { playing != nil && (audio?.isPlaying ?? false) }
+    var progress: Double { guard let a = audio, a.duration > 0 else { return 0 }; return a.currentTime / a.duration }
+
+    func toggle(_ id: String, state: SchoolModel, model: AppModel) async {
+        if playing == id, let a = audio {
+            if a.isPlaying { a.pause() } else { a.play() }
+            playing = id; return
+        }
+        stop(); loading = id; defer { loading = nil }
+        do {
+            let f = try await state.localFile(id, model: model)
+            try AVAudioSession.sharedInstance().setCategory(.playback)   // plays with the silent switch on, beside FL
+            try AVAudioSession.sharedInstance().setActive(true)
+            let a = try AVAudioPlayer(contentsOf: f); audio = a; playing = id; a.play(); result = nil
+        } catch { result = "Not played. \(error.localizedDescription)" }
+    }
+    func stop() { audio?.stop(); audio = nil; playing = nil }
+}
+
+// MARK: - The list
 
 struct SchoolView: View {
     let model: AppModel
@@ -87,115 +149,135 @@ struct SchoolView: View {
             if let e = state.loadError {
                 ContentUnavailableView("No lessons", systemImage: "pianokeys", description: Text(e))
             }
-            ForEach(state.chapters, id: \.self) { ch in
-                Section {
-                    ForEach(state.lessons(in: ch)) { l in
-                        NavigationLink {
-                            LessonView(model: model, state: state, lesson: l).osScreen()
-                        } label: {
-                            Label {
-                                VStack(alignment: .leading, spacing: 2) {
-                                    Text(l.title)
-                                    if !l.eyebrow.isEmpty { Text(l.eyebrow).font(.caption).foregroundStyle(.secondary).lineLimit(1) }
+            Section {
+                ForEach(state.tracks) { t in
+                    Button { state.open = t } label: {
+                        VStack(alignment: .leading, spacing: 3) {
+                            Text(t.title).font(.headline).foregroundStyle(.primary)
+                            Text("\(t.sub) · \(t.slides.count) steps").font(.subheadline).foregroundStyle(.secondary)
+                        }
+                        .frame(maxWidth: .infinity, alignment: .leading)
+                        .contentShape(Rectangle())
+                    }
+                }
+            }
+            if !state.his.isEmpty {
+                Section("Your beats") {
+                    ForEach(state.his) { h in
+                        Button { Task { await state.player.toggle(h.id, state: state, model: model) } } label: {
+                            HStack {
+                                VStack(alignment: .leading, spacing: 3) {
+                                    Text(h.title).font(.headline).foregroundStyle(.primary)
+                                    Text(h.sub).font(.subheadline).foregroundStyle(.secondary)
                                 }
-                            } icon: {
-                                Image(systemName: state.done.contains(l.id) ? "checkmark.circle.fill" : (l.audio.isEmpty ? "circle" : "play.circle"))
-                                    .foregroundStyle(state.done.contains(l.id) ? Color.accentColor : .secondary)
+                                Spacer()
+                                if state.player.loading == h.id { ProgressView() }
+                                else { Image(systemName: state.player.playing == h.id && state.player.isOn ? "pause.fill" : "play.fill").foregroundStyle(Color.accentColor) }
                             }
+                            .contentShape(Rectangle())
                         }
                     }
-                } header: {
-                    HStack {
-                        Text(ch == "0" ? "First loop" : "Beat \(ch) · \(state.name(of: ch))")
-                        Spacer()
-                        Text(state.progress(ch), format: .percent.precision(.fractionLength(0)))
-                            .contentTransition(.numericText())
-                    }
+                    ResultLine(text: state.player.result)
                 }
             }
         }
-        .navigationTitle("Production School")
+        .navigationTitle("PL Prod")
+        .navigationDestination(item: $state.open) { TrackView(model: model, state: state, track: $0).osScreen() }
+        .onDisappear { if state.open == nil { state.player.stop() } }
     }
 }
 
-struct LessonView: View {
+// MARK: - A track
+
+struct TrackView: View {
     let model: AppModel
-    @Bindable var state: SchoolModel
-    let lesson: SchoolLesson
-    @State private var tick = 0
+    let state: SchoolModel
+    let track: SchoolTrack
+    @State private var page = 0
+    @State private var notes = false
 
     var body: some View {
-        List {
-            Section {
-                VStack(alignment: .leading, spacing: 6) {
-                    if !lesson.eyebrow.isEmpty { Text(lesson.eyebrow.uppercased()).font(.caption).foregroundStyle(.secondary) }
-                    Text(lesson.title).font(.title.bold())
-                    if !lesson.chips.isEmpty {
-                        HStack { ForEach(lesson.chips, id: \.self) { Text($0).font(.footnote.monospaced()).padding(.horizontal, 10).padding(.vertical, 4).background(.quaternary, in: Capsule()) } }
-                    }
-                }
-            }
-            if !lesson.grids.isEmpty {
-                Section("In FL's step grid") {
-                    ForEach(Array(lesson.grids.enumerated()), id: \.offset) { _, g in StepRow(row: g) }
-                    BoxNumbers()
-                }
-            }
-            ForEach(lesson.audio, id: \.self) { a in Section("Listen") { StagePlayer(model: model, state: state, audio: a) } }
-            if !lesson.blocks.isEmpty {
-                Section {
-                    ForEach(Array(lesson.blocks.enumerated()), id: \.offset) { _, b in
-                        VStack(alignment: .leading, spacing: 4) {
-                            if !b.head.isEmpty { Text(b.head).font(.headline) }
-                            if !b.text.isEmpty { Text(b.text) }
-                        }
-                    }
-                }
-            }
-            if lesson.table.count > 1 {
-                Section {
-                    Grid(alignment: .leading, horizontalSpacing: 12, verticalSpacing: 8) {
-                        ForEach(Array(lesson.table.enumerated()), id: \.offset) { i, r in
-                            GridRow { ForEach(Array(r.enumerated()), id: \.offset) { _, c in Text(c).font(i == 0 ? .caption.bold() : .footnote) } }
-                        }
-                    }
-                }
-            }
-            if !lesson.notes.isEmpty {
-                Section("Why") { Text(lesson.notes).foregroundStyle(.secondary) }
-            }
-            Section {
-                Button {
-                    state.toggle(lesson.id); tick += 1
-                } label: {
-                    Label(state.done.contains(lesson.id) ? "Done in FL" : "Mark done in FL",
-                          systemImage: state.done.contains(lesson.id) ? "checkmark.circle.fill" : "circle")
-                        .symbolEffect(.bounce, value: tick)
-                }
-                if let n = state.next(after: lesson) {
-                    NavigationLink { LessonView(model: model, state: state, lesson: n).osScreen() } label: { Label("Next: \(n.title)", systemImage: "arrow.right") }
-                }
+        TabView(selection: $page) {
+            ScrollView { PadsPage(rows: state.padRows(track)).padding() }.tag(0)
+            ForEach(Array(track.slides.enumerated()), id: \.offset) { i, sid in
+                ScrollView { if let l = state.lesson(sid) { StepPage(lesson: l).padding() } }.tag(i + 1)
             }
         }
-        .navigationTitle(lesson.title)
+        .tabViewStyle(.page(indexDisplayMode: .never))
+        .navigationTitle(track.title)
         .navigationBarTitleDisplayMode(.inline)
-        .sensoryFeedback(PLHaptic.success, trigger: tick)
+        .toolbar {
+            ToolbarItem(placement: .topBarTrailing) {
+                Text(page == 0 ? "pads" : "\(page) / \(track.slides.count)").font(.subheadline.monospacedDigit()).foregroundStyle(.secondary)
+                    .contentTransition(.numericText())
+            }
+        }
+        .safeAreaInset(edge: .bottom) { bar }
+        .sheet(isPresented: $notes) {
+            NavigationStack {
+                ScrollView { Text(currentNotes).font(.body).padding().frame(maxWidth: .infinity, alignment: .leading) }
+                    .navigationTitle("Notes").navigationBarTitleDisplayMode(.inline)
+                    .toolbar { ToolbarItem(placement: .confirmationAction) { Button("Done") { notes = false } } }
+            }
+            .presentationDetents([.medium, .large])
+        }
+        .onAppear { page = state.page(track); UIApplication.shared.isIdleTimerDisabled = true }
+        .onDisappear { state.player.stop(); UIApplication.shared.isIdleTimerDisabled = false }
+        .onChange(of: page) { _, p in state.setPage(track, p); state.player.stop() }
+        .sensoryFeedback(PLHaptic.select, trigger: page)
+    }
+
+    private var currentNotes: String { page > 0 ? (state.lesson(track.slides[page - 1])?.notes ?? "") : "" }
+
+    /// The R1's bottom bar: play this step's clip, its name, the notes, a thin progress line.
+    private var bar: some View {
+        let c = state.clip(track, page: page)
+        let on = state.player.playing == c.id && state.player.isOn
+        return VStack(spacing: 6) {
+            HStack(spacing: 12) {
+                Button { Task { await state.player.toggle(c.id, state: state, model: model) } } label: {
+                    Group {
+                        if state.player.loading == c.id { ProgressView() }
+                        else { Image(systemName: on ? "pause.fill" : "play.fill").font(.title2).contentTransition(.symbolEffect(.replace)) }
+                    }
+                    .frame(width: 44, height: 44)
+                }
+                .accessibilityLabel(on ? "Pause \(c.name)" : "Play \(c.name)")
+                Text(c.name).lineLimit(1).frame(maxWidth: .infinity, alignment: .leading)
+                if !currentNotes.isEmpty {
+                    Button("Notes") { notes = true }.buttonStyle(.bordered).frame(minHeight: 44)
+                }
+            }
+            TimelineView(.periodic(from: .now, by: 0.25)) { _ in
+                ProgressView(value: state.player.playing == c.id ? state.player.progress : 0).progressViewStyle(.linear)
+            }
+            ResultLine(text: state.player.result)
+        }
+        .padding(.horizontal).padding(.vertical, 10)
+        .plGlass(in: Rectangle())
     }
 }
 
-/// One row of FL's 16-step grid: filled boxes are the taps, groups of four are the beats (as the deck draws it).
-struct StepRow: View {
-    let row: SchoolLesson.GridRow
+/// FL's step grid as the R1 draws it: 8 pads a line, a beat line every 4, the pad number at the foot of each pad.
+struct PadGrid: View {
+    let steps: [Bool]
+    let color: String?
     var body: some View {
-        VStack(alignment: .leading, spacing: 4) {
-            if !row.label.isEmpty { Text(row.label).font(.caption.monospaced()).foregroundStyle(.secondary) }
-            HStack(spacing: 3) {
-                ForEach(0..<16, id: \.self) { i in
-                    let on = i < row.steps.count && row.steps[i]
-                    RoundedRectangle(cornerRadius: 3)
-                        .fill(on ? (Color(hex: row.color) ?? .accentColor) : ((i / 4) % 2 == 0 ? Color.secondary.opacity(0.18) : Color.secondary.opacity(0.08)))
-                        .aspectRatio(0.8, contentMode: .fit)
-                        .accessibilityLabel("Box \(i + 1), \(on ? "tap" : "empty")")
+        VStack(spacing: 6) {
+            ForEach(0..<2, id: \.self) { line in
+                HStack(spacing: 5) {
+                    ForEach(0..<8, id: \.self) { j in
+                        let i = line * 8 + j, on = i < steps.count && steps[i]
+                        if j == 4 { RoundedRectangle(cornerRadius: 1).fill(Color.accentColor.opacity(0.55)).frame(width: 3) }
+                        RoundedRectangle(cornerRadius: 9, style: .continuous)
+                            .fill(on ? (Color(hex: color) ?? .accentColor) : Color.secondary.opacity(j < 4 ? 0.22 : 0.12))
+                            .frame(height: 44)
+                            .overlay(alignment: .bottom) {
+                                Text("\(i + 1)").font(.system(size: 12, weight: on ? .bold : .regular).monospacedDigit())
+                                    .foregroundStyle(on ? Color.black.opacity(0.8) : .secondary).padding(.bottom, 3)
+                            }
+                            .accessibilityLabel("Pad \(i + 1), \(on ? "on" : "off")")
+                    }
                 }
             }
         }
@@ -203,42 +285,52 @@ struct StepRow: View {
     }
 }
 
-private struct BoxNumbers: View {
+struct PadsPage: View {
+    let rows: [PadRow]
     var body: some View {
-        HStack(spacing: 3) {
-            ForEach(1...16, id: \.self) { n in Text("\(n)").font(.system(size: 9).monospacedDigit()).foregroundStyle(.secondary).frame(maxWidth: .infinity) }
+        VStack(alignment: .leading, spacing: 8) {
+            Text("THE WHOLE TRACK · EVERY PAD ROW").font(.caption).foregroundStyle(Color.accentColor)
+            if rows.isEmpty { Text("No pad rows in this track.").foregroundStyle(.secondary) }
+            ForEach(Array(rows.enumerated()), id: \.offset) { i, r in
+                if i == 0 || rows[i - 1].heading != r.heading {
+                    Divider().padding(.top, 6)
+                    Text(r.heading.uppercased()).font(.caption).foregroundStyle(.secondary)
+                }
+                Text(r.label).font(.subheadline)
+                PadGrid(steps: r.steps, color: r.color)
+            }
         }
-        .accessibilityHidden(true)
+        .frame(maxWidth: .infinity, alignment: .leading)
     }
 }
 
-/// A stage of the beat to compare against by ear. Nothing downloads until he taps.
-struct StagePlayer: View {
-    let model: AppModel
-    let state: SchoolModel
-    let audio: SchoolLesson.Audio
-    @State private var player: AVPlayer?
-    @State private var loading = false
-    @State private var result: String?
-
+struct StepPage: View {
+    let lesson: SchoolLesson
     var body: some View {
-        if let player {
-            VideoPlayer(player: player).aspectRatio(1, contentMode: .fit).clipShape(RoundedRectangle(cornerRadius: 14, style: .continuous))
-                .onDisappear { player.pause() }
-        } else {
-            Button {
-                Task {
-                    loading = true; defer { loading = false }
-                    do {
-                        let f = try await state.localFile(audio.key, model: model)
-                        let p = AVPlayer(url: f); player = p; p.play(); result = nil
-                    } catch { result = "Not loaded. \(error.localizedDescription)" }
+        VStack(alignment: .leading, spacing: 14) {
+            if !lesson.eyebrow.isEmpty { Text(lesson.eyebrow.uppercased()).font(.caption).foregroundStyle(Color.accentColor) }
+            Text(lesson.title).font(.title.bold())
+            ForEach(lesson.chips, id: \.self) { Text($0).font(.footnote.monospaced()).padding(.horizontal, 12).padding(.vertical, 6).background(.quaternary, in: Capsule()) }
+            ForEach(Array(lesson.grids.enumerated()), id: \.offset) { _, g in
+                VStack(alignment: .leading, spacing: 4) {
+                    if !g.label.isEmpty { Text(g.label).font(.subheadline) }
+                    PadGrid(steps: g.steps, color: g.color)
                 }
-            } label: {
-                HStack { Label(audio.title, systemImage: "play.fill"); Spacer(); if loading { ProgressView() } }
             }
-            .disabled(loading)
-            ResultLine(text: result)
+            ForEach(Array(lesson.blocks.enumerated()), id: \.offset) { _, b in
+                VStack(alignment: .leading, spacing: 4) {
+                    if !b.head.isEmpty { Text(b.head).font(.headline) }
+                    if !b.text.isEmpty { Text(b.text).font(.body) }
+                }
+            }
+            if lesson.table.count > 1 {
+                Grid(alignment: .leading, horizontalSpacing: 10, verticalSpacing: 8) {
+                    ForEach(Array(lesson.table.enumerated()), id: \.offset) { i, r in
+                        GridRow { ForEach(Array(r.enumerated()), id: \.offset) { _, c in Text(c).font(i == 0 ? .caption.bold() : .footnote) } }
+                    }
+                }
+            }
         }
+        .frame(maxWidth: .infinity, alignment: .leading)
     }
 }

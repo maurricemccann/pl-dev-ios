@@ -1,6 +1,151 @@
 {
- "v": 1,
- "title": "Production School",
+ "v": 2,
+ "title": "PL Prod",
+ "tracks": [
+  {
+   "id": "loop",
+   "title": "First Loop",
+   "sub": "D♭ major · 91 · curve.kit",
+   "slides": [
+    "cover",
+    "setup",
+    "kick",
+    "snare",
+    "hat",
+    "e808",
+    "keys",
+    "bar",
+    "bars",
+    "moves"
+   ],
+   "ref": "loop-ref",
+   "refName": "the curve.kit demo",
+   "clips": {}
+  },
+  {
+   "id": "b1",
+   "title": "Beat 1 · Weight",
+   "sub": "C♯ minor · 144, feels 72",
+   "slides": [
+    "ch1-cover",
+    "ch1-halftime",
+    "ch1-clap",
+    "ch1-kick",
+    "ch1-hats",
+    "ch1-808",
+    "ch1-keys",
+    "ch1-weight",
+    "ch1-intro",
+    "ch1-mumble",
+    "ch1-check"
+   ],
+   "ref": "b1-ref",
+   "refName": "finished beat 1",
+   "clips": {
+    "ch1-clap": [
+     "b1-s1",
+     "stage 1, clap and snare"
+    ],
+    "ch1-kick": [
+     "b1-s2",
+     "stage 2, plus kick"
+    ],
+    "ch1-hats": [
+     "b1-s3",
+     "stage 3, plus hats"
+    ],
+    "ch1-808": [
+     "b1-s4",
+     "stage 4, plus 808"
+    ],
+    "ch1-keys": [
+     "b1-s5",
+     "stage 5, plus piano"
+    ]
+   }
+  },
+  {
+   "id": "b2",
+   "title": "Beat 2 · Arrangement",
+   "sub": "D♭ major · 85",
+   "slides": [
+    "ch2-cover",
+    "ch2-straight",
+    "ch2-drums",
+    "ch2-808",
+    "ch2-keys",
+    "ch2-hook",
+    "ch2-weight",
+    "ch2-flow",
+    "ch2-check"
+   ],
+   "ref": "b2-ref",
+   "refName": "finished beat 2",
+   "clips": {
+    "ch2-straight": [
+     "b2-s1",
+     "stage 1, verse drums"
+    ],
+    "ch2-drums": [
+     "b2-s1",
+     "stage 1, verse drums"
+    ],
+    "ch2-808": [
+     "b2-s2",
+     "stage 2, plus 808"
+    ],
+    "ch2-keys": [
+     "b2-s3",
+     "stage 3, keys underwater"
+    ],
+    "ch2-hook": [
+     "b2-s4",
+     "stage 4, the hook opens"
+    ]
+   }
+  },
+  {
+   "id": "b3",
+   "title": "Beat 3 · The Blend",
+   "sub": "B♭ minor · 94",
+   "slides": [
+    "ch3-cover",
+    "ch3-guitar",
+    "ch3-strings",
+    "ch3-drop",
+    "ch3-808",
+    "ch3-long",
+    "ch3-voice",
+    "ch3-mix",
+    "ch3-master",
+    "ch3-check"
+   ],
+   "ref": "b3-ref",
+   "refName": "finished beat 3",
+   "clips": {
+    "ch3-guitar": [
+     "b3-s1",
+     "stage 1, the guitar alone"
+    ],
+    "ch3-drop": [
+     "b3-s2",
+     "stage 2, the drop"
+    ]
+   }
+  }
+ ],
+ "his": [
+  {
+   "id": "his-1106",
+   "title": "Your first beat",
+   "sub": "11-06"
+  },
+  {
+   "id": "his-1107",
+   "title": "PL one",
+   "sub": "11-07"
+  }
+ ],
  "lessons": [
   {
    "id": "cover",
@@ -42,9 +187,7 @@
     }
    ],
    "table": [],
-   "notes": "The loop is built from curve.kit, the kit he kept in FL Studio Mobile. Each slide is one row of FL's step grid, drawn the way it should look when it is right.",
-   "chapter": "0",
-   "audio": []
+   "notes": "The loop is built from curve.kit, the kit he kept in FL Studio Mobile. Each slide is one row of FL's step grid, drawn the way it should look when it is right."
   },
   {
    "id": "setup",
@@ -67,9 +210,7 @@
     }
    ],
    "table": [],
-   "notes": "Tempo first, every time: a pattern tapped at the wrong tempo feels wrong even when every box is right.",
-   "chapter": "0",
-   "audio": []
+   "notes": "Tempo first, every time: a pattern tapped at the wrong tempo feels wrong even when every box is right."
   },
   {
    "id": "kick",
@@ -113,9 +254,7 @@
     }
    ],
    "table": [],
-   "notes": "Box 8 is a sixteenth before beat 3. It is what makes this loop bounce instead of march.",
-   "chapter": "0",
-   "audio": []
+   "notes": "Box 8 is a sixteenth before beat 3. It is what makes this loop bounce instead of march."
   },
   {
    "id": "snare",
@@ -179,9 +318,7 @@
     }
    ],
    "table": [],
-   "notes": "The slide used to show one grid with two file names, which read as one row. It is two rows in FL with the same boxes.",
-   "chapter": "0",
-   "audio": []
+   "notes": "The slide used to show one grid with two file names, which read as one row. It is two rows in FL with the same boxes."
   },
   {
    "id": "hat",
@@ -225,9 +362,7 @@
     }
    ],
    "table": [],
-   "notes": "Eight hats a bar. If it feels too busy later, drop boxes 3, 7, 11 and 15 and it halves without losing the pulse.",
-   "chapter": "0",
-   "audio": []
+   "notes": "Eight hats a bar. If it feels too busy later, drop boxes 3, 7, 11 and 15 and it halves without losing the pulse."
   },
   {
    "id": "e808",
@@ -271,9 +406,7 @@
     }
    ],
    "table": [],
-   "notes": "808-Cs1 is the note C-sharp, the same note as D-flat, one octave down from the keys. The 's' in the file name means sharp.",
-   "chapter": "0",
-   "audio": []
+   "notes": "808-Cs1 is the note C-sharp, the same note as D-flat, one octave down from the keys. The 's' in the file name means sharp."
   },
   {
    "id": "keys",
@@ -317,9 +450,7 @@
     }
    ],
    "table": [],
-   "notes": "Each chord file is cut to one bar at 91 BPM. Change the tempo and the chords stop lining up; that is why the tempo came first.",
-   "chapter": "0",
-   "audio": []
+   "notes": "Each chord file is cut to one bar at 91 BPM. Change the tempo and the chords stop lining up; that is why the tempo came first."
   },
   {
    "id": "bar",
@@ -467,9 +598,7 @@
     }
    ],
    "table": [],
-   "notes": "This is the picture to match against FL's screen, row by row. Send a screenshot and it gets checked box by box.",
-   "chapter": "0",
-   "audio": []
+   "notes": "This is the picture to match against FL's screen, row by row. Send a screenshot and it gets checked box by box."
   },
   {
    "id": "bars",
@@ -519,9 +648,7 @@
      "PL 808-Gs0.wav"
     ]
    ],
-   "notes": "The letters in the file names: s means sharp. Cs1 is C-sharp, the same note as D-flat. Fs0 is G-flat, Gs0 is A-flat, As0 is B-flat.",
-   "chapter": "0",
-   "audio": []
+   "notes": "The letters in the file names: s means sharp. Cs1 is C-sharp, the same note as D-flat. Fs0 is G-flat, Gs0 is A-flat, As0 is B-flat."
   },
   {
    "id": "moves",
@@ -548,9 +675,7 @@
     }
    ],
    "table": [],
-   "notes": "The drop is the house move: the Starter Kit demo opens the same way, two bars of pads before the drums.",
-   "chapter": "0",
-   "audio": []
+   "notes": "The drop is the house move: the Starter Kit demo opens the same way, two bars of pads before the drums."
   },
   {
    "id": "ch1-cover",
@@ -581,14 +706,7 @@
     }
    ],
    "table": [],
-   "notes": "Chapter 1 of the Production School. The crowned beat 1 (11-07), matched to the weight of Helium and Fractal. Files: Music/PL Kits/_school/Beat 1 - Cs minor 144 (72 feel)/.",
-   "chapter": "1",
-   "audio": [
-    {
-     "title": "Reference - finished beat 1",
-     "key": "b1/reference-finished-beat-1.mp4"
-    }
-   ]
+   "notes": "Chapter 1 of the Production School. The crowned beat 1 (11-07), matched to the weight of the references. Files: Music/PL Kits/_school/Beat 1 - Cs minor 144 (72 feel)/."
   },
   {
    "id": "ch1-halftime",
@@ -656,9 +774,7 @@
     }
    ],
    "table": [],
-   "notes": "Teach the counting, not just the button. Box 9 is beat 3. The normal row is shown only for contrast; do not tap it.",
-   "chapter": "1",
-   "audio": []
+   "notes": "Teach the counting, not just the button. Box 9 is beat 3. The normal row is shown only for contrast; do not tap it."
   },
   {
    "id": "ch1-clap",
@@ -726,14 +842,7 @@
     }
    ],
    "table": [],
-   "notes": "From the study: snares and claps first; a clap filled out with reverb; layer parts so the whole works, not each part.",
-   "chapter": "1",
-   "audio": [
-    {
-     "title": "Stage 1 clap and snare",
-     "key": "b1/stage-1-clap-and-snare.mp4"
-    }
-   ]
+   "notes": "From the study: snares and claps first; a clap filled out with reverb; layer parts so the whole works, not each part."
   },
   {
    "id": "ch1-kick",
@@ -801,14 +910,7 @@
     }
    ],
    "table": [],
-   "notes": "Bars 4 and 8 are the fill bars across the whole chapter: the kick thins out and the hats gallop.",
-   "chapter": "1",
-   "audio": [
-    {
-     "title": "Stage 2 plus kick",
-     "key": "b1/stage-2-plus-kick.mp4"
-    }
-   ]
+   "notes": "Bars 4 and 8 are the fill bars across the whole chapter: the kick thins out and the hats gallop."
   },
   {
    "id": "ch1-hats",
@@ -898,14 +1000,7 @@
     }
    ],
    "table": [],
-   "notes": "Galloped hats are a trait from the study.",
-   "chapter": "1",
-   "audio": [
-    {
-     "title": "Stage 3 plus hats",
-     "key": "b1/stage-3-plus-hats.mp4"
-    }
-   ]
+   "notes": "Galloped hats are a trait from the study."
   },
   {
    "id": "ch1-808",
@@ -944,14 +1039,7 @@
     }
    ],
    "table": [],
-   "notes": "Roots: C#1 A0 F#1 G#0. Lengths: 10 boxes. Pickups an octave up on box 11 of bars 2, 4, 6 and 8.",
-   "chapter": "1",
-   "audio": [
-    {
-     "title": "Stage 4 plus 808",
-     "key": "b1/stage-4-plus-808.mp4"
-    }
-   ]
+   "notes": "Roots: C#1 A0 F#1 G#0. Lengths: 10 boxes. Pickups an octave up on box 11 of bars 2, 4, 6 and 8."
   },
   {
    "id": "ch1-keys",
@@ -990,14 +1078,7 @@
     }
    ],
    "table": [],
-   "notes": "Every chord is original to this course. B# is the same key as C: it pulls the last bar home to C#m.",
-   "chapter": "1",
-   "audio": [
-    {
-     "title": "Stage 5 plus piano",
-     "key": "b1/stage-5-plus-piano-the-skeleton.mp4"
-    }
-   ]
+   "notes": "Every chord is original to this course. B# is the same key as C: it pulls the last bar home to C#m."
   },
   {
    "id": "ch1-weight",
@@ -1012,7 +1093,7 @@
     },
     {
      "head": "Take 2: crowned",
-     "text": "808 and kick 96%. Piano 0.7%, filtered and drenched. Helium sits at 94%."
+     "text": "808 and kick 96%. Piano 0.7%, filtered and drenched. The reference sits at 94%."
     },
     {
      "head": "The move",
@@ -1032,9 +1113,7 @@
     }
    ],
    "table": [],
-   "notes": "Measured 11-07. Take 1 is kept in the code history as the light route.",
-   "chapter": "1",
-   "audio": []
+   "notes": "Measured 11-07. Take 1 is kept in the code history as the light route."
   },
   {
    "id": "ch1-intro",
@@ -1053,7 +1132,7 @@
     },
     {
      "head": "Next time",
-     "text": "Try 16 bars. Three of five ZTrapTV beats wait 15 to 19 seconds before the drop."
+     "text": "Try 16 bars. Three of five reference beats wait 15 to 19 seconds before the drop."
     },
     {
      "head": "",
@@ -1069,9 +1148,7 @@
     }
    ],
    "table": [],
-   "notes": "From the study: long intros on 3 of 5 ZTrapTV beats; the house move of pads before drums.",
-   "chapter": "1",
-   "audio": []
+   "notes": "From the study: long intros on 3 of 5 reference beats; the house move of pads before drums."
   },
   {
    "id": "ch1-mumble",
@@ -1106,9 +1183,7 @@
     }
    ],
    "table": [],
-   "notes": "Study 3b. Practise on his own lines only.",
-   "chapter": "1",
-   "audio": []
+   "notes": "Study 3b. Practise on his own lines only."
   },
   {
    "id": "ch1-check",
@@ -1139,9 +1214,7 @@
     }
    ],
    "table": [],
-   "notes": "Acceptance tests from the spec: the Acapella Drop and the Transfer test. No loudness target (his ruling 11-07).",
-   "chapter": "1",
-   "audio": []
+   "notes": "Acceptance tests from the spec: the Acapella Drop and the Transfer test. No loudness target (his ruling 11-07)."
   },
   {
    "id": "ch2-cover",
@@ -1172,14 +1245,7 @@
     }
    ],
    "table": [],
-   "notes": "Chapter 2 of the Production School. Beat 2, crowned 11-07. Built on the ZTrapTV weight line from the study: sub about 80%, a melody and hats that read on a phone speaker. Files: Music/PL Kits/_school/Beat 2 - Db major 85/.",
-   "chapter": "2",
-   "audio": [
-    {
-     "title": "Reference - finished beat 2",
-     "key": "b2/reference-finished-beat-2.mp4"
-    }
-   ]
+   "notes": "Chapter 2 of the Production School. Beat 2, crowned 11-07. Built on the weight line from the study: sub about 80%, a melody and hats that read on a phone speaker. Files: Music/PL Kits/_school/Beat 2 - Db major 85/."
   },
   {
    "id": "ch2-straight",
@@ -1247,14 +1313,7 @@
     }
    ],
    "table": [],
-   "notes": "The tempo of his most-played (Tell Me Who, 85 feel). The clap gets Reverb 2 as in chapter 1, a little less wet.",
-   "chapter": "2",
-   "audio": [
-    {
-     "title": "Stage 1 verse drums",
-     "key": "b2/stage-1-verse-drums.mp4"
-    }
-   ]
+   "notes": "The tempo of his most-played (85 feel). The clap gets Reverb 2 as in chapter 1, a little less wet."
   },
   {
    "id": "ch2-drums",
@@ -1388,14 +1447,7 @@
     }
    ],
    "table": [],
-   "notes": "Shaker and open hat belong to the hook: they are what makes the hook feel bigger without a new melody.",
-   "chapter": "2",
-   "audio": [
-    {
-     "title": "Stage 1 verse drums",
-     "key": "b2/stage-1-verse-drums.mp4"
-    }
-   ]
+   "notes": "Shaker and open hat belong to the hook: they are what makes the hook feel bigger without a new melody."
   },
   {
    "id": "ch2-808",
@@ -1434,14 +1486,7 @@
     }
    ],
    "table": [],
-   "notes": "Roots: Db1=25, Bb0=22, Gb1=30, Ab0=20 in MIDI. The hook's pickup note alternates octave / root.",
-   "chapter": "2",
-   "audio": [
-    {
-     "title": "Stage 2 plus 808",
-     "key": "b2/stage-2-plus-808.mp4"
-    }
-   ]
+   "notes": "Roots: Db1=25, Bb0=22, Gb1=30, Ab0=20 in MIDI. The hook's pickup note alternates octave / root."
   },
   {
    "id": "ch2-keys",
@@ -1480,14 +1525,7 @@
     }
    ],
    "table": [],
-   "notes": "Every chord is original to the course. The intro (bars 1-4) is the keys alone, filter even lower (600 Hz) and quieter.",
-   "chapter": "2",
-   "audio": [
-    {
-     "title": "Stage 3 plus keys underwater",
-     "key": "b2/stage-3-plus-keys-underwater.mp4"
-    }
-   ]
+   "notes": "Every chord is original to the course. The intro (bars 1-4) is the keys alone, filter even lower (600 Hz) and quieter."
   },
   {
    "id": "ch2-hook",
@@ -1522,14 +1560,7 @@
     }
    ],
    "table": [],
-   "notes": "The guitar motif is written fresh for this course (hook.mid). Strings on the two lowest chord tones only, voiced down an octave.",
-   "chapter": "2",
-   "audio": [
-    {
-     "title": "Stage 4 the hook opens",
-     "key": "b2/stage-4-the-hook-opens.mp4"
-    }
-   ]
+   "notes": "The guitar motif is written fresh for this course (hook.mid). Strings on the two lowest chord tones only, voiced down an octave."
   },
   {
    "id": "ch2-weight",
@@ -1539,8 +1570,8 @@
    "grids": [],
    "blocks": [
     {
-     "head": "Beat 1, Will's line",
-     "text": "808 and kick 96% of the sound. Nothing above 2 kHz. The reference was Helium and Fractal."
+     "head": "Beat 1, the heavy line",
+     "text": "808 and kick 96% of the sound. Nothing above 2 kHz. Matched to the references."
     },
     {
      "head": "Beat 2, the phone line",
@@ -1564,9 +1595,7 @@
     }
    ],
    "table": [],
-   "notes": "Study 3c holds both lines. Beat 3 (Flex, 94) will sit on the phone line too.",
-   "chapter": "2",
-   "audio": []
+   "notes": "Study 3c holds both lines. Beat 3 (Flex, 94) will sit on the phone line too."
   },
   {
    "id": "ch2-flow",
@@ -1601,9 +1630,7 @@
     }
    ],
    "table": [],
-   "notes": "Study 3b: rap and sung side by side. Practise on his own lines only.",
-   "chapter": "2",
-   "audio": []
+   "notes": "Study 3b: rap and sung side by side. Practise on his own lines only."
   },
   {
    "id": "ch2-check",
@@ -1634,9 +1661,7 @@
     }
    ],
    "table": [],
-   "notes": "Acceptance tests from the spec: the Acapella Drop, the Transfer test, no loudness target by his ruling.",
-   "chapter": "2",
-   "audio": []
+   "notes": "Acceptance tests from the spec: the Acapella Drop, the Transfer test, no loudness target by his ruling."
   },
   {
    "id": "ch3-cover",
@@ -1667,14 +1692,7 @@
     }
    ],
    "table": [],
-   "notes": "Chapter 3. Beat 3 crowned 11-07: the dark heavy blend of the two references' traits, every note original. Files: Music/PL Kits/_school/Beat 3 - Bb minor 94/.",
-   "chapter": "3",
-   "audio": [
-    {
-     "title": "Reference - finished beat 3",
-     "key": "b3/reference-finished-beat-3.mp4"
-    }
-   ]
+   "notes": "Chapter 3. Beat 3 crowned 11-07: the dark heavy blend of the two references' traits, every note original. Files: Music/PL Kits/_school/Beat 3 - Bb minor 94/."
   },
   {
    "id": "ch3-guitar",
@@ -1720,14 +1738,7 @@
     }
    ],
    "table": [],
-   "notes": "Chord tones per bar: Bbm9 F Ab C Db · Gbmaj7 Gb Bb Db F · Ebm9 Gb Bb Db Eb · F7sus4 F Bb C Eb · F7 F A C Eb. The figure's order of tones is 1 3 2 4 3 1.",
-   "chapter": "3",
-   "audio": [
-    {
-     "title": "Stage 1 the guitar alone",
-     "key": "b3/stage-1-the-guitar-alone.mp4"
-    }
-   ]
+   "notes": "Chord tones per bar: Bbm9 F Ab C Db · Gbmaj7 Gb Bb Db F · Ebm9 Gb Bb Db Eb · F7sus4 F Bb C Eb · F7 F A C Eb. The figure's order of tones is 1 3 2 4 3 1."
   },
   {
    "id": "ch3-strings",
@@ -1746,7 +1757,7 @@
     },
     {
      "head": "Why",
-     "text": "The build he named in Vincent's Tale: a quiet start that gets heavier before the drums ever arrive."
+     "text": "The build he named in his favourite: a quiet start that gets heavier before the drums ever arrive."
     },
     {
      "head": "",
@@ -1762,9 +1773,7 @@
     }
    ],
    "table": [],
-   "notes": "Study 5: his ear on Vincent's Tale was the build and the guitar and chords.",
-   "chapter": "3",
-   "audio": []
+   "notes": "Study 5: his ear on the reference was the build and the guitar and chords."
   },
   {
    "id": "ch3-drop",
@@ -1898,14 +1907,7 @@
     }
    ],
    "table": [],
-   "notes": "Straight time at 94: the confident side's bounce. Same drum grammar as chapter 2, new tempo.",
-   "chapter": "3",
-   "audio": [
-    {
-     "title": "Stage 2 the drop",
-     "key": "b3/stage-2-the-drop.mp4"
-    }
-   ]
+   "notes": "Straight time at 94: the bounce side. Same drum grammar as chapter 2, new tempo."
   },
   {
    "id": "ch3-808",
@@ -1932,7 +1934,7 @@
     },
     {
      "head": "",
-     "text": "The drop sits at the Will weight (808 and kick about 92% of the sound) with the guitar still heard at about 5%."
+     "text": "The drop sits at the heavy weight (808 and kick about 92% of the sound) with the guitar still heard at about 5%."
     },
     {
      "head": "",
@@ -1944,9 +1946,7 @@
     }
    ],
    "table": [],
-   "notes": "Gate: sub >= 80%, guitar mids >= 1% on the drop. Measured 92% / 4.5%.",
-   "chapter": "3",
-   "audio": []
+   "notes": "Gate: sub >= 80%, guitar mids >= 1% on the drop. Measured 92% / 4.5%."
   },
   {
    "id": "ch3-long",
@@ -1981,9 +1981,7 @@
     }
    ],
    "table": [],
-   "notes": "The storyteller side: long-form over hook-form. The chords never change; the register and the bounce do.",
-   "chapter": "3",
-   "audio": []
+   "notes": "The story side: long-form over hook-form. The chords never change; the register and the bounce do."
   },
   {
    "id": "ch3-voice",
@@ -2018,9 +2016,7 @@
     }
    ],
    "table": [],
-   "notes": "Study 3b and 5: rap and sung side by side; one voice carrying a whole story.",
-   "chapter": "3",
-   "audio": []
+   "notes": "Study 3b and 5: rap and sung side by side; one voice carrying a whole story."
   },
   {
    "id": "ch3-mix",
@@ -2055,9 +2051,7 @@
     }
    ],
    "table": [],
-   "notes": "Codex's mix pass: recording distance, room noise, clipping, take selection, kick and 808 masking, restrained effects.",
-   "chapter": "3",
-   "audio": []
+   "notes": "Codex's mix pass: recording distance, room noise, clipping, take selection, kick and 808 masking, restrained effects."
   },
   {
    "id": "ch3-master",
@@ -2092,9 +2086,7 @@
     }
    ],
    "table": [],
-   "notes": "Codex's master pass; his ruling 11-07, no target.",
-   "chapter": "3",
-   "audio": []
+   "notes": "Codex's master pass; his ruling 11-07, no target."
   },
   {
    "id": "ch3-check",
@@ -2125,9 +2117,7 @@
     }
    ],
    "table": [],
-   "notes": "Acceptance tests from the spec. The Transfer test is the pass; a loudness number alone earns nothing.",
-   "chapter": "3",
-   "audio": []
+   "notes": "Acceptance tests from the spec. The Transfer test is the pass; a loudness number alone earns nothing."
   }
  ]
 }
