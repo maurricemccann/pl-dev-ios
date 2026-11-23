@@ -161,16 +161,21 @@ struct MoneyGround: View {
     @State private var kit = HouseKit.shared
     @AppStorage("pldev.tileStrength") private var strength = 0.5
     @Environment(\.accessibilityReduceTransparency) private var reduce
+    @Environment(\.colorScheme) private var scheme
     private static let tile: UIImage? = Bundle.main.url(forResource: "money-field", withExtension: "png").flatMap { UIImage(contentsOfFile: $0.path) }
     var body: some View {
         let p = kit.palette, k = 0.22 * max(0.2, strength) * (1 + max(0, strength - 0.5) * 3)
         ZStack {
             p.groundColor
             if !reduce, let t = Self.tile {
-                Image(uiImage: t).renderingMode(.template).resizable(resizingMode: .tile)
-                    .foregroundStyle(p.keyColor.opacity(k))
+                let glyphs = Image(uiImage: t).renderingMode(.template).resizable(resizingMode: .tile)
+                if scheme == .dark {   // emission (his ask 11-23, "too dark, add some emission"): a blurred additive bloom under the crisp glyphs
+                    glyphs.foregroundStyle(p.keyColor.opacity(min(k * 2.4, 0.6))).blur(radius: 7).blendMode(.plusLighter)
+                }
+                glyphs.foregroundStyle(p.keyColor.opacity(min(k * 1.5, 0.5)))
             }
         }
+        .drawingGroup()   // the static field flattens once, so the blur is not redrawn while Pulse scrolls
         .ignoresSafeArea()
         .accessibilityHidden(true)
     }

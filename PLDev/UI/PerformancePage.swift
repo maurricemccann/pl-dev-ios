@@ -57,7 +57,9 @@ struct PerformancePage: View {
     struct ClaudeUse: Decodable {
         struct Block: Decodable { let generated: String?; let active: Bool?; let block_end: String?; let minutes_left: Int?; let tokens: Double?; let requests: Int?; let pct_of_peak: Double? }
         struct Week: Decodable { let pct: Double?; let read_at: String?; let resets: String? }
-        let board_day: String?; let board_calls: Int?; let board_cap: Int?; let block: Block?; let week: Week?; let five: Week?
+        /// The Console's own Billing and Cost pages, as a session last read them (11-23: the board is not the only Console spender)
+        struct Credit: Decodable { let read_at: String?; let credit_left: Double?; let credit_total: Double?; let expires: String?; let spent_7d: Double?; let spent_30d: Double? }
+        let board_day: String?; let board_calls: Int?; let board_cap: Int?; let block: Block?; let week: Week?; let five: Week?; let console: Credit?
     }
     private struct PCReply: Decodable { let claude: ClaudeUse? }
     @State private var claude: ClaudeUse?
@@ -848,8 +850,23 @@ struct PerformancePage: View {
                 if let w = u.week, w.pct != nil {
                     Text("Week limit read \(String((w.read_at ?? "").prefix(16)))\(w.resets.map { ", resets \($0)" } ?? "").").font(.caption2).foregroundStyle(.secondary)
                 } else {
-                    Text("The limits show here once a Claude Code session on the PC has read them. Console dollars need an admin key the house does not hold.")
+                    Text("The limits show here once a Claude Code session on the PC has read them.")
                         .font(.caption2).foregroundStyle(.secondary)
+                }
+                Divider()
+                Text("Console credit").plLabel(10).foregroundStyle(.secondary)
+                if let c = u.console, c.credit_left != nil {
+                    HStack(alignment: .top) {
+                        figure("Credit left", c.credit_left.map { String(format: "$%.2f", $0) + (c.credit_total.map { String(format: " / %.0f", $0) } ?? "") } ?? "\u{2014}")
+                        Divider().frame(height: 34)
+                        figure("Spent, 7 days", dollars(c.spent_7d))
+                        Divider().frame(height: 34)
+                        figure("Spent, 30 days", dollars(c.spent_30d))
+                    }
+                    Text("Read off the Console \(String((c.read_at ?? "").prefix(16)))\(c.expires.map { ", credit expires \(String($0.prefix(10)))" } ?? ""). Board, batches, agents and web search all draw on it.")
+                        .font(.caption2).foregroundStyle(.secondary)
+                } else {
+                    Text("Shows once a session has read the Console's Billing page.").font(.caption2).foregroundStyle(.secondary)
                 }
             } else {
                 Text(claudeFailed ? "Could not reach the PC (Tailscale may be off)." : "Reading the PC\u{2026}").font(.caption2).foregroundStyle(.secondary)
