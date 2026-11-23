@@ -169,6 +169,7 @@ struct PracticeView: View {
     @State private var started = false
     @State private var buddy = BuddyModel()   // Buddy lives top-right of Practice (his circle, 11-15), his drawn faces only
     @State private var rope: BuddyRopeRig?     // his rope, built once the bar item's place on screen is known
+    @State private var showSettings = false
 
     var body: some View {
         ScrollViewReader { proxy in
@@ -200,6 +201,10 @@ struct PracticeView: View {
         .navigationTitle("Practice")
         .navigationBarTitleDisplayMode(.inline)
         .toolbar {
+            ToolbarItem(placement: .topBarLeading) {
+                Button { showSettings = true } label: { Image(systemName: "gearshape").frame(width: 44, height: 44) }
+                    .accessibilityLabel("Practice settings")
+            }
             ToolbarItem(placement: .topBarTrailing) {
                 // a real Button: a bar item's plain tap gesture never fired on his phone (11-15, "Tap didn't play anything")
                 // the bar clips anything drawn past an item (the simulator shot 11-15 showed the rope cut to a box), so the bar item is
@@ -229,6 +234,7 @@ struct PracticeView: View {
         .overlay { if state.entryDone, let rope { BuddyRope(buddy: buddy, rig: rope).ignoresSafeArea().allowsHitTesting(false) } }
         .overlay { if !state.entryDone { PracticeEntry(model: model, state: state).transition(.opacity) } }
         .sensoryFeedback(PLHaptic.commit, trigger: state.tick)
+        .sheet(isPresented: $showSettings) { PracticeSettingsSheet() }
         .navigationDestination(isPresented: $state.preview) { VisionPreviewView() }
         .task { await PracticeOutbox.flush(model: model); await state.loadToday(model: model) }
     }

@@ -538,7 +538,7 @@ struct AccountsRows: View {
     }
 }
 
-private struct AccountSignInSheet: View {
+struct AccountSignInSheet: View {
     let account: SiteAccount
     @Environment(\.dismiss) private var dismiss
     @State private var email = ""

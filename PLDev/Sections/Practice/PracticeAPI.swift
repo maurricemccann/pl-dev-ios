@@ -21,13 +21,13 @@ import SwiftUI
     }
 
     static func get<T: Decodable>(_ path: String, _ type: T.Type, model: AppModel, query: [String: String] = [:], timeout: TimeInterval = 25) async throws -> T {
-        let data = try await http(model).send(RequestPlan(origin: "practice", path: "api/" + path, query: query), timeout: timeout)
+        let data = try await http(model).send(RequestPlan.practice(path: "api/" + path, query: query), timeout: timeout)
         return try JSONDecoder().decode(T.self, from: data)
     }
 
     /// A read that may come back as a bare `null` (no check-in yet today, no WOOP yet).
     static func getOrNil<T: Decodable>(_ path: String, _ type: T.Type, model: AppModel) async throws -> T? {
-        let data = try await http(model).send(RequestPlan(origin: "practice", path: "api/" + path), timeout: 25)
+        let data = try await http(model).send(RequestPlan.practice(path: "api/" + path), timeout: 25)
         if String(decoding: data, as: UTF8.self).trimmingCharacters(in: .whitespacesAndNewlines) == "null" { return nil }
         return try JSONDecoder().decode(T.self, from: data)
     }
@@ -38,7 +38,7 @@ import SwiftUI
         let client = try http(model)
         let data: Data
         do {
-            data = try await client.send(RequestPlan(origin: "practice", method: method, path: "api/" + path, headers: ["content-type": "application/json"],
+            data = try await client.send(RequestPlan.practice(method: method, path: "api/" + path, headers: ["content-type": "application/json"],
                                                      body: try JSONSerialization.data(withJSONObject: body)),
                                          idempotent: false, timeout: timeout)
         } catch {
@@ -66,7 +66,7 @@ import SwiftUI
     @discardableResult
     static func upload(_ path: String, _ bytes: Data, type: String, model: AppModel, query: [String: String] = [:]) async throws -> Data {
         do {
-            return try await http(model).send(RequestPlan(origin: "practice", method: "POST", path: "api/" + path, query: query, headers: ["content-type": type], body: bytes),
+            return try await http(model).send(RequestPlan.practice(method: "POST", path: "api/" + path, query: query, headers: ["content-type": type], body: bytes),
                                               idempotent: false, timeout: 90)
         } catch { throw Problem.refused("Not saved. \(plainSentence(error))") }
     }
@@ -74,7 +74,7 @@ import SwiftUI
     /// The bytes behind any practice path (an affirmation clip, an uploaded photo).
     static func bytes(_ pathOrURL: String, model: AppModel) async throws -> Data {
         if pathOrURL.hasPrefix("http"), let url = URL(string: pathOrURL) { return try await URLSession.shared.data(from: url).0 }
-        return try await http(model).send(RequestPlan(origin: "practice", path: pathOrURL.hasPrefix("/") ? String(pathOrURL.dropFirst()) : pathOrURL), timeout: 45)
+        return try await http(model).send(RequestPlan.practice(path: pathOrURL.hasPrefix("/") ? String(pathOrURL.dropFirst()) : pathOrURL), timeout: 45)
     }
 
     /// The photo URL for a pin or an upload: practice paths are made absolute against the configured address, never shown.
@@ -116,6 +116,7 @@ struct PracticeHabit: Decodable, Identifiable, Sendable, Equatable {
 }
 
 struct PracticeLog: Decodable, Identifiable, Sendable { let id: String; let kind: String; let text: String; let created_at: String? }
+struct PracticeLogSummary: Decodable, Sendable { struct First: Decodable, Sendable { let kind: String; let text: String }; let total: Int; let first: First? }
 struct PracticeNote: Decodable, Identifiable, Sendable { let id: String; let text: String; let created_at: String? }
 struct PracticePin: Decodable, Identifiable, Sendable { let url: String; let alt: String?; var id: String { url } }
 struct PracticeMessage: Decodable, Identifiable, Sendable { let id: String; let role: String; let text: String; let created_at: String? }
@@ -225,7 +226,7 @@ struct PracticeBoardImages: Decodable, Sendable {
         var sent = 0
         while let first = items.first {
             do {
-                _ = try await http.send(RequestPlan(origin: "practice", method: "POST", path: "api/" + first.path, headers: ["content-type": "application/json"],
+                _ = try await http.send(RequestPlan.practice(method: "POST", path: "api/" + first.path, headers: ["content-type": "application/json"],
                                                     body: Data(first.body.utf8)), idempotent: false, timeout: 60)
             } catch let f as HTTPClient.Failure {
                 if case .http(let code) = f, (400..<500).contains(code) { items.removeFirst(); continue }
@@ -234,5 +235,16 @@ struct PracticeBoardImages: Decodable, Sendable {
             items.removeFirst(); sent += 1
         }
         return sent
+    }
+}
+
+extension RequestPlan {
+    /// A request to the practice server. Signed in (Google, the site's flow), it carries the site session, so the server keeps the
+    /// practice under that account and a new phone that signs in gets it back (S350). Signed out: exactly as before.
+    @MainActor static func practice(method: String = "GET", path: String = "", query: [String: String] = [:],
+                                    headers: [String: String] = [:], body: Data? = nil) -> RequestPlan {
+        var h = headers
+        if let t = SiteAccount.shared.token { h["cookie"] = "pl_session=\(t)" }
+        return RequestPlan(origin: "practice", method: method, path: path, query: query, headers: h, body: body)
     }
 }
