@@ -39,7 +39,7 @@ struct LabCurveMotionView: View {
                 .overlay(alignment: .top) { Rectangle().fill(PLG.gold.opacity(0.15)).frame(height: 0.5) }
             }
         }
-        .background(Color(hex: 0x0a0a0a))
+        .background(PLCarry.tone(.ground, .dark, Color(hex: 0x0a0a0a)))
         .scrollIndicators(.hidden)
         .accessibilityLabel("The curve in motion. Six live pieces.")
     }
@@ -425,7 +425,7 @@ private struct CMTubeCanvas: View {
                 sim.draw(&gc, size)
             }
         }
-        .background(matrix ? Color(hex: 0x0f1416) : Color(hex: 0x0a0a0a))
+        .background(matrix ? Color(hex: 0x0f1416) : PLCarry.tone(.ground, .dark, Color(hex: 0x0a0a0a)))
         .accessibilityLabel(matrix ? "Matrix code spine: three green tubes wrapped in sliding code" : "3D curve engine: three tubes that swirl, pulse, tilt and drift")
     }
 }

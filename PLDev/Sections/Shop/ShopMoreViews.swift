@@ -6,13 +6,13 @@ struct ShopMoreView: View {
     @Bindable var state: ShopModel
 
     var body: some View {
-        List {
+        List { Group {
             Section {
                 ForEach(ShopRoom.moreRooms) { room in
                     NavigationLink { room.view(model) } label: { Label(room.title, systemImage: room.symbol) }
                 }
             } footer: { Text("Checkout, gift cards and the signal form run on the site, behind its human check. They open in a sheet here.") }
-        }
+        }.listRowBackground(PLRowGround()) }
         .siteList()
     }
 }
@@ -94,7 +94,7 @@ struct SiteStatusView: View {
 
     var body: some View {
         Loaded(load: { try await Site.get("api/creator-status", Creator.self) }) { c, _ in
-            List {
+            List { Group {
                 Section("The creator") {
                     Label(c.label, systemImage: c.status == "awake" ? "sun.max" : "moon")
                     if let u = c.updated { LabeledContent("Changed") { Ago(text: u) } }
@@ -112,7 +112,7 @@ struct SiteStatusView: View {
                 Section {
                     Button { if let url = Site.page("") { web = WebPage(url) } } label: { Label("Open psychedluxuries.com", systemImage: "safari") }
                 }
-            }
+            }.listRowBackground(PLRowGround()) }
             .siteList()
         }
         .plScreenTitle("The site")
@@ -137,7 +137,7 @@ struct SitePagesView: View {
     @State private var web: WebPage?
 
     var body: some View {
-        List {
+        List { Group {
             ForEach(groups) { group in
                 Section(group.name) {
                     ForEach(group.links) { l in
@@ -151,7 +151,7 @@ struct SitePagesView: View {
                     }
                 }
             }
-        }
+        }.listRowBackground(PLRowGround()) }
         .siteList()
         .plScreenTitle("Pages")
         .sheet(item: $web) { SafariSheet(url: $0.url).ignoresSafeArea() }

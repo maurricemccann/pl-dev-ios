@@ -123,7 +123,7 @@ struct MirrorInfo { let numeral: String; let name: String; let carries: String; 
 struct LabsRoom: View {
     let model: AppModel
     var body: some View {
-        List {
+        List { Group {
             Section {
                 NavigationLink { NativeVJRoom(model: model) } label: {
                     VStack(alignment: .leading, spacing: 2) {
@@ -143,7 +143,7 @@ struct LabsRoom: View {
             Section("Instruments") { ForEach([LabPage.goldenMend, .fluid, .ar, .fly]) { row($0) } }
             Section("Figures and models") { ForEach([LabPage.dance, .glyphbot, .heart, .wordmark, .cards, .curveWho, .curveWhoReader, .room]) { row($0) } }
             Section("Studies") { ForEach([LabPage.hero, .homeStudy, .study, .components, .curveMotion, .hand]) { row($0) } }
-        }
+        }.listRowBackground(PLRowGround()) }
         .gScreen()
         .navigationTitle("The Labs")
     }
@@ -175,7 +175,7 @@ struct LabHost: View {
 
     var body: some View {
         ZStack {
-            Color(hex: 0x0a0a0a).ignoresSafeArea()
+            PLCarry.tone(.ground, .dark, Color(hex: 0x0a0a0a)).ignoresSafeArea()
             current.content(model).id(current).ignoresSafeArea(edges: .bottom)
             if let m = current.mirror { mirrorChrome(m) }
         }

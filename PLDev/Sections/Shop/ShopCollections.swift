@@ -142,7 +142,7 @@ struct ShopFilterSheet: View {
 
     var body: some View {
         NavigationStack {
-            List {
+            List { Group {
                 facetSection("Garment", ShopFacet.garments, keyPath: \.garments)
                 facetSection("Line", ShopFacet.lines, keyPath: \.lines)
                 Section("Price") {
@@ -157,7 +157,7 @@ struct ShopFilterSheet: View {
                 if filter.active > 0 {
                     Section { Button("Clear every filter", role: .destructive) { filter = ShopFilter() } }
                 }
-            }
+            }.listRowBackground(PLRowGround()) }
             .siteList()
             .navigationTitle("Filter")
             .navigationBarTitleDisplayMode(.inline)

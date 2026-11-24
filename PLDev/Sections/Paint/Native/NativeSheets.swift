@@ -311,7 +311,7 @@ struct NativeHandbookView: View {
 
     var body: some View {
         NavigationStack {
-            List {
+            List { Group {
                 Section {
                     NavigationLink { phoneChapter } label: { Label("PL Paint on the iPhone", systemImage: "iphone") }
                 }
@@ -320,7 +320,7 @@ struct NativeHandbookView: View {
                         ForEach(ch.secs) { s in NavigationLink(s.title) { NativeHandbookSection(section: s, chapter: ch.title) } }
                     }
                 }
-            }
+            }.listRowBackground(PLRowGround()) }
             .searchable(text: $query, prompt: "Search the handbook")
             .navigationTitle("Handbook")
             .navigationBarTitleDisplayMode(.inline)
@@ -338,7 +338,7 @@ struct NativeHandbookView: View {
     }
 
     private var phoneChapter: some View {
-        List {
+        List { Group {
             Section("Drawing") {
                 row("Apple Pencil", "Draws with its pressure and its lean. A finger only draws if Finger paints is on.")
                 row("Two fingers", "Pinch to zoom, twist to turn the picture, drag to move it. A small twist near upright snaps back to level.")
@@ -355,7 +355,7 @@ struct NativeHandbookView: View {
                 row("Saved on their own", "Three seconds after the last change, and when you leave the app.")
                 row("Sync", "Works, the Daily Mark and your own brushes go both ways with the laptop. A work changed on both sides is kept as two copies.")
             }
-        }.navigationTitle("On the iPhone")
+        }.listRowBackground(PLRowGround()) }.navigationTitle("On the iPhone")
     }
     private func row(_ t: String, _ b: String) -> some View { VStack(alignment: .leading, spacing: 4) { Text(t).font(Font.pl(.headline)); Text(b).font(Font.pl(.subheadline)).foregroundStyle(.secondary) }.padding(.vertical, 2) }
 }

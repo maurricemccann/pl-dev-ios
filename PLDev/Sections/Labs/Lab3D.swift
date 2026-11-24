@@ -13,7 +13,7 @@ struct LabHeartView: View {
 
     var body: some View {
         ZStack {
-            Color(hex: 0x0e0c08).ignoresSafeArea()
+            PLCarry.tone(.ground, .dark, Color(hex: 0x0e0c08)).ignoresSafeArea()
             OrbitStage(distance: 3.4, height: 0.65, autoSpin: true) { pivot in
                 // gold light from behind, the page's rim light
                 let rim = Entity()
@@ -49,7 +49,7 @@ struct LabHeartView: View {
 struct LabWordmarkView: View {
     var body: some View {
         ZStack {
-            Color(hex: 0x0e0c08).ignoresSafeArea()
+            PLCarry.tone(.ground, .dark, Color(hex: 0x0e0c08)).ignoresSafeArea()
             OrbitStage(distance: 3.0, height: 0, autoSpin: true) { pivot in
                 let top = await panel("PSYCHED", y: 0.49)
                 let bot = await panel("LUXURIES", y: -0.49)
@@ -131,7 +131,7 @@ struct LabCardsView: View {
             }
             .padding(.horizontal, 20).padding(.top, 60).padding(.bottom, 80)
         }
-        .background(Color(hex: 0x0e0c08))
+        .background(PLCarry.tone(.ground, .dark, Color(hex: 0x0e0c08)))
     }
 }
 

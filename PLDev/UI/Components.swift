@@ -193,6 +193,7 @@ struct PLTile: ViewModifier {
     static func shape(_ name: String) -> AnyShape {
         switch name {
         case "circle": AnyShape(Circle())
+        case "notch": AnyShape(NotchShape())
         case "square": AnyShape(RoundedRectangle(cornerRadius: 12 * PLStyle.radius, style: .continuous))
         default: AnyShape(RoundedRectangle(cornerRadius: 15 * PLStyle.radius, style: .continuous))
         }
@@ -372,4 +373,30 @@ struct ThemeWall: View {
         cache[address] = img
         return img
     }
+}
+
+
+/// Cyberpunk's tile: two corners cut on the diagonal (the clipped-corner frame idea from augmented-ui, BSD-2, drawn natively).
+struct NotchShape: Shape {
+    func path(in r: CGRect) -> Path {
+        let n = min(r.width, r.height) * 0.22
+        var p = Path()
+        p.move(to: CGPoint(x: r.minX + n, y: r.minY))
+        p.addLine(to: CGPoint(x: r.maxX, y: r.minY))
+        p.addLine(to: CGPoint(x: r.maxX, y: r.maxY - n))
+        p.addLine(to: CGPoint(x: r.maxX - n, y: r.maxY))
+        p.addLine(to: CGPoint(x: r.minX, y: r.maxY))
+        p.addLine(to: CGPoint(x: r.minX, y: r.minY + n))
+        p.closeSubpath()
+        return p
+    }
+}
+
+
+/// A list row's ground in the theme (S353·7b1e, his "the whole thing"): the theme's surface where rows were the system's plain grey.
+/// No theme worn: the system's own row colour, unchanged.
+struct PLRowGround: View {
+    @Environment(\.colorScheme) private var scheme
+    init() {}
+    var body: some View { PLCarry.tone(.surface, scheme, Color(uiColor: .secondarySystemGroupedBackground)) }
 }

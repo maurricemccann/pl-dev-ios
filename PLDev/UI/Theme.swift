@@ -107,6 +107,7 @@ private struct PLFontModifier: ViewModifier {
     let isTitle: Bool
     @AppStorage("pldev.font") private var face = "system"
     @AppStorage("pldev.textSize") private var textSize = 100.0
+    @AppStorage("pldev.styleTitleFX") private var titleFX = ""
     @Environment(\.legibilityWeight) private var legibilityWeight
     @Environment(\.dynamicTypeSize) private var dynamicTypeSize   // read so a Dynamic Type change redraws the scaled system size
 
@@ -119,13 +120,16 @@ private struct PLFontModifier: ViewModifier {
     func body(content: Content) -> some View {
         let _ = dynamicTypeSize
         let scale = min(1.3, max(0.9, textSize / 100))
-        if isTitle, let pack = ThemePack.shared.titleFont {
-            content.font(text.packFont(pack, scale: scale))
-        } else if isTitle, let title = PLStyle.titleFont {
-            content.font(text.packFont(title, scale: scale))
-        } else {
-            content.font(text.font(face: face, scale: scale, bold: legibilityWeight == .bold, emphasized: emphasized))
+        Group {
+            if isTitle, let pack = ThemePack.shared.titleFont {
+                content.font(text.packFont(pack, scale: scale))
+            } else if isTitle, let title = PLStyle.titleFont {
+                content.font(text.packFont(title, scale: scale))
+            } else {
+                content.font(text.font(face: face, scale: scale, bold: legibilityWeight == .bold, emphasized: emphasized))
+            }
         }
+        .modifier(TitleFX(active: isTitle, fx: titleFX))
     }
 }
 
@@ -256,6 +260,26 @@ enum PLAppearance {
         case "light": return .light
         case "dark": return .dark
         default: return nil
+        }
+    }
+}
+
+
+/// A theme's title finish (S353·7b1e, his references 11-24): Synthwave's chrome lettering, a neon glow for the night themes.
+private struct TitleFX: ViewModifier {
+    let active: Bool, fx: String
+    @State private var kit = HouseKit.shared
+
+    func body(content: Content) -> some View {
+        let key = kit.palette.keyColor
+        if active && fx == "chrome" {
+            content
+                .foregroundStyle(LinearGradient(colors: [.white, Color(white: 0.78), key, Color(white: 0.25), .white], startPoint: .top, endPoint: .bottom))
+                .shadow(color: key.opacity(0.75), radius: 6)
+        } else if active && fx == "glow" {
+            content.shadow(color: key.opacity(0.9), radius: 5).shadow(color: key.opacity(0.5), radius: 12)
+        } else {
+            content
         }
     }
 }

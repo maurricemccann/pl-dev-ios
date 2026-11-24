@@ -259,7 +259,7 @@ struct NativeSyncSheet: View {
 
     var body: some View {
         NavigationStack {
-            List {
+            List { Group {
                 Section {
                     LabeledContent("State", value: sync.state)
                     if !sync.detail.isEmpty { Text(sync.detail).font(Font.pl(.footnote)).foregroundStyle(.secondary) }
@@ -271,7 +271,7 @@ struct NativeSyncSheet: View {
                 Section("This device") {
                     LabeledContent("Key", value: model.config?.key("paintSync") != nil ? "Set, from your config" : "Missing")
                 }
-            }
+            }.listRowBackground(PLRowGround()) }
             .navigationTitle("Sync")
             .navigationBarTitleDisplayMode(.inline)
             .toolbar { ToolbarItem(placement: .confirmationAction) { Button("Done") { dismiss() } } }

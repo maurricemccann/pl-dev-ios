@@ -13,20 +13,20 @@ extension HousePalette {
     }
     /// One palette per theme, built in so a theme works before the Design Kit has been fetched, and offline.
     static let themed: [HousePalette] = [
-        th("studio-night", "#0e0c08", "#efe9dc", "#c9a84c", "#e7cf86"),
-        th("ember", "#0a0807", "#efe9dc", "#d4550a", "#f0a070", "#1d1410"),
-        th("totem", "#0f1d3a", "#efe9dc", "#c9a84c", "#e7cf86", "#1a2c52"),
-        th("indigo", "#080810", "#e6e8f5", "#6a7fd4", "#b8c2f0"),
-        th("silver", "#0c0c0e", "#e8eaef", "#b0b8c8", "#e8eaef", "#1c1d22"),
+        th("studio-night", "#0e0c08", "#efe9dc", "#c9a84c", "#dfb536"),
+        th("ember", "#0a0807", "#efe9dc", "#d4550a", "#c99472", "#1d1d19"),
+        th("totem", "#162a4d", "#f0ece4", "#c9a84c", "#327ad3", "#1d3560"),
+        th("indigo", "#1c1e65", "#e6e8f5", "#c1ab7c", "#785fce"),
+        th("silver", "#070707", "#c4c4c3", "#b0b8c8", "#b8c5d5", "#1c1d22"),
         th("oxblood", "#5e1622", "#f0ece4", "#c98fb0", "#e7cf86", "#74202e"),
-        th("forest", "#14301a", "#f0ece4", "#c9a84c", "#e7cf86", "#1e4226"),
+        th("forest", "#14301a", "#f0ece4", "#2d8a6e", "#178e45", "#1e4226"),
         th("archive", "#000000", "#f0ece4", "#dfb536", "#e7cf86", "#14110a"),
-        th("drop", "#f0d9cc", "#171310", "#7c1f1f", "#d98a6a", "#f8e8df"),
-        th("ledger", "#e6e4bb", "#13170f", "#33307e", "#9a97d6", "#f1efd0"),
-        th("linen", "#cdd9c2", "#171310", "#1a3d1e", "#6a9e7a", "#e0e8d8"),
-        th("copper", "#d5c09c", "#131516", "#8b4a1a", "#466097", "#e6d6b8"),
-        th("smoke", "#bcb8b0", "#0c0b0d", "#7c1f1f", "#4f4843", "#d3cfc8"),
-        th("pearl", "#d6d5e4", "#171310", "#785fce", "#b0842c", "#e9e8f3"),
+        th("drop", "#ccc3bf", "#171310", "#7c1f1f", "#b24b1b", "#ddd6d2"),
+        th("ledger", "#e6e4bb", "#13170f", "#33307e", "#50583c", "#f1efd0"),
+        th("linen", "#edeae0", "#171310", "#1a3d1e", "#178e45", "#f6f4ec"),
+        th("copper", "#d5c09c", "#131516", "#a9743a", "#466097", "#e6d6b8"),
+        th("smoke", "#bcb8b0", "#0c0b0d", "#7c1f1f", "#7a5b41", "#d3cfc8"),
+        th("pearl", "#cabce5", "#171310", "#785fce", "#b0842c", "#e4dcf2"),
         th("macos", "#3aa6b9", "#111111", "#3366cc", "#9c9cff", "#dddddd"),
         th("linux", "#2c1b12", "#f3e9e1", "#e95420", "#f6b28c", "#42291a"),
         th("glass", "#0b2a45", "#eef8ff", "#7fd4ff", "#ffffff"),
@@ -35,7 +35,7 @@ extension HousePalette {
         th("cyberpunk", "#140a1e", "#f2e9f7", "#ff4f5e", "#19e3c8", "#1d0f2a"),
         th("retro", "#cdbaf5", "#2a1a4a", "#7a3cff", "#ff6ec7", "#fff0fb"),
         th("hyperspace", "#02010a", "#e6f0ff", "#7b5cff", "#3cf2ff", "#130f30"),
-        th("vibe", "#050805", "#d8ffd0", "#39ff14", "#bd93f9", "#0d150d"),
+        th("vibe", "#050805", "#d8ffd0", "#39ff14", "#bd93f9", "#282a36"),
     ]
 }
 
@@ -55,6 +55,8 @@ struct PLThemePreset: Identifiable, Hashable {
     /// One of his glyph marks beside Home's name.
     var mark: String? = nil
     var fun = false
+    /// The title's finish: "chrome" (Synthwave's lettering), "glow" (neon), or none.
+    var titleFX = ""
 
     private static func house(_ f: String) -> String { "file:fonts/house/\(f)" }
     private static let art = "https://pub-4420dc4349624d6bbed7eb9555f42661.r2.dev/"
@@ -82,11 +84,11 @@ struct PLThemePreset: Identifiable, Hashable {
               curves: 0.35, repeatSize: 200, tint: 0, icon: "AppIcon-DeepIndigo", icons: "iconoir"),
         .init(id: "silver", title: "Night silver", palette: "th-silver", face: house("big-shoulders-stencil.ttf"), text: house("cutive-mono.ttf"),
               note: "Stencil titles, typewriter text, metal keycaps on brushed steel, still", dark: true,
-              card: .solid, radius: 0.5, space: 1, tile: "square", look: "keycap", wall: "code|brushed",
+              card: .solid, radius: 0.5, space: 1, tile: "square", look: "chrome", wall: "code|brushed",
               calm: true, tint: 0.1, through: 0.2),
         .init(id: "oxblood", title: "Oxblood room", palette: "th-oxblood", face: house("new-rocker.ttf"), text: "jost",
               note: "Rocker titles, soft solid panels, domed keys, a velvet wall", dark: true,
-              card: .solid, radius: 1.5, space: 1.2, tile: "circle", look: "dome", wall: "code|velvet",
+              card: .solid, radius: 1.5, space: 1.2, tile: "circle", look: "fuzzy", wall: "code|velvet",
               tint: 0.25, through: 0.25, mark: "love-yourself"),
         .init(id: "forest", title: "Forest room", palette: "th-forest", face: house("grenze-gotisch.ttf"), text: house("xanh-mono.ttf"),
               note: "Gotisch titles, a serif mono, sharp frosted panes over contour lines", dark: true,
@@ -110,7 +112,7 @@ struct PLThemePreset: Identifiable, Hashable {
               tint: 0.2, through: 0.75, icons: "iconoir"),
         .init(id: "copper", title: "Copper", palette: "th-copper", face: house("saira-stencil-one.ttf"), text: house("dirty-enough.ttf"),
               note: "Stencil over worn type, solid bevelled plates, Copper as you made it", dark: false,
-              card: .solid, radius: 1, space: 1, tile: "squircle", look: "bevel", wall: "color|" + art + "abstract-pattern_organic-flowing_warm-pink_digital_4693.png",
+              card: .solid, radius: 1, space: 1, tile: "squircle", look: "clay", wall: "color|" + art + "abstract-pattern_organic-flowing_warm-pink_digital_4693.png",
               curves: 0.15, tint: 0.35, through: 0.2),
         .init(id: "smoke", title: "Warm smoke", palette: "th-smoke", face: house("pencilant.otf"), text: house("special-elite.ttf"),
               note: "Pencil titles, typed text, round soft outlines on smoke, still", dark: false,
@@ -118,7 +120,7 @@ struct PLThemePreset: Identifiable, Hashable {
               calm: true, tint: 0.15),
         .init(id: "pearl", title: "Pearl", palette: "th-pearl", face: house("fruktur.ttf"), text: house("germania-one.ttf"),
               note: "Fruktur over Germania, pearl bubbles, a slow lilac sheen", dark: false,
-              card: .clear, radius: 1, space: 1, tile: "squircle", look: "bubble", wall: "code|pearl",
+              card: .clear, radius: 1, space: 1, tile: "squircle", look: "glaze", wall: "code|pearl",
               tint: 0.35, through: 0.65),
 
         // Fun (his list and references 11-24). Genre looks only: no maker's logo, icons or menu art.
@@ -141,11 +143,11 @@ struct PLThemePreset: Identifiable, Hashable {
         .init(id: "fun-synthwave", title: "Synthwave", palette: "th-synthwave", face: "bundle:MrDafoe-Regular", text: "jost",
               note: "Pink script titles, neon rings, a sunset over the grid floor", dark: true,
               card: .outline, radius: 1, space: 1, tile: "circle", look: "neon", wall: "code|synth",
-              curves: 0.8, tint: 0.2, through: 0.45, icons: "sf", fun: true),
+              curves: 0.8, tint: 0.2, through: 0.45, icons: "sf", fun: true, titleFX: "chrome"),
         .init(id: "fun-cyberpunk", title: "Cyberpunk", palette: "th-cyberpunk", face: "bundle:ChakraPetch-SemiBold", text: "bundle:GeistMono-Regular",
               note: "Night city OS: coral hairline frames, teal, scanlines on violet-black", dark: true,
-              card: .outline, radius: 0.5, space: 0.85, tile: "square", look: "terminal", wall: "code|night",
-              tint: 0.1, through: 0.3, icons: "tabler", fun: true),
+              card: .outline, radius: 0.5, space: 0.85, tile: "notch", look: "terminal", wall: "code|night",
+              tint: 0.1, through: 0.3, icons: "tabler", fun: true, titleFX: "glow"),
         .init(id: "fun-retro", title: "Retro 90s", palette: "th-retro", face: "bundle:PixelifySans-Regular", text: "jost",
               note: "Vaporwave windows: raised pink panels on a lavender grid, pixel titles", dark: false,
               card: .solid, radius: 0.5, space: 1, tile: "square", look: "bevel", wall: "code|vapor",
@@ -153,11 +155,11 @@ struct PLThemePreset: Identifiable, Hashable {
         .init(id: "fun-hyperspace", title: "Hyperspace", palette: "th-hyperspace", face: "bundle:Audiowide-Regular", text: "jost",
               note: "Violet and cyan in deep space, frosted domes, the tunnel behind", dark: true,
               card: .frosted, radius: 1.5, space: 1.2, tile: "circle", look: "dome", wall: "invert|" + art + "abstract-pattern_organic-flowing_monochrome_digital_5457.png",
-              curves: 0.8, tint: 0.4, through: 0.6, fun: true),
+              curves: 0.8, tint: 0.4, through: 0.6, fun: true, titleFX: "glow"),
         .init(id: "fun-vibe", title: "Vibe coded", palette: "th-vibe", face: "bundle:JetBrainsMono-Regular", text: "bundle:JetBrainsMono-Regular",
               note: "Editor night: acid green on black, terminal keys, code lines on the wall", dark: true,
               card: .outline, radius: 0.1, space: 0.85, tile: "square", look: "terminal", wall: "code|editor",
-              tint: 0, through: 0.2, icons: "pixel", fun: true),
+              tint: 0, through: 0.2, icons: "pixel", fun: true, titleFX: "glow"),
     ]
 
     /// The wallpaper this theme wears: his own choice for it when he made one, else the theme's.
@@ -173,6 +175,7 @@ struct PLThemePreset: Identifiable, Hashable {
         d.set(radius, forKey: "pldev.styleRadius"); d.set(space, forKey: "pldev.styleSpace")
         d.set(tile, forKey: "pldev.styleTile"); d.set(look, forKey: "pldev.styleLook"); d.set(icons, forKey: "pldev.styleIcons")
         d.set(mark ?? "", forKey: "pldev.styleMark"); d.set(repeatSize, forKey: "pldev.styleRepeat")
+        d.set(titleFX, forKey: "pldev.styleTitleFX")
         resetGlass()
         d.set(chosenWall, forKey: "pldev.styleWall")
         d.set(curves, forKey: "pldev.tileStrength"); d.set(calm ? "reduce" : "full", forKey: "pldev.motion")
@@ -437,9 +440,22 @@ struct TileLook: View {
                 shape.stroke(accent.opacity(0.7), lineWidth: 0.8).padding(4)
             case "bevel":
                 shape.fill(Color(white: 0.84))
-                Rectangle().strokeBorder(Color(white: 0.45), lineWidth: 3).clipShape(shape)
+                Rectangle().strokeBorder(Color(white: 0.5), lineWidth: 3).clipShape(shape)
                 Rectangle().strokeBorder(Color.white, lineWidth: 3).padding(.trailing, 3).padding(.bottom, 3).clipShape(shape)
+                shape.stroke(Color(white: 0.04), lineWidth: 1)
                 shape.fill(key.opacity(0.22))
+            case "chrome":
+                shape.fill(LinearGradient(colors: [Color(white: 0.96), Color(white: 0.55), Color(white: 0.9), Color(white: 0.32)], startPoint: .topLeading, endPoint: .bottomTrailing))
+                shape.stroke(Color.white.opacity(0.8), lineWidth: 1).padding(2)
+            case "glaze":
+                shape.fill(LinearGradient(colors: [accent.opacity(0.9), key], startPoint: .top, endPoint: .bottom))
+                Ellipse().fill(Color.white.opacity(0.55)).frame(width: 30, height: 12).offset(x: -8, y: -18).blur(radius: 1.5)
+            case "clay":
+                shape.fill(key.mix(with: .white, by: 0.12))
+                shape.stroke(key.mix(with: .black, by: 0.35), lineWidth: 3)
+            case "fuzzy":
+                shape.fill(RadialGradient(colors: [accent.opacity(0.9), key], center: .center, startRadius: 2, endRadius: 40)).blur(radius: 1.2)
+                shape.stroke(accent.opacity(0.55), style: StrokeStyle(lineWidth: 2.5, lineCap: .round, dash: [0.5, 3.5]))
             case "flat":
                 shape.fill(key)
             default:
@@ -455,7 +471,7 @@ struct TileLook: View {
     static func glyph(_ look: String, key: Color, scheme: ColorScheme) -> Color {
         switch look {
         case "terminal", "neon", "bare": return key
-        case "bevel": return Color(white: 0.08)
+        case "bevel", "chrome": return Color(white: 0.08)
         case "flat": return luminance(key) > 0.55 ? .black : .white
         case "glass": return scheme == .dark ? Color(red: 1, green: 0.95, blue: 0.9) : Color.primary
         default: return .white

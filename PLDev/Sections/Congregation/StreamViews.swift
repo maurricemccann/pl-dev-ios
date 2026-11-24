@@ -473,7 +473,7 @@ struct StreamDetailView: View {
 
     var body: some View {
         if let item = stream.item(itemID) {
-            List {
+            List { Group {
                 Section {
                     switch item.kind {
                     case "archive", "generated":
@@ -553,7 +553,7 @@ struct StreamDetailView: View {
                     }
                 }
                 ResultLine(text: stream.line)
-            }
+            }.listRowBackground(PLRowGround()) }
             .siteList()
             .navigationTitle(item.kind == "archive" ? (item.cr ?? "Archive") : "Stream")
             .navigationBarTitleDisplayMode(.inline)

@@ -258,7 +258,7 @@ struct LabKinematicView: View {
 
 struct LabGoldenMendView: View {
     @State private var m = GoldenMendModel()
-    private let obsidian = Color(hex: 0x0e0c08)
+    private let obsidian = PLCarry.tone(.ground, .dark, Color(hex: 0x0e0c08))
 
     var body: some View {
         ZStack {

@@ -365,7 +365,7 @@ struct LabRibbonView: View {
     private func stepButton(_ s: String, _ label: String, _ action: @escaping () -> Void) -> some View {
         Button(action: action) {
             Text(s).font(Font.pl(size: 20)).foregroundStyle(PLG.gold.opacity(0.85)).frame(width: 44, height: 44)
-                .background { Circle().fill(Color(hex: 0x0a0a0a).opacity(0.6)) }
+                .background { Circle().fill(PLCarry.tone(.ground, .dark, Color(hex: 0x0a0a0a)).opacity(0.6)) }
                 .overlay { Circle().strokeBorder(PLG.gold.opacity(0.35), lineWidth: 1) }
         }
         .accessibilityLabel(label)

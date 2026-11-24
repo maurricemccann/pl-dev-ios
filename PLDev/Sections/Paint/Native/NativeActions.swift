@@ -17,7 +17,7 @@ struct NativeActionsSheet: View {
 
     var body: some View {
         NavigationStack {
-            List {
+            List { Group {
                 switch tab {
                 case .canvas:
                     Section("This picture") {
@@ -65,7 +65,7 @@ struct NativeActionsSheet: View {
                     open("Sync with the laptop", "arrow.triangle.2.circlepath", .sync)
                     open("Handbook", "book", .handbook)
                 }
-            }
+            }.listRowBackground(PLRowGround()) }
             .safeAreaInset(edge: .top) {
                 Picker("Actions", selection: $tab) { ForEach(Tab.allCases) { Text($0.rawValue).tag($0) } }
                     .pickerStyle(.segmented).padding(.horizontal).padding(.bottom, 6)

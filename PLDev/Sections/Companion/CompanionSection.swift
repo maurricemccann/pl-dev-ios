@@ -402,9 +402,9 @@ struct CompanionOpening: View {
                 CompanionScene(store: store, who: choice).frame(height: 220).clipShape(RoundedRectangle(cornerRadius: PLG.radius))
                 ForEach(["him", "her", "both"], id: \.self) { id in
                     Button { choice = id; UISelectionFeedbackGenerator().selectionChanged() } label: {
-                        Text(label(id)).plHand(28, relativeTo: .title2).foregroundStyle(choice == id ? PLG.gold : Color(hex: 0xefe6d2))
+                        Text(label(id)).plHand(28, relativeTo: .title2).foregroundStyle(choice == id ? PLG.gold : PLCarry.tone(.ink, .dark, Color(hex: 0xefe6d2)))
                             .frame(maxWidth: .infinity, minHeight: 64)
-                            .background(Color(hex: 0x1a1a1a), in: RoundedRectangle(cornerRadius: 24 * PLStyle.radius))
+                            .background(PLCarry.tone(.surface, .dark, Color(hex: 0x1a1a1a)), in: RoundedRectangle(cornerRadius: 24 * PLStyle.radius))
                             .overlay(RoundedRectangle(cornerRadius: 24 * PLStyle.radius).stroke(choice == id ? PLG.gold : .clear, lineWidth: 2))
                             .contentShape(RoundedRectangle(cornerRadius: 24 * PLStyle.radius))
                     }

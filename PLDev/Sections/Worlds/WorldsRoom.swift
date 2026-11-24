@@ -60,7 +60,7 @@ struct WorldsRoom: View {
     @State private var open: WorldRoom?
 
     var body: some View {
-        List {
+        List { Group {
             Section {
                 ForEach([WorldRoom.haul, .money, .weight]) { row($0) }
             } header: {
@@ -77,7 +77,7 @@ struct WorldsRoom: View {
                     Button("Try again") { Task { await archive.load(model: model, force: true) } }
                 }
             }
-        }
+        }.listRowBackground(PLRowGround()) }
         .gScreen()
         .navigationTitle("The Defiance worlds")
         .navigationDestination(item: $open) { $0.view(model) }

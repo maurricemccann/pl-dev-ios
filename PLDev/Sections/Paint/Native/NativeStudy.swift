@@ -186,7 +186,7 @@ struct NativeStudySheet: View {
 
     var body: some View {
         NavigationStack {
-            List {
+            List { Group {
                 Section {
                     LabeledContent("State", value: study.on ? "Recording: \(study.strokes) strokes" : "Not recording")
                     if !study.on { TextField("A name for this session", text: $label) }
@@ -221,7 +221,7 @@ struct NativeStudySheet: View {
                         }
                     }
                 }
-            }
+            }.listRowBackground(PLRowGround()) }
             .navigationTitle("Study")
             .navigationBarTitleDisplayMode(.inline)
             .toolbar { ToolbarItem(placement: .confirmationAction) { Button("Done") { dismiss() } } }

@@ -149,7 +149,7 @@ struct NativeTimelapseSheet: View {
 
     var body: some View {
         NavigationStack {
-            List {
+            List { Group {
                 Section {
                     Toggle("Record as I draw", isOn: $tl.recording)
                     LabeledContent("Frames", value: "\(tl.count)")
@@ -182,7 +182,7 @@ struct NativeTimelapseSheet: View {
                     Section { ContentUnavailableView("Nothing recorded yet", systemImage: "play.rectangle", description: Text("Draw a little. Each change keeps a small picture, and they play back here.")) }
                 }
                 if let line { Section { ResultLine(text: line) } }
-            }
+            }.listRowBackground(PLRowGround()) }
             .navigationTitle("Timelapse")
             .navigationBarTitleDisplayMode(.inline)
             .toolbar { ToolbarItem(placement: .confirmationAction) { Button("Done") { stop(); dismiss() } } }

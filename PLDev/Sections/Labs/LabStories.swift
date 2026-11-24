@@ -5,7 +5,7 @@ import SwiftUI
 // Hand (type, rendered in his hands), Components (the house's reusable pieces, each live).
 // Sources: app/lab/study, app/lab/home, public/hand.html, app/components/page.tsx, components/ElectricBorder.tsx.
 
-private let obsidian = Color(hex: 0x0e0c08)
+private let obsidian = PLCarry.tone(.ground, .dark, Color(hex: 0x0e0c08))
 private func clamp01(_ v: Double) -> Double { max(0, min(1, v)) }
 private func smoothstep(_ a: Double, _ b: Double, _ x: Double) -> Double { let t = clamp01((x - a) / (b - a)); return t * t * (3 - 2 * t) }
 
@@ -257,7 +257,7 @@ struct LabHandView: View {
             }
             .padding(16).padding(.top, 40)
         }
-        .background(Color(hex: 0x0e0c08))
+        .background(PLCarry.tone(.ground, .dark, Color(hex: 0x0e0c08)))
         .scrollDismissesKeyboard(.interactively)
         .onAppear { write() }
         .onDisappear { writer?.cancel() }
@@ -323,7 +323,7 @@ struct LabHandView: View {
     private func pill(_ t: String, _ on: Bool, _ a: @escaping () -> Void) -> some View {
         Button(action: a) {
             Text(t).font(Font.pl(size: 12, weight: .semibold, design: .monospaced)).tracking(0.7).textCase(.uppercase)
-                .foregroundStyle(on ? Color(hex: 0x0e0c08) : Color(hex: 0x8a8576)).padding(.horizontal, 14).frame(minHeight: 44)
+                .foregroundStyle(on ? PLCarry.tone(.ground, .dark, Color(hex: 0x0e0c08)) : Color(hex: 0x8a8576)).padding(.horizontal, 14).frame(minHeight: 44)
                 .background(RoundedRectangle(cornerRadius: 6 * PLStyle.radius).fill(on ? PLG.gold : .clear))
                 .overlay { RoundedRectangle(cornerRadius: 6 * PLStyle.radius).strokeBorder(on ? PLG.gold : Color(hex: 0x2a2618), lineWidth: 1) }
         }

@@ -164,6 +164,7 @@ struct SourcesSheet: View {
                     Text(p.source.isEmpty ? "A passage" : p.source.replacingOccurrences(of: "-", with: " ").capitalized).font(Font.pl(.headline))
                     Text(p.text).font(Font.pl(.callout)).foregroundStyle(.secondary).lineLimit(8)
                 }
+                .listRowBackground(PLRowGround())
             }
             .glyphList()
             .overlay { if turn.passages.isEmpty { ContentUnavailableView("No sources", systemImage: "doc.text", description: Text("This answer came from memory or the bundled doctrine.")) } }
@@ -580,7 +581,7 @@ struct GlyphRecordTab: View {
     private let store = GlyphBotStore.shared
 
     var body: some View {
-        List {
+        List { Group {
             if let m = state.message { Text(m).font(Font.pl(.footnote)).foregroundStyle(.secondary) }
             if let s = state.interview {
                 Section {
@@ -624,7 +625,7 @@ struct GlyphRecordTab: View {
                 LabeledContent("Waiting to sync", value: "\(store.unsynced.count)")
                 if store.unsynced.count > 0 { Button("Sync now") { Task { await store.flush(model: model); state.publish() } } }
             } header: { Text("The Oracle") } footer: { Text("Every question is kept the moment you ask it, offline too, and syncs when the connection returns.") }
-        }
+        }.listRowBackground(PLRowGround()) }
         .glyphList()
         .refreshable { await state.loadState(model: model) }
         .task { await state.loadState(model: model) }

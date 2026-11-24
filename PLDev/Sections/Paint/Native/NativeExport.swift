@@ -451,7 +451,7 @@ struct NativeExportSheet: View {
 
     var body: some View {
         NavigationStack {
-            List {
+            List { Group {
                 Section {
                     row("PNG", "photo", "The picture as you see it. Transparent where the background is hidden.", ext: "png") { d in NativeExport.png(d) }
                     row("JPEG", "photo.fill", "Smaller, no transparency: a hidden background goes onto white.", ext: "jpg") { d in NativeExport.jpeg(d) }
@@ -474,7 +474,7 @@ struct NativeExportSheet: View {
                     Button { if let d = canvas.doc, let img = d.flatImage() { UIPasteboard.general.image = UIImage(cgImage: img); line = "Copied the picture." } } label: { Label("Copy the picture", systemImage: "doc.on.doc") }
                 }
                 if let line { Section { ResultLine(text: line) } }
-            }
+            }.listRowBackground(PLRowGround()) }
             .navigationTitle("Save or share")
             .navigationBarTitleDisplayMode(.inline)
             .toolbar { ToolbarItem(placement: .confirmationAction) { Button("Done") { dismiss() } } }
@@ -518,7 +518,7 @@ struct NativeBringInSheet: View {
 
     var body: some View {
         NavigationStack {
-            List {
+            List { Group {
                 Section("Pictures") {
                     PhotosPicker(selection: $photo, matching: .images) { Label("A photo, as a layer", systemImage: "photo.on.rectangle") }
                     Button { canvas.panel = .lift } label: { Label("Lift the ink off a photo", systemImage: "wand.and.stars") }
@@ -530,7 +530,7 @@ struct NativeBringInSheet: View {
                     Button { markName = ""; naming = true } label: { Label("Make a brush from this layer", systemImage: "stamp") }
                 } header: { Text("Brushes") } footer: { Text("Draw a mark once (your signature, a stamp), then stamp it anywhere in any colour.") }
                 if let line { Section { ResultLine(text: line) } }
-            }
+            }.listRowBackground(PLRowGround()) }
             .navigationTitle("Bring in")
             .navigationBarTitleDisplayMode(.inline)
             .toolbar { ToolbarItem(placement: .confirmationAction) { Button("Done") { dismiss() } } }

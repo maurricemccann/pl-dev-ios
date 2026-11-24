@@ -145,7 +145,7 @@ struct SchoolView: View {
     @Bindable var state: SchoolModel
 
     var body: some View {
-        List {
+        List { Group {
             if let e = state.loadError {
                 ContentUnavailableView("No lessons", systemImage: "pianokeys", description: Text(e))
             }
@@ -180,7 +180,7 @@ struct SchoolView: View {
                     ResultLine(text: state.player.result)
                 }
             }
-        }
+        }.listRowBackground(PLRowGround()) }
         .navigationTitle("PL Prod")
         .navigationDestination(item: $state.open) { TrackView(model: model, state: state, track: $0).osScreen() }
         .onDisappear { if state.open == nil { state.player.stop() } }

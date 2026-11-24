@@ -472,7 +472,7 @@ struct LabFlyView: View {
                 panel
             }
         }
-        .background(Color(hex: 0x0a0a0a))
+        .background(PLCarry.tone(.ground, .dark, Color(hex: 0x0a0a0a)))
         .scrollIndicators(.hidden)
         .task { await fly.boot(model: model) }
         .task { while !Task.isCancelled { fly.tick(); try? await Task.sleep(for: .milliseconds(16)) } }
@@ -485,14 +485,14 @@ struct LabFlyView: View {
             TimelineView(.animation) { _ in
                 Canvas { gc, size in
                     fly.size = size
-                    gc.fill(Path(CGRect(origin: .zero, size: size)), with: .color(Color(hex: 0x0a0a0a)))
+                    gc.fill(Path(CGRect(origin: .zero, size: size)), with: .color(PLCarry.tone(.ground, .dark, Color(hex: 0x0a0a0a))))
                     draw(&gc)
                 }
             }
             VStack(alignment: .leading, spacing: 5) {
                 Text("THE FLY").font(Font.pl(size: 19, weight: .semibold, design: .serif)).tracking(2.6).foregroundStyle(PLG.gold)
                 Text("The fly draws; the house renders. The line is the path walked by the centre of mass of whatever is firing in a brain that died several years ago.")
-                    .font(Font.pl(size: 11, design: .monospaced)).foregroundStyle(Color(hex: 0x7a756a)).lineSpacing(3).frame(maxWidth: 300, alignment: .leading)
+                    .font(Font.pl(size: 11, design: .monospaced)).foregroundStyle(PLCarry.tone(.dim, .dark, Color(hex: 0x7a756a))).lineSpacing(3).frame(maxWidth: 300, alignment: .leading)
             }
             .padding(.top, 14).padding(.leading, 20).allowsHitTesting(false)
             HStack(spacing: 22) {
@@ -508,21 +508,21 @@ struct LabFlyView: View {
 
     private func hud(_ k: String, _ v: String) -> some View {
         VStack(alignment: .leading, spacing: 1) {
-            Text(k).font(Font.pl(size: 9.5, design: .monospaced)).foregroundStyle(Color(hex: 0x7a756a))
+            Text(k).font(Font.pl(size: 9.5, design: .monospaced)).foregroundStyle(PLCarry.tone(.dim, .dark, Color(hex: 0x7a756a)))
             Text(v).font(Font.pl(size: 13, weight: .bold, design: .monospaced)).foregroundStyle(Color(hex: 0xe8e4d9)).contentTransition(.numericText())
         }
     }
 
     private var boot: some View {
         VStack(spacing: 14) {
-            Text(fly.bootMessage).font(Font.pl(size: 11, design: .monospaced)).tracking(1.1).foregroundStyle(fly.bootFailed ? Color(hex: 0xd9706f) : Color(hex: 0x7a756a))
+            Text(fly.bootMessage).font(Font.pl(size: 11, design: .monospaced)).tracking(1.1).foregroundStyle(fly.bootFailed ? Color(hex: 0xd9706f) : PLCarry.tone(.dim, .dark, Color(hex: 0x7a756a)))
             ZStack(alignment: .leading) {
                 Rectangle().fill(Color(hex: 0x1a1813)).frame(width: 260, height: 2)
                 Rectangle().fill(PLG.gold).frame(width: 260 * fly.bootProgress, height: 2).animation(.easeOut(duration: 0.25), value: fly.bootProgress)
             }
             if fly.bootFailed { LabPill(title: "Try again") { fly.bootFailed = false; Task { await fly.boot(model: model) } } }
         }
-        .frame(maxWidth: .infinity, maxHeight: .infinity).background(Color(hex: 0x0a0a0a))
+        .frame(maxWidth: .infinity, maxHeight: .infinity).background(PLCarry.tone(.ground, .dark, Color(hex: 0x0a0a0a)))
     }
 
     /// The house's render over the fly's path: runs of 14 points, each carving a channel out of everything laid down before it.
@@ -565,7 +565,7 @@ struct LabFlyView: View {
         VStack(alignment: .leading, spacing: 0) {
             Text("STIMULUS").font(Font.pl(size: 12, weight: .semibold, design: .serif)).tracking(1.7).foregroundStyle(PLG.gold)
             Text("Pick a sense. Nothing here aims at the motor channels — the wiring gets there on its own.")
-                .font(Font.pl(size: 10.5, design: .monospaced)).foregroundStyle(Color(hex: 0x7a756a)).lineSpacing(4).padding(.top, 4).padding(.bottom, 16)
+                .font(Font.pl(size: 10.5, design: .monospaced)).foregroundStyle(PLCarry.tone(.dim, .dark, Color(hex: 0x7a756a))).lineSpacing(4).padding(.top, 4).padding(.bottom, 16)
             HStack(spacing: 8) {
                 flyButton(fly.running ? "pause" : "run", on: fly.running) { fly.toggle(!fly.running) }.disabled(!fly.ready)
                 flyButton("clear", on: false) { fly.clear() }
@@ -576,7 +576,7 @@ struct LabFlyView: View {
                     Button { fly.choose(p) } label: {
                         HStack { Text(p.name); Spacer(); Text(p.tag.uppercased()).font(Font.pl(size: 9.5)).tracking(0.9).opacity(0.7) }
                             .font(Font.pl(size: 12, design: .monospaced))
-                            .foregroundStyle(fly.selected == p.id ? Color(hex: 0x0a0a0a) : Color(hex: 0xe8e4d9))
+                            .foregroundStyle(fly.selected == p.id ? PLCarry.tone(.ground, .dark, Color(hex: 0x0a0a0a)) : Color(hex: 0xe8e4d9))
                             .padding(.horizontal, 11).frame(minHeight: 44)
                             .background(RoundedRectangle(cornerRadius: 3 * PLStyle.radius).fill(fly.selected == p.id ? PLG.gold : Color(hex: 0x111010)))
                             .overlay(RoundedRectangle(cornerRadius: 3 * PLStyle.radius).strokeBorder(fly.selected == p.id ? PLG.gold : Color(hex: 0x1e1c18), lineWidth: 1))
@@ -584,23 +584,23 @@ struct LabFlyView: View {
                     .buttonStyle(.plain).disabled(!fly.ready)
                 }
             }
-            Text(fly.why).font(Font.pl(size: 10.5, design: .monospaced)).foregroundStyle(Color(hex: 0x7a756a)).lineSpacing(5)
+            Text(fly.why).font(Font.pl(size: 10.5, design: .monospaced)).foregroundStyle(PLCarry.tone(.dim, .dark, Color(hex: 0x7a756a))).lineSpacing(5)
                 .padding(.leading, 10).padding(.top, 12).overlay(alignment: .leading) { Rectangle().fill(Color(hex: 0x1e1c18)).frame(width: 1) }
             Text("WHAT THE LINE IS DOING").font(Font.pl(size: 12, weight: .semibold, design: .serif)).tracking(1.7).foregroundStyle(PLG.gold).padding(.top, 24)
-            Text(fly.stimName).font(Font.pl(size: 10.5, design: .monospaced)).foregroundStyle(Color(hex: 0x7a756a)).padding(.top, 4).padding(.bottom, 8)
+            Text(fly.stimName).font(Font.pl(size: 10.5, design: .monospaced)).foregroundStyle(PLCarry.tone(.dim, .dark, Color(hex: 0x7a756a))).padding(.top, 4).padding(.bottom, 8)
             ForEach(FlyModel.channels, id: \.0) { k, what in
                 let hz = fly.channelHz[k] ?? 0
                 HStack(spacing: 8) {
                     VStack(alignment: .leading, spacing: 2) {
                         Text(k).font(Font.pl(size: 11, design: .monospaced)).foregroundStyle(hz > 4 ? PLG.gold : Color(hex: 0xe8e4d9))
-                        Text(what).font(Font.pl(size: 9.5, design: .monospaced)).foregroundStyle(Color(hex: 0x7a756a))
+                        Text(what).font(Font.pl(size: 9.5, design: .monospaced)).foregroundStyle(PLCarry.tone(.dim, .dark, Color(hex: 0x7a756a)))
                     }
                     Spacer()
                     ZStack(alignment: .leading) {
                         Capsule().fill(Color(hex: 0x17150f)).frame(width: 62, height: 3)
                         Capsule().fill(PLG.gold).frame(width: 62 * min(1, hz * 7 / 100), height: 3)
                     }
-                    Text(String(format: "%.0f", hz)).font(Font.pl(size: 10, design: .monospaced)).foregroundStyle(hz > 4 ? PLG.gold : Color(hex: 0x7a756a)).frame(width: 30, alignment: .trailing).monospacedDigit()
+                    Text(String(format: "%.0f", hz)).font(Font.pl(size: 10, design: .monospaced)).foregroundStyle(hz > 4 ? PLG.gold : PLCarry.tone(.dim, .dark, Color(hex: 0x7a756a))).frame(width: 30, alignment: .trailing).monospacedDigit()
                 }
                 .padding(.vertical, 6)
                 Divider().overlay(Color(hex: 0x131210))
@@ -614,7 +614,7 @@ struct LabFlyView: View {
 
     private func flyButton(_ title: String, on: Bool, _ action: @escaping () -> Void) -> some View {
         Button(action: action) {
-            Text(title).font(Font.pl(size: 11, design: .monospaced)).tracking(0.7).foregroundStyle(on ? Color(hex: 0x0a0a0a) : Color(hex: 0xe8e4d9))
+            Text(title).font(Font.pl(size: 11, design: .monospaced)).tracking(0.7).foregroundStyle(on ? PLCarry.tone(.ground, .dark, Color(hex: 0x0a0a0a)) : Color(hex: 0xe8e4d9))
                 .padding(.horizontal, 14).frame(minHeight: 44)
                 .background(RoundedRectangle(cornerRadius: 2 * PLStyle.radius).fill(on ? PLG.gold : Color(hex: 0x111010)))
                 .overlay(RoundedRectangle(cornerRadius: 2 * PLStyle.radius).strokeBorder(on ? PLG.gold : Color(hex: 0x1e1c18), lineWidth: 1))

@@ -10,7 +10,7 @@ struct CaptureView: View {
     @Environment(\.colorScheme) private var scheme
 
     var body: some View {
-        List {
+        List { Group {
             OSHeader().captureRow()
             switch state.room {
             case .add:
@@ -20,7 +20,7 @@ struct CaptureView: View {
             case .waiting:
                 CaptureWaitingRoom(model: model, state: state)
             }
-        }
+        }.listRowBackground(PLRowGround()) }
         .listStyle(.plain)
         .safeAreaInset(edge: .bottom, spacing: 0) {   // his layout 11-14: the three rooms as a sticky bar at the bottom
             CaptureRoomBar(room: $state.room, badges: [.trail: state.deck.count, .waiting: model.inboxCount])

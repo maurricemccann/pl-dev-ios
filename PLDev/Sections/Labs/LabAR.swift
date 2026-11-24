@@ -111,19 +111,19 @@ struct LabARView: View {
 
     var body: some View {
         ZStack {
-            Color(hex: 0x0e0c08).ignoresSafeArea()
+            PLCarry.tone(.ground, .dark, Color(hex: 0x0e0c08)).ignoresSafeArea()
             switch ar.mode {
             case .idle: gate
             case .room: LabARRoomView(tile: ar.tile, say: { ar.note = $0 }, failed: { ar.preview($0) })
             case .camera, .preview:
                 if ar.mode == .camera { LabCameraBackdrop(session: ar.session).ignoresSafeArea() }
-                else { RadialGradient(colors: [Color(hex: 0x151109), Color(hex: 0x0e0c08)], center: .center, startRadius: 0, endRadius: 400).ignoresSafeArea() }
+                else { RadialGradient(colors: [PLCarry.tone(.surface, .dark, Color(hex: 0x151109)), PLCarry.tone(.ground, .dark, Color(hex: 0x0e0c08))], center: .center, startRadius: 0, endRadius: 400).ignoresSafeArea() }
                 overlay
             }
             if !ar.note.isEmpty && ar.mode != .idle {
                 VStack { Spacer()
                     Text(ar.note).font(Font.pl(size: 11)).tracking(0.9).foregroundStyle(PLG.gold.opacity(0.8)).multilineTextAlignment(.center)
-                        .padding(.horizontal, 14).padding(.vertical, 8).background(RoundedRectangle(cornerRadius: 10 * PLStyle.radius).fill(Color(hex: 0x0e0c08).opacity(0.7)).overlay { RoundedRectangle(cornerRadius: 10 * PLStyle.radius).strokeBorder(PLG.gold.opacity(0.27), lineWidth: 1) })
+                        .padding(.horizontal, 14).padding(.vertical, 8).background(RoundedRectangle(cornerRadius: 10 * PLStyle.radius).fill(PLCarry.tone(.ground, .dark, Color(hex: 0x0e0c08)).opacity(0.7)).overlay { RoundedRectangle(cornerRadius: 10 * PLStyle.radius).strokeBorder(PLG.gold.opacity(0.27), lineWidth: 1) })
                         .padding(.bottom, ar.mode == .room ? 130 : 24).padding(.horizontal, 30) }
                 .allowsHitTesting(false)
             }

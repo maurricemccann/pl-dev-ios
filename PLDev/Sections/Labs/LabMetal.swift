@@ -532,7 +532,7 @@ struct LabLifeView: View {
         ZStack(alignment: .topTrailing) {
             if let scene {
                 LabMetalView(scene: scene)
-                LinearGradient(colors: [.clear, Color(hex: 0x0a0a0a).opacity(0.88)], startPoint: .init(x: 0.5, y: 0.66), endPoint: .bottom).allowsHitTesting(false)
+                LinearGradient(colors: [.clear, PLCarry.tone(.ground, .dark, Color(hex: 0x0a0a0a)).opacity(0.88)], startPoint: .init(x: 0.5, y: 0.66), endPoint: .bottom).allowsHitTesting(false)
                 VStack(alignment: .trailing, spacing: 8) {
                     Text(scene.rule).font(Font.pl(size: 11, design: .serif)).labCaps().tracking(2).foregroundStyle(PLG.gold.opacity(0.72)).contentTransition(.numericText())
                     if scene.source != "mic" {
@@ -541,7 +541,7 @@ struct LabLifeView: View {
                     if let micLine { Text(micLine).font(Font.pl(.caption2)).foregroundStyle(PLG.gold.opacity(0.7)).multilineTextAlignment(.trailing).frame(maxWidth: 220, alignment: .trailing) }
                 }
                 .padding(12)
-                .background { RoundedRectangle(cornerRadius: 18 * PLStyle.radius, style: .continuous).fill(Color(hex: 0x0e0c08).opacity(0.82)).overlay { RoundedRectangle(cornerRadius: 18 * PLStyle.radius, style: .continuous).strokeBorder(PLG.gold.opacity(0.28), lineWidth: 0.8) } }
+                .background { RoundedRectangle(cornerRadius: 18 * PLStyle.radius, style: .continuous).fill(PLCarry.tone(.ground, .dark, Color(hex: 0x0e0c08)).opacity(0.82)).overlay { RoundedRectangle(cornerRadius: 18 * PLStyle.radius, style: .continuous).strokeBorder(PLG.gold.opacity(0.28), lineWidth: 0.8) } }
                 .padding(.top, 54).padding(.trailing, 14)
             } else { LabGPUMissing() }
         }

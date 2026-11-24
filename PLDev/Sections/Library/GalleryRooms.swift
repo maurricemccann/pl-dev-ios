@@ -66,12 +66,12 @@ enum GalleryRoom: String, CaseIterable, Identifiable, Hashable {
 struct GalleryRoomsView: View {
     let model: AppModel
     var body: some View {
-        List {
+        List { Group {
             Section("See") { ForEach([GalleryRoom.curves, .live, .archive, .space, .generated, .cinematic]) { row($0) } }
             Section("Make") { ForEach([GalleryRoom.forge, .classify, .printful]) { row($0) } }
             Section("Find") { ForEach([GalleryRoom.vault, .kit, .tools]) { row($0) } }
             Section("Play") { ForEach([GalleryRoom.worlds, .labs, .town]) { row($0) } }
-        }
+        }.listRowBackground(PLRowGround()) }
         .gScreen()
         .navigationTitle("Curve Library")
     }
@@ -333,7 +333,7 @@ struct VaultRoom: View {
             guard let http = model.http else { throw Console.Problem.notSetUp }
             return try JSONDecoder().decode(L.self, from: try await http.send(RequestPlan(origin: "gallery", path: "api/vault-list"), timeout: 60)).groups
         }) { groups, _ in
-            List {
+            List { Group {
                 Section {
                     LazyVGrid(columns: [GridItem(.flexible()), GridItem(.flexible())], spacing: 10) {
                         vaultTile("GENERATED", "\(byClass["still"] ?? 0)", "stills", .generated)
@@ -364,7 +364,7 @@ struct VaultRoom: View {
                         } label: { LabeledContent(g, value: "\(groups[g]?.count ?? 0)") }
                     }
                 }
-            }
+            }.listRowBackground(PLRowGround()) }
         }
         .gScreen()
         .navigationTitle("The Vault")
@@ -415,6 +415,7 @@ struct PrintfulRoom: View {
                 Spacer()
                 if hearted.contains(String(t.id)) { Image(systemName: "heart.fill").foregroundStyle(PLG.gold) }
             }
+            .listRowBackground(PLRowGround())
             .swipeActions(edge: .trailing) { Button("Heart") { Task { await act(t, "heart") } }.tint(PLTone.house) }
             .swipeActions(edge: .leading) {
                 Button("Delete", role: .destructive) { Task { await act(t, "delete") } }
@@ -562,7 +563,7 @@ struct KitRoom: View {
             guard let http = model.http else { throw Console.Problem.notSetUp }
             return try JSONDecoder().decode(Kit.self, from: try await http.send(RequestPlan(origin: "gallery", path: "kit.json"), timeout: 60))
         }) { k, _ in
-            List {
+            List { Group {
                 Section("Palettes") {
                     ForEach(k.colors?.palettes ?? []) { p in
                         HStack {
@@ -573,7 +574,7 @@ struct KitRoom: View {
                     }
                 }
                 group("Fonts", k.fonts); group("Symbols", k.symbols); group("Icons", k.icons); group("Patterns", k.patterns); group("Layouts", k.layouts?.map { Named(name: $0.layout, role: "\($0.keeps ?? 0) keeps · \($0.favs ?? 0) favs · \($0.cuts ?? 0) cuts", use: $0.use, kind: nil) })
-            }
+            }.listRowBackground(PLRowGround()) }
         }
         .gScreen()
         .navigationTitle("Design Kit")
@@ -594,14 +595,14 @@ struct ToolsRoom: View {
     @State private var search = ""
     var body: some View {
         let pieces = data.items.filter { ($0.class == "code-piece" || $0.class == "lab") && (search.isEmpty || ($0.name ?? "").localizedCaseInsensitiveContains(search) || $0.item_id.localizedCaseInsensitiveContains(search)) }
-        List {
+        List { Group {
             Section { Text("Every piece's full code, from /api/source. Touch a piece to read it, or share it.").font(Font.pl(.footnote)).foregroundStyle(.secondary) }
             ForEach(pieces) { p in
                 NavigationLink { SourceView(model: model, id: p.item_id) } label: {
                     VStack(alignment: .leading) { Text(p.name ?? p.item_id); Text(p.item_id).font(Font.pl(.caption).monospaced()).foregroundStyle(.secondary) }
                 }
             }
-        }
+        }.listRowBackground(PLRowGround()) }
         .gScreen()
         .searchable(text: $search, prompt: "Piece")
         .navigationTitle("Tools and source")

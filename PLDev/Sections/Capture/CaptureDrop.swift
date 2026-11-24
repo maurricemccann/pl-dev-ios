@@ -264,7 +264,7 @@ struct CaptureWhereSheet: View {
 
     var body: some View {
         NavigationStack {
-            List {
+            List { Group {
                 Section {
                     ForEach(pending.options) { r in
                         Button { route = r } label: {
@@ -303,7 +303,7 @@ struct CaptureWhereSheet: View {
                     Section("Who said it?") { TextField("Optional", text: $extra) }
                 }
                 if let m = state.message { Section { Text(m).foregroundStyle(.red) } }
-            }
+            }.listRowBackground(PLRowGround()) }
             .navigationTitle("Where does it go?")
             .navigationBarTitleDisplayMode(.inline)
             .toolbar {
