@@ -42,11 +42,11 @@ struct StreakCard: View {
     let state: PracticeModel
     var body: some View {
         let n = state.streak?.practisedThisMonth ?? 0
-        let today = Calendar.current.component(.day, from: .now)
+        let total = state.streak?.practisedTotal ?? 0
+        let goal = [7, 30, 100, 365, 1000].first { $0 > total } ?? total   // the next round number; the arc only grows (his ruling 11-24)
         VStack(spacing: 8) {
-            // the month as a ring: days practised out of the days gone by (his ask 11-14, shown not listed)
-            // leads with the total, which only grows; a zero month is never the headline (ui-ux-rules: progress adds up)
-            PLRing(value: Double(n) / Double(max(today, 1)), center: "\(state.streak?.practisedTotal ?? 0)", label: "days practised", tint: Candle.goldHi,
+            // the arc tells the same story as the centre: the total, toward its next round number
+            PLRing(value: Double(total) / Double(max(goal, 1)), center: "\(total)", label: "days practised", tint: Candle.goldHi,
                    text: Candle.goldHi, dim: Candle.ink.opacity(0.6), size: 96)
             if n > 0 {
                 Text("\(n) this month")
