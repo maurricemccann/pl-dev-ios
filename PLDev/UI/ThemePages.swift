@@ -92,13 +92,13 @@ struct WallpaperPage: View {
 
     private static let art = "https://pub-4420dc4349624d6bbed7eb9555f42661.r2.dev/"
     private static let picks: [(String, String)] = [
-        ("Studio night", "mask|" + art + "abstract-pattern_organic-curves_monochrome_digital_970.png"),
-        ("Drop day", "color|" + art + "abstract-pattern_organic-interlocking_red-warm_digital_2437.png"),
-        ("Copper", "color|" + art + "abstract-pattern_organic-flowing_warm-pink_digital_4693.png"),
-        ("The ledger", "invert|" + art + "abstract-pattern_organic-interlocking_monochrome_digital-ink_5373.png"),
-        ("Hyperspace", "invert|" + art + "abstract-pattern_organic-flowing_monochrome_digital_5457.png"),
-        ("From the archive", "invert|" + art + "glyph-abstract_organic-labyrinthine_monochrome_ink_017.jpg"),
-        ("Ember", "mask|" + art + "abstract-pattern_organic-interlocking_black-white_ink-marker_1239.jpg")]
+        ("PL-0138 · Studio night", "mask|" + art + "abstract-pattern_organic-curves_monochrome_digital_970.png"),
+        ("PL-0369 · Drop day", "color|" + art + "abstract-pattern_organic-interlocking_red-warm_digital_2437.png"),
+        ("PL-0539 · Copper", "color|" + art + "abstract-pattern_organic-flowing_warm-pink_digital_4693.png"),
+        ("PL-0690 · The ledger", "invert|" + art + "abstract-pattern_organic-interlocking_monochrome_digital-ink_5373.png"),
+        ("PL-0712 · Hyperspace", "invert|" + art + "abstract-pattern_organic-flowing_monochrome_digital_5457.png"),
+        ("PL-0732 · From the archive", "invert|" + art + "glyph-abstract_organic-labyrinthine_monochrome_ink_017.jpg"),
+        ("PL-0984 · Ember", "mask|" + art + "abstract-pattern_organic-interlocking_black-white_ink-marker_1239.jpg")]
     private let columns = [GridItem(.adaptive(minimum: 96), spacing: 10)]
 
     init() {}
@@ -119,7 +119,7 @@ struct WallpaperPage: View {
                     Text("Strength").plFont(.callout)
                     Slider(value: $strength, in: 0...1) { Text("Wallpaper strength") }
                 }
-                group("Your seven", Self.picks)
+                group("Your list (your archive picks 11-24)", Self.picks)
                 group("Your patterns", [("Curves", "curves"), ("PL tile", "kit|patterns/pl_tile.png"), ("Curve tile", "kit|patterns/ar-curve-tile.png")])
                 group("Drawn grounds", CodeGround.names.map { ($0.1, "code|" + $0.0) })
                 NavigationLink { ArchiveWallPage(choose: choose) } label: {
@@ -150,7 +150,7 @@ struct WallpaperPage: View {
                                 .frame(height: 130)
                                 .clipShape(RoundedRectangle(cornerRadius: 12, style: .continuous))
                                 .overlay { RoundedRectangle(cornerRadius: 12, style: .continuous).strokeBorder(wall == spec ? PLTone.accent : .secondary.opacity(0.3), lineWidth: wall == spec ? 3 : 1) }
-                            Text(name).plFont(.caption2).lineLimit(1)
+                            Text(name).plFont(.caption2).lineLimit(2).multilineTextAlignment(.center)
                         }
                         .contentShape(Rectangle())
                     }
@@ -279,7 +279,7 @@ struct FacePage: View {
                             Spacer()
                             if busy == token { ProgressView() } else if on { Image(systemName: "checkmark").foregroundStyle(kit.palette.keyColor) }
                         }
-                        .frame(minHeight: 32)
+                        .frame(minHeight: PLMetric.touch)
                         .contentShape(Rectangle())
                     }
                     .foregroundStyle(.primary)

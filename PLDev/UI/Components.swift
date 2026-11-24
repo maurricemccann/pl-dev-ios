@@ -329,7 +329,10 @@ struct ThemeWall: View {
     var body: some View {
         let parts = spec.split(separator: "|", maxSplits: 1).map(String.init)
         let mode = parts.first ?? "mask"
-        Group {
+        // S353·7b1e 11-24, his report "the archive pieces I sent aren't used": this was a Group, empty until the image arrived, and an empty
+        // view never starts its .task, so his seven pieces never loaded. The clear layer is always there, so the load always starts.
+        ZStack {
+            Color.clear
             if let image {
                 if mode == "color" {
                     Image(uiImage: image).resizable().scaledToFill().opacity(min(1, 0.25 + strength))
@@ -342,6 +345,9 @@ struct ThemeWall: View {
                 }
             }
         }
+        .frame(maxWidth: .infinity, maxHeight: .infinity)
+        .clipped()
+        .allowsHitTesting(false)
         .ignoresSafeArea()
         .task(id: spec) { image = await Self.load(parts.count == 2 ? parts[1] : "") }
     }
