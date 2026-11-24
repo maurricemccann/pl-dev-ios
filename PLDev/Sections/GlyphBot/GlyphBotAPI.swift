@@ -45,7 +45,10 @@ import SwiftUI
     struct StateReply: Decodable, Sendable {
         struct Bank: Decodable, Sendable { let asked: Int?; let total: Int?; let next_round: String? }
         struct Recent: Decodable, Identifiable, Sendable { let id: Int; let answer: String; let at: String?; let domain: String?; let question: String? }
-        let bank: Bank?; let coverage: [String: Int]?; let recent: [Recent]?
+        /// A topic queued for the interviewer (the newest five unused) and a bank question it may reword (the next three). Absent from a server older than the queue.
+        struct Topic: Decodable, Identifiable, Sendable { let id: Int; let text: String }
+        struct BankQ: Decodable, Identifiable, Sendable { let id: Int; let round: String?; let text: String }
+        let bank: Bank?; let coverage: [String: Int]?; let recent: [Recent]?; let queue: [Topic]?; let bank_next: [BankQ]?
     }
 
     private static func client(_ model: AppModel) throws -> HTTPClient {

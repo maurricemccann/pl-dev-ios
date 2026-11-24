@@ -58,8 +58,8 @@ struct AskTab: View {
                             if !t.answer.isEmpty {
                                 HStack {
                                     VStack(alignment: .leading, spacing: 2) {
-                                        GlyphBubble(mine: false) { Text(t.answer).font(.system(size: 14)).foregroundStyle(PLOS.text(scheme).opacity(0.85)).lineSpacing(3).textSelection(.enabled) }
-                                        Text(GlyphBot.viaWords(t.via)).osEyebrow(8).foregroundStyle(PLOS.dim(scheme))
+                                        GlyphBubble(mine: false) { Text(t.answer).font(SiteFont.body(15)).foregroundStyle(Bone.inkSoft(scheme)).lineSpacing(4).textSelection(.enabled) }
+                                        Text(GlyphBot.viaWords(t.via)).font(SiteFont.body(11, relativeTo: .caption)).foregroundStyle(Bone.inkFaint(scheme))
                                     }
                                     Spacer(minLength: 40)
                                 }
@@ -71,7 +71,7 @@ struct AskTab: View {
                         if let note { Text(note).font(.footnote).foregroundStyle(.secondary) }
                         Color.clear.frame(height: 1).id("end")
                     }
-                    .padding(.horizontal, PLSpace.margin).padding(.vertical, PLSpace.gap)
+                    .padding(.horizontal, 20).padding(.vertical, 16)
                 }
                 .onChange(of: store.turns.first?.answer) { _, _ in withAnimation { proxy.scrollTo("end", anchor: .bottom) } }
                 .onChange(of: loading) { _, _ in withAnimation { proxy.scrollTo("end", anchor: .bottom) } }
@@ -79,16 +79,14 @@ struct AskTab: View {
         }
         .safeAreaInset(edge: .bottom) {
             HStack(alignment: .bottom, spacing: 8) {
-                Text("\u{203A}").font(.system(size: 17, design: .monospaced)).foregroundStyle(PLOS.gold.opacity(0.5)).padding(.bottom, 8)
-                TextField(net.online ? "Ask the practice" : "Offline: answering from memory", text: $text, axis: .vertical).lineLimit(1...4)
-                    .font(.system(size: 15)).padding(.vertical, 8)
-                Button { Task { await ask() } } label: { Image(systemName: "arrow.up.circle.fill").font(.title).foregroundStyle(PLOS.gold) }
+                TextField(net.online ? "Ask the practice" : "Offline: answering from memory", text: $text, axis: .vertical).lineLimit(1...4).siteField()
+                Button { Task { await ask() } } label: { Image(systemName: "arrow.up.circle.fill").font(.largeTitle).foregroundStyle(Bone.gold).frame(minWidth: 44, minHeight: 44) }
                     .disabled(loading || text.trimmingCharacters(in: .whitespaces).isEmpty)
                     .accessibilityLabel("Ask")
             }
-            .padding(.horizontal, PLSpace.margin).padding(.vertical, PLSpace.gap).background(.bar)
+            .padding(.horizontal, 20).padding(.vertical, 10).background(Bone.ground(scheme)).overlay(alignment: .top) { SiteRule() }
         }
-        .background { PLOS.bg(scheme).ignoresSafeArea() }
+        .background { SiteGround() }
         .sensoryFeedback(PLHaptic.select, trigger: sent)
         .sheet(item: $sourcesFor) { t in SourcesSheet(turn: t) }
         .onDisappear { voice.stop() }
@@ -109,7 +107,7 @@ struct AskTab: View {
             }
             .padding(.top, 32)
         }
-        .padding(.horizontal, PLSpace.margin).padding(.top, 8)
+        .padding(.horizontal, 20).padding(.top, 8)
     }
 
     @ViewBuilder private func turnMenu(_ t: GlyphTurn) -> some View {
@@ -121,12 +119,12 @@ struct AskTab: View {
     private var status: some View {
         HStack(spacing: 6) {
             if !net.online {   // online is already shown in the header; said once (11-13)
-                Image(systemName: "circle.dotted").font(.caption2).foregroundStyle(Color(hex: 0xb08948))
+                Image(systemName: "circle.dotted").font(.caption2).foregroundStyle(Bone.amber)
                 Text("Offline: answering from memory").font(.caption).foregroundStyle(.secondary)
             }
             Spacer()
             if store.unsynced.count > 0 {
-                Button("\(store.unsynced.count) to sync") { Task { await store.flush(model: model); state.publish() } }.font(.caption).buttonStyle(.bordered)
+                SiteAction(title: "\(store.unsynced.count) to sync") { Task { await store.flush(model: model); state.publish() } }
             }
         }
         .accessibilityElement(children: .combine)
@@ -197,10 +195,35 @@ struct SourcesSheet: View {
     var error: String?
     var draft = ""                    // his answer; it stays here when a send fails
 
+    /// A sitting saved on this phone that is still recent enough to continue (`SittingFreshness`), and when it was left.
+    /// Stored, so the setup screen redraws the moment an old one is cleared.
+    var savedSitting = false
+    var savedAt: Date?
+
     var active: Bool { started != nil }
-    var savedSitting: Bool { UserDefaults.standard.integer(forKey: "glyphbot.sid") > 0 && !(UserDefaults.standard.string(forKey: "glyphbot.lastQ") ?? "").isEmpty }
+
+    init() { refreshSaved() }
+
+    private static let savedKeys = ["glyphbot.sid", "glyphbot.lastQ", "glyphbot.lastSeat", "glyphbot.mode", "glyphbot.at"]
+
+    /// Reads what is saved. The server opens a new sitting only when no session id is sent and closes one only at the monthly
+    /// budget, so a saved id alone would resume the question he left a month ago (his 11-24). One that is not recent is cleared
+    /// here, so the next sitting begins fresh and the newest queued questions come up.
+    func refreshSaved() {
+        let d = UserDefaults.standard
+        let has = d.integer(forKey: "glyphbot.sid") > 0 && !(d.string(forKey: "glyphbot.lastQ") ?? "").isEmpty
+        let at = (d.object(forKey: "glyphbot.at") as? Double).map { Date(timeIntervalSince1970: $0) }
+        if has, !SittingFreshness.isFresh(savedAt: at) { clearSaved(); return }
+        savedSitting = has; savedAt = has ? at : nil
+    }
+
+    private func clearSaved() {
+        Self.savedKeys.forEach { UserDefaults.standard.removeObject(forKey: $0) }
+        savedSitting = false; savedAt = nil
+    }
 
     func begin(model: AppModel) async {
+        clearSaved()   // "Start a new sitting" means new: nothing of the last one is offered or sent
         lines = []; sid = nil; answers = 0; done = false; error = nil; draft = ""
         started = Date()
         SittingLive.start(mode: mode.title, started: started ?? .now)
@@ -240,6 +263,7 @@ struct SourcesSheet: View {
                 lines.append(Line(mine: false, text: q, seat: r.seat))
                 let d = UserDefaults.standard
                 d.set(sid ?? 0, forKey: "glyphbot.sid"); d.set(q, forKey: "glyphbot.lastQ"); d.set(r.seat ?? "", forKey: "glyphbot.lastSeat"); d.set(mode.rawValue, forKey: "glyphbot.mode")
+                d.set(Date().timeIntervalSince1970, forKey: "glyphbot.at")   // when he left off: a sitting is continued only while this is recent
             }
             await SittingLive.update(answers: answers, seat: GlyphBot.seatTitle(r.seat))
             if done { await end() }
@@ -251,8 +275,9 @@ struct SourcesSheet: View {
 
     func end() async {
         await SittingLive.stop()
-        if done { UserDefaults.standard.removeObject(forKey: "glyphbot.sid") }
+        if done { clearSaved() }
         started = nil
+        refreshSaved()
     }
 }
 
@@ -268,10 +293,11 @@ struct SitTab: View {
     var body: some View {
         Group {
             if !GlyphBot.interviewReady(model) {
-                ContentUnavailableView("The interviewer needs its key", systemImage: "key", description: Text("Your config has no key named interview. Add it to the config file and load it again."))
+                SiteEmpty(title: "The interviewer needs its key", detail: "Your config has no key named interview. Add it to the config file and load it again.")
             } else if sitting.active { thread } else { setup }
         }
         .sensoryFeedback(PLHaptic.select, trigger: sitting.lines.count)
+        .onAppear { sitting.refreshSaved() }
         .onDisappear { voice.stop(); talk.stopAll() }
         .onChange(of: sitting.lines.count) { _, _ in
             // Voice: each question the interviewer asks is spoken aloud in an Apple voice, then it listens (hands free) or waits for the held gold.
@@ -282,77 +308,199 @@ struct SitTab: View {
         .onChange(of: sitting.active) { _, a in if !a { talk.stopAll() } }
     }
 
+    private var modeIndex: Binding<Int> {
+        Binding(get: { SittingModel.Mode.allCases.firstIndex(of: sitting.mode) ?? 0 }, set: { sitting.mode = SittingModel.Mode.allCases[$0] })
+    }
+
+    // MARK: setup: the page opens like the Congregation's, then the cards
+
     private var setup: some View {
-        Form {
-            Section { GlyphUsageRow(model: model) }
-            Section {
-                Picker("Mode", selection: $sitting.mode) { ForEach(SittingModel.Mode.allCases) { Text($0.title).tag($0) } }.pickerStyle(.segmented)
-            } footer: {
-                Text(sitting.mode == .interview ? "GlyphBot asks, one question at a time, and pulls on what you say. Everything you answer is saved word for word."
-                                                : "You start. GlyphBot answers like someone who has read everything you ever said.")
-            }
-            if sitting.mode == .interview, let b = state.interview?.bank, (b.total ?? 0) > 0 {
-                // the page's bank card: how much of the 501 has been asked, and which round is next
-                Section {
-                    VStack(alignment: .leading, spacing: 6) {
-                        HStack { Text("The 501").osEyebrow(10); Spacer(); Text("\(b.asked ?? 0) of \(b.total ?? 0) asked").font(.footnote).monospacedDigit().foregroundStyle(.secondary) }
-                        ProgressView(value: Double(b.asked ?? 0), total: Double(max(1, b.total ?? 1))).tint(PLOS.gold)
-                        Text(b.next_round.map { "Next: \($0.capitalized)" } ?? "All asked").font(.footnote).foregroundStyle(.secondary)
+        let s = state.interview
+        let interview = sitting.mode == .interview
+        return ScrollView {
+            VStack(alignment: .leading, spacing: 16) {
+                SitePageHead(eyebrow: "The interview", lead: interview ? "GlyphBot asks," : "You start,", accent: interview ? "you answer." : "it answers.",
+                             lede: interview ? "One question at a time. It pulls on what you say, and everything you answer is saved word for word."
+                                             : "GlyphBot answers like someone who has read everything you ever said.")
+                VStack(alignment: .leading, spacing: 16) {
+                    GlyphUsageRow(model: model)
+                    SiteSegment(titles: SittingModel.Mode.allCases.map(\.title), index: modeIndex)
+                    if interview {
+                        upNext
+                        answered
+                        if let b = s?.bank, (b.total ?? 0) > 0 { bankCard(b) }
+                        doors
+                        thisSitting
                     }
-                    .accessibilityElement(children: .combine)
+                    voiceCard
+                    actions
                 }
-            }
-            if sitting.mode == .interview {
-                // the page's doors: one tap sits you down on that domain, with how much it already holds
-                Section("Doors") {
-                    let cov = state.interview?.coverage ?? [:]
-                    ForEach(GlyphBot.domains, id: \.self) { d in
-                        Button { sitting.domain = d; Task { await sitting.begin(model: model) } } label: {
-                            HStack {
-                                Text(GlyphBot.domainTitle(d)).foregroundStyle(.primary)
-                                Spacer()
-                                Text((cov[d] ?? 0) == 0 ? "Untouched" : "\(cov[d] ?? 0) answer\((cov[d] ?? 0) == 1 ? "" : "s")").font(.footnote).foregroundStyle(.secondary)
-                                Image(systemName: "chevron.right").font(.caption2.weight(.bold)).foregroundStyle(.tertiary)
-                            }
-                            .frame(minHeight: 44).contentShape(Rectangle())
-                        }
-                        .buttonStyle(.plain)
-                    }
-                }
-            }
-            if sitting.mode == .interview {
-                Section("This sitting") {
-                    Picker("Domain", selection: $sitting.domain) {
-                        Text("Let GlyphBot choose").tag("")
-                        ForEach(GlyphBot.domains, id: \.self) { Text(GlyphBot.domainTitle($0)).tag($0) }
-                    }
-                    Picker("Pressure", selection: $sitting.settings.boldness) { Text("Light").tag("light"); Text("Gentle").tag("gentle"); Text("Probing").tag("probing") }
-                    Picker("Length", selection: $sitting.settings.targetMin) { Text("Open").tag(0); Text("10 minutes").tag(10); Text("20 minutes").tag(20); Text("30 minutes").tag(30) }
-                    Toggle("Go deeper on rich answers", isOn: $sitting.settings.deep)
-                }
-            }
-            Section {
-                if talk.supported {
-                    Toggle("Talk to it", isOn: Binding(get: { talk.on }, set: { talk.setOn($0) }))
-                } else {
-                    Text("Voice answers need Speech Recognition and the microphone. Allow them for PL DEV in Settings.").font(.footnote).foregroundStyle(.secondary)
-                }
-                NavigationLink { InterviewSettingsView(sitting: sitting) } label: { Label("Voice and answers", systemImage: "slider.horizontal.3") }
-            } header: { Text("Voice") } footer: { Text("It speaks each question in an Apple voice on this iPhone and hears you with Apple's on-device speech. Hands free or push to talk, the pause, the speed and the model are in Voice and answers.") }
-            Section {
-                Button(sitting.mode == .interview ? "Begin the sitting" : "Start talking") { Task { await sitting.begin(model: model) } }
-                if sitting.savedSitting { Button("Continue the last sitting") { sitting.resume() } }
+                .padding(.horizontal, 20).padding(.bottom, 28)
             }
         }
-        .glyphList()
+        .background { SiteGround() }
+        .task { await state.loadState(model: model) }
+        .refreshable { await state.loadState(model: model) }
     }
+
+    /// The questions, before he sits down: the topics the interviewer draws from (the newest five unused) and the bank questions it may reword.
+    private var upNext: some View {
+        let s = state.interview
+        return GlyphCard(title: "Up next", note: "The interviewer sees these, newest first, and rewords them to fit where the talk is.") {
+            if let q = s?.queue, !q.isEmpty {
+                VStack(alignment: .leading, spacing: 0) {
+                    ForEach(Array(q.enumerated()), id: \.element.id) { i, t in
+                        if i > 0 { SiteRule() }
+                        questionLine(t.text, tag: nil)
+                    }
+                }
+            } else if s == nil {
+                if let m = state.message {
+                    Text(m).siteBody(14)
+                    SiteAction(title: "Try again") { Task { await state.loadState(model: model) } }
+                } else { SitePulse() }
+            } else if s?.queue == nil {
+                Text("The queue shows here once the server has its update.").siteBody(14)
+            } else {
+                Text("Nothing is queued. It will choose from the bank.").siteBody(14)
+            }
+            if let b = s?.bank_next, !b.isEmpty {
+                SiteRule()
+                Text("From the bank").siteLabel(11)
+                VStack(alignment: .leading, spacing: 0) {
+                    ForEach(Array(b.enumerated()), id: \.element.id) { i, q in
+                        if i > 0 { SiteRule() }
+                        questionLine(q.text, tag: q.round?.capitalized)
+                    }
+                }
+            }
+        }
+    }
+
+    private func questionLine(_ text: String, tag: String?) -> some View {
+        VStack(alignment: .leading, spacing: 4) {
+            if let tag { Text(tag).siteLabel(11) }
+            Text(text).font(SiteFont.display(18)).foregroundStyle(Bone.ink(scheme)).lineSpacing(3).fixedSize(horizontal: false, vertical: true)
+        }
+        .padding(.vertical, 10).frame(maxWidth: .infinity, alignment: .leading)
+        .accessibilityElement(children: .combine)
+    }
+
+    /// What he already answered, read only; the whole record is the Record tab.
+    @ViewBuilder private var answered: some View {
+        if let recent = state.interview?.recent, !recent.isEmpty {
+            GlyphCard(title: "Already answered", note: "Read only. Every answer is kept word for word.") {
+                VStack(alignment: .leading, spacing: 0) {
+                    ForEach(Array(recent.prefix(3).enumerated()), id: \.element.id) { i, r in
+                        if i > 0 { SiteRule() }
+                        VStack(alignment: .leading, spacing: 4) {
+                            if let q = r.question { Text(q).font(SiteFont.body(13, relativeTo: .footnote)).foregroundStyle(Bone.inkFaint(scheme)).lineLimit(2) }
+                            Text(r.answer).font(SiteFont.body(14)).foregroundStyle(Bone.inkSoft(scheme)).lineSpacing(3).lineLimit(3)
+                        }
+                        .padding(.vertical, 10).frame(maxWidth: .infinity, alignment: .leading)
+                        .accessibilityElement(children: .combine)
+                    }
+                }
+                SiteAction(title: "All answers") { state.tab = .record }
+            }
+        }
+    }
+
+    private func bankCard(_ b: GlyphBot.StateReply.Bank) -> some View {
+        GlyphCard(title: "The 501") {
+            HStack {
+                Text("\(b.asked ?? 0) of \(b.total ?? 0) asked").font(SiteFont.body(14)).monospacedDigit().foregroundStyle(Bone.ink(scheme))
+                Spacer()
+                Text(b.next_round.map { "Next: \($0.capitalized)" } ?? "All asked").font(SiteFont.body(13, relativeTo: .footnote)).foregroundStyle(Bone.inkFaint(scheme))
+            }
+            ProgressView(value: Double(b.asked ?? 0), total: Double(max(1, b.total ?? 1))).tint(Bone.gold)
+        }
+        .accessibilityElement(children: .combine)
+    }
+
+    /// The page's doors: one tap sits you down on that domain, with how much it already holds.
+    private var doors: some View {
+        let cov = state.interview?.coverage ?? [:]
+        return GlyphCard(title: "Doors") {
+            VStack(alignment: .leading, spacing: 0) {
+                ForEach(Array(GlyphBot.domains.enumerated()), id: \.element) { i, d in
+                    if i > 0 { SiteRule() }
+                    Button { sitting.domain = d; Task { await sitting.begin(model: model) } } label: {
+                        HStack {
+                            Text(GlyphBot.domainTitle(d)).font(SiteFont.body(15)).foregroundStyle(Bone.ink(scheme))
+                            Spacer()
+                            Text((cov[d] ?? 0) == 0 ? "Untouched" : "\(cov[d] ?? 0) answer\((cov[d] ?? 0) == 1 ? "" : "s")").font(SiteFont.body(13, relativeTo: .footnote)).foregroundStyle(Bone.inkFaint(scheme))
+                            Image(systemName: "chevron.right").font(.caption2.weight(.bold)).foregroundStyle(Bone.inkFaint(scheme))
+                        }
+                        .frame(minHeight: 44).contentShape(Rectangle())
+                    }
+                    .buttonStyle(.plain)
+                }
+            }
+        }
+    }
+
+    private var thisSitting: some View {
+        GlyphCard(title: "This sitting") {
+            GlyphRow(title: "Domain") {
+                Picker("Domain", selection: $sitting.domain) {
+                    Text("Let GlyphBot choose").tag("")
+                    ForEach(GlyphBot.domains, id: \.self) { Text(GlyphBot.domainTitle($0)).tag($0) }
+                }.labelsHidden().pickerStyle(.menu)
+            }
+            SiteRule()
+            GlyphRow(title: "Pressure") {
+                Picker("Pressure", selection: $sitting.settings.boldness) { Text("Light").tag("light"); Text("Gentle").tag("gentle"); Text("Probing").tag("probing") }.labelsHidden().pickerStyle(.menu)
+            }
+            SiteRule()
+            GlyphRow(title: "Length") {
+                Picker("Length", selection: $sitting.settings.targetMin) { Text("Open").tag(0); Text("10 minutes").tag(10); Text("20 minutes").tag(20); Text("30 minutes").tag(30) }.labelsHidden().pickerStyle(.menu)
+            }
+            SiteRule()
+            GlyphRow(title: "Go deeper on rich answers") { Toggle("Go deeper on rich answers", isOn: $sitting.settings.deep).labelsHidden() }
+        }
+    }
+
+    private var voiceCard: some View {
+        GlyphCard(title: "Voice", note: "It speaks each question in an Apple voice on this iPhone and hears you with Apple's on-device speech. Hands free or push to talk, the pause, the speed and the model are in Voice and answers.") {
+            if talk.supported {
+                GlyphRow(title: "Talk to it") { Toggle("Talk to it", isOn: Binding(get: { talk.on }, set: { talk.setOn($0) })).labelsHidden() }
+            } else {
+                Text("Voice answers need Speech Recognition and the microphone. Allow them for PL DEV in Settings.").siteBody(14)
+            }
+            SiteRule()
+            NavigationLink { InterviewSettingsView(sitting: sitting) } label: {
+                GlyphRow(title: "Voice and answers") { Image(systemName: "chevron.right").font(.caption2.weight(.bold)).foregroundStyle(Bone.inkFaint(scheme)) }.contentShape(Rectangle())
+            }
+            .buttonStyle(.plain)
+        }
+    }
+
+    /// A saved sitting can be continued only while it is recent; a new sitting is always one tap.
+    private var actions: some View {
+        VStack(spacing: 12) {
+            if sitting.savedSitting {
+                Button("Continue the last sitting") { sitting.resume() }.buttonStyle(SitePill(gold: true))
+                if let at = sitting.savedAt {
+                    Text("Left off " + at.formatted(.relative(presentation: .named))).font(SiteFont.body(12, relativeTo: .caption)).foregroundStyle(Bone.inkFaint(scheme))
+                }
+                Button("Start a new sitting") { Task { await sitting.begin(model: model) } }.buttonStyle(SiteGhost())
+            } else {
+                Button("Start a new sitting") { Task { await sitting.begin(model: model) } }.buttonStyle(SitePill(gold: true))
+            }
+        }
+        .padding(.top, 4)
+    }
+
+    // MARK: the sitting itself
 
     /// The page's orb: the gold button, what it hears, and a way back to typing.
     private var orbPanel: some View {
         VStack(spacing: 8) {
-            Text(talk.heard.isEmpty ? " " : talk.heard).font(.system(size: 15)).foregroundStyle(PLOS.text(scheme)).lineLimit(3).frame(maxWidth: .infinity, minHeight: 22)
+            Text(talk.heard.isEmpty ? " " : talk.heard).font(SiteFont.body(15)).foregroundStyle(Bone.ink(scheme)).lineLimit(3).frame(maxWidth: .infinity, minHeight: 22)
             InterviewOrb(talk: talk)
-            Text(talk.statusLine).osEyebrow(10).foregroundStyle(talk.note == nil ? PLOS.dim(scheme) : PLOS.danger)
+            Text(talk.statusLine).font(SiteFont.body(11, relativeTo: .caption, weight: .medium)).textCase(.uppercase).tracking(2.4)
+                .foregroundStyle(talk.note == nil ? Bone.inkFaint(scheme) : Color(hex: 0xe08a8a))
             HStack(spacing: 18) {
                 Button("Type instead") { talk.setOn(false) }
                 NavigationLink { InterviewSettingsView(sitting: sitting) } label: { Text("Voice settings") }
@@ -363,19 +511,23 @@ struct SitTab: View {
     private var thread: some View {
         ScrollViewReader { proxy in
             ScrollView {
-                LazyVStack(spacing: 8) {
+                LazyVStack(spacing: 10) {
                     if sitting.lines.isEmpty && !sitting.busy {
-                        ContentUnavailableView("You start", systemImage: "text.bubble", description: Text("Say what is on your mind. Nothing is sent until you press send."))
+                        SiteEmpty(title: "You start", detail: "Say what is on your mind. Nothing is sent until you press send.")
                     }
                     ForEach(sitting.lines) { l in
                         if l.mine { GlyphUserBubble(text: l.text).id(l.id) }
                         else {
+                            // the question is the point of the screen: the latest one is set large, in the site's display face
+                            let newest = l.id == sitting.lines.last?.id
                             HStack {
-                                VStack(alignment: .leading, spacing: 2) {
-                                    GlyphBubble(mine: false) { Text(l.text).font(.system(size: 14)).foregroundStyle(PLOS.text(scheme)).lineSpacing(3).textSelection(.enabled) }
-                                    Label(GlyphBot.seatTitle(l.seat), systemImage: GlyphBot.seatSymbol(l.seat)).osEyebrow(8).foregroundStyle(PLOS.dim(scheme))
+                                VStack(alignment: .leading, spacing: 4) {
+                                    GlyphBubble(mine: false) {
+                                        Text(l.text).font(newest ? SiteFont.display(21) : SiteFont.body(15)).foregroundStyle(Bone.ink(scheme)).lineSpacing(newest ? 5 : 4).textSelection(.enabled)
+                                    }
+                                    Label(GlyphBot.seatTitle(l.seat), systemImage: GlyphBot.seatSymbol(l.seat)).font(SiteFont.body(11, relativeTo: .caption)).foregroundStyle(Bone.inkFaint(scheme))
                                 }
-                                Spacer(minLength: 40)
+                                Spacer(minLength: 24)
                             }
                             .id(l.id)
                             .contextMenu {
@@ -385,36 +537,37 @@ struct SitTab: View {
                         }
                     }
                     if sitting.busy { PLThinkingOrb(size: 34).frame(maxWidth: .infinity, alignment: .leading).padding(.leading, 12).id("typing") }   // GlyphBot thinking (11-13)
-                    if let e = sitting.error { ResultLine(text: e) }
-                    if let note { Text(note).font(.footnote).foregroundStyle(.secondary) }
-                    if sitting.done { Text("The sitting is over. Everything you said is kept word for word.").font(.footnote).foregroundStyle(.secondary).padding(.top, 8) }
+                    if let e = sitting.error { SiteNote(text: e) }
+                    if let note { SiteNote(text: note) }
+                    if sitting.done { Text("The sitting is over. Everything you said is kept word for word.").siteBody(13).padding(.top, 8) }
                 }
-                .padding(.horizontal, PLSpace.margin).padding(.vertical, PLSpace.gap)
+                .padding(.horizontal, 20).padding(.vertical, 16)
             }
             .onChange(of: sitting.lines.count) { _, _ in withAnimation { proxy.scrollTo(sitting.lines.last?.id, anchor: .bottom) } }
         }
+        .background { SiteGround() }
         .safeAreaInset(edge: .bottom) {
             VStack(spacing: 6) {
                 if talk.on { orbPanel } else {
-                HStack(alignment: .bottom, spacing: 8) {
-                    Text("\u{203A}").font(.system(size: 17, design: .monospaced)).foregroundStyle(PLOS.gold.opacity(0.5)).padding(.bottom, 8)
-                    TextField("Your answer", text: $sitting.draft, axis: .vertical).lineLimit(1...8)
-                        .font(.system(size: 15)).padding(.vertical, 8)
-                    Button { Task { await sitting.send(model: model) } } label: { Image(systemName: "arrow.up.circle.fill").font(.title).foregroundStyle(PLOS.gold) }
-                        .disabled(sitting.busy || sitting.draft.trimmingCharacters(in: .whitespaces).isEmpty)
-                        .accessibilityLabel("Send")
-                    if talk.supported {
-                        Button {
-                            talk.setOn(true)
-                            if let q = sitting.lines.last, !q.mine, !sitting.done { talk.speak(q.text) { heard in sitting.draft = heard; Task { await sitting.send(model: model) } } }
-                        } label: { Image(systemName: "mic.circle").font(.title).foregroundStyle(PLOS.gold) }
-                            .accessibilityLabel("Answer by voice")
+                    HStack(alignment: .bottom, spacing: 8) {
+                        TextField("Your answer", text: $sitting.draft, axis: .vertical).lineLimit(1...8).siteField()
+                        Button { Task { await sitting.send(model: model) } } label: { Image(systemName: "arrow.up.circle.fill").font(.largeTitle).foregroundStyle(Bone.gold).frame(minWidth: 44, minHeight: 44) }
+                            .disabled(sitting.busy || sitting.draft.trimmingCharacters(in: .whitespaces).isEmpty)
+                            .accessibilityLabel("Send")
+                        if talk.supported {
+                            Button {
+                                talk.setOn(true)
+                                if let q = sitting.lines.last, !q.mine, !sitting.done { talk.speak(q.text) { heard in sitting.draft = heard; Task { await sitting.send(model: model) } } }
+                            } label: { Image(systemName: "mic.circle").font(.largeTitle).foregroundStyle(Bone.gold).frame(minWidth: 44, minHeight: 44) }
+                                .accessibilityLabel("Answer by voice")
+                        }
                     }
                 }
-                }
-                Button(sitting.done ? "Finish" : "End the sitting") { talk.stopAll(); Task { await sitting.end() } }.font(.footnote).buttonStyle(.borderless)
+                SiteAction(title: sitting.done ? "Finish" : "End the sitting", tone: .faint) { talk.stopAll(); Task { await sitting.end() } }
             }
-            .padding(.horizontal, PLSpace.margin).padding(.vertical, PLSpace.gap).background(.bar)
+            .padding(.horizontal, 20).padding(.vertical, 10)
+            .background(Bone.ground(scheme))
+            .overlay(alignment: .top) { SiteRule() }
         }
     }
 }
@@ -440,7 +593,7 @@ struct GlyphRecordTab: View {
                     ForEach(GlyphBot.domains, id: \.self) { d in
                         VStack(alignment: .leading, spacing: 3) {
                             HStack { Text(GlyphBot.domainTitle(d)); Spacer(); Text("\(cov[d] ?? 0)").monospacedDigit().foregroundStyle(.secondary) }
-                            ProgressView(value: Double(cov[d] ?? 0), total: Double(top)).tint(Wallpaper.line)
+                            ProgressView(value: Double(cov[d] ?? 0), total: Double(top)).tint(Bone.gold)
                         }
                         .accessibilityElement(children: .combine)
                     }
@@ -457,14 +610,14 @@ struct GlyphRecordTab: View {
                     }
                 }
             } else if !GlyphBot.interviewReady(model) {
-                ContentUnavailableView("The record needs the interviewer key", systemImage: "key", description: Text("Your config has no key named interview. Add it to the config file and load it again."))
+                SiteEmpty(title: "The record needs the interviewer key", detail: "Your config has no key named interview. Add it to the config file and load it again.")
             } else if !OfflineState.shared.online {
-                ContentUnavailableView("The record needs a connection the first time", systemImage: "wifi.slash", description: Text("Once it has loaded, it stays on this iPhone for offline use."))
+                SiteEmpty(title: "The record needs a connection the first time", detail: "Once it has loaded, it stays on this iPhone for offline use.")
             } else if state.message != nil {
                 // the load failed and said why above: a loader here would spin forever (11-14 sweep shot 11)
-                Button("Try again") { Task { await state.loadState(model: model) } }
+                SiteAction(title: "Try again") { Task { await state.loadState(model: model) } }
             } else {
-                PLLoader().frame(maxWidth: .infinity, minHeight: 120)
+                SitePulse()
             }
             Section {
                 LabeledContent("Oracle questions on this phone", value: "\(store.turns.count)")
@@ -481,13 +634,14 @@ struct GlyphRecordTab: View {
 /// This month's interview spend against the cap, at the top of the Sit tab (pl-cron's R1 door, `usage`). Says so when it cannot read it.
 struct GlyphUsageRow: View {
     let model: AppModel
+    @Environment(\.colorScheme) private var scheme
     @State private var text = "Reading this month's spend…"
 
     var body: some View {
         HStack {
-            Text("This month").osEyebrow(10)
+            Text("This month").siteLabel(11)
             Spacer()
-            Text(text).font(.footnote).monospacedDigit().foregroundStyle(.secondary)
+            Text(text).font(SiteFont.body(13, relativeTo: .footnote)).monospacedDigit().foregroundStyle(Bone.inkSoft(scheme))
         }
         .task {
             do {

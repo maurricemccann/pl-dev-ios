@@ -60,12 +60,26 @@ enum GlyphBotRoom: String, CaseIterable, Identifiable, Hashable {
     }
 
     var tab: Tab = .ask
-    var interview: GlyphBot.StateReply? = GlyphBot.cachedState()
+    var interview: GlyphBot.StateReply? = GlyphBotModel.simFixture() ?? GlyphBot.cachedState()
     var message: String?
     let sitting = SittingModel()
 
+    /// Screens workflow only (the same gate as `simLink`, never on a device): made-up numbers and sample lines so the setup screen can be seen with its lists filled.
+    static func simFixture() -> GlyphBot.StateReply? {
+        guard UserDefaults.standard.string(forKey: "simConfig") != nil else { return nil }
+        let json = """
+        {"bank":{"asked":112,"total":501,"next_round":"origins"},
+         "coverage":{"philosophy":14,"art-design":9,"process":7,"seeds":3,"archive":5,"business":2,"social-content":1,"world":0,"taste":4,"legacy":0,"origin":6},
+         "queue":[{"id":9,"text":"Sample topic: what the daily practice asks of you that nothing else does"},{"id":8,"text":"Sample topic: the first piece you would not sell"},{"id":7,"text":"Sample topic: who the Defiance is for"},{"id":6,"text":"Sample topic: what luxury means when nobody is watching"},{"id":5,"text":"Sample topic: the line you redraw the most"}],
+         "bank_next":[{"id":40,"round":"origins","text":"Sample question: what did you make first, and who saw it?"},{"id":41,"round":"origins","text":"Sample question: what did you stop making, and why?"},{"id":42,"round":"origins","text":"Sample question: which year changed the work?"}],
+         "recent":[{"id":3,"answer":"Sample answer. The practice is the part nobody sees, and it is the only part that holds.","at":"2026-11-23T03:10:00Z","domain":"philosophy","question":"Sample question: what holds the work together?"},
+                   {"id":2,"answer":"Sample answer. I draw the same gesture until it stops being a gesture and becomes a position.","at":"2026-11-22T02:40:00Z","domain":"process","question":"Sample question: how do you start?"}]}
+        """
+        return try? JSONDecoder().decode(GlyphBot.StateReply.self, from: Data(json.utf8))
+    }
+
     func loadState(model: AppModel) async {
-        guard GlyphBot.interviewReady(model) else { return }
+        guard GlyphBot.interviewReady(model), UserDefaults.standard.string(forKey: "simConfig") == nil else { return }
         do { interview = try await GlyphBot.state(model: model); message = nil }
         catch { message = "Could not reach the record. \(plainSentence(error))" }
         publish()
@@ -96,11 +110,13 @@ struct GlyphBotView: View {
             }
         }
         .safeAreaInset(edge: .top, spacing: 0) {
-            GlyphTabs(titles: GlyphBotModel.Tab.allCases.map(\.title), index: Binding(
+            GlyphHeader(titles: GlyphBotModel.Tab.allCases.map(\.title), index: Binding(
                 get: { GlyphBotModel.Tab.allCases.firstIndex(of: state.tab) ?? 0 },
                 set: { state.tab = GlyphBotModel.Tab.allCases[$0] }), online: GlyphBotNet.shared.online)
         }
-        .background { PLOS.bg(scheme).ignoresSafeArea() }
+        .background { SiteGround() }
+        .tint(Bone.goldDim)
+        .sensoryFeedback(PLHaptic.select, trigger: state.tab)
         .navigationTitle("GlyphBot")
         .navigationBarTitleDisplayMode(.inline)
         .toolbar {

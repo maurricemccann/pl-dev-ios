@@ -110,10 +110,10 @@ struct GlyphStageFigure: View {
                 }
             }
             .overlay {
-                if missing { Image(systemName: "figure.seated.side").font(.system(size: 44)).foregroundStyle(PLOS.gold.opacity(0.4)) }
+                if missing { Image(systemName: "figure.seated.side").font(.system(size: 44)).foregroundStyle(Bone.gold.opacity(0.4)) }
                 else if !ready { PLThinkingOrb(size: 64) }
             }
-            .shadow(color: PLOS.gold.opacity(speaking ? 0.5 : 0.22), radius: speaking ? 22 : 16)
+            .shadow(color: Bone.gold.opacity(speaking ? 0.5 : 0.22), radius: speaking ? 22 : 16)
             .animation(.easeInOut(duration: 0.5), value: speaking)
             .accessibilityLabel("GlyphGuy")
     }
@@ -169,12 +169,12 @@ struct GlyphStageBubble: View {
         VStack(alignment: .leading, spacing: 8) {
             if loading {
                 HStack(spacing: 4) { ForEach(0..<3, id: \.self) { i in
-                    Circle().fill(PLOS.gold.opacity(pulse ? 0.8 : 0.3)).frame(width: 6, height: 6)
+                    Circle().fill(Bone.gold.opacity(pulse ? 0.8 : 0.3)).frame(width: 6, height: 6)
                         .animation(.easeInOut(duration: 0.6).repeatForever().delay(Double(i) * 0.2), value: pulse)
                 } }.padding(.vertical, 6)
             } else {
                 TypewriterText(text: text, animate: typing, onDone: onDone)
-                    .font(.system(size: 15)).foregroundStyle(PLOS.text(scheme))
+                    .font(SiteFont.body(15)).lineSpacing(4).foregroundStyle(Bone.ink(scheme))
                 if !typing, !sources.isEmpty {
                     GlyphFlowChips(items: sources.prefix(4).map { "\($0.source) \u{00B7} \(String(format: "%.2f", $0.score))" })
                 }
@@ -182,8 +182,8 @@ struct GlyphStageBubble: View {
         }
         .padding(.horizontal, 14).padding(.vertical, 10)
         .frame(maxWidth: .infinity, alignment: .leading)
-        .background { UnevenRoundedRectangle(topLeadingRadius: 4, bottomLeadingRadius: 16, bottomTrailingRadius: 16, topTrailingRadius: 16, style: .continuous).fill(PLOS.surface2(scheme)) }
-        .overlay { UnevenRoundedRectangle(topLeadingRadius: 4, bottomLeadingRadius: 16, bottomTrailingRadius: 16, topTrailingRadius: 16, style: .continuous).strokeBorder(PLOS.line(scheme), lineWidth: 0.8) }
+        .background { UnevenRoundedRectangle(topLeadingRadius: 4, bottomLeadingRadius: 16, bottomTrailingRadius: 16, topTrailingRadius: 16, style: .continuous).fill(Bone.raised(scheme)) }
+        .overlay { UnevenRoundedRectangle(topLeadingRadius: 4, bottomLeadingRadius: 16, bottomTrailingRadius: 16, topTrailingRadius: 16, style: .continuous).strokeBorder(Bone.line(scheme), lineWidth: 0.8) }
         .onAppear { pulse = true }
         .accessibilityElement(children: .combine)
     }
@@ -200,8 +200,8 @@ private struct GlyphFlowChips: View {
         }
     }
     private func chip(_ s: String) -> some View {
-        Text(s).osEyebrow(8).foregroundStyle(PLOS.dim(scheme).opacity(0.75)).lineLimit(1)
+        Text(s).font(SiteFont.body(11, relativeTo: .caption)).foregroundStyle(Bone.inkFaint(scheme)).lineLimit(1)
             .padding(.horizontal, 6).padding(.vertical, 3)
-            .overlay { Rectangle().strokeBorder(PLOS.line(scheme), lineWidth: 0.6) }
+            .overlay { Rectangle().strokeBorder(Bone.line(scheme), lineWidth: 0.6) }
     }
 }
