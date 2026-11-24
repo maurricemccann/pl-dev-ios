@@ -35,6 +35,8 @@ struct HousePalette: Codable, Hashable, Identifiable {
     static let fun: [HousePalette] = [
         HousePalette(name: "fun-macos", ground: "#3aa6b9", text: "#111111", key: "#3366cc", accent: "#9c9cff"),   // his Mac OS reference 11-24: teal desktop, platinum, blue bars
         HousePalette(name: "fun-terminal", ground: "#0055aa", text: "#ffffff", key: "#ff8800", accent: "#ffffff"),   // his Linux reference 11-24: blue, white, orange
+        HousePalette(name: "fun-ubuntu", ground: "#2c1b12", text: "#f3e9e1", key: "#e95420", accent: "#f6b28c"),   // his Ubuntu reference 11-24: dark brown, orange
+        HousePalette(name: "fun-windows", ground: "#ece9d8", text: "#111111", key: "#245edb", accent: "#3c9d3c"),   // his Windows reference 11-24: the XP style, blue bars, green
         HousePalette(name: "fun-glass", ground: "#0e1b2a", text: "#eef6ff", key: "#9fd4ff", accent: "#ffffff"),
         HousePalette(name: "fun-eink", ground: "#f2f0e9", text: "#111111", key: "#2b2b2b", accent: "#777777"),
         HousePalette(name: "fun-synthwave", ground: "#14061f", text: "#ffe9fb", key: "#ff2a9d", accent: "#2de2e6"),   // his retrowave reference 11-24: hot pink and teal neon
@@ -348,9 +350,15 @@ struct PLThemePreset: Identifiable, Hashable {
         .init(id: "fun-macos", title: "Mac OS", palette: "fun-macos", face: "bundle:system", text: "system",
               note: "The platinum era: grey square windows on a teal desktop, blue bars, a quiet wave pattern, still", dark: false,
               card: .solid, radius: 0.15, space: 1, tile: "square", repeatSize: 120, curves: 0.2, calm: true, icon: nil, fun: true),
-        .init(id: "fun-terminal", title: "Linux", palette: "fun-terminal", face: "file:fonts/house/vt323.ttf", text: "bundle:IBMPlexMono-Regular",
-              note: "Retro desktop: white windows on deep blue, orange marks, pixel titles, mono text, still", dark: true,
+        .init(id: "fun-linux", title: "Linux", palette: "fun-ubuntu", face: "bundle:Ubuntu-Bold", text: "bundle:Ubuntu-Regular",
+              note: "The Ubuntu netbook look: dark brown frosted panels, orange, the Ubuntu font", dark: true,
+              card: .frosted, radius: 1, space: 1.1, tile: "squircle", repeatSize: 320, curves: 0.2, calm: false, icon: nil, fun: true),
+        .init(id: "fun-terminal", title: "Retro desktop", palette: "fun-terminal", face: "file:fonts/house/vt323.ttf", text: "bundle:IBMPlexMono-Regular",
+              note: "White windows on deep blue, orange marks, pixel titles, mono text, still", dark: true,
               card: .solid, radius: 0.1, space: 0.9, tile: "square", repeatSize: 180, curves: 0.15, calm: true, icon: nil, fun: true),
+        .init(id: "fun-windows", title: "Windows", palette: "fun-windows", face: "bundle:system", text: "system",
+              note: "The XP style: blue title bars over cream windows, green accents, softly rounded, a calm wallpaper", dark: false,
+              card: .solid, radius: 0.6, space: 1, tile: "squircle", repeatSize: 300, curves: 0.1, calm: false, icon: nil, fun: true),
         .init(id: "fun-glass", title: "Glass", palette: "fun-glass", face: "bundle:Michroma-Regular", text: "system",
               note: "All clear glass over deep blue, round and airy", dark: true,
               card: .clear, radius: 1.5, space: 1.2, tile: "circle", repeatSize: 480, curves: 0.35, calm: false, icon: nil, fun: true),

@@ -90,6 +90,8 @@
 		<string>ChakraPetch-SemiBold.ttf</string>
 		<string>PressStart2P-Regular.ttf</string>
 		<string>PixelifySans.ttf</string>
+		<string>Ubuntu-Regular.ttf</string>
+		<string>Ubuntu-Bold.ttf</string>
 		<string>GeistMono.ttf</string>
 	</array>
 	<key>UISupportedInterfaceOrientations</key>
