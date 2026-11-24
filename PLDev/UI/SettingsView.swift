@@ -105,6 +105,7 @@ struct SettingsView: View {
                 Text("System").tag("system")
                 Text("Jost").tag("jost")
                 Text("Courier Prime").tag("courier")
+                if font.hasPrefix("file:") { Text("The theme's").tag(font) }
             } label: {
                 SettingsLabel("Text face", "textformat", IOS27.SystemColors.blue)
             }
@@ -414,13 +415,14 @@ struct HouseRows: View {
     var body: some View {
         Section {
             NavigationLink { ThemePacksView() } label: {
-                LabeledContent { Text(ThemePack.shared.isLoaded ? "Your own" : PLThemePreset.all.first { $0.palette == kit.palette.name && $0.face == kit.titleFace }?.title ?? "Custom") } label: { SettingsLabel("Theme packs", "square.stack.3d.up.fill", kit.palette.keyColor) }
+                LabeledContent { Text(ThemePack.shared.isLoaded ? "Your own" : PLThemePreset.current?.title ?? "Custom") } label: { SettingsLabel("Theme packs", "square.stack.3d.up.fill", kit.palette.keyColor) }
             }
             NavigationLink { ColourwaysView() } label: {
                 LabeledContent { Text(kit.palette.name == "home-screen" ? "Your Home Screen" : kit.palette.title) } label: { SettingsLabel("Colourways", "swatchpalette.fill", kit.palette.keyColor) }
             }
             Picker(selection: $kit.titleFace) {
                 Text("Your hand (V1)").tag("v1"); Text("Your hand (V2)").tag("v2"); Text("Ransom").tag("ransom"); Text("Ledger").tag("ledger")
+                if kit.titleFace.hasPrefix("file:") { Text("The theme's").tag(kit.titleFace) }
             } label: { SettingsLabel("Title face", "textformat", kit.palette.keyColor) }
             Picker(selection: Binding(get: { icon }, set: { name in
                 UIApplication.shared.setAlternateIconName(name) { err in if err == nil { Task { @MainActor in icon = name } } }
@@ -480,8 +482,11 @@ struct ThemePacksView: View {
     @State private var kit = HouseKit.shared
     @State private var pack = ThemePack.shared
     @AppStorage("pldev.font") private var textFace = "system"
+    @State private var busy: String?
+    @State private var note: String?
     var body: some View {
         List {
+            if let note { Text(note).font(.footnote).foregroundStyle(.secondary) }
             Section("Dark") { ForEach(PLThemePreset.all.filter(\.dark)) { row($0) } }
             Section("Light") { ForEach(PLThemePreset.all.filter { !$0.dark }) { row($0) } }
             // S353·7b1e: was a second "Theme pack" row under Appearance (his report 11-24: two theme pack options); one place now.
@@ -499,19 +504,22 @@ struct ThemePacksView: View {
 
     private func row(_ t: PLThemePreset) -> some View {
         let p = kit.allPalettes.first { $0.name == t.palette }
-        let on = kit.paletteName == t.palette && kit.titleFace == t.face && textFace == t.text
-        return Button { withAnimation(.snappy) { t.apply() } } label: {
+        let on = PLThemePreset.current?.id == t.id && textFace == t.text
+        return Button {
+            busy = t.id
+            Task { let ok = await t.apply(); busy = nil; note = ok ? nil : "\(t.title): its fonts need a connection once; your hand stands in until then." }
+        } label: {
             HStack(spacing: 12) {
                 RoundedRectangle(cornerRadius: 10, style: .continuous).fill(p?.groundColor ?? .black)
                     .overlay { Text("Aa").font(.custom(face(t.face), size: 20)).foregroundStyle(p?.keyColor ?? .orange) }
                     .frame(width: 54, height: 54)
                 VStack(alignment: .leading, spacing: 2) { Text(t.title).font(.headline); Text(p == nil ? "Arrives from your Design Kit the next time the app is online" : t.note).font(.caption).foregroundStyle(.secondary) }
                 Spacer()
-                if on { Image(systemName: "checkmark.circle.fill").foregroundStyle(p?.keyColor ?? .orange) }
+                if busy == t.id { ProgressView() } else if on { Image(systemName: "checkmark.circle.fill").foregroundStyle(p?.keyColor ?? .orange) }
             }
         }
         .foregroundStyle(.primary)
-        .disabled(p == nil)
+        .disabled(p == nil || busy != nil)
         .accessibilityAddTraits(on ? .isSelected : [])
     }
     private func face(_ f: String) -> String { switch f { case "v2": return PLFace.handV2; case "ransom": return PLFace.ransom; case "ledger": return PLFace.ledger; default: return PLFace.handV1 } }

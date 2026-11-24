@@ -80,6 +80,10 @@ enum PLText {
             let f = Font.custom("CourierPrime-Regular", size: jostSize * scale, relativeTo: style)
             return w >= 600 ? f.bold() : f
         }
+        if let house = HouseFonts.name(face) {   // a theme's house font (one weight file), emphasis synthesized
+            let f = Font.custom(house, size: jostSize * scale, relativeTo: style)
+            return w >= 600 ? f.bold() : f
+        }
         if face == "jost" {
             let name = w >= 700 ? "Jost-Bold" : w >= 600 ? "Jost-Semi" : w >= 500 ? "Jost-Medium" : "Jost-Book"
             return .custom(name, size: jostSize * scale, relativeTo: style)
@@ -150,10 +154,13 @@ private struct PLGlass<S: Shape>: ViewModifier {
     let shape: S
     @AppStorage("pldev.glassBlur") private var glass = true
     @AppStorage("pldev.glassClear") private var clear = false
+    @AppStorage("pldev.cardLine") private var line = false   // a theme's outlined cards (S353·7b1e)
 
     func body(content: Content) -> some View {
         if glass {
             content.glassEffect((clear ? Glass.clear : Glass.regular).tint(tint).interactive(interactive), in: shape)
+        } else if line {
+            content.background((tint ?? PLTone.plate).opacity(0.3), in: shape).overlay(shape.stroke(PLTone.accent.opacity(0.85), lineWidth: 1))
         } else {
             content.background(tint ?? PLTone.plate, in: shape)
         }

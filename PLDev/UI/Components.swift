@@ -129,11 +129,16 @@ struct SectionTile: View {
     }
 
     @AppStorage("pldev.glassBlur") private var glass = true
+    @AppStorage("pldev.styleTile") private var tileShape = "squircle"   // the theme's tile: squircle, circle or square (S353·7b1e)
 
     /// The Home Screen's tinted look (his reference, 11-13): every icon the same glass, washed in the wallpaper's colour,
     /// a frosted white glyph on it. One colour for every app; the symbol tells them apart.
     var body: some View {
-        let icon = RoundedRectangle(cornerRadius: 15, style: .continuous)
+        let icon: AnyShape = switch tileShape {
+        case "circle": AnyShape(Circle())
+        case "square": AnyShape(RoundedRectangle(cornerRadius: 5, style: .continuous))
+        default: AnyShape(RoundedRectangle(cornerRadius: 15, style: .continuous))
+        }
         VStack(spacing: 6) {
             ZStack {
                 Group {
@@ -176,9 +181,13 @@ private struct TileGlass<S: Shape>: ViewModifier {
     let shape: S
     let on: Bool
 
+    @AppStorage("pldev.cardLine") private var line = false
+
     func body(content: Content) -> some View {
         if on {
             content.plGlass(tint: Wallpaper.line.opacity(0.45), in: shape)
+        } else if line {
+            content.background(Wallpaper.line.opacity(0.14), in: shape).overlay(shape.stroke(Wallpaper.line, lineWidth: 1.5))
         } else {
             content.background(Wallpaper.line.gradient, in: shape)
         }
@@ -197,6 +206,7 @@ struct Wallpaper: View {
     @State private var kit = HouseKit.shared
     @State private var ready = Wallpaper.stencil != nil
     @AppStorage("pldev.tileStrength") private var strength = 0.5   // Settings: how strongly the curves show; 0.5 = his reference
+    @AppStorage("pldev.styleRepeat") private var repeatSize = 300.0   // the theme's curve scale (S353·7b1e)
 
     init(model: AppModel) { self.model = model }
 
@@ -210,7 +220,7 @@ struct Wallpaper: View {
         }
         .ignoresSafeArea()
         .accessibilityHidden(true)
-        .task { await Self.load(model: model); ready = Self.stencil != nil }
+        .task(id: repeatSize) { await Self.load(model: model); ready = Self.stencil != nil }
     }
 
     private static var cacheURL: URL? {
@@ -219,7 +229,7 @@ struct Wallpaper: View {
 
     /// The stencil from the Design Kit's glass.css on the gallery; cached, so later launches draw it at once and offline.
     static func load(model: AppModel) async {
-        if stencil != nil { return }
+        if let s = stencil, abs(s.size.width - PLStyle.repeatSize) < 1 { return }   // a theme with another curve scale re-sizes the cached tile
         if let url = cacheURL, let data = try? Data(contentsOf: url), let img = UIImage(data: data) { stencil = sized(img); return }
         guard let http = model.http,
               let css = try? await http.send(RequestPlan(origin: "gallery", path: "kit/glass/glass.css")),
@@ -234,7 +244,7 @@ struct Wallpaper: View {
 
     private static func sized(_ img: UIImage) -> UIImage? {
         guard let cg = img.cgImage else { return nil }
-        return UIImage(cgImage: cg, scale: CGFloat(cg.width) / 300, orientation: .up).withRenderingMode(.alwaysTemplate)
+        return UIImage(cgImage: cg, scale: CGFloat(cg.width) / PLStyle.repeatSize, orientation: .up).withRenderingMode(.alwaysTemplate)
     }
 }
 

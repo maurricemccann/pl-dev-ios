@@ -1,24 +1,76 @@
 import SwiftUI
 import UIKit
+import CoreText
 
 /// The spacing scale, in points. Use these, not loose numbers.
+/// Scaled by the theme's spacing (S353·7b1e: compact 0.85, house 1, airy 1.2); tap targets never shrink (PLMetric.touch).
 enum PLSpace {
-    static let hair: CGFloat = 2
-    static let tight: CGFloat = 4
-    static let gap: CGFloat = 8
-    static let snug: CGFloat = 10
-    static let pad: CGFloat = 12
-    static let margin: CGFloat = 16
-    static let roomy: CGFloat = 20
-    static let block: CGFloat = 36
+    static var hair: CGFloat { 2 }
+    static var tight: CGFloat { 4 * PLStyle.space }
+    static var gap: CGFloat { 8 * PLStyle.space }
+    static var snug: CGFloat { 10 * PLStyle.space }
+    static var pad: CGFloat { 12 * PLStyle.space }
+    static var margin: CGFloat { 16 * PLStyle.space }
+    static var roomy: CGFloat { 20 * PLStyle.space }
+    static var block: CGFloat { 36 * PLStyle.space }
 }
 
-/// Corner radii, always with the continuous curve.
+/// Corner radii, always with the continuous curve. Scaled by the theme's shape (sharp 0.35, house 1, soft 1.35).
 enum PLRadius {
-    static let card: CGFloat = 28
-    static let sheet: CGFloat = 32
-    static let row: CGFloat = 14
-    static let list: CGFloat = 26
+    static var card: CGFloat { 28 * PLStyle.radius }
+    static var sheet: CGFloat { 32 * PLStyle.radius }
+    static var row: CGFloat { 14 * PLStyle.radius }
+    static var list: CGFloat { 26 * PLStyle.radius }
+}
+
+/// The theme's shape and rhythm (his ask 11-24: "15 distinct themes, each with their own style and unique ui/ux"). Written by
+/// PLThemePreset.apply(); read from anywhere. Unset keys mean the house defaults, so no theme = the app as it was.
+enum PLStyle {
+    static var radius: CGFloat { scale("pldev.styleRadius") }
+    static var space: CGFloat { scale("pldev.styleSpace") }
+    /// Home's app tiles: squircle, circle or square.
+    static var tile: String { UserDefaults.standard.string(forKey: "pldev.styleTile") ?? "squircle" }
+    /// One repeat of the curve wallpaper, in points (his reference is 300).
+    static var repeatSize: CGFloat { let v = UserDefaults.standard.double(forKey: "pldev.styleRepeat"); return v > 0 ? v : 300 }
+    private static func scale(_ key: String) -> CGFloat { let v = UserDefaults.standard.double(forKey: key); return v > 0 ? v : 1 }
+}
+
+/// House fonts from the Design Kit on the gallery (kit.json → fonts), fetched the first time a theme names one, cached, and
+/// registered for the process. A face token is "file:<gallery path>", e.g. "file:fonts/house/pirata-one.ttf".
+enum HouseFonts {
+    private static var dir: URL { FileManager.default.urls(for: .applicationSupportDirectory, in: .userDomainMask)[0].appendingPathComponent("house/fonts", isDirectory: true) }
+    private static func local(_ token: String) -> URL { dir.appendingPathComponent((token as NSString).lastPathComponent) }
+
+    /// The PostScript name for a face token once its file is registered; nil for built-in faces or before it arrives.
+    static func name(_ token: String) -> String? {
+        token.hasPrefix("file:") ? UserDefaults.standard.string(forKey: "pldev.ps." + token) : nil
+    }
+
+    /// At launch: every font already cached is registered again (registration lasts one process).
+    static func registerCached() {
+        for url in (try? FileManager.default.contentsOfDirectory(at: dir, includingPropertiesForKeys: nil)) ?? [] { register(url) }
+    }
+
+    /// Makes a face usable: fetched once from the gallery, then from the cache. False = offline and not cached yet.
+    @MainActor static func ensure(_ token: String) async -> Bool {
+        guard token.hasPrefix("file:") else { return true }
+        let url = local(token)
+        if !FileManager.default.fileExists(atPath: url.path) {
+            guard let http = AppModel.shared.http,
+                  let d = try? await http.send(RequestPlan(origin: "gallery", path: String(token.dropFirst(5))), timeout: 40), !d.isEmpty else { return false }
+            try? FileManager.default.createDirectory(at: dir, withIntermediateDirectories: true)
+            guard (try? d.write(to: url)) != nil else { return false }
+        }
+        guard let ps = register(url) else { try? FileManager.default.removeItem(at: url); return false }   // not a font: drop it, fetch again next time
+        UserDefaults.standard.set(ps, forKey: "pldev.ps." + token)
+        return true
+    }
+
+    @discardableResult private static func register(_ url: URL) -> String? {
+        guard let p = CGDataProvider(url: url as CFURL), let f = CGFont(p), let n = f.postScriptName as String? else { return nil }
+        _ = CTFontManagerRegisterFontsForURL(url as CFURL, .process, nil)   // false only means it was already registered
+        return n
+    }
 }
 
 enum PLMetric {

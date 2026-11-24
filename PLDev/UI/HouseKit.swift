@@ -60,6 +60,7 @@ struct HousePalette: Codable, Hashable, Identifiable {
         if let d = try? Data(contentsOf: cache.appendingPathComponent("palettes.json")), let p = try? JSONDecoder().decode([HousePalette].self, from: d), !p.isEmpty { palettes = [.homeScreen] + p.filter { $0.name != HousePalette.homeScreen.name } }
         loadExtras(from: try? Data(contentsOf: cache.appendingPathComponent("extras.json")))
         registerFont(at: cache.appendingPathComponent("hand-v1.ttf"))
+        HouseFonts.registerCached()   // the themes' house fonts fetched on earlier launches
         if titleFont == nil, UIFont(name: PLFace.handV1, size: 12) != nil { titleFont = PLFace.handV1 }   // bundled since 11-13: his hand from the first frame, offline too
         apply()
     }
@@ -112,6 +113,7 @@ struct HousePalette: Codable, Hashable, Identifiable {
     /// and the palette to the widgets (App Group) so the Lock Screen and Home Screen wear the same colour.
     /// The title face he chose (v1, v2, Ransom, Ledger), or his V1 hand until another is picked. One answer for every title in the app.
     var titleFaceName: String? {
+        if let house = HouseFonts.name(titleFace) { return house }   // a theme's house font, once fetched
         switch titleFace { case "v2": return PLFace.handV2; case "ransom": return PLFace.ransom; case "ledger": return PLFace.ledger; default: return titleFont }
     }
     private var barsCarried = false
@@ -267,38 +269,86 @@ enum PLIcon {
 /// every pack; only navigation titles change face.
 /// S353·7b1e (his ask 11-24, "theme packs updated"): every house palette in the Design Kit has a pack, each sets the text face
 /// too, and the list splits dark and light. Faces follow the kit's rule: V1 leads, V2 supports, Ransom is the one loud word.
-/// S353·7b1e phase 1 (his ruling 11-24: "14 distinct themes", "ui and ux and any appearance changes for each theme"): one theme per
-/// palette, and each sets every look switch the app has: light/dark, title and text face, glass (frosted, clear or solid), how strongly
-/// the curve wallpaper shows, motion, and the app icon where a matching icon exists (nil leaves his icon alone). Text size is his
-/// accessibility choice and no theme touches it. Phase 2 (shape, card style, spacing, wallpaper art) is in the spec.
+/// S353·7b1e (his ask 11-24: "use whatever house fonts and color palettes we have to craft 15 distinct themes, each with their own
+/// style and unique ui/ux, no two the same"). Each theme owns: palette, light or dark, title face and text face (his hands or the
+/// Design Kit's house fonts, fetched once from the gallery), card style (frosted, clear, solid, outlined), corner shape (sharp 0.35,
+/// house 1, soft 1.35), spacing (compact 0.85, house 1, airy 1.2), Home's tile shape, the curve wallpaper's scale and strength,
+/// motion, and the app icon where a matching icon exists. Text size stays his accessibility choice. No two share the same mix.
 struct PLThemePreset: Identifiable, Hashable {
-    enum Glass: String { case frosted, clear, solid }
+    enum Card: String { case frosted, clear, solid, outline }
     let id: String, title: String, palette: String, face: String, text: String, note: String, dark: Bool
-    let glass: Glass, curves: Double, calm: Bool, icon: String?
+    let card: Card, radius: Double, space: Double, tile: String, repeatSize: Double, curves: Double, calm: Bool, icon: String?
+
+    private static func house(_ f: String) -> String { "file:fonts/house/\(f)" }
     static let all: [PLThemePreset] = [
-        .init(id: "home", title: "Your Home Screen", palette: "home-screen", face: "v1", text: "jost", note: "Deep brown and orange curves, frosted, your hand", dark: true, glass: .frosted, curves: 0.5, calm: false, icon: "AppIcon-HomeScreen"),
-        .init(id: "studio-night", title: "Studio night", palette: "obsidian-gold", face: "v1", text: "jost", note: "Gold on obsidian, clear glass over strong curves", dark: true, glass: .clear, curves: 0.65, calm: false, icon: "AppIcon-ObsidianGold"),
-        .init(id: "ember", title: "Ember", palette: "void-ember", face: "v2", text: "jost", note: "Void and ember, the curves burn brightest, second hand", dark: true, glass: .frosted, curves: 0.8, calm: false, icon: "AppIcon-VoidEmber"),
-        .init(id: "totem", title: "Totem", palette: "totem-blue-gold", face: "v1", text: "jost", note: "Totem blue and gold, clear glass", dark: true, glass: .clear, curves: 0.4, calm: false, icon: nil),
-        .init(id: "indigo", title: "Deep indigo", palette: "deep-indigo", face: "v1", text: "jost", note: "Indigo night, faint curves, the Deep indigo icon", dark: true, glass: .clear, curves: 0.3, calm: false, icon: "AppIcon-DeepIndigo"),
-        .init(id: "silver", title: "Night silver", palette: "night-silver", face: "v2", text: "courier", note: "Silver on night, solid panels, typewriter text, still", dark: true, glass: .solid, curves: 0.15, calm: true, icon: nil),
-        .init(id: "oxblood", title: "Oxblood room", palette: "oxblood-ground", face: "ransom", text: "jost", note: "Oxblood ground and gold, solid panels, Ransom titles", dark: true, glass: .solid, curves: 0.6, calm: false, icon: nil),
-        .init(id: "forest", title: "Forest room", palette: "forest-ground", face: "v1", text: "jost", note: "Forest ground and gold, frosted", dark: true, glass: .frosted, curves: 0.45, calm: false, icon: nil),
-        .init(id: "drop", title: "Drop day", palette: "bone-oxblood", face: "ransom", text: "jost", note: "Bone and oxblood, solid panels, Ransom titles, the Bone oxblood icon", dark: false, glass: .solid, curves: 0.35, calm: false, icon: "AppIcon-BoneOxblood"),
-        .init(id: "ledger", title: "The ledger", palette: "cream-indigo", face: "ledger", text: "courier", note: "Cream and indigo, Ledger titles, typewriter text, still", dark: false, glass: .solid, curves: 0.1, calm: true, icon: nil),
-        .init(id: "linen", title: "Linen", palette: "linen-forest", face: "v2", text: "jost", note: "Linen and forest green, clear glass", dark: false, glass: .clear, curves: 0.25, calm: false, icon: nil),
-        .init(id: "copper", title: "Copper", palette: "ivory-copper", face: "v1", text: "jost", note: "Ivory and copper, frosted", dark: false, glass: .frosted, curves: 0.4, calm: false, icon: nil),
-        .init(id: "smoke", title: "Warm smoke", palette: "warm-smoke", face: "ledger", text: "jost", note: "Smoke and oxblood, solid panels, Ledger titles, still", dark: false, glass: .solid, curves: 0.2, calm: true, icon: nil),
-        .init(id: "pearl", title: "Pearl", palette: "pearl-gold", face: "v1", text: "jost", note: "Pearl and gold, clear glass", dark: false, glass: .clear, curves: 0.3, calm: false, icon: nil),
+        .init(id: "home", title: "Your Home Screen", palette: "home-screen", face: "v1", text: "jost",
+              note: "Your hand, frosted glass, the curves as you drew them", dark: true,
+              card: .frosted, radius: 1, space: 1, tile: "squircle", repeatSize: 300, curves: 0.5, calm: false, icon: "AppIcon-HomeScreen"),
+        .init(id: "studio-night", title: "Studio night", palette: "obsidian-gold", face: house("pirata-one.ttf"), text: "jost",
+              note: "Blackletter titles, gold hairline cards, sharp and tight", dark: true,
+              card: .outline, radius: 0.35, space: 0.85, tile: "square", repeatSize: 240, curves: 0.65, calm: false, icon: "AppIcon-ObsidianGold"),
+        .init(id: "ember", title: "Ember", palette: "void-ember", face: house("rubik-burned.ttf"), text: "jost",
+              note: "Burned titles, round tiles, the curves large and bright", dark: true,
+              card: .frosted, radius: 1.35, space: 1, tile: "circle", repeatSize: 420, curves: 0.85, calm: false, icon: "AppIcon-VoidEmber"),
+        .init(id: "totem", title: "Totem", palette: "totem-blue-gold", face: house("unifrakturcook.ttf"), text: house("texturina.ttf"),
+              note: "Fraktur titles over a book face, clear glass, room to breathe", dark: true,
+              card: .clear, radius: 1, space: 1.2, tile: "squircle", repeatSize: 360, curves: 0.4, calm: false, icon: nil),
+        .init(id: "indigo", title: "Deep indigo", palette: "deep-indigo", face: house("major-mono-display.ttf"), text: house("syne-mono.ttf"),
+              note: "Mono display and mono text, outlined, small dense curves", dark: true,
+              card: .outline, radius: 0.35, space: 0.85, tile: "square", repeatSize: 200, curves: 0.3, calm: false, icon: "AppIcon-DeepIndigo"),
+        .init(id: "silver", title: "Night silver", palette: "night-silver", face: house("vt323.ttf"), text: "courier",
+              note: "Terminal titles, typewriter text, solid panels, still", dark: true,
+              card: .solid, radius: 0.35, space: 1, tile: "square", repeatSize: 200, curves: 0.15, calm: true, icon: nil),
+        .init(id: "oxblood", title: "Oxblood room", palette: "oxblood-ground", face: house("new-rocker.ttf"), text: "jost",
+              note: "Rocker titles, soft solid panels, round tiles, airy", dark: true,
+              card: .solid, radius: 1.35, space: 1.2, tile: "circle", repeatSize: 460, curves: 0.6, calm: false, icon: nil),
+        .init(id: "forest", title: "Forest room", palette: "forest-ground", face: house("grenze-gotisch.ttf"), text: house("xanh-mono.ttf"),
+              note: "Gotisch titles, a serif mono, frosted, sharp corners", dark: true,
+              card: .frosted, radius: 0.35, space: 1, tile: "squircle", repeatSize: 300, curves: 0.45, calm: false, icon: nil),
+        .init(id: "archive", title: "From the archive", palette: "archive-0a", face: house("rubik-dirt.ttf"), text: "jost",
+              note: "Gold on black from your archive, dirt titles, outlined, the curves huge", dark: true,
+              card: .outline, radius: 1.35, space: 0.85, tile: "circle", repeatSize: 520, curves: 0.7, calm: false, icon: nil),
+        .init(id: "drop", title: "Drop day", palette: "bone-oxblood", face: "ransom", text: "jost",
+              note: "Your Ransom titles, solid and sharp, tight like a poster", dark: false,
+              card: .solid, radius: 0.35, space: 0.85, tile: "square", repeatSize: 260, curves: 0.35, calm: false, icon: "AppIcon-BoneOxblood"),
+        .init(id: "ledger", title: "The ledger", palette: "cream-indigo", face: "ledger", text: "courier",
+              note: "Your Ledger hand, typewriter text, ruled outlines, still", dark: false,
+              card: .outline, radius: 0.35, space: 1, tile: "square", repeatSize: 200, curves: 0.1, calm: true, icon: nil),
+        .init(id: "linen", title: "Linen", palette: "linen-forest", face: "v2", text: "jost",
+              note: "Your second hand, clear glass, soft and airy, round tiles", dark: false,
+              card: .clear, radius: 1.35, space: 1.2, tile: "circle", repeatSize: 420, curves: 0.25, calm: false, icon: nil),
+        .init(id: "copper", title: "Copper", palette: "ivory-copper", face: house("saira-stencil-one.ttf"), text: "jost",
+              note: "Stencil titles, solid panels, the house shape", dark: false,
+              card: .solid, radius: 1, space: 1, tile: "squircle", repeatSize: 300, curves: 0.4, calm: false, icon: nil),
+        .init(id: "smoke", title: "Warm smoke", palette: "warm-smoke", face: house("pencilant.otf"), text: house("special-elite.ttf"),
+              note: "Pencil titles, typed text, soft outlines, still", dark: false,
+              card: .outline, radius: 1.35, space: 1.2, tile: "circle", repeatSize: 360, curves: 0.2, calm: true, icon: nil),
+        .init(id: "pearl", title: "Pearl", palette: "pearl-gold", face: house("fruktur.ttf"), text: "jost",
+              note: "Fruktur titles, clear glass, soft corners, wide curves", dark: false,
+              card: .clear, radius: 1.35, space: 1, tile: "squircle", repeatSize: 460, curves: 0.3, calm: false, icon: nil),
     ]
 
-    /// Sets every switch this theme owns. The @AppStorage views read the same keys, so the whole app follows.
-    @MainActor func apply() {
+    /// Fetches the theme's house fonts (first time only), then sets every switch it owns; the views read the same keys.
+    /// Returns false when a font could not be fetched (offline, never cached): the rest still applies, titles fall back to his V1.
+    @MainActor func apply() async -> Bool {
+        let titleOK = await HouseFonts.ensure(face)
+        let textOK = await HouseFonts.ensure(text)
         let kit = HouseKit.shared, d = UserDefaults.standard
-        kit.paletteName = palette; kit.titleFace = face
-        d.set(text, forKey: "pldev.font"); d.set(dark ? "dark" : "light", forKey: "pldev.theme")
-        d.set(glass != .solid, forKey: "pldev.glassBlur"); d.set(glass == .clear, forKey: "pldev.glassClear")
+        d.set(radius, forKey: "pldev.styleRadius"); d.set(space, forKey: "pldev.styleSpace")
+        d.set(tile, forKey: "pldev.styleTile"); d.set(repeatSize, forKey: "pldev.styleRepeat")
+        d.set(card == .frosted || card == .clear, forKey: "pldev.glassBlur"); d.set(card == .clear, forKey: "pldev.glassClear")
+        d.set(card == .outline, forKey: "pldev.cardLine")
         d.set(curves, forKey: "pldev.tileStrength"); d.set(calm ? "reduce" : "full", forKey: "pldev.motion")
+        d.set(textOK ? text : "jost", forKey: "pldev.font")
+        d.set(dark ? "dark" : "light", forKey: "pldev.theme")
+        kit.paletteName = palette; kit.titleFace = face   // last: their didSet re-applies the bars with everything above in place
         if let icon, UIApplication.shared.alternateIconName != icon { UIApplication.shared.setAlternateIconName(icon, completionHandler: nil) }
+        return titleOK && textOK
+    }
+
+    @MainActor static var current: PLThemePreset? {
+        let d = UserDefaults.standard
+        return all.first { $0.palette == HouseKit.shared.paletteName && $0.face == HouseKit.shared.titleFace && $0.tile == PLStyle.tile
+            && abs($0.radius - Double(PLStyle.radius)) < 0.01 && d.string(forKey: "pldev.font") == $0.text }
     }
 }
