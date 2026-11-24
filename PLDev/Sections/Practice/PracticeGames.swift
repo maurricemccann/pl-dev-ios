@@ -82,7 +82,7 @@ struct GamesScreen: View {
             }
         }
         .padding(12)
-        .background { GlyphField(strength: 0.14).clipShape(RoundedRectangle(cornerRadius: Candle.radius, style: .continuous)) }
+        .background { GlyphField(strength: 0.05).clipShape(RoundedRectangle(cornerRadius: Candle.radius, style: .continuous)) }
         .task {
             await state.load(model: model)
             if let c = await PracticeCards.load(model: model) { unlocked = Set(c.games ?? []) }
