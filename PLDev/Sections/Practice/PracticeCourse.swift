@@ -168,7 +168,6 @@ struct PathScreen: View {
             // Gemini and Codex 11-17: one action first. The next lesson leads; the minutes question and the pack test follow it.
             if let course = state.course {
                 summary(course)
-                if minutes == 0 { goalCard }
                 // Phase 2 (S349): the current unit is drawn in full; every other unit is one compact row that opens on tap.
                 let current = record.next(in: course)?.0.n ?? course.units.first(where: { record.isOpen($0, in: course) && !record.isPrepared($0) })?.n
                 ForEach(course.units) { u in
@@ -184,6 +183,7 @@ struct PathScreen: View {
                 ProgressView().tint(Candle.gold).frame(maxWidth: .infinity).padding(.top, 40)
             }
             if let course = state.course { PracticePlayCard(course: course) { playRun = $0 } }
+            if state.course != nil, minutes == 0 { goalCard }   // his ruling 11-24: the next lesson leads, the minutes question follows the path
             Button("The pack \u{00b7} live test") { livePack = true }.buttonStyle(CandleGhost()).padding(.top, 8)
         }
         .onAppear { seen += 1 }
