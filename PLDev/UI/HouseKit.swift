@@ -39,7 +39,8 @@ struct HousePalette: Codable, Hashable, Identifiable {
         HousePalette(name: "fun-eink", ground: "#f2f0e9", text: "#111111", key: "#2b2b2b", accent: "#777777"),
         HousePalette(name: "fun-synthwave", ground: "#14061f", text: "#ffe9fb", key: "#ff2a9d", accent: "#2de2e6"),   // his retrowave reference 11-24: hot pink and teal neon
         HousePalette(name: "fun-cyberpunk", ground: "#140a1e", text: "#f2e9f7", key: "#ff4f5e", accent: "#19e3c8"),   // his references 11-24: violet-black, coral frames, teal
-        HousePalette(name: "fun-retro", ground: "#008080", text: "#ffffff", key: "#ffff55", accent: "#ff55ff"),
+        HousePalette(name: "fun-retro", ground: "#cdbaf5", text: "#2a1a4a", key: "#7a3cff", accent: "#ff6ec7"),   // his vaporwave reference 11-24: lavender, purple frames, pink
+        HousePalette(name: "fun-y2k", ground: "#040804", text: "#d8ffd0", key: "#39ff14", accent: "#b6ff3b"),   // his Y2K reference 11-24: acid green on black
         HousePalette(name: "fun-hyperspace", ground: "#02010a", text: "#e6f0ff", key: "#7b5cff", accent: "#3cf2ff"),
         HousePalette(name: "fun-vibe", ground: "#282a36", text: "#f8f8f2", key: "#bd93f9", accent: "#ff79c6"),
     ]
@@ -362,9 +363,12 @@ struct PLThemePreset: Identifiable, Hashable {
         .init(id: "fun-cyberpunk", title: "Cyberpunk", palette: "fun-cyberpunk", face: "bundle:ChakraPetch-SemiBold", text: "bundle:GeistMono-Regular",
               note: "Night city OS: coral hairline frames on violet-black, teal, a code font", dark: true,
               card: .outline, radius: 0.6, space: 0.85, tile: "square", repeatSize: 220, curves: 0.3, calm: false, icon: nil, fun: true),
-        .init(id: "fun-retro", title: "Retro 90s", palette: "fun-retro", face: "bundle:PressStart2P-Regular", text: "courier",
-              note: "Pixel titles on desktop teal, chunky solid panels", dark: true,
-              card: .solid, radius: 0.15, space: 1, tile: "square", repeatSize: 200, curves: 0.2, calm: false, icon: nil, fun: true),
+        .init(id: "fun-retro", title: "Retro 90s", palette: "fun-retro", face: "bundle:PixelifySans-Regular", text: "jost",
+              note: "Vaporwave windows: purple-framed panels on lavender, pink and yellow, pixel titles", dark: false,
+              card: .outline, radius: 0.15, space: 1, tile: "square", repeatSize: 200, curves: 0.2, calm: false, icon: nil, fun: true),
+        .init(id: "fun-y2k", title: "Y2K", palette: "fun-y2k", face: "bundle:PressStart2P-Regular", text: "bundle:JetBrainsMono-Regular",
+              note: "Acid green on black: pixel titles, green wireframe panels, a dense curve grid", dark: true,
+              card: .outline, radius: 0.1, space: 0.85, tile: "square", repeatSize: 140, curves: 0.45, calm: false, icon: nil, fun: true),
         .init(id: "fun-hyperspace", title: "Hyperspace", palette: "fun-hyperspace", face: "bundle:Audiowide-Regular", text: "jost",
               note: "Violet and cyan in deep space, frosted, the curves vast", dark: true,
               card: .frosted, radius: 1.35, space: 1.2, tile: "circle", repeatSize: 560, curves: 0.9, calm: false, icon: nil, fun: true, wall: "invert|https://pub-4420dc4349624d6bbed7eb9555f42661.r2.dev/abstract-pattern_organic-flowing_monochrome_digital_5457.png"),
