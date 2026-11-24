@@ -265,17 +265,25 @@ enum PLIcon {
 
 /// Built-in theme packs (his ask 11-13): one tap sets a palette and the title face together. His words stay in his V1 hand in
 /// every pack; only navigation titles change face.
+/// S353·7b1e (his ask 11-24, "theme packs updated"): every house palette in the Design Kit has a pack, each sets the text face
+/// too, and the list splits dark and light. Faces follow the kit's rule: V1 leads, V2 supports, Ransom is the one loud word.
 struct PLThemePreset: Identifiable, Hashable {
-    let id: String, title: String, palette: String, face: String, note: String
+    let id: String, title: String, palette: String, face: String, text: String, note: String, dark: Bool
     static let all: [PLThemePreset] = [
-        .init(id: "home", title: "Your Home Screen", palette: "home-screen", face: "v1", note: "Orange curves on deep brown, your hand"),
-        .init(id: "studio-night", title: "Studio night", palette: "obsidian-gold", face: "v1", note: "pl-os at night: gold on obsidian"),
-        .init(id: "ember", title: "Ember", palette: "void-ember", face: "v2", note: "Void and ember, the second hand"),
-        .init(id: "totem", title: "Totem", palette: "totem-blue-gold", face: "v1", note: "Totem blue with gold"),
-        .init(id: "drop", title: "Drop day", palette: "bone-oxblood", face: "ransom", note: "Bone and oxblood, Ransom titles"),
-        .init(id: "ledger", title: "The ledger", palette: "cream-indigo", face: "ledger", note: "Cream and indigo, Ledger titles"),
-        .init(id: "silver", title: "Night silver", palette: "night-silver", face: "v2", note: "Silver on night"),
-        .init(id: "archive", title: "From the archive", palette: "archive-0a", face: "v1", note: "A palette pulled from your archive"),
-        .init(id: "pearl", title: "Pearl", palette: "pearl-gold", face: "v1", note: "Pearl and gold, light"),
+        .init(id: "home", title: "Your Home Screen", palette: "home-screen", face: "v1", text: "jost", note: "Orange curves on deep brown, your hand", dark: true),
+        .init(id: "studio-night", title: "Studio night", palette: "obsidian-gold", face: "v1", text: "jost", note: "Gold on obsidian, pl-os at night", dark: true),
+        .init(id: "ember", title: "Ember", palette: "void-ember", face: "v2", text: "jost", note: "Void and ember, the second hand", dark: true),
+        .init(id: "totem", title: "Totem", palette: "totem-blue-gold", face: "v1", text: "jost", note: "Totem blue with gold", dark: true),
+        .init(id: "indigo", title: "Deep indigo", palette: "deep-indigo", face: "v1", text: "jost", note: "Indigo night, matches the Deep indigo icon", dark: true),
+        .init(id: "silver", title: "Night silver", palette: "night-silver", face: "v2", text: "courier", note: "Silver on night, typewriter text", dark: true),
+        .init(id: "oxblood", title: "Oxblood room", palette: "oxblood-ground", face: "ransom", text: "jost", note: "Oxblood ground, gold, Ransom titles", dark: true),
+        .init(id: "forest", title: "Forest room", palette: "forest-ground", face: "v1", text: "jost", note: "Forest ground with gold", dark: true),
+        .init(id: "archive", title: "From the archive", palette: "archive-0a", face: "v1", text: "jost", note: "A palette pulled from your archive", dark: true),
+        .init(id: "drop", title: "Drop day", palette: "bone-oxblood", face: "ransom", text: "jost", note: "Bone and oxblood, Ransom titles", dark: false),
+        .init(id: "ledger", title: "The ledger", palette: "cream-indigo", face: "ledger", text: "courier", note: "Cream and indigo, Ledger titles, typewriter text", dark: false),
+        .init(id: "linen", title: "Linen", palette: "linen-forest", face: "v2", text: "jost", note: "Linen and forest green", dark: false),
+        .init(id: "copper", title: "Copper", palette: "ivory-copper", face: "v1", text: "jost", note: "Ivory and copper", dark: false),
+        .init(id: "smoke", title: "Warm smoke", palette: "warm-smoke", face: "ledger", text: "jost", note: "Smoke and oxblood, Ledger titles", dark: false),
+        .init(id: "pearl", title: "Pearl", palette: "pearl-gold", face: "v1", text: "jost", note: "Pearl and gold", dark: false),
     ]
 }

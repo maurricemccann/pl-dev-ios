@@ -135,13 +135,6 @@ struct SettingsView: View {
             } label: {
                 SettingsLabel("Motion", "figure.walk.motion", IOS27.SystemColors.green)
             }
-            Button {
-                ThemePack.shared.load()
-                typeTick += 1
-            } label: {
-                LabeledContent { Text(ThemePack.shared.isLoaded ? "Loaded" : "None") } label: { SettingsLabel("Theme pack", "paintpalette", IOS27.SystemColors.pink) }
-            }
-            .accessibilityHint("Reads the theme pack from the app\u{2019}s folder again")
         } header: {
             Text("Appearance").plFont(.footnote)
         } footer: {
@@ -150,8 +143,7 @@ struct SettingsView: View {
     }
 
     private var themeFooter: String {
-        var text = "Text size multiplies on top of the iPhone\u{2019}s own text size. Wallpaper curves is how strongly his curve tile shows behind Home. Reduced motion swaps springs and the zoom for short fades; the iPhone\u{2019}s Reduce Motion setting does the same. A theme pack is optional: put theme.json (and the font or tile it names) in this app\u{2019}s folder in Files, then tap Theme pack."
-        if let problem = ThemePack.shared.problem { text += " " + problem }
+        let text = "Text size multiplies on top of the iPhone\u{2019}s own text size. Wallpaper curves is how strongly his curve tile shows behind Home. Reduced motion swaps springs and the zoom for short fades; the iPhone\u{2019}s Reduce Motion setting does the same. Theme packs live under The house."
         return text
     }
 
@@ -421,7 +413,9 @@ struct HouseRows: View {
                                               ("AppIcon-VoidEmber", "Void ember"), ("AppIcon-DeepIndigo", "Deep indigo"), ("AppIcon-BoneOxblood", "Bone oxblood")]
     var body: some View {
         Section {
-            NavigationLink { ThemePacksView() } label: { SettingsLabel("Theme packs", "square.stack.3d.up.fill", kit.palette.keyColor) }
+            NavigationLink { ThemePacksView() } label: {
+                LabeledContent { Text(ThemePack.shared.isLoaded ? "Your own" : PLThemePreset.all.first { $0.palette == kit.palette.name && $0.face == kit.titleFace }?.title ?? "Custom") } label: { SettingsLabel("Theme packs", "square.stack.3d.up.fill", kit.palette.keyColor) }
+            }
             NavigationLink { ColourwaysView() } label: {
                 LabeledContent { Text(kit.palette.name == "home-screen" ? "Your Home Screen" : kit.palette.title) } label: { SettingsLabel("Colourways", "swatchpalette.fill", kit.palette.keyColor) }
             }
@@ -484,25 +478,41 @@ struct ColourwaysView: View {
 /// Built-in theme packs: a palette and a title face in one tap. A pack dropped in through Files (theme.json) still wins.
 struct ThemePacksView: View {
     @State private var kit = HouseKit.shared
+    @State private var pack = ThemePack.shared
+    @AppStorage("pldev.font") private var textFace = "system"
     var body: some View {
         List {
-            ForEach(PLThemePreset.all) { t in
-                let p = kit.allPalettes.first { $0.name == t.palette }
-                Button { withAnimation(.snappy) { kit.paletteName = t.palette; kit.titleFace = t.face } } label: {
-                    HStack(spacing: 12) {
-                        RoundedRectangle(cornerRadius: 10, style: .continuous).fill(p?.groundColor ?? .black)
-                            .overlay { Text("Aa").font(.custom(face(t.face), size: 20)).foregroundStyle(p?.keyColor ?? .orange) }
-                            .frame(width: 54, height: 54)
-                        VStack(alignment: .leading, spacing: 2) { Text(t.title).font(.headline); Text(t.note).font(.caption).foregroundStyle(.secondary) }
-                        Spacer()
-                        if kit.paletteName == t.palette && kit.titleFace == t.face { Image(systemName: "checkmark.circle.fill").foregroundStyle(p?.keyColor ?? .orange) }
-                    }
+            Section("Dark") { ForEach(PLThemePreset.all.filter(\.dark)) { row($0) } }
+            Section("Light") { ForEach(PLThemePreset.all.filter { !$0.dark }) { row($0) } }
+            // S353·7b1e: was a second "Theme pack" row under Appearance (his report 11-24: two theme pack options); one place now.
+            Section {
+                Button { pack.load() } label: {
+                    LabeledContent { Text(pack.isLoaded ? "Loaded" : "None") } label: { SettingsLabel("Your own pack", "folder", IOS27.SystemColors.pink) }
                 }
-                .foregroundStyle(.primary)
-                .disabled(p == nil)
+                .accessibilityHint("Reads theme.json from the app\u{2019}s folder in Files again")
+            } footer: {
+                Text("Optional: put theme.json (and the font or tile it names) in this app\u{2019}s folder in Files, then tap Your own pack. A loaded pack wins over the packs above." + (pack.problem.map { " " + $0 } ?? ""))
             }
         }
         .navigationTitle("Theme packs")
+    }
+
+    private func row(_ t: PLThemePreset) -> some View {
+        let p = kit.allPalettes.first { $0.name == t.palette }
+        let on = kit.paletteName == t.palette && kit.titleFace == t.face && textFace == t.text
+        return Button { withAnimation(.snappy) { kit.paletteName = t.palette; kit.titleFace = t.face; textFace = t.text } } label: {
+            HStack(spacing: 12) {
+                RoundedRectangle(cornerRadius: 10, style: .continuous).fill(p?.groundColor ?? .black)
+                    .overlay { Text("Aa").font(.custom(face(t.face), size: 20)).foregroundStyle(p?.keyColor ?? .orange) }
+                    .frame(width: 54, height: 54)
+                VStack(alignment: .leading, spacing: 2) { Text(t.title).font(.headline); Text(p == nil ? "Arrives from your Design Kit the next time the app is online" : t.note).font(.caption).foregroundStyle(.secondary) }
+                Spacer()
+                if on { Image(systemName: "checkmark.circle.fill").foregroundStyle(p?.keyColor ?? .orange) }
+            }
+        }
+        .foregroundStyle(.primary)
+        .disabled(p == nil)
+        .accessibilityAddTraits(on ? .isSelected : [])
     }
     private func face(_ f: String) -> String { switch f { case "v2": return PLFace.handV2; case "ransom": return PLFace.ransom; case "ledger": return PLFace.ledger; default: return PLFace.handV1 } }
 }
