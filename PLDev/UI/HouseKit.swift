@@ -33,8 +33,8 @@ struct HousePalette: Codable, Hashable, Identifiable {
     static let homeScreen = HousePalette(name: "home-screen", ground: "#5a1f0e", text: "#efe9dc", key: "#b85536", accent: "#f0a070")
     /// The Fun themes' palettes (S353·7b1e, his ask 11-24: "a few fun ones"). Built in, not in the Design Kit: they are play, not house colour.
     static let fun: [HousePalette] = [
-        HousePalette(name: "fun-macos", ground: "#f5f5f7", text: "#1d1d1f", key: "#0a84ff", accent: "#64d2ff"),
-        HousePalette(name: "fun-terminal", ground: "#0b0f0b", text: "#c8f7c5", key: "#33ff66", accent: "#ffb000"),
+        HousePalette(name: "fun-macos", ground: "#3aa6b9", text: "#111111", key: "#3366cc", accent: "#9c9cff"),   // his Mac OS reference 11-24: teal desktop, platinum, blue bars
+        HousePalette(name: "fun-terminal", ground: "#0055aa", text: "#ffffff", key: "#ff8800", accent: "#ffffff"),   // his Linux reference 11-24: blue, white, orange
         HousePalette(name: "fun-glass", ground: "#0e1b2a", text: "#eef6ff", key: "#9fd4ff", accent: "#ffffff"),
         HousePalette(name: "fun-eink", ground: "#f2f0e9", text: "#111111", key: "#2b2b2b", accent: "#777777"),
         HousePalette(name: "fun-synthwave", ground: "#14061f", text: "#ffe9fb", key: "#ff2a9d", accent: "#2de2e6"),   // his retrowave reference 11-24: hot pink and teal neon
@@ -344,12 +344,12 @@ struct PLThemePreset: Identifiable, Hashable {
               card: .clear, radius: 1.35, space: 1, tile: "squircle", repeatSize: 460, curves: 0.3, calm: false, icon: nil),
         // Fun (his list 11-24: macOS, terminal/Linux, glass, E ink, synthwave/neon, cyberpunk, retro 90s, hyperspace, vibe coded).
         // Open fonts bundled in the app (OFL, Google Fonts), so they work offline.
-        .init(id: "fun-macos", title: "macOS", palette: "fun-macos", face: "bundle:system", text: "system",
-              note: "Apple's own face, frosted glass, soft squircles, no curves", dark: false,
-              card: .frosted, radius: 1.35, space: 1.1, tile: "squircle", repeatSize: 300, curves: 0, calm: false, icon: nil, fun: true),
-        .init(id: "fun-terminal", title: "Terminal", palette: "fun-terminal", face: "bundle:IBMPlexMono-Regular", text: "bundle:IBMPlexMono-Regular",
-              note: "Green phosphor on black, mono everything, square and still", dark: true,
-              card: .outline, radius: 0.15, space: 0.85, tile: "square", repeatSize: 160, curves: 0.12, calm: true, icon: nil, fun: true),
+        .init(id: "fun-macos", title: "Mac OS", palette: "fun-macos", face: "bundle:system", text: "system",
+              note: "The platinum era: grey square windows on a teal desktop, blue bars, a quiet wave pattern, still", dark: false,
+              card: .solid, radius: 0.15, space: 1, tile: "square", repeatSize: 120, curves: 0.2, calm: true, icon: nil, fun: true),
+        .init(id: "fun-terminal", title: "Linux", palette: "fun-terminal", face: "file:fonts/house/vt323.ttf", text: "bundle:IBMPlexMono-Regular",
+              note: "Retro desktop: white windows on deep blue, orange marks, pixel titles, mono text, still", dark: true,
+              card: .solid, radius: 0.1, space: 0.9, tile: "square", repeatSize: 180, curves: 0.15, calm: true, icon: nil, fun: true),
         .init(id: "fun-glass", title: "Glass", palette: "fun-glass", face: "bundle:Michroma-Regular", text: "system",
               note: "All clear glass over deep blue, round and airy", dark: true,
               card: .clear, radius: 1.5, space: 1.2, tile: "circle", repeatSize: 480, curves: 0.35, calm: false, icon: nil, fun: true),
