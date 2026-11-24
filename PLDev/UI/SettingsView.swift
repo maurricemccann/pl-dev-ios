@@ -8,9 +8,6 @@ struct SettingsView: View {
     @Environment(\.dismiss) private var dismiss
     @AppStorage("pldev.theme") private var theme = "system"
     @AppStorage("pldev.font") private var font = "system"
-    @AppStorage("pldev.glassBlur") private var glassBlur = true
-    @AppStorage("pldev.glassClear") private var glassClear = false
-    @AppStorage("pldev.tileStrength") private var tileStrength = 0.5
     @AppStorage("pldev.textSize") private var textSize = 100.0
     @AppStorage("pldev.motion") private var motion = "full"
     @AppStorage("pldev.notify") private var notify = false
@@ -38,13 +35,13 @@ struct SettingsView: View {
                     HStack(spacing: PLSpace.pad) {
                         Image("AppMark").resizable().scaledToFill()   // the gold bar icon (his ruling 11-13)
                             .frame(width: 60, height: 60)
-                            .clipShape(RoundedRectangle(cornerRadius: 14, style: .continuous))
+                            .clipShape(RoundedRectangle(cornerRadius: 14 * PLStyle.radius, style: .continuous))
                             .accessibilityHidden(true)
                         VStack(alignment: .leading, spacing: 2) {
-                            Text("PL DEV").font(.title3.weight(.semibold))
+                            Text("PL DEV").font(Font.pl(.title3).weight(.semibold))
                             Text(model.config == nil ? "No config loaded" : "\(model.sections.filter { $0.readiness.isReady }.count) of \(model.sections.count) apps ready")
-                                .font(.subheadline).foregroundStyle(.secondary)
-                            Text("Version \(version)").font(.caption).foregroundStyle(.tertiary)
+                                .font(Font.pl(.subheadline)).foregroundStyle(.secondary)
+                            Text("Version \(version)").font(Font.pl(.caption)).foregroundStyle(.tertiary)
                         }
                     }
                     .padding(.vertical, 4)
@@ -62,6 +59,7 @@ struct SettingsView: View {
                 forget
                 about
             }
+            .plGround()
             .plScreenTitle("Settings")
             .toolbar {
                 ToolbarItem(placement: .confirmationAction) {
@@ -82,10 +80,11 @@ struct SettingsView: View {
                 Text("Every address and key is removed from this iPhone. Load the config file again to use the app. Items waiting to send are kept.")
             }
         }
+        .environment(\.font, Font.pl(.body))
         .tint(PLTone.accent)
         .preferredColorScheme(PLAppearance.scheme(theme))
         .sensoryFeedback(PLHaptic.select, trigger: [theme, font, motion])
-        .sensoryFeedback(PLHaptic.select, trigger: [glassBlur, glassClear, notify, debug])
+        .sensoryFeedback(PLHaptic.select, trigger: [notify, debug])
         .sensoryFeedback(PLHaptic.select, trigger: typeTick)
         .sensoryFeedback(PLHaptic.warning, trigger: warnTick)
     }
@@ -101,12 +100,7 @@ struct SettingsView: View {
             } label: {
                 SettingsLabel("Theme", "circle.lefthalf.filled", IOS27.SystemColors.indigo)
             }
-            Picker(selection: $font) {
-                Text("System").tag("system")
-                Text("Jost").tag("jost")
-                Text("Courier Prime").tag("courier")
-                if font.hasPrefix("file:") { Text("The theme's").tag(font) }
-            } label: {
+            NavigationLink { FacePage(isTitle: false) } label: {
                 SettingsLabel("Text face", "textformat", IOS27.SystemColors.blue)
             }
             VStack(alignment: .leading, spacing: PLSpace.tight) {
@@ -120,15 +114,11 @@ struct SettingsView: View {
                 }
                 .accessibilityValue("\(Int(textSize)) percent")
             }
-            toggleRow("Glass controls", "The floating buttons use Apple\u{2019}s glass. Off draws them solid.", isOn: $glassBlur, icon: ("drop.halffull", IOS27.SystemColors.cyan))
-            toggleRow("See-through glass", "A clearer glass that shows more of what is behind it.", isOn: $glassClear, icon: ("circle.dotted", IOS27.SystemColors.teal))
-                .disabled(!glassBlur)
-            VStack(alignment: .leading, spacing: PLSpace.tight) {
-                SettingsLabel("Wallpaper curves", "scribble.variable", IOS27.SystemColors.orange)
-                Slider(value: $tileStrength, in: 0...1) {
-                    Text("Tile strength")
-                }
-                .accessibilityValue("\(Int(tileStrength * 100)) percent")
+            NavigationLink { GlassPage() } label: {
+                SettingsLabel("Glass", "drop.halffull", IOS27.SystemColors.cyan)
+            }
+            NavigationLink { WallpaperPage() } label: {
+                SettingsLabel("Wallpaper", "photo.on.rectangle", IOS27.SystemColors.orange)
             }
             Picker(selection: $motion) {
                 Text("Full").tag("full")
@@ -144,7 +134,7 @@ struct SettingsView: View {
     }
 
     private var themeFooter: String {
-        let text = "Text size multiplies on top of the iPhone\u{2019}s own text size. Wallpaper curves is how strongly his curve tile shows behind Home. Reduced motion swaps springs and the zoom for short fades; the iPhone\u{2019}s Reduce Motion setting does the same. Theme packs live under The house."
+        let text = "Text size multiplies on top of the iPhone\u{2019}s own text size. Glass and Wallpaper each have their own page. Reduced motion swaps springs and the zoom for short fades; the iPhone\u{2019}s Reduce Motion setting does the same. Theme packs live under The house."
         return text
     }
 
@@ -383,10 +373,10 @@ struct SettingsIcon: View {
     let color: Color
     var body: some View {
         Image(systemName: symbol)
-            .font(.system(size: 15, weight: .semibold))
+            .font(Font.pl(size: 15, weight: .semibold))
             .foregroundStyle(.white)
             .frame(width: 29, height: 29)
-            .background(color.gradient, in: RoundedRectangle(cornerRadius: 7, style: .continuous))
+            .background(color.gradient, in: RoundedRectangle(cornerRadius: 7 * PLStyle.radius, style: .continuous))
             .accessibilityHidden(true)
     }
 }
@@ -420,10 +410,7 @@ struct HouseRows: View {
             NavigationLink { ColourwaysView() } label: {
                 LabeledContent { Text(kit.palette.name == "home-screen" ? "Your Home Screen" : kit.palette.title) } label: { SettingsLabel("Colourways", "swatchpalette.fill", kit.palette.keyColor) }
             }
-            Picker(selection: $kit.titleFace) {
-                Text("Your hand (V1)").tag("v1"); Text("Your hand (V2)").tag("v2"); Text("Ransom").tag("ransom"); Text("Ledger").tag("ledger")
-                if kit.titleFace.hasPrefix("file:") { Text("The theme's").tag(kit.titleFace) }
-            } label: { SettingsLabel("Title face", "textformat", kit.palette.keyColor) }
+            NavigationLink { FacePage(isTitle: true) } label: { SettingsLabel("Title face", "textformat", kit.palette.keyColor) }
             Picker(selection: Binding(get: { icon }, set: { name in
                 UIApplication.shared.setAlternateIconName(name) { err in if err == nil { Task { @MainActor in icon = name } } }
             })) {
@@ -450,8 +437,9 @@ struct ColourwaysView: View {
             }
             group("From the archive", kit.archivePalettes)
             group("Families of your works", kit.familyPalettes)
-            if kit.archivePalettes.isEmpty { Text("Open the app online once and the archive palettes, families and harmonies arrive from your Design Kit.").font(.footnote).foregroundStyle(.secondary) }
+            if kit.archivePalettes.isEmpty { Text("Open the app online once and the archive palettes, families and harmonies arrive from your Design Kit.").font(Font.pl(.footnote)).foregroundStyle(.secondary) }
         }
+        .plGround()
         .navigationTitle("Colourways")
     }
 
@@ -463,10 +451,10 @@ struct ColourwaysView: View {
         Button { withAnimation(.snappy) { kit.paletteName = p.name } } label: {
             HStack(spacing: 12) {
                 HStack(spacing: 0) { ForEach([p.groundColor, p.keyColor, p.accentColor, p.textColor], id: \.self) { Rectangle().fill($0) } }
-                    .frame(width: 64, height: 28).clipShape(RoundedRectangle(cornerRadius: 6, style: .continuous))
+                    .frame(width: 64, height: 28).clipShape(RoundedRectangle(cornerRadius: 6 * PLStyle.radius, style: .continuous))
                 VStack(alignment: .leading, spacing: 1) {
                     Text(p.name == "home-screen" ? "Your Home Screen" : p.title)
-                    if let label { Text(label).font(.caption).foregroundStyle(.secondary) }
+                    if let label { Text(label).font(Font.pl(.caption)).foregroundStyle(.secondary) }
                 }
                 Spacer()
                 if kit.paletteName == p.name { Image(systemName: "checkmark").foregroundStyle(p.keyColor) }
@@ -481,12 +469,12 @@ struct ColourwaysView: View {
 struct ThemePacksView: View {
     @State private var kit = HouseKit.shared
     @State private var pack = ThemePack.shared
-    @AppStorage("pldev.font") private var textFace = "system"
+    @AppStorage("pldev.themeId") private var themeId = ""
     @State private var busy: String?
     @State private var note: String?
     var body: some View {
         List {
-            if let note { Text(note).font(.footnote).foregroundStyle(.secondary) }
+            if let note { Text(note).font(Font.pl(.footnote)).foregroundStyle(.secondary) }
             Section("Dark") { ForEach(PLThemePreset.all.filter { $0.dark && !$0.fun }) { row($0) } }
             Section("Light") { ForEach(PLThemePreset.all.filter { !$0.dark && !$0.fun }) { row($0) } }
             Section("Fun") { ForEach(PLThemePreset.all.filter(\.fun)) { row($0) } }
@@ -500,21 +488,22 @@ struct ThemePacksView: View {
                 Text("Optional: put theme.json (and the font or tile it names) in this app\u{2019}s folder in Files, then tap Your own pack. A loaded pack wins over the packs above." + (pack.problem.map { " " + $0 } ?? ""))
             }
         }
+        .plGround()
         .navigationTitle("Theme packs")
     }
 
     private func row(_ t: PLThemePreset) -> some View {
         let p = kit.allPalettes.first { $0.name == t.palette }
-        let on = PLThemePreset.current?.id == t.id && textFace == t.text
+        let on = themeId == t.id
         return Button {
             busy = t.id
             Task { let ok = await t.apply(); busy = nil; note = ok ? nil : "\(t.title): its fonts need a connection once; your hand stands in until then." }
         } label: {
             HStack(spacing: 12) {
-                RoundedRectangle(cornerRadius: 10, style: .continuous).fill(p?.groundColor ?? .black)
-                    .overlay { Text("Aa").font(.custom(face(t.face), size: 20)).foregroundStyle(p?.keyColor ?? .orange) }
+                RoundedRectangle(cornerRadius: 10 * PLStyle.radius, style: .continuous).fill(p?.groundColor ?? .black)
+                    .overlay { Text("Aa").font(.custom(HouseFonts.name(t.face) ?? face(t.face), size: 20)).foregroundStyle(p?.keyColor ?? .orange) }
                     .frame(width: 54, height: 54)
-                VStack(alignment: .leading, spacing: 2) { Text(t.title).font(.headline); Text(p == nil ? "Arrives from your Design Kit the next time the app is online" : t.note).font(.caption).foregroundStyle(.secondary) }
+                VStack(alignment: .leading, spacing: 2) { Text(t.title).font(Font.pl(.headline)); Text(p == nil ? "Arrives from your Design Kit the next time the app is online" : t.note).font(Font.pl(.caption)).foregroundStyle(.secondary) }
                 Spacer()
                 if busy == t.id { ProgressView() } else if on { Image(systemName: "checkmark.circle.fill").foregroundStyle(p?.keyColor ?? .orange) }
             }

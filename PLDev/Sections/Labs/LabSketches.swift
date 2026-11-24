@@ -269,8 +269,8 @@ struct LabGoldenMendView: View {
             .gesture(DragGesture(minimumDistance: 0).onChanged { _ in m.hold = true }.onEnded { _ in m.hold = false })
             VStack(alignment: .leading, spacing: 6) {
                 Spacer()
-                Text("Golden Mend").font(.system(size: 28, design: .serif).italic()).foregroundStyle(PLG.gold.opacity(0.9))
-                Text(m.status).font(.system(size: 10.5)).tracking(1.8).foregroundStyle(PLG.gold.opacity(0.5)).frame(maxWidth: 320, alignment: .leading)
+                Text("Golden Mend").font(Font.pl(size: 28, design: .serif).italic()).foregroundStyle(PLG.gold.opacity(0.9))
+                Text(m.status).font(Font.pl(size: 10.5)).tracking(1.8).foregroundStyle(PLG.gold.opacity(0.5)).frame(maxWidth: 320, alignment: .leading)
             }
             .padding(.leading, 20).padding(.bottom, 26).frame(maxWidth: .infinity, alignment: .leading).allowsHitTesting(false)
             if !m.mic {

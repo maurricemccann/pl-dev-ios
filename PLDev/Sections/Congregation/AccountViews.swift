@@ -54,11 +54,11 @@ private struct MeRow: View {
 
     var body: some View {
         HStack(spacing: 14) {
-            Image(systemName: symbol).font(.system(size: 17)).foregroundStyle(Bone.goldDim).frame(width: 26)
+            Image(systemName: symbol).font(Font.pl(size: 17)).foregroundStyle(Bone.goldDim).frame(width: 26)
             Text(title).font(SiteFont.body(15)).foregroundStyle(Bone.ink(scheme))
             Spacer(minLength: 0)
             if badge > 0 { Text("\(badge)").font(SiteFont.body(12, weight: .medium)).foregroundStyle(Color(hex: 0x15120b)).padding(.horizontal, 9).frame(minHeight: 22).background(Bone.gold, in: Capsule()).monospacedDigit() }
-            Image(systemName: "chevron.forward").font(.footnote).foregroundStyle(Bone.inkFaint(scheme))
+            Image(systemName: "chevron.forward").font(Font.pl(.footnote)).foregroundStyle(Bone.inkFaint(scheme))
         }
         .padding(.horizontal, 16).frame(minHeight: 54).contentShape(Rectangle())
     }
@@ -130,8 +130,8 @@ struct AccountTabView: View {
                 NavigationLink { PinsView() } label: { MeRow(title: "Pins", symbol: "pin") }
             }
             .buttonStyle(.plain)
-            .background(Bone.raised(scheme), in: RoundedRectangle(cornerRadius: 16, style: .continuous))
-            .overlay { RoundedRectangle(cornerRadius: 16, style: .continuous).strokeBorder(Bone.line(scheme), lineWidth: 0.8) }
+            .background(Bone.raised(scheme), in: RoundedRectangle(cornerRadius: 16 * PLStyle.radius, style: .continuous))
+            .overlay { RoundedRectangle(cornerRadius: 16 * PLStyle.radius, style: .continuous).strokeBorder(Bone.line(scheme), lineWidth: 0.8) }
             .padding(.horizontal, 20).padding(.top, 20)
             if let h = me.handle, !h.isEmpty {
                 MemberHub(handle: h, state: state).padding(.horizontal, 20)
@@ -181,9 +181,9 @@ struct SettingsPanel: View {
                         Button { chooseGlyph(g) } label: {
                             GlyphMark(glyph: g.key, color: active ? accent : Bone.inkFaint(scheme), size: 30)
                                 .frame(width: 56, height: 56)
-                                .background(active ? Bone.raised(scheme) : Color.clear, in: RoundedRectangle(cornerRadius: 10, style: .continuous))
-                                .overlay { RoundedRectangle(cornerRadius: 10, style: .continuous).strokeBorder(active ? Bone.gold : Bone.line(scheme), lineWidth: active ? 1.4 : 0.8) }
-                                .overlay(alignment: .bottomTrailing) { if locked { Image(systemName: "lock.fill").font(.system(size: 10)).foregroundStyle(Bone.inkFaint(scheme)).padding(4) } }
+                                .background(active ? Bone.raised(scheme) : Color.clear, in: RoundedRectangle(cornerRadius: 10 * PLStyle.radius, style: .continuous))
+                                .overlay { RoundedRectangle(cornerRadius: 10 * PLStyle.radius, style: .continuous).strokeBorder(active ? Bone.gold : Bone.line(scheme), lineWidth: active ? 1.4 : 0.8) }
+                                .overlay(alignment: .bottomTrailing) { if locked { Image(systemName: "lock.fill").font(Font.pl(size: 10)).foregroundStyle(Bone.inkFaint(scheme)).padding(4) } }
                                 .opacity(locked ? 0.45 : 1)
                         }
                         .buttonStyle(.plain).disabled(busy)
@@ -428,9 +428,9 @@ struct MessagesPanel: View {
                             if let d = Date.pl(m.createdAt) { Text(d, format: .relative(presentation: .named)).font(SiteFont.body(10)).foregroundStyle((founder ? Color(hex: 0xf1ece1) : Bone.ground(scheme)).opacity(0.5)) }
                         }
                         .padding(.horizontal, 14).padding(.vertical, 10)
-                        .background(founder ? Color(hex: 0x0e0c08) : Bone.ink(scheme), in: RoundedRectangle(cornerRadius: 14, style: .continuous))
+                        .background(founder ? Color(hex: 0x0e0c08) : Bone.ink(scheme), in: RoundedRectangle(cornerRadius: 14 * PLStyle.radius, style: .continuous))
                         .overlay(alignment: .leading) { if founder { Rectangle().fill(Bone.gold).frame(width: 2) } }
-                        .clipShape(RoundedRectangle(cornerRadius: 14, style: .continuous))
+                        .clipShape(RoundedRectangle(cornerRadius: 14 * PLStyle.radius, style: .continuous))
                         if founder { Spacer(minLength: 40) }
                     }
                 }
@@ -541,8 +541,8 @@ struct PinsView: View {
                                     }.clipped()
                                     Text(piece?.title ?? cr).font(SiteFont.body(13)).foregroundStyle(Bone.ink(scheme)).lineLimit(1).padding(10)
                                 }
-                                .overlay { RoundedRectangle(cornerRadius: 12, style: .continuous).strokeBorder(Bone.line(scheme), lineWidth: 0.8) }
-                                .clipShape(RoundedRectangle(cornerRadius: 12, style: .continuous))
+                                .overlay { RoundedRectangle(cornerRadius: 12 * PLStyle.radius, style: .continuous).strokeBorder(Bone.line(scheme), lineWidth: 0.8) }
+                                .clipShape(RoundedRectangle(cornerRadius: 12 * PLStyle.radius, style: .continuous))
                             }
                             .buttonStyle(.plain)
                             .contextMenu {

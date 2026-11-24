@@ -31,11 +31,11 @@ struct CaptureNotesBlock: View {
     private func row(_ n: Note) -> some View {
         HStack(alignment: .center, spacing: 12) {
             VStack(alignment: .leading, spacing: 3) {
-                Text(n.title).font(.system(size: 16, weight: .semibold)).foregroundStyle(PLOS.text(scheme))
-                Text(preview(n)).font(.system(size: 13)).foregroundStyle(PLOS.dim(scheme)).lineLimit(2)
+                Text(n.title).font(Font.pl(size: 16, weight: .semibold)).foregroundStyle(PLOS.text(scheme))
+                Text(preview(n)).font(Font.pl(size: 13)).foregroundStyle(PLOS.dim(scheme)).lineLimit(2)
             }
             Spacer(minLength: 8)
-            Image(systemName: "chevron.right").font(.system(size: 13, weight: .semibold)).foregroundStyle(PLOS.dim(scheme))
+            Image(systemName: "chevron.right").font(Font.pl(size: 13, weight: .semibold)).foregroundStyle(PLOS.dim(scheme))
         }
         .frame(minHeight: 52).contentShape(Rectangle())
         .accessibilityElement(children: .combine).accessibilityHint("Opens the note")
@@ -77,10 +77,10 @@ struct CaptureNoteSheet: View {
         NavigationStack {
             ScrollView {
                 LazyVStack(alignment: .leading, spacing: 10) {
-                    Text(note.what + ". Newest first.").font(.system(size: 13)).foregroundStyle(PLOS.dim(scheme))
+                    Text(note.what + ". Newest first.").font(Font.pl(size: 13)).foregroundStyle(PLOS.dim(scheme))
                     if lines.isEmpty { Text("Nothing in this note yet.").foregroundStyle(PLOS.dim(scheme)) }
                     ForEach(Array(lines.enumerated()), id: \.offset) { _, l in
-                        Text((try? AttributedString(markdown: l)) ?? AttributedString(l)).font(.system(size: 15)).foregroundStyle(PLOS.text(scheme))
+                        Text((try? AttributedString(markdown: l)) ?? AttributedString(l)).font(Font.pl(size: 15)).foregroundStyle(PLOS.text(scheme))
                             .frame(maxWidth: .infinity, alignment: .leading).textSelection(.enabled)
                     }
                 }

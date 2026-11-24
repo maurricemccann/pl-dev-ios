@@ -111,7 +111,7 @@ struct MyOrdersView: View {
     private func row(_ o: Order) -> some View {
         HStack(spacing: PLSpace.pad) {
             Color.clear.frame(width: 56, height: 56).overlay { FlatImage(url: o.itemImage.flatMap { ShopCatalogue.isFlat($0) ? URL(string: $0) : nil }, padding: 2) }
-                .background(Bone.line(.light).opacity(0.4), in: RoundedRectangle(cornerRadius: 10, style: .continuous))
+                .background(Bone.line(.light).opacity(0.4), in: RoundedRectangle(cornerRadius: 10 * PLStyle.radius, style: .continuous))
             VStack(alignment: .leading, spacing: 2) {
                 Text(o.itemName ?? "Order \(o.friendlyId ?? "")").plFont(.headline)
                 Text(status(o)).plFont(.footnote).foregroundStyle(.secondary)

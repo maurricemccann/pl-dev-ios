@@ -320,10 +320,10 @@ struct WorldCaption: View {
         VStack {
             Spacer()
             VStack(spacing: 4) {
-                Text(data?.title ?? " ").font(.system(.title, design: .serif).italic()).tracking(1.4).foregroundStyle(PLG.gold)
+                Text(data?.title ?? " ").font(Font.pl(.title, design: .serif).italic()).tracking(1.4).foregroundStyle(PLG.gold)
                     .multilineTextAlignment(.center).shadow(color: .black.opacity(0.9), radius: 6, y: 2)
                 if let y = data?.year, !y.isEmpty {
-                    Text(y).font(.system(size: 12)).tracking(2.6).foregroundStyle(PLG.gold.opacity(0.7))
+                    Text(y).font(Font.pl(size: 12)).tracking(2.6).foregroundStyle(PLG.gold.opacity(0.7))
                 }
             }
             .padding(.horizontal, 24).padding(.bottom, 110)
@@ -345,13 +345,13 @@ struct WorldArchiveNotice: View {
         VStack {
             if archive.failed {
                 HStack(spacing: 10) {
-                    Text("The archive did not load. The frames stay gold until it does.").font(.footnote)
-                    Button("Try again") { Task { await archive.load(model: model, force: true) } }.font(.footnote.weight(.semibold))
+                    Text("The archive did not load. The frames stay gold until it does.").font(Font.pl(.footnote))
+                    Button("Try again") { Task { await archive.load(model: model, force: true) } }.font(Font.pl(.footnote).weight(.semibold))
                 }
                 .padding(.horizontal, 14).padding(.vertical, 8)
                 .background(.thinMaterial, in: Capsule()).padding(.top, 6)
             } else if archive.fromCopy {
-                Text("Offline. Showing the last copy of the archive.").font(.caption2).foregroundStyle(.secondary)
+                Text("Offline. Showing the last copy of the archive.").font(Font.pl(.caption2)).foregroundStyle(.secondary)
                     .padding(.horizontal, 12).padding(.vertical, 5).background(.thinMaterial, in: Capsule()).padding(.top, 6)
             }
             Spacer()

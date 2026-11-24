@@ -239,7 +239,7 @@ struct FounderTab: View {
             VStack(spacing: 12) {
                 OSHeader()
                 strip
-                if let m = state.message { Text(m).font(.footnote).foregroundStyle(PLOS.dim(scheme)).frame(maxWidth: .infinity, alignment: .leading) }
+                if let m = state.message { Text(m).font(Font.pl(.footnote)).foregroundStyle(PLOS.dim(scheme)).frame(maxWidth: .infinity, alignment: .leading) }
                 if let line = state.walls?.madman {
                     Text(line).plHand(24).foregroundStyle(PLOS.text(scheme)).multilineTextAlignment(.center).frame(maxWidth: .infinity).padding(.vertical, 4)
                 }
@@ -253,20 +253,20 @@ struct FounderTab: View {
                     ForEach(state.tasks) { t in
                         OSRow(title: t.title ?? "", meta: [t.project, t.priority, t.due_date].compactMap { $0 }.joined(separator: " · ")) {
                             ConfirmButton(title: "Done", question: "Mark \"\(t.title ?? "this")\" done in Notion?") { await state.complete(t, model: model) }
-                                .font(.caption.weight(.semibold)).foregroundStyle(PLOS.gold)
+                                .font(Font.pl(.caption).weight(.semibold)).foregroundStyle(PLOS.gold)
                         }
                     }
                 }
                 shiftPanel
                 OSPanel(title: "The board", badge: board.map { "\($0.inbox + $0.pending)" }, owed: (board?.inbox ?? 0) + (board?.pending ?? 0) > 0) {
                     if let b = board {
-                        Text("\(b.inbox) in the inbox · \(b.pending) approvals waiting").font(.system(size: 12, design: .monospaced)).foregroundStyle(PLOS.dim(scheme))
+                        Text("\(b.inbox) in the inbox · \(b.pending) approvals waiting").font(Font.pl(size: 12, design: .monospaced)).foregroundStyle(PLOS.dim(scheme))
                     } else {
                         Text(boardNote ?? "Asking the board…").foregroundStyle(PLOS.dim(scheme))
                     }
                 }
                 OSPanel(title: "Approvals", badge: "\(state.stats?.pending ?? 0)", startOpen: (state.stats?.pending ?? 0) > 0) {
-                    if let s = state.stats { Text("\(s.queued ?? 0) in the drip · \(s.held ?? 0) held · \(s.week_total ?? 0) made this week").font(.system(size: 12, design: .monospaced)).foregroundStyle(PLOS.dim(scheme)) }
+                    if let s = state.stats { Text("\(s.queued ?? 0) in the drip · \(s.held ?? 0) held · \(s.week_total ?? 0) made this week").font(Font.pl(size: 12, design: .monospaced)).foregroundStyle(PLOS.dim(scheme)) }
                     door("Review the drafts", "checkmark.seal", .approvals)
                     door("In the drip", "drop", .drip)
                 }
@@ -302,9 +302,9 @@ struct FounderTab: View {
                     OSPanel(title: "What the sessions did today", badge: "\(state.digests.count)") {
                         ForEach(state.digests) { d in
                             DisclosureGroup {
-                                Text(d.summary ?? "").font(.callout).foregroundStyle(PLOS.text(scheme)).textSelection(.enabled)
+                                Text(d.summary ?? "").font(Font.pl(.callout)).foregroundStyle(PLOS.text(scheme)).textSelection(.enabled)
                             } label: {
-                                VStack(alignment: .leading) { Text(d.title ?? d.session_id ?? "Session").foregroundStyle(PLOS.text(scheme)); Ago(text: d.closed_at).font(.caption).foregroundStyle(PLOS.dim(scheme)) }
+                                VStack(alignment: .leading) { Text(d.title ?? d.session_id ?? "Session").foregroundStyle(PLOS.text(scheme)); Ago(text: d.closed_at).font(Font.pl(.caption)).foregroundStyle(PLOS.dim(scheme)) }
                             }
                         }
                     }
@@ -356,7 +356,7 @@ struct FounderTab: View {
         if let q = state.standing?.quarters?.min(by: { $0.score < $1.score }) {
             VStack(alignment: .leading, spacing: 10) {
                 Text("Do next · raises \(q.label)").osEyebrow(10).foregroundStyle(PLOS.goldDim(scheme))
-                (Text("\(q.score)/25").font(.system(.callout, design: .monospaced)).foregroundStyle(PLOS.dim(scheme)) + Text(" · \(q.note ?? "")").foregroundStyle(PLOS.text(scheme))).font(.callout)
+                (Text("\(q.score)/25").font(Font.pl(.callout, design: .monospaced)).foregroundStyle(PLOS.dim(scheme)) + Text(" · \(q.note ?? "")").foregroundStyle(PLOS.text(scheme))).font(Font.pl(.callout))
                 if let first = state.needsYou.first {
                     Button { state.room = .approvals } label: { OSRow(title: first) { Text("Open →").osEyebrow(10).foregroundStyle(PLOS.gold) } }.buttonStyle(.plain)
                 }
@@ -386,23 +386,23 @@ struct FounderTab: View {
                 HStack(alignment: .top, spacing: 10) {
                     Button { if t.status != "done" { Task { await state.tickTask(t, "done", model: model) } } } label: {
                         Image(systemName: t.status == "done" ? "checkmark.circle.fill" : t.status == "skipped" ? "minus.circle" : "circle")
-                            .font(.title3).foregroundStyle(t.status == "done" ? PLOS.ok : PLOS.goldDim(scheme))
+                            .font(Font.pl(.title3)).foregroundStyle(t.status == "done" ? PLOS.ok : PLOS.goldDim(scheme))
                             .contentTransition(.symbolEffect(.replace)).symbolEffect(.bounce, value: t.status)
                     }
                     .buttonStyle(.plain)
                     .accessibilityLabel(t.status == "done" ? "Done." : "Not done. Tap to mark done.")
                     VStack(alignment: .leading, spacing: 3) {
                         HStack(spacing: 6) {
-                            if let time = t.time_pt { Text(time).font(.system(size: 11, design: .monospaced)).foregroundStyle(PLOS.dim(scheme)) }
-                            Text(t.kind == "auto" ? "⚙" : "✋").font(.caption2).accessibilityLabel(t.kind == "auto" ? "Runs itself" : "By hand")
+                            if let time = t.time_pt { Text(time).font(Font.pl(size: 11, design: .monospaced)).foregroundStyle(PLOS.dim(scheme)) }
+                            Text(t.kind == "auto" ? "⚙" : "✋").font(Font.pl(.caption2)).accessibilityLabel(t.kind == "auto" ? "Runs itself" : "By hand")
                         }
                         Text(t.title ?? "").foregroundStyle(PLOS.text(scheme)).strikethrough(t.status == "done" || t.status == "skipped")
-                        if let why = t.why, !why.isEmpty { Text(why).font(.caption).foregroundStyle(PLOS.dim(scheme)).lineLimit(3) }
+                        if let why = t.why, !why.isEmpty { Text(why).font(Font.pl(.caption)).foregroundStyle(PLOS.dim(scheme)).lineLimit(3) }
                     }
                     Spacer(minLength: 0)
                 }
                 .padding(10)
-                .background(PLOS.surface2(scheme).opacity(0.6), in: RoundedRectangle(cornerRadius: 12, style: .continuous))
+                .background(PLOS.surface2(scheme).opacity(0.6), in: RoundedRectangle(cornerRadius: 12 * PLStyle.radius, style: .continuous))
                 .contextMenu {
                     Button("Done", systemImage: "checkmark") { Task { await state.tickTask(t, "done", model: model) } }
                     Button("Skip", systemImage: "minus.circle") { Task { await state.tickTask(t, "skipped", model: model) } }
@@ -418,11 +418,11 @@ struct FounderTab: View {
                                 VStack(spacing: 4) {
                                     Text(Date.pl(d.date)?.formatted(.dateTime.weekday(.abbreviated)) ?? d.date).osEyebrow(9)
                                     Text(Date.pl(d.date)?.formatted(.dateTime.day()) ?? "").osValue(20)
-                                    Text(work ? "Work" : "Off").font(.caption2)
+                                    Text(work ? "Work" : "Off").font(Font.pl(.caption2))
                                 }
                                 .foregroundStyle(work ? Color.black : PLOS.text(scheme))
                                 .padding(.vertical, 10).frame(minWidth: 52)
-                                .background(work ? PLOS.gold : PLOS.surface2(scheme).opacity(0.7), in: RoundedRectangle(cornerRadius: 12, style: .continuous))
+                                .background(work ? PLOS.gold : PLOS.surface2(scheme).opacity(0.7), in: RoundedRectangle(cornerRadius: 12 * PLStyle.radius, style: .continuous))
                             }
                             .buttonStyle(.plain)
                             .accessibilityLabel("\(d.date), \(work ? "work day" : "day off"). Tap to change.")
@@ -434,7 +434,7 @@ struct FounderTab: View {
                 HStack {
                     Text("The record").plHand(16).foregroundStyle(PLOS.dim(scheme))
                     Spacer()
-                    Text("\(r.streak ?? 0) day streak · \(r.done ?? 0)/\(r.total ?? 0)").font(.system(size: 12, design: .monospaced)).foregroundStyle(PLOS.text(scheme))
+                    Text("\(r.streak ?? 0) day streak · \(r.done ?? 0)/\(r.total ?? 0)").font(Font.pl(size: 12, design: .monospaced)).foregroundStyle(PLOS.text(scheme))
                 }
             }
             if !tasks.isEmpty {
@@ -454,11 +454,11 @@ struct FounderTab: View {
                 Toggle(isOn: Binding(get: { c.status == "awake" }, set: { v in Task { await state.setCreator(awake: v, model: model) } })) {
                     VStack(alignment: .leading, spacing: 2) {
                         Text("The Creator Signal").foregroundStyle(PLOS.text(scheme))
-                        Text(c.label).font(.caption).foregroundStyle(PLOS.dim(scheme))
+                        Text(c.label).font(Font.pl(.caption)).foregroundStyle(PLOS.dim(scheme))
                     }
                 }
                 .disabled(c.status == "dnd")
-                Text("One signal the whole site reads: lightOS when you are working, nightOS when resting.").font(.caption).foregroundStyle(PLOS.dim(scheme))
+                Text("One signal the whole site reads: lightOS when you are working, nightOS when resting.").font(Font.pl(.caption)).foregroundStyle(PLOS.dim(scheme))
             }
             door("Site controls · maintenance, shop, words on the site", "switch.2", .site)
         }
@@ -470,15 +470,15 @@ struct FounderTab: View {
         if let st = state.standing {
             OSPanel(title: "Standing", badge: "\(st.total ?? 0)/100") {
                 HStack(alignment: .firstTextBaseline, spacing: 6) {
-                    Text("\(st.total ?? 0)").font(.system(size: 56, design: .serif).italic()).foregroundStyle(PLOS.gold)
+                    Text("\(st.total ?? 0)").font(Font.pl(size: 56, design: .serif).italic()).foregroundStyle(PLOS.gold)
                     Text("of 100").osEyebrow(10).foregroundStyle(PLOS.dim(scheme))
                 }
-                if let v = st.verdict { Text(v).font(.callout).foregroundStyle(PLOS.text(scheme)) }
+                if let v = st.verdict { Text(v).font(Font.pl(.callout)).foregroundStyle(PLOS.text(scheme)) }
                 ForEach(st.quarters ?? []) { q in
                     VStack(alignment: .leading, spacing: 4) {
                         HStack { Text(q.label.capitalized).plHand(16).foregroundStyle(PLOS.dim(scheme)); Spacer(); Text("\(q.score)/25").osValue(13).foregroundStyle(PLOS.text(scheme)) }
                         Gauge(value: Double(q.score), in: 0...25) { EmptyView() }.gaugeStyle(.accessoryLinearCapacity).tint(q.score < 10 ? PLOS.danger : q.score < 18 ? PLOS.warn : PLOS.gold)
-                        if let n = q.note { Text(n).font(.caption).foregroundStyle(PLOS.dim(scheme)) }
+                        if let n = q.note { Text(n).font(Font.pl(.caption)).foregroundStyle(PLOS.dim(scheme)) }
                     }
                 }
             }
@@ -491,7 +491,7 @@ struct FounderTab: View {
         Button { state.room = room } label: {
             if plain { Label(title, systemImage: symbol) }
             else {
-                OSRow(title: title) { Image(systemName: "chevron.right").font(.caption.weight(.bold)).foregroundStyle(PLOS.goldDim(scheme)) }
+                OSRow(title: title) { Image(systemName: "chevron.right").font(Font.pl(.caption).weight(.bold)).foregroundStyle(PLOS.goldDim(scheme)) }
             }
         }
         .buttonStyle(.plain)

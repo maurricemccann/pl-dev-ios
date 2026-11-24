@@ -20,7 +20,7 @@ struct PracticePlayer: View {
         let on = clips.playing == key
         HStack(spacing: 10) {
             Button { Task { onError(await clips.toggle(key, path: path, model: model)) } } label: {
-                Image(systemName: on ? "pause.fill" : "play.fill").font(.system(size: 16)).foregroundStyle(Candle.bg)
+                Image(systemName: on ? "pause.fill" : "play.fill").font(Font.pl(size: 16)).foregroundStyle(Candle.bg)
                     .frame(width: 36, height: 36).background(Candle.gold, in: Circle()).contentTransition(.symbolEffect(.replace))
             }
             .buttonStyle(.plain).accessibilityLabel(on ? "Pause" : "Play this line")
@@ -28,7 +28,7 @@ struct PracticePlayer: View {
                 let len = max(clips.length, 0.01), pos = on ? clips.position : 0
                 HStack(spacing: 10) {
                     Text("\(clock(dragging.map { $0 * len } ?? pos)) / \(clock(on ? clips.length : 0))")
-                        .font(.system(size: 12).monospacedDigit()).foregroundStyle(Candle.ink.opacity(0.75))
+                        .font(Font.pl(size: 12).monospacedDigit()).foregroundStyle(Candle.ink.opacity(0.75))
                     Slider(value: Binding(get: { dragging ?? (on ? pos / len : 0) }, set: { dragging = $0 }), in: 0...1) { editing in
                         if !editing, let d = dragging { clips.seek(to: d * len); dragging = nil }
                     }
@@ -95,7 +95,7 @@ struct AffirmationsCard: View {
                 if let line {
                     Text(word(line)).plHand(21, relativeTo: .title3).foregroundStyle(Candle.ink).lineSpacing(4).textSelection(.enabled)
                     if let audio = line.audio { PracticePlayer(key: line.key, path: audio, model: model) { result = $0 } }
-                    else { Text("voice not recorded yet \u{2014} text only").font(.system(size: 12)).foregroundStyle(Candle.ink.opacity(0.5)) }
+                    else { Text("voice not recorded yet \u{2014} text only").font(Font.pl(size: 12)).foregroundStyle(Candle.ink.opacity(0.5)) }
                 } else if failed { Text(PracticeWords.loadFailed("the lines")).candleHint() }
                 else { Text("\u{2026}").candleHint() }
             }

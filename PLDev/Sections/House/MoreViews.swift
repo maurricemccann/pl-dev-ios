@@ -46,7 +46,7 @@ struct MoreTab: View {
 
     private func door<D: View>(_ title: String, @ViewBuilder _ dest: @escaping () -> D) -> some View {
         NavigationLink { dest().osScreen() } label: {
-            OSRow(title: title) { Image(systemName: "chevron.right").font(.caption.weight(.bold)).foregroundStyle(PLOS.goldDim(scheme)) }
+            OSRow(title: title) { Image(systemName: "chevron.right").font(Font.pl(.caption).weight(.bold)).foregroundStyle(PLOS.goldDim(scheme)) }
         }
         .buttonStyle(.plain)
     }
@@ -99,7 +99,7 @@ struct OpsView: View {
                 Text(t.text).plReading().textSelection(.enabled)
                     .padding(10)
                     .frame(maxWidth: .infinity, alignment: t.you ? .trailing : .leading)
-                    .background(t.you ? PLTone.house.opacity(0.2) : Color.secondary.opacity(0.12), in: RoundedRectangle(cornerRadius: 14, style: .continuous))
+                    .background(t.you ? PLTone.house.opacity(0.2) : Color.secondary.opacity(0.12), in: RoundedRectangle(cornerRadius: 14 * PLStyle.radius, style: .continuous))
                     .listRowSeparator(.hidden)
             }
             if busy { PLLoader() }
@@ -108,7 +108,7 @@ struct OpsView: View {
         .safeAreaInset(edge: .bottom) {
             HStack {
                 TextField("Ask Ops", text: $q, axis: .vertical).lineLimit(1...4).textFieldStyle(.roundedBorder)
-                Button { Task { await ask() } } label: { Image(systemName: "arrow.up.circle.fill").font(.title) }.disabled(q.isEmpty || busy).accessibilityLabel("Ask")
+                Button { Task { await ask() } } label: { Image(systemName: "arrow.up.circle.fill").font(Font.pl(.title)) }.disabled(q.isEmpty || busy).accessibilityLabel("Ask")
             }
             .padding(.horizontal).padding(.vertical, 8).background(.bar)
         }
@@ -145,15 +145,15 @@ struct CorpusView: View {
             if searched && hits.isEmpty { ContentUnavailableView.search(text: q) }
             ForEach(hits) { h in
                 VStack(alignment: .leading, spacing: 4) {
-                    if let p = h.principle { Text(p).font(.headline) }
+                    if let p = h.principle { Text(p).font(Font.pl(.headline)) }
                     if let quote = h.quote { Text("“\(quote)”").italic() }
-                    if let n = h.note { Text(n).font(.callout) }
-                    Text([h.lens, h.label, h.source, h.date].compactMap { $0 }.joined(separator: " · ")).font(.caption).foregroundStyle(.secondary)
+                    if let n = h.note { Text(n).font(Font.pl(.callout)) }
+                    Text([h.lens, h.label, h.source, h.date].compactMap { $0 }.joined(separator: " · ")).font(Font.pl(.caption)).foregroundStyle(.secondary)
                 }
                 .textSelection(.enabled)
             }
             if let s = stats {
-                Section { Text("\(s.corpus_fragments ?? 0) fragments from \(s.corpus_conversations ?? 0) conversations · \(s.archive_count ?? 0) archive pieces").font(.caption).foregroundStyle(.secondary) }.listRowBackground(OSRowBackground())
+                Section { Text("\(s.corpus_fragments ?? 0) fragments from \(s.corpus_conversations ?? 0) conversations · \(s.archive_count ?? 0) archive pieces").font(Font.pl(.caption)).foregroundStyle(.secondary) }.listRowBackground(OSRowBackground())
             }
         }
         .searchable(text: $q, prompt: "What did he say about…")
@@ -211,7 +211,7 @@ struct MerchView: View {
                 }()
                 PLBigTile(number: "\(max(0, Calendar.current.dateComponents([.day], from: .now, to: next).day ?? 0))", label: "Days to the next season switch",
                           tint: PLOS.gold, text: PLOS.text(scheme), dim: PLOS.dim(scheme)) {
-                    Text(next.formatted(.dateTime.month(.abbreviated).day())).font(.system(size: 13, design: .monospaced)).foregroundStyle(PLOS.gold)
+                    Text(next.formatted(.dateTime.month(.abbreviated).day())).font(Font.pl(size: 13, design: .monospaced)).foregroundStyle(PLOS.gold)
                 }
                 if !rows.isEmpty {
                     PLStageBar(stages: [.init(name: "On the grid", count: rows.filter { onGrid($0.season) }.count, tint: PLOS.ok),
@@ -243,8 +243,8 @@ struct MerchView: View {
                             VStack(spacing: 4) {
                                 AsyncImage(url: c.image.flatMap(URL.init(string:))) { $0.resizable().scaledToFit() } placeholder: { Color.secondary.opacity(0.12) }
                                     .frame(height: 96)
-                                Text(c.name).font(.caption2).lineLimit(2).multilineTextAlignment(.center)
-                                Text(c.placement ?? "").font(.caption2.bold()).foregroundStyle(.secondary)
+                                Text(c.name).font(Font.pl(.caption2)).lineLimit(2).multilineTextAlignment(.center)
+                                Text(c.placement ?? "").font(Font.pl(.caption2).bold()).foregroundStyle(.secondary)
                             }
                         }
                     }
@@ -254,7 +254,7 @@ struct MerchView: View {
                 Section("The Ask on /shop") {
                     let top = Double(asks.map(\.n).max() ?? 1)
                     ForEach(asks.sorted { $0.n > $1.n }) { a in
-                        HStack { Text(a.answer_id).font(.callout); Text(a.question_id).font(.caption2).foregroundStyle(PLOS.dim(scheme)); Spacer(); Text("\(a.n)").font(.system(.callout, design: .monospaced)) }
+                        HStack { Text(a.answer_id).font(Font.pl(.callout)); Text(a.question_id).font(Font.pl(.caption2)).foregroundStyle(PLOS.dim(scheme)); Spacer(); Text("\(a.n)").font(Font.pl(.callout, design: .monospaced)) }
                             .padding(.horizontal, 8).padding(.vertical, 6)
                             .plBar(Double(a.n), of: top, tint: PLOS.gold)
                     }
@@ -314,13 +314,13 @@ struct CatalogQueueView: View {
 
     private func row(_ r: Row) -> some View {
         VStack(alignment: .leading, spacing: 2) {
-            Text("\(r.design ?? "") · \(r.colorway ?? "")").font(.headline)
+            Text("\(r.design ?? "") · \(r.colorway ?? "")").font(Font.pl(.headline))
             HStack(spacing: 5) {
                 if let b = r.blank { PLChip(word: b, tint: PLOS.dim(scheme)) }
                 if let t = r.technique { PLChip(word: t, tint: PLOS.philosophy) }
                 if let p = r.tier_price { PLChip(word: "$\(p)", tint: PLOS.gold) }
             }
-            if let n = r.note, !n.isEmpty { Text(n).font(.caption) }
+            if let n = r.note, !n.isEmpty { Text(n).font(Font.pl(.caption)) }
         }
     }
 
@@ -346,9 +346,9 @@ struct PrecedentView: View {
                         Button { open = it } label: {
                             VStack(alignment: .leading, spacing: 4) {
                                 AsyncImage(url: url(it)) { $0.resizable().scaledToFill() } placeholder: { Color.secondary.opacity(0.12) }
-                                    .frame(height: 150).clipShape(RoundedRectangle(cornerRadius: 10, style: .continuous))
-                                Text(it.pattern ?? it.slug).font(.caption.bold()).lineLimit(1)
-                                Text([it.tongue, it.viewport].compactMap { $0 }.joined(separator: " · ")).font(.caption2).foregroundStyle(.secondary)
+                                    .frame(height: 150).clipShape(RoundedRectangle(cornerRadius: 10 * PLStyle.radius, style: .continuous))
+                                Text(it.pattern ?? it.slug).font(Font.pl(.caption).bold()).lineLimit(1)
+                                Text([it.tongue, it.viewport].compactMap { $0 }.joined(separator: " · ")).font(Font.pl(.caption2)).foregroundStyle(.secondary)
                             }
                         }
                         .buttonStyle(.plain)
@@ -390,8 +390,8 @@ struct CrewView: View {
                 }.listRowBackground(OSRowBackground())
                 ForEach(crew) { m in
                     VStack(alignment: .leading, spacing: 2) {
-                        HStack { Text(m.agent).font(.headline); Spacer(); Text("\(m.n ?? 0) runs").font(.caption).monospacedDigit() }
-                        HStack { Text(m.last_job ?? ""); Spacer(); Ago(text: m.last) }.font(.caption).foregroundStyle(.secondary)
+                        HStack { Text(m.agent).font(Font.pl(.headline)); Spacer(); Text("\(m.n ?? 0) runs").font(Font.pl(.caption)).monospacedDigit() }
+                        HStack { Text(m.last_job ?? ""); Spacer(); Ago(text: m.last) }.font(Font.pl(.caption)).foregroundStyle(.secondary)
                     }
                     .padding(.horizontal, 6).padding(.vertical, 4)
                     .plBar(Double(m.n ?? 0), of: top, tint: PLOS.gold)
@@ -428,11 +428,11 @@ struct StackHealthView: View {
                                text: PLOS.text(scheme), dim: PLOS.dim(scheme))
                         VStack(alignment: .leading, spacing: 6) {
                             PLStateDot(word: l.all_pass == true ? "Every check passed" : "Something failed", tint: l.all_pass == true ? PLOS.ok : PLOS.danger, text: PLOS.text(scheme))
-                            HStack(spacing: 4) { Text("Ran").foregroundStyle(.secondary); Ago(text: l.ran_at).foregroundStyle(.secondary) }.font(.caption)
+                            HStack(spacing: 4) { Text("Ran").foregroundStyle(.secondary); Ago(text: l.ran_at).foregroundStyle(.secondary) }.font(Font.pl(.caption))
                         }
                     }
                     .padding(.vertical, 4)
-                    if let s = l.summary { Text(s).font(.callout) }
+                    if let s = l.summary { Text(s).font(Font.pl(.callout)) }
                 }.listRowBackground(OSRowBackground())
                 Section("Checks") {
                     // what failed comes first, then the rest by name
@@ -445,7 +445,7 @@ struct StackHealthView: View {
                             Image(systemName: r?.pass == true ? "checkmark.circle.fill" : "xmark.circle.fill").foregroundStyle(r?.pass == true ? .green : .red)
                             Text(k)
                             Spacer()
-                            if let ms = r?.latency { Text("\(ms) ms").font(.caption.monospacedDigit()).foregroundStyle(.secondary) }
+                            if let ms = r?.latency { Text("\(ms) ms").font(Font.pl(.caption).monospacedDigit()).foregroundStyle(.secondary) }
                         }
                     }
                 }.listRowBackground(OSRowBackground())
@@ -491,7 +491,7 @@ struct AutomationView: View {
                     HStack {
                         Label(j.1, systemImage: j.2)
                         Spacer()
-                        if running == j.0 { PLLoader() } else if let r = results[j.0] { Text(r).font(.caption).foregroundStyle(.secondary).lineLimit(2) }
+                        if running == j.0 { PLLoader() } else if let r = results[j.0] { Text(r).font(Font.pl(.caption)).foregroundStyle(.secondary).lineLimit(2) }
                     }
                 }
                 .disabled(running != nil)
@@ -530,7 +530,7 @@ struct CostView: View {
                                label: "Of costs covered", tint: (c.revenue30d ?? 0) >= monthly && monthly > 0 ? PLOS.ok : PLOS.warn, text: PLOS.text(scheme), dim: PLOS.dim(scheme))
                         VStack(alignment: .leading, spacing: 8) {
                             PLBigTile(number: (c.revenue30d ?? 0).formatted(.currency(code: "USD")), label: "Last 30 days", text: PLOS.text(scheme), dim: PLOS.dim(scheme))
-                            Text("\((c.revenueAllTime ?? 0).formatted(.currency(code: "USD"))) all time").font(.system(size: 11, design: .monospaced)).foregroundStyle(PLOS.dim(scheme))
+                            Text("\((c.revenueAllTime ?? 0).formatted(.currency(code: "USD"))) all time").font(Font.pl(size: 11, design: .monospaced)).foregroundStyle(PLOS.dim(scheme))
                         }
                     }
                     .padding(.vertical, 4)
@@ -543,7 +543,7 @@ struct CostView: View {
                 Section {
                     let top = (c.recurringMonthly ?? []).map(\.value).max() ?? 1
                     ForEach((c.recurringMonthly ?? []).sorted { $0.value > $1.value }) { l in
-                        HStack { Text(l.label); Spacer(); Text(l.value.formatted(.currency(code: "USD"))).font(.system(.callout, design: .monospaced)) }
+                        HStack { Text(l.label); Spacer(); Text(l.value.formatted(.currency(code: "USD"))).font(Font.pl(.callout, design: .monospaced)) }
                             .padding(.horizontal, 8).padding(.vertical, 6)
                             .plBar(l.value, of: top, tint: PLOS.warn)
                     }
@@ -576,16 +576,16 @@ struct LogView: View {
                 VStack(alignment: .leading, spacing: 3) {
                     switch kind {
                     case .agent:
-                        HStack { Text(r.agent ?? "").font(.headline); Spacer(); Ago(text: r.ran_at).font(.caption) }
-                        Text(r.job ?? "").font(.callout)
-                        Text(r.result ?? "").font(.caption).foregroundStyle(.secondary).lineLimit(4)
+                        HStack { Text(r.agent ?? "").font(Font.pl(.headline)); Spacer(); Ago(text: r.ran_at).font(Font.pl(.caption)) }
+                        Text(r.job ?? "").font(Font.pl(.callout))
+                        Text(r.result ?? "").font(Font.pl(.caption)).foregroundStyle(.secondary).lineLimit(4)
                     case .notifications:
-                        HStack { Text(r.title ?? "").font(.headline); Spacer(); Ago(text: r.created_at).font(.caption) }
-                        Text(r.message ?? "").font(.callout).lineLimit(5)
+                        HStack { Text(r.title ?? "").font(Font.pl(.headline)); Spacer(); Ago(text: r.created_at).font(Font.pl(.caption)) }
+                        Text(r.message ?? "").font(Font.pl(.callout)).lineLimit(5)
                     case .captures:
-                        HStack { Text((r.status ?? "").capitalized).font(.caption.bold()); Spacer(); Ago(text: r.created_at).font(.caption) }
+                        HStack { Text((r.status ?? "").capitalized).font(Font.pl(.caption).bold()); Spacer(); Ago(text: r.created_at).font(Font.pl(.caption)) }
                         Text(r.payload ?? "").lineLimit(3)
-                        Text([r.type, r.source, r.pool_key.map { _ in "in the research pool" }].compactMap { $0 }.joined(separator: " · ")).font(.caption).foregroundStyle(.secondary)
+                        Text([r.type, r.source, r.pool_key.map { _ in "in the research pool" }].compactMap { $0 }.joined(separator: " · ")).font(Font.pl(.caption)).foregroundStyle(.secondary)
                     }
                 }
                 .textSelection(.enabled)

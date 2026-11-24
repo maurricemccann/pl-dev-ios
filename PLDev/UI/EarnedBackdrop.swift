@@ -26,7 +26,7 @@ struct EarnedBackdrop: View {
                         HStack {
                             Text("Your latest keeps").plHand(20)
                             Spacer()
-                            Image(systemName: "arrow.right").font(.system(size: 11, weight: .bold)).foregroundStyle(.white.opacity(0.9))
+                            Image(systemName: "arrow.right").font(Font.pl(size: 11, weight: .bold)).foregroundStyle(Color.primary.opacity(0.9))
                         }
                         ScrollView(.horizontal, showsIndicators: false) {
                             HStack(spacing: 8) {
@@ -39,7 +39,7 @@ struct EarnedBackdrop: View {
                                         }
                                     }
                                     .frame(width: 84, height: 84)
-                                    .clipShape(RoundedRectangle(cornerRadius: 12, style: .continuous))
+                                    .clipShape(RoundedRectangle(cornerRadius: 12 * PLStyle.radius, style: .continuous))
                                 }
                             }
                         }

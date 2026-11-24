@@ -268,7 +268,7 @@ struct HeartCoin: View {
             ThreeDModels.paint(e, m)
             pivot.addChild(ThreeDModels.fitted(e, longest: 1.5))
         }
-        .overlay { if missing { Image(systemName: "heart").font(.largeTitle).foregroundStyle(Bone.gold.opacity(0.4)) } }
+        .overlay { if missing { Image(systemName: "heart").font(Font.pl(.largeTitle)).foregroundStyle(Bone.gold.opacity(0.4)) } }
         .accessibilityLabel("The heart mark in gold, turning. Drag to turn it.")
     }
 }

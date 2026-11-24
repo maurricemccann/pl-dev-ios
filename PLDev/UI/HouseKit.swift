@@ -14,14 +14,17 @@ struct HousePalette: Codable, Hashable, Identifiable {
     let text: String
     let key: String
     let accent: String
+    /// A theme may name its own card colour (platinum grey on a teal desktop); nil = a step from the ground.
+    var surface: String? = nil
     var id: String { name }
-    init(name: String, ground: String, text: String, key: String, accent: String) { self.name = name; self.ground = ground; self.text = text; self.key = key; self.accent = accent }
-    private enum K: String, CodingKey { case name, ground, text, key, accent }
+    init(name: String, ground: String, text: String, key: String, accent: String, surface: String? = nil) { self.name = name; self.ground = ground; self.text = text; self.key = key; self.accent = accent; self.surface = surface }
+    private enum K: String, CodingKey { case name, ground, text, key, accent, surface }
     init(from d: Decoder) throws {
         let c = try d.container(keyedBy: K.self)
         name = try c.decode(String.self, forKey: .name); ground = try c.decode(String.self, forKey: .ground)
         text = try c.decode(String.self, forKey: .text); key = try c.decode(String.self, forKey: .key)
         accent = try c.decodeIfPresent(String.self, forKey: .accent) ?? key
+        surface = try c.decodeIfPresent(String.self, forKey: .surface)
     }
     var groundColor: Color { Color(hex: ground) ?? .black }
     var textColor: Color { Color(hex: text) ?? .white }
@@ -31,21 +34,6 @@ struct HousePalette: Codable, Hashable, Identifiable {
 
     /// His own Home Screen (the 11-13 reference: orange curves on deep brown, sampled), the default until he picks another.
     static let homeScreen = HousePalette(name: "home-screen", ground: "#5a1f0e", text: "#efe9dc", key: "#b85536", accent: "#f0a070")
-    /// The Fun themes' palettes (S353·7b1e, his ask 11-24: "a few fun ones"). Built in, not in the Design Kit: they are play, not house colour.
-    static let fun: [HousePalette] = [
-        HousePalette(name: "fun-macos", ground: "#3aa6b9", text: "#111111", key: "#3366cc", accent: "#9c9cff"),   // his Mac OS reference 11-24: teal desktop, platinum, blue bars
-        HousePalette(name: "fun-terminal", ground: "#0055aa", text: "#ffffff", key: "#ff8800", accent: "#ffffff"),   // his Linux reference 11-24: blue, white, orange
-        HousePalette(name: "fun-ubuntu", ground: "#2c1b12", text: "#f3e9e1", key: "#e95420", accent: "#f6b28c"),   // his Ubuntu reference 11-24: dark brown, orange
-        HousePalette(name: "fun-windows", ground: "#ece9d8", text: "#111111", key: "#245edb", accent: "#3c9d3c"),   // his Windows reference 11-24: the XP style, blue bars, green
-        HousePalette(name: "fun-glass", ground: "#0e1b2a", text: "#eef6ff", key: "#9fd4ff", accent: "#ffffff"),
-        HousePalette(name: "fun-eink", ground: "#f2f0e9", text: "#111111", key: "#2b2b2b", accent: "#777777"),
-        HousePalette(name: "fun-synthwave", ground: "#14061f", text: "#ffe9fb", key: "#ff2a9d", accent: "#2de2e6"),   // his retrowave reference 11-24: hot pink and teal neon
-        HousePalette(name: "fun-cyberpunk", ground: "#140a1e", text: "#f2e9f7", key: "#ff4f5e", accent: "#19e3c8"),   // his references 11-24: violet-black, coral frames, teal
-        HousePalette(name: "fun-retro", ground: "#cdbaf5", text: "#2a1a4a", key: "#7a3cff", accent: "#ff6ec7"),   // his vaporwave reference 11-24: lavender, purple frames, pink
-        HousePalette(name: "fun-y2k", ground: "#040804", text: "#d8ffd0", key: "#39ff14", accent: "#b6ff3b"),   // his Y2K reference 11-24: acid green on black
-        HousePalette(name: "fun-hyperspace", ground: "#02010a", text: "#e6f0ff", key: "#7b5cff", accent: "#3cf2ff"),
-        HousePalette(name: "fun-vibe", ground: "#282a36", text: "#f8f8f2", key: "#bd93f9", accent: "#ff79c6"),
-    ]
 }
 
 @MainActor @Observable final class HouseKit {
@@ -60,7 +48,7 @@ struct HousePalette: Codable, Hashable, Identifiable {
     var titleFace: String = UserDefaults.standard.string(forKey: "pldev.titleFace") ?? "v1" {
         didSet { UserDefaults.standard.set(titleFace, forKey: "pldev.titleFace"); apply() }
     }
-    var allPalettes: [HousePalette] { palettes + archivePalettes + familyPalettes + mixes.map(\.palette) + HousePalette.fun }
+    var allPalettes: [HousePalette] { palettes + archivePalettes + familyPalettes + mixes.map(\.palette) + HousePalette.themed }
     func harmonies(of base: String) -> [Mix] { mixes.filter { $0.base == base } }
     private(set) var titleFont: String?          // his hand, V1 (main), once registered
     var paletteName: String = UserDefaults.standard.string(forKey: "pldev.palette") ?? "home-screen" {
@@ -199,26 +187,7 @@ struct MoneyGround: View {
 }
 
 struct HouseGround: View {
-    @Environment(\.colorScheme) private var scheme
-    @Environment(\.accessibilityReduceTransparency) private var reduce
-    @State private var kit = HouseKit.shared
-    // the same Settings dial as Home's wallpaper: 0.5 = the quiet default; up to 1 = the bold curves behind glass he liked on pl-os (11-13 screenshot)
-    @AppStorage("pldev.tileStrength") private var strength = 0.5
-    var body: some View {
-        let p = kit.palette, k = 0.14 * max(0.2, strength) * (1 + max(0, strength - 0.5) * 4)   // 0.5 -> 0.07 as before, 1 -> about 0.42
-        ZStack {
-            if PLCarry.snap.active { PLCarry.tone(.ground, scheme, .clear) }   // a chosen pack: deep ground in dark, pale in light, whichever way the palette runs
-            else if scheme == .dark { p.groundColor } else { ZStack { Color(uiColor: .systemGroupedBackground); p.textColor.opacity(0.45) } }
-            if !reduce, let tile = Wallpaper.stencil {
-                Image(uiImage: tile).renderingMode(.template).resizable(resizingMode: .tile)
-                    // a chosen pack's ink (notes4) at the strength the curve dial asks for (his 11-13 "looked really cool")
-                    .foregroundStyle(PLCarry.snap.active ? PLCarry.tone(.ink, scheme, .clear, alpha: scheme == .dark ? k : k * 0.86)
-                                                         : (scheme == .dark ? p.textColor.opacity(k) : p.groundColor.opacity(k * 0.86)))
-            }
-        }
-        .ignoresSafeArea()
-        .accessibilityHidden(true)
-    }
+    var body: some View { ThemeGround() }
 }
 
 /// His words in his hand (his ruling 11-13: "anything that sounds like it came from the founder needs the house font, anything
@@ -280,133 +249,3 @@ enum PLIcon {
 }
 
 
-/// Built-in theme packs (his ask 11-13): one tap sets a palette and the title face together. His words stay in his V1 hand in
-/// every pack; only navigation titles change face.
-/// S353·7b1e (his ask 11-24, "theme packs updated"): every house palette in the Design Kit has a pack, each sets the text face
-/// too, and the list splits dark and light. Faces follow the kit's rule: V1 leads, V2 supports, Ransom is the one loud word.
-/// S353·7b1e (his ask 11-24: "use whatever house fonts and color palettes we have to craft 15 distinct themes, each with their own
-/// style and unique ui/ux, no two the same"). Each theme owns: palette, light or dark, title face and text face (his hands or the
-/// Design Kit's house fonts, fetched once from the gallery), card style (frosted, clear, solid, outlined), corner shape (sharp 0.35,
-/// house 1, soft 1.35), spacing (compact 0.85, house 1, airy 1.2), Home's tile shape, the curve wallpaper's scale and strength,
-/// motion, and the app icon where a matching icon exists. Text size stays his accessibility choice. No two share the same mix.
-struct PLThemePreset: Identifiable, Hashable {
-    enum Card: String { case frosted, clear, solid, outline }
-    let id: String, title: String, palette: String, face: String, text: String, note: String, dark: Bool
-    let card: Card, radius: Double, space: Double, tile: String, repeatSize: Double, curves: Double, calm: Bool, icon: String?
-    var fun = false   // the Fun group (his ask 11-24), listed after Dark and Light
-    /// One of his archive pieces as the wallpaper, "mode|url": mask (white lines take the key colour), invert (black lines do),
-    /// color (the piece as he made it). His picks 11-24. nil = the curve tile.
-    var wall: String? = nil
-
-    private static func house(_ f: String) -> String { "file:fonts/house/\(f)" }
-    static let all: [PLThemePreset] = [
-        .init(id: "home", title: "Your Home Screen", palette: "home-screen", face: "v1", text: "jost",
-              note: "Your hand, frosted glass, the curves as you drew them", dark: true,
-              card: .frosted, radius: 1, space: 1, tile: "squircle", repeatSize: 300, curves: 0.5, calm: false, icon: "AppIcon-HomeScreen"),
-        .init(id: "studio-night", title: "Studio night", palette: "obsidian-gold", face: house("pirata-one.ttf"), text: "jost",
-              note: "Blackletter titles, gold hairline cards, sharp and tight", dark: true,
-              card: .outline, radius: 0.35, space: 0.85, tile: "square", repeatSize: 240, curves: 0.65, calm: false, icon: "AppIcon-ObsidianGold", wall: "mask|https://pub-4420dc4349624d6bbed7eb9555f42661.r2.dev/abstract-pattern_organic-curves_monochrome_digital_970.png"),
-        .init(id: "ember", title: "Ember", palette: "void-ember", face: house("rubik-burned.ttf"), text: "jost",
-              note: "Burned titles, round tiles, the curves large and bright", dark: true,
-              card: .frosted, radius: 1.35, space: 1, tile: "circle", repeatSize: 420, curves: 0.85, calm: false, icon: "AppIcon-VoidEmber", wall: "mask|https://pub-4420dc4349624d6bbed7eb9555f42661.r2.dev/abstract-pattern_organic-interlocking_black-white_ink-marker_1239.jpg"),
-        .init(id: "totem", title: "Totem", palette: "totem-blue-gold", face: house("unifrakturcook.ttf"), text: house("texturina.ttf"),
-              note: "Fraktur titles over a book face, clear glass, room to breathe", dark: true,
-              card: .clear, radius: 1, space: 1.2, tile: "squircle", repeatSize: 360, curves: 0.4, calm: false, icon: nil),
-        .init(id: "indigo", title: "Deep indigo", palette: "deep-indigo", face: house("major-mono-display.ttf"), text: house("syne-mono.ttf"),
-              note: "Mono display and mono text, outlined, small dense curves", dark: true,
-              card: .outline, radius: 0.35, space: 0.85, tile: "square", repeatSize: 200, curves: 0.3, calm: false, icon: "AppIcon-DeepIndigo"),
-        .init(id: "silver", title: "Night silver", palette: "night-silver", face: house("vt323.ttf"), text: "courier",
-              note: "Terminal titles, typewriter text, solid panels, still", dark: true,
-              card: .solid, radius: 0.35, space: 1, tile: "square", repeatSize: 200, curves: 0.15, calm: true, icon: nil),
-        .init(id: "oxblood", title: "Oxblood room", palette: "oxblood-ground", face: house("new-rocker.ttf"), text: "jost",
-              note: "Rocker titles, soft solid panels, round tiles, airy", dark: true,
-              card: .solid, radius: 1.35, space: 1.2, tile: "circle", repeatSize: 460, curves: 0.6, calm: false, icon: nil),
-        .init(id: "forest", title: "Forest room", palette: "forest-ground", face: house("grenze-gotisch.ttf"), text: house("xanh-mono.ttf"),
-              note: "Gotisch titles, a serif mono, frosted, sharp corners", dark: true,
-              card: .frosted, radius: 0.35, space: 1, tile: "squircle", repeatSize: 300, curves: 0.45, calm: false, icon: nil),
-        .init(id: "archive", title: "From the archive", palette: "archive-0a", face: house("rubik-dirt.ttf"), text: "jost",
-              note: "Gold on black from your archive, dirt titles, outlined, the curves huge", dark: true,
-              card: .outline, radius: 1.35, space: 0.85, tile: "circle", repeatSize: 520, curves: 0.7, calm: false, icon: nil, wall: "invert|https://pub-4420dc4349624d6bbed7eb9555f42661.r2.dev/glyph-abstract_organic-labyrinthine_monochrome_ink_017.jpg"),
-        .init(id: "drop", title: "Drop day", palette: "bone-oxblood", face: "ransom", text: "jost",
-              note: "Your Ransom titles, solid and sharp, tight like a poster", dark: false,
-              card: .solid, radius: 0.35, space: 0.85, tile: "square", repeatSize: 260, curves: 0.35, calm: false, icon: "AppIcon-BoneOxblood", wall: "color|https://pub-4420dc4349624d6bbed7eb9555f42661.r2.dev/abstract-pattern_organic-interlocking_red-warm_digital_2437.png"),
-        .init(id: "ledger", title: "The ledger", palette: "cream-indigo", face: "ledger", text: "courier",
-              note: "Your Ledger hand, typewriter text, ruled outlines, still", dark: false,
-              card: .outline, radius: 0.35, space: 1, tile: "square", repeatSize: 200, curves: 0.1, calm: true, icon: nil, wall: "invert|https://pub-4420dc4349624d6bbed7eb9555f42661.r2.dev/abstract-pattern_organic-interlocking_monochrome_digital-ink_5373.png"),
-        .init(id: "linen", title: "Linen", palette: "linen-forest", face: "v2", text: "jost",
-              note: "Your second hand, clear glass, soft and airy, round tiles", dark: false,
-              card: .clear, radius: 1.35, space: 1.2, tile: "circle", repeatSize: 420, curves: 0.25, calm: false, icon: nil),
-        .init(id: "copper", title: "Copper", palette: "ivory-copper", face: house("saira-stencil-one.ttf"), text: "jost",
-              note: "Stencil titles, solid panels, the house shape", dark: false,
-              card: .solid, radius: 1, space: 1, tile: "squircle", repeatSize: 300, curves: 0.4, calm: false, icon: nil, wall: "color|https://pub-4420dc4349624d6bbed7eb9555f42661.r2.dev/abstract-pattern_organic-flowing_warm-pink_digital_4693.png"),
-        .init(id: "smoke", title: "Warm smoke", palette: "warm-smoke", face: house("pencilant.otf"), text: house("special-elite.ttf"),
-              note: "Pencil titles, typed text, soft outlines, still", dark: false,
-              card: .outline, radius: 1.35, space: 1.2, tile: "circle", repeatSize: 360, curves: 0.2, calm: true, icon: nil),
-        .init(id: "pearl", title: "Pearl", palette: "pearl-gold", face: house("fruktur.ttf"), text: "jost",
-              note: "Fruktur titles, clear glass, soft corners, wide curves", dark: false,
-              card: .clear, radius: 1.35, space: 1, tile: "squircle", repeatSize: 460, curves: 0.3, calm: false, icon: nil),
-        // Fun (his list 11-24: macOS, terminal/Linux, glass, E ink, synthwave/neon, cyberpunk, retro 90s, hyperspace, vibe coded).
-        // Open fonts bundled in the app (OFL, Google Fonts), so they work offline.
-        .init(id: "fun-macos", title: "Mac OS", palette: "fun-macos", face: "bundle:system", text: "system",
-              note: "The platinum era: grey square windows on a teal desktop, blue bars, a quiet wave pattern, still", dark: false,
-              card: .solid, radius: 0.15, space: 1, tile: "square", repeatSize: 120, curves: 0.2, calm: true, icon: nil, fun: true),
-        .init(id: "fun-linux", title: "Linux", palette: "fun-ubuntu", face: "bundle:Ubuntu-Bold", text: "bundle:Ubuntu-Regular",
-              note: "The Ubuntu netbook look: dark brown frosted panels, orange, the Ubuntu font", dark: true,
-              card: .frosted, radius: 1, space: 1.1, tile: "squircle", repeatSize: 320, curves: 0.2, calm: false, icon: nil, fun: true),
-        .init(id: "fun-terminal", title: "Retro desktop", palette: "fun-terminal", face: "file:fonts/house/vt323.ttf", text: "bundle:IBMPlexMono-Regular",
-              note: "White windows on deep blue, orange marks, pixel titles, mono text, still", dark: true,
-              card: .solid, radius: 0.1, space: 0.9, tile: "square", repeatSize: 180, curves: 0.15, calm: true, icon: nil, fun: true),
-        .init(id: "fun-windows", title: "Windows", palette: "fun-windows", face: "bundle:system", text: "system",
-              note: "The XP style: blue title bars over cream windows, green accents, softly rounded, a calm wallpaper", dark: false,
-              card: .solid, radius: 0.6, space: 1, tile: "squircle", repeatSize: 300, curves: 0.1, calm: false, icon: nil, fun: true),
-        .init(id: "fun-glass", title: "Glass", palette: "fun-glass", face: "bundle:Michroma-Regular", text: "system",
-              note: "All clear glass over deep blue, round and airy", dark: true,
-              card: .clear, radius: 1.5, space: 1.2, tile: "circle", repeatSize: 480, curves: 0.35, calm: false, icon: nil, fun: true),
-        .init(id: "fun-eink", title: "E ink", palette: "fun-eink", face: "bundle:Literata-Regular", text: "bundle:Literata-Regular",
-              note: "Paper and ink: a book face, flat panels, no curves, no motion", dark: false,
-              card: .solid, radius: 0.35, space: 1.1, tile: "square", repeatSize: 300, curves: 0, calm: true, icon: nil, fun: true),
-        .init(id: "fun-synthwave", title: "Synthwave", palette: "fun-synthwave", face: "bundle:MrDafoe-Regular", text: "jost",
-              note: "Retrowave: pink script titles, hot pink and teal neon, glowing lines on purple night", dark: true,
-              card: .outline, radius: 1, space: 1, tile: "circle", repeatSize: 420, curves: 0.85, calm: false, icon: nil, fun: true),
-        .init(id: "fun-cyberpunk", title: "Cyberpunk", palette: "fun-cyberpunk", face: "bundle:ChakraPetch-SemiBold", text: "bundle:GeistMono-Regular",
-              note: "Night city OS: coral hairline frames on violet-black, teal, a code font", dark: true,
-              card: .outline, radius: 0.6, space: 0.85, tile: "square", repeatSize: 220, curves: 0.3, calm: false, icon: nil, fun: true),
-        .init(id: "fun-retro", title: "Retro 90s", palette: "fun-retro", face: "bundle:PixelifySans-Regular", text: "jost",
-              note: "Vaporwave windows: purple-framed panels on lavender, pink and yellow, pixel titles", dark: false,
-              card: .outline, radius: 0.15, space: 1, tile: "square", repeatSize: 200, curves: 0.2, calm: false, icon: nil, fun: true),
-        .init(id: "fun-y2k", title: "Y2K", palette: "fun-y2k", face: "bundle:PressStart2P-Regular", text: "bundle:JetBrainsMono-Regular",
-              note: "Acid green on black: pixel titles, green wireframe panels, a dense curve grid", dark: true,
-              card: .outline, radius: 0.1, space: 0.85, tile: "square", repeatSize: 140, curves: 0.45, calm: false, icon: nil, fun: true),
-        .init(id: "fun-hyperspace", title: "Hyperspace", palette: "fun-hyperspace", face: "bundle:Audiowide-Regular", text: "jost",
-              note: "Violet and cyan in deep space, frosted, the curves vast", dark: true,
-              card: .frosted, radius: 1.35, space: 1.2, tile: "circle", repeatSize: 560, curves: 0.9, calm: false, icon: nil, fun: true, wall: "invert|https://pub-4420dc4349624d6bbed7eb9555f42661.r2.dev/abstract-pattern_organic-flowing_monochrome_digital_5457.png"),
-        .init(id: "fun-vibe", title: "Vibe coded", palette: "fun-vibe", face: "bundle:JetBrainsMono-Regular", text: "bundle:JetBrainsMono-Regular",
-              note: "Editor night: purple and pink, code font, outlined panes", dark: true,
-              card: .outline, radius: 0.6, space: 1, tile: "squircle", repeatSize: 260, curves: 0.3, calm: false, icon: nil, fun: true),
-    ]
-
-    /// Fetches the theme's house fonts (first time only), then sets every switch it owns; the views read the same keys.
-    /// Returns false when a font could not be fetched (offline, never cached): the rest still applies, titles fall back to his V1.
-    @MainActor func apply() async -> Bool {
-        let titleOK = await HouseFonts.ensure(face)
-        let textOK = await HouseFonts.ensure(text)
-        let kit = HouseKit.shared, d = UserDefaults.standard
-        d.set(radius, forKey: "pldev.styleRadius"); d.set(space, forKey: "pldev.styleSpace")
-        d.set(tile, forKey: "pldev.styleTile"); d.set(repeatSize, forKey: "pldev.styleRepeat")
-        d.set(card == .frosted || card == .clear, forKey: "pldev.glassBlur"); d.set(card == .clear, forKey: "pldev.glassClear")
-        d.set(card == .outline, forKey: "pldev.cardLine")
-        d.set(wall ?? "", forKey: "pldev.styleWall")
-        d.set(curves, forKey: "pldev.tileStrength"); d.set(calm ? "reduce" : "full", forKey: "pldev.motion")
-        d.set(textOK ? text : "jost", forKey: "pldev.font")
-        d.set(dark ? "dark" : "light", forKey: "pldev.theme")
-        kit.paletteName = palette; kit.titleFace = face   // last: their didSet re-applies the bars with everything above in place
-        if let icon, UIApplication.shared.alternateIconName != icon { UIApplication.shared.setAlternateIconName(icon, completionHandler: nil) }
-        return titleOK && textOK
-    }
-
-    @MainActor static var current: PLThemePreset? {
-        let d = UserDefaults.standard
-        return all.first { $0.palette == HouseKit.shared.paletteName && $0.face == HouseKit.shared.titleFace && $0.tile == PLStyle.tile
-            && abs($0.radius - Double(PLStyle.radius)) < 0.01 && d.string(forKey: "pldev.font") == $0.text }
-    }
-}

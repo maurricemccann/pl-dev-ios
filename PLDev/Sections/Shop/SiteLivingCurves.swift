@@ -475,7 +475,7 @@ struct LivingCurvesSourceView: View {
                             Text(i < Self.labels.count ? Self.labels[i] : "").font(SiteFont.display(20)).foregroundStyle(Bone.ink(scheme)).padding(.top, 12)
                         }
                         ScrollView(.horizontal) {
-                            Text(code).font(.system(size: 11, design: .monospaced)).foregroundStyle(Color(hex: 0xf1ece1).opacity(0.65)).lineSpacing(3)
+                            Text(code).font(Font.pl(size: 11, design: .monospaced)).foregroundStyle(Color(hex: 0xf1ece1).opacity(0.65)).lineSpacing(3)
                                 .padding(24).fixedSize()
                         }
                         .background(Color(hex: 0x0e0c08))

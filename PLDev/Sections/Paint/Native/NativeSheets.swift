@@ -30,23 +30,23 @@ struct NativeColourSheet: View {
                     HStack(spacing: 14) {
                         ColorPicker("Colour", selection: $canvas.color, supportsOpacity: false).labelsHidden().scaleEffect(1.4).frame(width: 52, height: 40)
                         VStack(alignment: .leading, spacing: 2) {
-                            Text("Painting with").font(.caption).foregroundStyle(.secondary)
-                            Text(UIColor(canvas.color).hex.uppercased()).font(.headline.monospaced())
+                            Text("Painting with").font(Font.pl(.caption)).foregroundStyle(.secondary)
+                            Text(UIColor(canvas.color).hex.uppercased()).font(Font.pl(.headline).monospaced())
                         }
                         Spacer()
                         Button { canvas.swapColours() } label: { Image(systemName: "arrow.left.arrow.right") }.buttonStyle(.bordered).accessibilityLabel("Swap the two colours")
                         VStack(spacing: 2) {
                             ColorPicker("Companion", selection: $canvas.color2, supportsOpacity: false).labelsHidden()
-                            Text("Companion").font(.caption2).foregroundStyle(.secondary)
+                            Text("Companion").font(Font.pl(.caption2)).foregroundStyle(.secondary)
                         }
                     }
                     NativeBrushColourCard(canvas: canvas)
                     if let sense = NativeToolkit.sense(of: UIColor(canvas.color).hex) {
-                        Text(sense).font(.footnote).foregroundStyle(.secondary).padding(10).frame(maxWidth: .infinity, alignment: .leading)
-                            .background(Color.secondary.opacity(0.1), in: RoundedRectangle(cornerRadius: 12, style: .continuous))
+                        Text(sense).font(Font.pl(.footnote)).foregroundStyle(.secondary).padding(10).frame(maxWidth: .infinity, alignment: .leading)
+                            .background(Color.secondary.opacity(0.1), in: RoundedRectangle(cornerRadius: 12 * PLStyle.radius, style: .continuous))
                     }
                     section("Used lately") {
-                        if canvas.recent.isEmpty { Text("The colours you paint with collect here.").font(.footnote).foregroundStyle(.secondary) }
+                        if canvas.recent.isEmpty { Text("The colours you paint with collect here.").font(Font.pl(.footnote)).foregroundStyle(.secondary) }
                         else { swatches(canvas.recent) }
                     }
                     section("Classic") {
@@ -64,7 +64,7 @@ struct NativeColourSheet: View {
                             ("Tetrad", [hex(h: v.h + 90, s: v.s, v: v.v), hex(h: v.h + 180, s: v.s, v: v.v), hex(h: v.h + 270, s: v.s, v: v.v)]),
                         ]
                         ForEach(sets, id: \.0) { name, cols in
-                            HStack { Text(name).font(.caption).frame(width: 104, alignment: .leading); ForEach(Array(cols.enumerated()), id: \.offset) { _, c in swatch(UIColor(c).hex) }; Spacer() }
+                            HStack { Text(name).font(Font.pl(.caption)).frame(width: 104, alignment: .leading); ForEach(Array(cols.enumerated()), id: \.offset) { _, c in swatch(UIColor(c).hex) }; Spacer() }
                         }
                     }
                     section("Value") {   // the handbook: "from dark to light in ten steps"
@@ -76,14 +76,14 @@ struct NativeColourSheet: View {
                             Text("Off").tag(-1)
                             ForEach(Array(NativeToolkit.palettes.enumerated()), id: \.offset) { i, p in Text(p.name).tag(i) }
                         }.pickerStyle(.menu)
-                        Text("Use it to build a piece in colours, one stroke after another, in the palette's order.").font(.caption).foregroundStyle(.secondary)
+                        Text("Use it to build a piece in colours, one stroke after another, in the palette's order.").font(Font.pl(.caption)).foregroundStyle(.secondary)
                     }
                     section("His palettes") {
                         HStack {
                             Picker("Palette", selection: $palette) { ForEach(Array(NativeToolkit.palettes.enumerated()), id: \.offset) { i, p in Text(p.name).tag(i) } }.pickerStyle(.menu)
                             Button { NativeToolkit.shuffleRandoms(); palette = 1 } label: { Label("Shuffle", systemImage: "shuffle") }.buttonStyle(.bordered).controlSize(.small)
                         }
-                        Text("The two Random palettes after the House one are new each time the app opens. Shuffle draws two more.").font(.caption).foregroundStyle(.secondary)
+                        Text("The two Random palettes after the House one are new each time the app opens. Shuffle draws two more.").font(Font.pl(.caption)).foregroundStyle(.secondary)
                         if NativeToolkit.palettes.indices.contains(palette) { swatches(NativeToolkit.palettes[palette].colors) }
                     }
                 }.padding()
@@ -99,14 +99,14 @@ struct NativeColourSheet: View {
     private func syncClassic() { let v = hsv; if v.s > 0.001 && v.v > 0.001 { ch = v.h }; cs = v.s; cv = v.v }
     private func classicRow(_ name: String, _ value: Binding<Double>, _ range: ClosedRange<Double>, _ read: String) -> some View {
         HStack(spacing: 10) {
-            Text(name).font(.caption).frame(width: 78, alignment: .leading)
+            Text(name).font(Font.pl(.caption)).frame(width: 78, alignment: .leading)
             Slider(value: Binding(get: { value.wrappedValue }, set: { value.wrappedValue = $0; canvas.setColour(hex: UIColor(hex(h: ch, s: cs, v: cv)).hex) }), in: range)
                 .accessibilityLabel(name)
-            Text(read).font(.caption.monospacedDigit()).frame(width: 44, alignment: .trailing)
+            Text(read).font(Font.pl(.caption).monospacedDigit()).frame(width: 44, alignment: .trailing)
         }
     }
     private func section(_ t: String, @ViewBuilder _ c: () -> some View) -> some View {
-        VStack(alignment: .leading, spacing: 8) { Text(t).font(.subheadline.weight(.semibold)); c() }
+        VStack(alignment: .leading, spacing: 8) { Text(t).font(Font.pl(.subheadline).weight(.semibold)); c() }
     }
     private func swatch(_ hex: String, size: CGFloat = 32) -> some View {
         let rgb = Hex.rgb(hex) ?? (0, 0, 0)
@@ -153,7 +153,7 @@ struct NativeAssistSheet: View {
                 }
                 Section("Paper") {
                     Picker("Stock", selection: $canvas.paper) { ForEach(NativeToolkit.papers) { Text($0.name).tag($0.id) } }
-                    Text("The stock is kept with the work. A new canvas picks its ground colour from it.").font(.footnote).foregroundStyle(.secondary)
+                    Text("The stock is kept with the work. A new canvas picks its ground colour from it.").font(Font.pl(.footnote)).foregroundStyle(.secondary)
                 }
             }
             .navigationTitle("Assists")
@@ -176,16 +176,16 @@ struct NativeSettingsSheet: View {
                 Section {
                     Toggle("Finger paints after the Pencil is used", isOn: $canvas.fingerPaints)   // a finger always paints until a Pencil touches (Procreate), 11-14
                     Toggle("Palm guard: the view stays still while the Pencil is down", isOn: $canvas.palmGuard)
-                    HStack { Text("Stabilization"); Slider(value: $canvas.stabAll, in: 0...1); Text("\(Int(canvas.stabAll * 100))%").font(.caption).monospacedDigit().frame(width: 40) }
+                    HStack { Text("Stabilization"); Slider(value: $canvas.stabAll, in: 0...1); Text("\(Int(canvas.stabAll * 100))%").font(Font.pl(.caption)).monospacedDigit().frame(width: 40) }
                     Toggle("Brushes bring their own colours", isOn: $canvas.brushColors)
-                    HStack { Text("Hold time"); Slider(value: $canvas.rapidMs, in: 300...1200, step: 50); Text("\(Int(canvas.rapidMs)) ms").font(.caption).monospacedDigit().frame(width: 60) }
+                    HStack { Text("Hold time"); Slider(value: $canvas.rapidMs, in: 300...1200, step: 50); Text("\(Int(canvas.rapidMs)) ms").font(Font.pl(.caption)).monospacedDigit().frame(width: 60) }
                 } header: { Text("Drawing") } footer: { Text("Stabilization smooths every brush; a brush's own StreamLine and Stabilization still apply, the larger of the two wins.") }
                 Section("Controls") {
                     Button("Gesture controls") { canvas.panel = .gestures }
                     Button("Quick menu") { canvas.panel = .quickEditor }
                     TipView(PaintPencilTip())
                     Toggle("Swap the Pencil's two buttons", isOn: $canvas.swapPencil)
-                    Text("The Pencil's double tap runs the Pen side button's action; the squeeze of a Pencil Pro runs the Pen second button's. This trades them. Set what they run in Gesture controls.").font(.caption).foregroundStyle(.secondary)
+                    Text("The Pencil's double tap runs the Pen side button's action; the squeeze of a Pencil Pro runs the Pen second button's. This trades them. Set what they run in Gesture controls.").font(Font.pl(.caption)).foregroundStyle(.secondary)
                 }
                 Section {
                     LabeledContent("Sync key", value: model.config?.key("paintSync") == nil ? "Not set" : "Set")
@@ -287,13 +287,13 @@ struct NativeQuickMenu: View {
                     let a = Double(i) / 6 * .pi * 2 - .pi / 2
                     let name = slots.indices.contains(i) ? slots[i] : "None"
                     Button { close(); canvas.run(action: name) } label: {
-                        Text(name == "None" ? "·" : name).font(.caption2.weight(.semibold)).multilineTextAlignment(.center).lineLimit(3).padding(6).frame(width: 84, height: 84)
+                        Text(name == "None" ? "·" : name).font(Font.pl(.caption2).weight(.semibold)).multilineTextAlignment(.center).lineLimit(3).padding(6).frame(width: 84, height: 84)
                     }
                     .glassControl(in: Circle())
                     .offset(x: cos(a) * 112, y: sin(a) * 112)
                 }
                 Button { canvas.quickAt = (canvas.quickAt + 1) % max(1, canvas.quick.count); canvas.savePrefs() } label: {
-                    Text(canvas.quick.indices.contains(canvas.quickAt) ? canvas.quick[canvas.quickAt].name : "").font(.caption.weight(.bold)).padding(8)
+                    Text(canvas.quick.indices.contains(canvas.quickAt) ? canvas.quick[canvas.quickAt].name : "").font(Font.pl(.caption).weight(.bold)).padding(8)
                 }.glassControl(in: Capsule())
             }
         }
@@ -357,7 +357,7 @@ struct NativeHandbookView: View {
             }
         }.navigationTitle("On the iPhone")
     }
-    private func row(_ t: String, _ b: String) -> some View { VStack(alignment: .leading, spacing: 4) { Text(t).font(.headline); Text(b).font(.subheadline).foregroundStyle(.secondary) }.padding(.vertical, 2) }
+    private func row(_ t: String, _ b: String) -> some View { VStack(alignment: .leading, spacing: 4) { Text(t).font(Font.pl(.headline)); Text(b).font(Font.pl(.subheadline)).foregroundStyle(.secondary) }.padding(.vertical, 2) }
 }
 
 struct NativeHandbookSection: View {
@@ -377,21 +377,21 @@ struct NativeHandbookSection: View {
             ZStack(alignment: .topTrailing) {
                 Color.black.ignoresSafeArea()
                 ScrollView([.horizontal, .vertical]) { AsyncImage(url: z.url) { $0.resizable().scaledToFit() } placeholder: { PLLoader() }.frame(minWidth: UIScreen.main.bounds.width) }
-                Button { zoomed = nil } label: { Image(systemName: "xmark.circle.fill").font(.title) }.padding().foregroundStyle(.white)
+                Button { zoomed = nil } label: { Image(systemName: "xmark.circle.fill").font(Font.pl(.title)) }.padding().foregroundStyle(.white)
             }
         }
     }
 
     @ViewBuilder private func block(_ b: NativeHandbook.Block) -> some View {
         switch b.t {
-        case "lead": Text(b.text).font(.title3).fixedSize(horizontal: false, vertical: true)
+        case "lead": Text(b.text).font(Font.pl(.title3)).fixedSize(horizontal: false, vertical: true)
         case "p": Text(b.text).fixedSize(horizontal: false, vertical: true)
-        case "h4": Text(b.text).font(.headline).padding(.top, 6)
+        case "h4": Text(b.text).font(Font.pl(.headline)).padding(.top, 6)
         case "tip":
             VStack(alignment: .leading, spacing: 2) {
-                if !b.head.isEmpty { Text(b.head).font(.caption.weight(.bold)).foregroundStyle(Wallpaper.line) }
-                Text(b.text).font(.subheadline)
-            }.padding(12).frame(maxWidth: .infinity, alignment: .leading).background(Wallpaper.line.opacity(0.12), in: RoundedRectangle(cornerRadius: 12, style: .continuous))
+                if !b.head.isEmpty { Text(b.head).font(Font.pl(.caption).weight(.bold)).foregroundStyle(Wallpaper.line) }
+                Text(b.text).font(Font.pl(.subheadline))
+            }.padding(12).frame(maxWidth: .infinity, alignment: .leading).background(Wallpaper.line.opacity(0.12), in: RoundedRectangle(cornerRadius: 12 * PLStyle.radius, style: .continuous))
         case "list": VStack(alignment: .leading, spacing: 6) { ForEach(Array(b.items.enumerated()), id: \.offset) { _, t in HStack(alignment: .top) { Text("•"); Text(t) } } }
         case "steps": VStack(alignment: .leading, spacing: 6) { ForEach(Array(b.items.enumerated()), id: \.offset) { i, t in HStack(alignment: .top) { Text("\(i + 1).").monospacedDigit().foregroundStyle(.secondary); Text(t) } } }
         case "table":
@@ -405,12 +405,12 @@ struct NativeHandbookSection: View {
             VStack(alignment: .leading, spacing: 8) {
                 if let u = NativeHandbook.imageURL(b.src) {
                     Button { zoomed = u } label: { AsyncImage(url: u) { $0.resizable().scaledToFit() } placeholder: { PLLoader().frame(maxWidth: .infinity, minHeight: 120) } }.buttonStyle(.plain)
-                        .clipShape(RoundedRectangle(cornerRadius: 14, style: .continuous))
+                        .clipShape(RoundedRectangle(cornerRadius: 14 * PLStyle.radius, style: .continuous))
                 }
                 ForEach(Array(b.legend.enumerated()), id: \.offset) { i, l in
                     HStack(alignment: .top, spacing: 8) {
-                        Text("\(i + 1)").font(.caption.weight(.bold)).frame(width: 22, height: 22).background(Wallpaper.line, in: Circle()).foregroundStyle(.white)
-                        VStack(alignment: .leading, spacing: 1) { Text(l.0).font(.subheadline.weight(.semibold)); Text(l.1).font(.footnote).foregroundStyle(.secondary) }
+                        Text("\(i + 1)").font(Font.pl(.caption).weight(.bold)).frame(width: 22, height: 22).background(Wallpaper.line, in: Circle()).foregroundStyle(.white)
+                        VStack(alignment: .leading, spacing: 1) { Text(l.0).font(Font.pl(.subheadline).weight(.semibold)); Text(l.1).font(Font.pl(.footnote)).foregroundStyle(.secondary) }
                     }
                 }
             }

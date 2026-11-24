@@ -20,21 +20,21 @@ enum Bone {
     static let amber = Color(hex: 0xdb9314)
     static let proof = Color(hex: 0xc0392b)
     static let philosophy = Color(hex: 0x9b72cf)
-    static let cardRadius: CGFloat = 24
-    static let rowRadius: CGFloat = 14
+    static var cardRadius: CGFloat { 24 * PLStyle.radius }
+    static var rowRadius: CGFloat { 14 * PLStyle.radius }
 }
 
 /// The site's two typefaces as SwiftUI fonts.
 enum SiteFont {
     /// `font-display` (Cormorant): the system serif at a light weight, scaling with Dynamic Type.
     static func display(_ size: CGFloat, relativeTo style: Font.TextStyle = .title, italic: Bool = false) -> Font {
-        let f = Font.system(size: size, weight: .light, design: .serif)
+        let f = Font.plDisplay(size, relativeTo: style, or: .system(size: size, weight: .light, design: .serif))
         return italic ? f.italic() : f
     }
     /// `font-body` (Jost): Book is the lightest weight bundled; Medium and Semi are the emphasised steps.
     static func body(_ size: CGFloat = 15, relativeTo style: Font.TextStyle = .body, weight: Font.Weight = .regular) -> Font {
         let name = weight == .semibold || weight == .bold ? "Jost-Semi" : (weight == .medium ? "Jost-Medium" : "Jost-Book")
-        return .custom(name, size: size, relativeTo: style)
+        return .custom(PLStyle.themed ? PLStyle.textFont ?? name : name, size: size, relativeTo: style)
     }
 }
 
@@ -72,7 +72,9 @@ struct SitePageHead: View {
 
 struct SiteGround: View {
     @Environment(\.colorScheme) private var scheme
-    var body: some View { Bone.ground(scheme).ignoresSafeArea() }
+    var body: some View {
+        if PLStyle.themed { HouseGround() } else { Bone.ground(scheme).ignoresSafeArea() }
+    }
 }
 
 /// The raised cream card: paper lifted off bone, a hairline, a soft warm shadow (`--psylight-shadow` on the light ground).
@@ -82,12 +84,14 @@ struct SiteCard: ViewModifier {
     var radius: CGFloat = Bone.cardRadius
     func body(content: Content) -> some View {
         let shape = RoundedRectangle(cornerRadius: radius, style: .continuous)
-        content
-            .padding(padding)
-            .frame(maxWidth: .infinity, alignment: .leading)
-            .background(Bone.raised(scheme), in: shape)
-            .overlay { shape.strokeBorder(Bone.line(scheme), lineWidth: 0.6) }
-            .shadow(color: scheme == .dark ? .clear : Color(red: 60 / 255, green: 45 / 255, blue: 20 / 255).opacity(0.12), radius: 14, y: 8)
+        let inner = content.padding(padding).frame(maxWidth: .infinity, alignment: .leading)
+        if PLStyle.themed {
+            inner.plGlass(in: shape)
+        } else {
+            inner.background(Bone.raised(scheme), in: shape)
+                .overlay { shape.strokeBorder(Bone.line(scheme), lineWidth: 0.6) }
+                .shadow(color: scheme == .dark ? .clear : Color(red: 60 / 255, green: 45 / 255, blue: 20 / 255).opacity(0.12), radius: 14, y: 8)
+        }
     }
 }
 

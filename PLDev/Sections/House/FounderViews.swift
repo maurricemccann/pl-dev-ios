@@ -167,7 +167,7 @@ struct ApprovalsView: View {
                     Chart(state.lanes) { l in
                         BarMark(x: .value("Days", l.days), y: .value("Lane", l.platform.capitalized))
                             .foregroundStyle(l.days < 1 ? PLOS.danger : l.days < target ? PLOS.warn : PLOS.gold)
-                            .annotation(position: .trailing) { Text(l.days, format: .number.precision(.fractionLength(1))).font(.caption2.monospacedDigit()) }
+                            .annotation(position: .trailing) { Text(l.days, format: .number.precision(.fractionLength(1))).font(Font.pl(.caption2).monospacedDigit()) }
                         RuleMark(x: .value("Target", target)).foregroundStyle(PLOS.muted.opacity(0.6)).lineStyle(StrokeStyle(lineWidth: 1, dash: [3, 3]))
                     }
                     .chartXAxisLabel("days of runway · target \(Int(target))")
@@ -177,12 +177,12 @@ struct ApprovalsView: View {
                         LabeledContent {
                             VStack(alignment: .trailing, spacing: 2) {
                                 Text("\(p.backlog ?? 0) waiting · \(p.held ?? 0) held").monospacedDigit()
-                                if p.paused != true, let n = p.next_due, let d = Date.pl(n) { Text("next \(d.formatted(.relative(presentation: .named)))").font(.caption2).foregroundStyle(.secondary) }
+                                if p.paused != true, let n = p.next_due, let d = Date.pl(n) { Text("next \(d.formatted(.relative(presentation: .named)))").font(Font.pl(.caption2)).foregroundStyle(.secondary) }
                             }
                         } label: {
                             Label(p.platform.capitalized, systemImage: p.paused == true ? "pause.circle" : p.gapped == true ? "exclamationmark.triangle.fill" : p.automated == false ? "hand.raised" : "dot.radiowaves.right")
                                 .foregroundStyle(p.paused == true ? PLOS.muted : p.gapped == true ? PLOS.danger : .primary)
-                            if let why = p.blocked_reason, !why.isEmpty { Text(why).font(.caption).foregroundStyle(PLOS.danger) }
+                            if let why = p.blocked_reason, !why.isEmpty { Text(why).font(Font.pl(.caption)).foregroundStyle(PLOS.danger) }
                         }
                     }
                     // DripTimeline: what went out and what goes next
@@ -191,7 +191,7 @@ struct ApprovalsView: View {
                     let late = (rw.upcoming ?? []).filter { !paused.contains($0.platform) && (Date.pl($0.publish_at) ?? now) < now }
                     if !late.isEmpty {
                         Label("\(late.count) scheduled post\(late.count == 1 ? "" : "s") past due (\(Set(late.map { $0.platform.capitalized }).sorted().joined(separator: ", ")))", systemImage: "clock.badge.exclamationmark")
-                            .foregroundStyle(PLOS.danger).font(.callout)
+                            .foregroundStyle(PLOS.danger).font(Font.pl(.callout))
                     }
                 } header: { Text("Runway") } footer: {
                     if let s = rw.next_open_slot, let d = Date.pl(s) { Text("Next open slot \(d.formatted(.relative(presentation: .named))).") }
@@ -244,7 +244,7 @@ struct ApprovalsView: View {
                                     .clipShape(RoundedRectangle(cornerRadius: PLRadius.row, style: .continuous)).frame(maxHeight: 220)
                             }
                             Text((c.payload ?? "").replacingOccurrences(of: #"\[image\] \S+"#, with: "", options: .regularExpression)).lineLimit(6)
-                            Text("\(c.type ?? "") · ").font(.caption).foregroundStyle(.secondary) + Text(Date.pl(c.created_at) ?? .now, format: .relative(presentation: .named)).font(.caption).foregroundStyle(.secondary)
+                            Text("\(c.type ?? "") · ").font(Font.pl(.caption)).foregroundStyle(.secondary) + Text(Date.pl(c.created_at) ?? .now, format: .relative(presentation: .named)).font(Font.pl(.caption)).foregroundStyle(.secondary)
                         }
                         .selectionDisabled()
                         .swipeActions(edge: .trailing) { Button("Keep") { Task { await state.capture(c, "approve", model: model) } }.tint(.green) }
@@ -267,7 +267,7 @@ struct ApprovalsView: View {
                         VStack(alignment: .leading, spacing: 4) {
                             Text(r.content ?? "").lineLimit(5)
                             Text("\(r.refType) · \(r.count ?? 1) flag\((r.count ?? 1) == 1 ? "" : "s")\(r.reason.map { " · \($0)" } ?? "")\(r.authorHandle.map { " · @\($0)" } ?? "")")
-                                .font(.caption).foregroundStyle(.secondary)
+                                .font(Font.pl(.caption)).foregroundStyle(.secondary)
                         }
                         .selectionDisabled()
                         .swipeActions(edge: .trailing) { Button("Remove", role: .destructive) { Task { await state.report(r, "remove", model: model) } } }
@@ -279,10 +279,10 @@ struct ApprovalsView: View {
                 Section("Ads") {
                     ForEach(state.ads) { a in
                         VStack(alignment: .leading, spacing: 4) {
-                            Text("\(a.brand ?? "") #\(a.ad_no ?? 0) · \(a.name ?? "")").font(.headline)
+                            Text("\(a.brand ?? "") #\(a.ad_no ?? 0) · \(a.name ?? "")").font(Font.pl(.headline))
                             Text(a.body ?? "")
-                            if let n = a.needs, !n.isEmpty { Text("Needs: \(n)").font(.caption).foregroundStyle(PLTone.house) }
-                            if let l = a.link, let u = URL(string: l) { Link(l, destination: u).font(.caption) }
+                            if let n = a.needs, !n.isEmpty { Text("Needs: \(n)").font(Font.pl(.caption)).foregroundStyle(PLTone.house) }
+                            if let l = a.link, let u = URL(string: l) { Link(l, destination: u).font(Font.pl(.caption)) }
                         }
                         .selectionDisabled()
                         // pl-os: approve takes a second tap and is closed while the ad still needs something
@@ -374,19 +374,19 @@ private struct DraftRow: View {
                     .frame(height: 220).frame(maxWidth: .infinity)
                     .clipShape(RoundedRectangle(cornerRadius: PLRadius.row, style: .continuous))
             } else if d.media_type == "video" {
-                Label("Video", systemImage: "play.rectangle").font(.caption).foregroundStyle(.secondary)
+                Label("Video", systemImage: "play.rectangle").font(Font.pl(.caption)).foregroundStyle(.secondary)
             }
             HStack {
                 Text(platformName(d.platform)).osEyebrow(10).foregroundStyle(.white)
                     .padding(.horizontal, 8).padding(.vertical, 3).background(PLOS.platform(d.platform), in: Capsule())
-                if let fam = d.family_platforms, !fam.isEmpty { Text("also " + fam.map(platformName).joined(separator: ", ")).font(.caption2).foregroundStyle(.secondary) }
+                if let fam = d.family_platforms, !fam.isEmpty { Text("also " + fam.map(platformName).joined(separator: ", ")).font(Font.pl(.caption2)).foregroundStyle(.secondary) }
                 Spacer()
-                Ago(text: d.created_at).font(.caption2).foregroundStyle(.secondary)
+                Ago(text: d.created_at).font(Font.pl(.caption2)).foregroundStyle(.secondary)
             }
-            if let t = d.title, !t.isEmpty { Text(t).font(.headline) }
-            Text(d.caption ?? "").font(.body).plReading()
+            if let t = d.title, !t.isEmpty { Text(t).font(Font.pl(.headline)) }
+            Text(d.caption ?? "").font(Font.pl(.body)).plReading()
             // never the raw id (his screenshot 11-13): only that it is close to something already made
-            if d.similar_to != nil { Label("Close to an earlier post", systemImage: "square.on.square").font(.caption).foregroundStyle(PLOS.warn) }
+            if d.similar_to != nil { Label("Close to an earlier post", systemImage: "square.on.square").font(Font.pl(.caption)).foregroundStyle(PLOS.warn) }
         }
         .padding(12)
         .background { RoundedRectangle(cornerRadius: PLOS.radius, style: .continuous).fill(PLOS.platform(d.platform).opacity(0.08)).plGlass(in: RoundedRectangle(cornerRadius: PLOS.radius, style: .continuous)) }
@@ -421,23 +421,23 @@ private struct ManualRow: View {
 
     var body: some View {
         VStack(alignment: .leading, spacing: 6) {
-            Text((m.platform ?? "").capitalized).font(.caption.bold()).foregroundStyle(.secondary)
+            Text((m.platform ?? "").capitalized).font(Font.pl(.caption).bold()).foregroundStyle(.secondary)
             if let u = m.media_url.flatMap(URL.init(string:)) {
                 AsyncImage(url: u) { $0.resizable().scaledToFit() } placeholder: { Color.secondary.opacity(0.15).frame(height: 160) }
-                    .frame(maxHeight: 260).clipShape(RoundedRectangle(cornerRadius: 12, style: .continuous))
+                    .frame(maxHeight: 260).clipShape(RoundedRectangle(cornerRadius: 12 * PLStyle.radius, style: .continuous))
             }
-            if let t = m.title { Text(t).font(.headline) }
+            if let t = m.title { Text(t).font(Font.pl(.headline)) }
             Text(m.caption ?? "").lineLimit(6)
-            if let note = compose.note { Text(note).font(.caption).foregroundStyle(.secondary) }
+            if let note = compose.note { Text(note).font(Font.pl(.caption)).foregroundStyle(.secondary) }
             HStack {
                 if let t = m.title, !t.isEmpty { Button("Title", systemImage: "doc.on.doc") { UIPasteboard.general.string = t } }
                 Button("Caption", systemImage: "doc.on.doc") { UIPasteboard.general.string = m.caption ?? "" }
                 if let u = compose.url { Button(m.platform == "threads" ? "Open prefilled" : "Compose", systemImage: "arrow.up.forward.app") { openURL(u) } }
                 if let u = m.media_url.flatMap(URL.init(string:)) { ShareLink(item: u) { Label("Picture", systemImage: "photo") } }
             }
-            .buttonStyle(.bordered).font(.caption)
-            TextField("Link to the post (optional)", text: $url).textContentType(.URL).keyboardType(.URL).font(.caption)
-            Button("Mark posted") { Task { await state.posted(m, url: url, model: model) } }.buttonStyle(.borderedProminent).font(.caption)
+            .buttonStyle(.bordered).font(Font.pl(.caption))
+            TextField("Link to the post (optional)", text: $url).textContentType(.URL).keyboardType(.URL).font(Font.pl(.caption))
+            Button("Mark posted") { Task { await state.posted(m, url: url, model: model) } }.buttonStyle(.borderedProminent).font(Font.pl(.caption))
         }
     }
 }
@@ -486,7 +486,7 @@ struct MakeView: View {
                 if intakeKind == "artwork" {
                     // pl-os Intake's Artwork mode: image + title, medium, year, notes
                     PhotosPicker(selection: $artPick, matching: .images) {
-                        if let artData, let ui = UIImage(data: artData) { Image(uiImage: ui).resizable().scaledToFit().frame(maxHeight: 220).clipShape(RoundedRectangle(cornerRadius: 12, style: .continuous)) }
+                        if let artData, let ui = UIImage(data: artData) { Image(uiImage: ui).resizable().scaledToFit().frame(maxHeight: 220).clipShape(RoundedRectangle(cornerRadius: 12 * PLStyle.radius, style: .continuous)) }
                         else { Label("Choose image or shoot · JPG, PNG, HEIC", systemImage: "photo.badge.plus") }
                     }
                     .onChange(of: artPick) { _, item in Task { artData = try? await item?.loadTransferable(type: Data.self) } }
@@ -626,7 +626,7 @@ struct SiteControlsView: View {
         VStack(alignment: .leading, spacing: 6) {
             TextField(label, text: Binding(get: { c?[keyPath: kp] ?? "" }, set: { c?[keyPath: kp] = $0 }), axis: .vertical)
             ConfirmButton(title: "Put it on the site", question: "Change the \(label.lowercased()) on the live site?") { await set(key, c?[keyPath: kp] ?? "") }
-                .font(.caption)
+                .font(Font.pl(.caption))
         }
     }
 

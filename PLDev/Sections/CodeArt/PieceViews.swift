@@ -54,7 +54,7 @@ struct CodeArtGate<Content: View>: View {
                     Button("Try again") { Task { await boot.retry(model: model) } }.buttonStyle(.borderedProminent)
                 }
             default:
-                VStack(spacing: 10) { PLLoader(); Text("Loading the pieces").font(.footnote).foregroundStyle(.secondary) }.frame(maxWidth: .infinity, maxHeight: .infinity)
+                VStack(spacing: 10) { PLLoader(); Text("Loading the pieces").font(Font.pl(.footnote)).foregroundStyle(.secondary) }.frame(maxWidth: .infinity, maxHeight: .infinity)
             }
         }
         .task { FontResolver.handName = HouseKit.shared.titleFont; await boot.ensure(model: model) }

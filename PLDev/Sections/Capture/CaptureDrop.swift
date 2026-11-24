@@ -73,7 +73,7 @@ struct CaptureDropBox: View {
     }
 
     private func iconCircle(_ name: String) -> some View {
-        Image(systemName: name).font(.system(size: 17, weight: .medium)).foregroundStyle(PLOS.text(scheme))
+        Image(systemName: name).font(Font.pl(size: 17, weight: .medium)).foregroundStyle(PLOS.text(scheme))
             .frame(width: 44, height: 44).background(PLOS.surface2(scheme).opacity(0.8), in: Circle())
     }
 
@@ -89,9 +89,9 @@ struct CaptureDropBox: View {
         } label: {
             HStack(spacing: 4) {
                 Text(whereRoute.map { "Where: " + $0.title } ?? "Where: Auto")
-                Image(systemName: "chevron.up.chevron.down").font(.caption2)
+                Image(systemName: "chevron.up.chevron.down").font(Font.pl(.caption2))
             }
-            .font(.footnote.weight(.medium)).foregroundStyle(whereRoute?.isVault == true ? PLOS.vault : PLOS.text(scheme))   // a vault note reads violet
+            .font(Font.pl(.footnote).weight(.medium)).foregroundStyle(whereRoute?.isVault == true ? PLOS.vault : PLOS.text(scheme))   // a vault note reads violet
             .padding(.horizontal, 10).padding(.vertical, 6)
             .background(PLOS.surface2(scheme).opacity(0.8), in: Capsule())
             .overlay(Capsule().stroke(PLOS.vault.opacity(whereRoute?.isVault == true ? 0.7 : 0), lineWidth: 1))
@@ -117,17 +117,17 @@ struct CaptureDropBox: View {
                 }
             }
             if !text.isEmpty {
-                Label(hint, systemImage: "sparkles").font(.footnote).foregroundStyle(PLOS.dim(scheme))
+                Label(hint, systemImage: "sparkles").font(Font.pl(.footnote)).foregroundStyle(PLOS.dim(scheme))
             }
             if photo != nil, let quality {
-                Label(quality, systemImage: "exclamationmark.triangle").font(.footnote).foregroundStyle(PLOS.warn)
+                Label(quality, systemImage: "exclamationmark.triangle").font(Font.pl(.footnote)).foregroundStyle(PLOS.warn)
             }
             if let photo, let img = UIImage(data: photo) {
                 ZStack(alignment: .topTrailing) {
                     Image(uiImage: img).resizable().scaledToFit().frame(maxHeight: 200)
-                        .clipShape(RoundedRectangle(cornerRadius: 12, style: .continuous))
+                        .clipShape(RoundedRectangle(cornerRadius: 12 * PLStyle.radius, style: .continuous))
                     Button { self.photo = nil } label: {
-                        Image(systemName: "xmark.circle.fill").font(.title3).symbolRenderingMode(.palette).foregroundStyle(.white, .black.opacity(0.6))
+                        Image(systemName: "xmark.circle.fill").font(Font.pl(.title3)).symbolRenderingMode(.palette).foregroundStyle(.white, .black.opacity(0.6))
                     }
                     .padding(6)
                     .accessibilityLabel("Remove the photo")
@@ -148,7 +148,7 @@ struct CaptureDropBox: View {
                 Button { if let s = UIPasteboard.general.string { text = s } } label: { iconCircle("doc.on.clipboard") }.accessibilityLabel("Paste")
                 Spacer(minLength: 0)
                 Button { send() } label: {
-                    Image(systemName: "arrow.up").font(.system(size: 17, weight: .bold)).foregroundStyle(.black)
+                    Image(systemName: "arrow.up").font(Font.pl(size: 17, weight: .bold)).foregroundStyle(.black)
                         .frame(width: 44, height: 44).background(PLOS.gold, in: Circle())
                 }
                 .disabled(!canSend).opacity(canSend ? 1 : 0.35)
@@ -156,8 +156,8 @@ struct CaptureDropBox: View {
             }
         }
         .padding(12)
-        .background(RoundedRectangle(cornerRadius: 20, style: .continuous).fill(PLOS.surface2(scheme).opacity(0.5)))
-        .overlay(RoundedRectangle(cornerRadius: 20, style: .continuous).strokeBorder(PLOS.line(scheme), lineWidth: 0.8))
+        .background(RoundedRectangle(cornerRadius: 20 * PLStyle.radius, style: .continuous).fill(PLOS.surface2(scheme).opacity(0.5)))
+        .overlay(RoundedRectangle(cornerRadius: 20 * PLStyle.radius, style: .continuous).strokeBorder(PLOS.line(scheme), lineWidth: 0.8))
         .onReceive(tick) { _ in withAnimation { hintIndex = (hintIndex + 1) % 60 } }
         .onAppear { PLIntelligence.warm() }
         .fullScreenCover(isPresented: $shooting) {
@@ -271,11 +271,11 @@ struct CaptureWhereSheet: View {
                             HStack(spacing: 12) {
                                 Image(systemName: r.symbol).frame(width: 26).foregroundStyle(r.isVault ? PLOS.vault : Color.primary)
                                 VStack(alignment: .leading, spacing: 2) {
-                                    Text(r.title).font(.body.weight(.medium))
-                                    Text(Self.line(r)).font(.footnote).foregroundStyle(.secondary)
+                                    Text(r.title).font(Font.pl(.body).weight(.medium))
+                                    Text(Self.line(r)).font(Font.pl(.footnote)).foregroundStyle(.secondary)
                                 }
                                 Spacer(minLength: 0)
-                                if r == pending.suggested { Text("Suggested").font(.caption2).foregroundStyle(.secondary) }
+                                if r == pending.suggested { Text("Suggested").font(Font.pl(.caption2)).foregroundStyle(.secondary) }
                                 if r == route { Image(systemName: "checkmark.circle.fill").foregroundStyle(r.isVault ? PLOS.vault : PLOS.gold) }   // an Obsidian note is violet, everything else gold
                             }
                         }
@@ -407,7 +407,7 @@ struct CaptureFlow: View {
                 HStack(alignment: .top, spacing: 12) {
                     VStack(spacing: 0) {
                         Image(systemName: step.symbol)
-                            .font(.system(size: 14, weight: .medium))
+                            .font(Font.pl(size: 14, weight: .medium))
                             .foregroundStyle(step.done ? Color.black : PLOS.dim(scheme))
                             .frame(width: 30, height: 30)
                             .background(step.done ? PLOS.gold : PLOS.surface2(scheme).opacity(0.6), in: Circle())
@@ -416,8 +416,8 @@ struct CaptureFlow: View {
                         }
                     }
                     VStack(alignment: .leading, spacing: 2) {
-                        Text(step.title).font(.subheadline.weight(.semibold)).foregroundStyle(step.done ? PLOS.text(scheme) : PLOS.dim(scheme))
-                        Text(step.line).font(.footnote).foregroundStyle(PLOS.dim(scheme)).fixedSize(horizontal: false, vertical: true)
+                        Text(step.title).font(Font.pl(.subheadline).weight(.semibold)).foregroundStyle(step.done ? PLOS.text(scheme) : PLOS.dim(scheme))
+                        Text(step.line).font(Font.pl(.footnote)).foregroundStyle(PLOS.dim(scheme)).fixedSize(horizontal: false, vertical: true)
                     }
                     .padding(.bottom, 14)
                 }
@@ -467,7 +467,7 @@ struct CaptureRender: View {
                     switch phase {
                     case .success(let image):
                         image.resizable().scaledToFit().frame(maxWidth: .infinity)
-                            .clipShape(RoundedRectangle(cornerRadius: 14, style: .continuous))
+                            .clipShape(RoundedRectangle(cornerRadius: 14 * PLStyle.radius, style: .continuous))
                     case .failure:
                         Color.clear.frame(height: 1).onAppear { index += 1 }   // try the next address, then none
                     default:
@@ -476,9 +476,9 @@ struct CaptureRender: View {
                 }
                 .id(index)
             } else if isArt {
-                Text("The picture is not in the store any more.").font(.footnote).foregroundStyle(PLOS.dim(scheme))
+                Text("The picture is not in the store any more.").font(Font.pl(.footnote)).foregroundStyle(PLOS.dim(scheme))
             }
-            Text(words).font(.callout).foregroundStyle(PLOS.text(scheme)).textSelection(.enabled)
+            Text(words).font(Font.pl(.callout)).foregroundStyle(PLOS.text(scheme)).textSelection(.enabled)
         }
         .padding(.top, 6)
     }
@@ -502,7 +502,7 @@ struct NoteLiveView: View {
             VStack(alignment: .leading, spacing: 10) {
                 if let text {
                     Text(text.isEmpty ? "Nothing synced yet. The PC pushes this on its next capture sync." : text)
-                        .font(.system(.footnote, design: .monospaced)).textSelection(.enabled)
+                        .font(Font.pl(.footnote, design: .monospaced)).textSelection(.enabled)
                 } else if failed {
                     Text("It would not load. Pull to try again.").foregroundStyle(.secondary)
                 } else { ProgressView() }
@@ -511,7 +511,7 @@ struct NoteLiveView: View {
         }
         .navigationTitle(note.file).navigationBarTitleDisplayMode(.inline)
         .safeAreaInset(edge: .bottom) {
-            if let age { Text("Synced " + (age < 1 ? "just now" : age < 90 ? "\(age) min ago" : "\(age / 60) h ago")).font(.caption2).foregroundStyle(.secondary).padding(8) }
+            if let age { Text("Synced " + (age < 1 ? "just now" : age < 90 ? "\(age) min ago" : "\(age / 60) h ago")).font(Font.pl(.caption2)).foregroundStyle(.secondary).padding(8) }
         }
         .refreshable { await load() }
         .task { await load() }

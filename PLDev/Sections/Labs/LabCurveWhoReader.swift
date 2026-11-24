@@ -54,7 +54,7 @@ struct LabCurveWhoReaderView: View {
                 HStack(alignment: .bottom) {
                     LabCaption(title: "The Curve Who", line: "claymation reader \u{00B7} scroll \u{2014} birth to the mark", tint: Color(red: 40 / 255, green: 32 / 255, blue: 20 / 255))
                     Spacer()
-                    Text(chapter).font(.system(size: 13, design: .serif).italic()).foregroundStyle(Color(red: 40 / 255, green: 32 / 255, blue: 20 / 255).opacity(0.5)).padding(.trailing, 20).padding(.bottom, 30)
+                    Text(chapter).font(Font.pl(size: 13, design: .serif).italic()).foregroundStyle(Color(red: 40 / 255, green: 32 / 255, blue: 20 / 255).opacity(0.5)).padding(.trailing, 20).padding(.bottom, 30)
                 }
             }
             .allowsHitTesting(false)

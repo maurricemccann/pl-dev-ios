@@ -72,6 +72,6 @@ struct PracticeSettingsSheet: View {
     }
 
     private func line(_ s: String) -> some View {
-        Text(s).font(.system(size: 15)).foregroundStyle(Candle.ink.opacity(0.85)).fixedSize(horizontal: false, vertical: true)
+        Text(s).font(Font.pl(size: 15)).foregroundStyle(Candle.ink.opacity(0.85)).fixedSize(horizontal: false, vertical: true)
     }
 }

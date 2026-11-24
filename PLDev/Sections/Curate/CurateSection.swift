@@ -85,13 +85,13 @@ private struct FavouriteRow: View {
         let m = LibraryData.shared.media(item, model: model)
         HStack(alignment: .top, spacing: 12) {
             AsyncImage(url: m.still) { $0.resizable().scaledToFit() } placeholder: { PLC.bone }
-                .frame(width: 96, height: 120).background(PLC.bone).clipShape(RoundedRectangle(cornerRadius: 10, style: .continuous))
+                .frame(width: 96, height: 120).background(PLC.bone).clipShape(RoundedRectangle(cornerRadius: 10 * PLStyle.radius, style: .continuous))
             VStack(alignment: .leading, spacing: 6) {
                 Text(item.class == "seed" ? (item.origin ?? "seed") : (item.name ?? item.item_id)).gTitle(17).foregroundStyle(PLG.ink(scheme)).lineLimit(2)
                 Text(item.item_id).gEyebrow(9).foregroundStyle(PLG.dim(scheme))
                 TextField("A word about this piece", text: $text, axis: .vertical).lineLimit(1...4).focused($focus)
-                    .padding(10).background(PLG.surface(scheme).opacity(0.6), in: RoundedRectangle(cornerRadius: 12, style: .continuous))
-                    .overlay { RoundedRectangle(cornerRadius: 12, style: .continuous).strokeBorder(PLG.line(scheme), lineWidth: 0.8) }
+                    .padding(10).background(PLG.surface(scheme).opacity(0.6), in: RoundedRectangle(cornerRadius: 12 * PLStyle.radius, style: .continuous))
+                    .overlay { RoundedRectangle(cornerRadius: 12 * PLStyle.radius, style: .continuous).strokeBorder(PLG.line(scheme), lineWidth: 0.8) }
                     .onChange(of: focus) { _, f in if !f { Task { await save() } } }
                 if !state.isEmpty { Text(state).gEyebrow(9).foregroundStyle(state.hasPrefix("NOT") ? PLG.red : PLG.dim(scheme)) }
             }

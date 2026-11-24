@@ -41,6 +41,7 @@ struct RootView: View {
         .appleActivity(model: model)   // Handoff and Siri suggestions: the screen he is on
         .animation(PLMotion.standard(reduce: reduce), value: unlocked)
         .animation(PLMotion.standard(reduce: reduce), value: hasConfig)
+        .environment(\.font, Font.pl(.body))   // text that names no font takes the theme's face
         .tint(PLTone.accent)
         .preferredColorScheme(PLAppearance.scheme(theme))
         .task(id: hasConfig) {
@@ -76,7 +77,7 @@ struct RootView: View {
     private var lockedView: some View {
         VStack(spacing: PLSpace.margin) {
             Image(systemName: "lock.fill")
-                .font(.largeTitle)
+                .font(Font.pl(.largeTitle))
                 .foregroundStyle(.secondary)
                 .accessibilityHidden(true)
             Text("Locked")

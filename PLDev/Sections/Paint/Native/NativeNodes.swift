@@ -196,13 +196,13 @@ struct NativeNodeBar: View {
     var body: some View {
         HStack(spacing: 8) {
             Image(systemName: "point.topleft.down.to.point.bottomright.curvepath")
-            Text(canvas.nodeBar ? "Finish this line?" : canvas.nodes == nil ? "Draw a line, or touch one, then drag the yellow nodes." : "Drag a yellow node.").font(.footnote)
+            Text(canvas.nodeBar ? "Finish this line?" : canvas.nodes == nil ? "Draw a line, or touch one, then drag the yellow nodes." : "Drag a yellow node.").font(Font.pl(.footnote))
             Spacer(minLength: 0)
             if canvas.nodeBar || canvas.nodes != nil {
                 Button("Done") { canvas.nodes = nil; canvas.nodeBar = false; canvas.stage?.updateOverlay() }.buttonStyle(.borderedProminent).controlSize(.small)
             }
             if canvas.nodeBar { Button("Keep going") { canvas.nodeBar = false }.buttonStyle(.bordered).controlSize(.small) }
             Button { canvas.toggleNodes(false) } label: { Image(systemName: "xmark") }.buttonStyle(.bordered).controlSize(.small).accessibilityLabel("Leave Node mode")
-        }.padding(10).glassControl(in: RoundedRectangle(cornerRadius: 18, style: .continuous))
+        }.padding(10).glassControl(in: RoundedRectangle(cornerRadius: 18 * PLStyle.radius, style: .continuous))
     }
 }

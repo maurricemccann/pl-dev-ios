@@ -145,7 +145,7 @@ struct SiteSystemView: View {
                                 Text(String(a.0.replacingOccurrences(of: "The ", with: "").prefix(1))).font(SiteFont.display(30)).foregroundStyle(Bone.gold.opacity(0.5))
                             }
                         }
-                        .frame(width: 60, height: 80).overlay { RoundedRectangle(cornerRadius: 6).strokeBorder(Color.white.opacity(0.1), lineWidth: 0.6) }
+                        .frame(width: 60, height: 80).overlay { RoundedRectangle(cornerRadius: 6 * PLStyle.radius).strokeBorder(Color.white.opacity(0.1), lineWidth: 0.6) }
                         VStack(alignment: .leading, spacing: 6) {
                             Text(a.1).siteTag(9, Bone.gold)
                             Text(a.0).font(SiteFont.display(22)).foregroundStyle(Color(hex: 0xf1ece1))
@@ -383,7 +383,7 @@ struct SystemFlow: View {
                 if ti < SystemData.tiers.count - 1 {
                     VStack(spacing: 2) {
                         Rectangle().fill(Bone.gold.opacity(0.2)).frame(width: 1, height: 18)
-                        Image(systemName: "arrowtriangle.down.fill").font(.system(size: 8)).foregroundStyle(Bone.gold.opacity(0.35))
+                        Image(systemName: "arrowtriangle.down.fill").font(Font.pl(size: 8)).foregroundStyle(Bone.gold.opacity(0.35))
                     }
                     .accessibilityHidden(true)
                 }

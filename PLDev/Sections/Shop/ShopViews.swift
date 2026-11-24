@@ -14,12 +14,12 @@ struct FlatImage: View {
                 AsyncImage(url: url, transaction: Transaction(animation: .easeIn(duration: 0.2))) { phase in
                     switch phase {
                     case .success(let image): image.resizable().scaledToFit().padding(padding)
-                    case .failure: Image(systemName: "photo").font(.title).foregroundStyle(Bone.inkFaint(.light).opacity(0.5))
+                    case .failure: Image(systemName: "photo").font(Font.pl(.title)).foregroundStyle(Bone.inkFaint(.light).opacity(0.5))
                     default: PLLoader()
                     }
                 }
             } else {
-                Image(systemName: "hanger").font(.largeTitle).foregroundStyle(Bone.inkFaint(.light).opacity(0.5))
+                Image(systemName: "hanger").font(Font.pl(.largeTitle)).foregroundStyle(Bone.inkFaint(.light).opacity(0.5))
             }
         }
         .frame(maxWidth: .infinity, maxHeight: .infinity)
@@ -171,7 +171,7 @@ struct SiteFold: View {
                 HStack {
                     Text(title).siteLabel()
                     Spacer()
-                    Image(systemName: "plus").font(.footnote.weight(.regular)).foregroundStyle(Bone.gold).rotationEffect(.degrees(open ? 45 : 0))
+                    Image(systemName: "plus").font(Font.pl(.footnote).weight(.regular)).foregroundStyle(Bone.gold).rotationEffect(.degrees(open ? 45 : 0))
                 }
                 .frame(minHeight: 52).contentShape(Rectangle())
             }
@@ -196,7 +196,7 @@ struct SizeGuideView: View {
                 HStack {
                     Text("Size & fit").siteLabel()
                     Spacer()
-                    Image(systemName: "plus").font(.footnote).foregroundStyle(Bone.gold).rotationEffect(.degrees(open ? 45 : 0))
+                    Image(systemName: "plus").font(Font.pl(.footnote)).foregroundStyle(Bone.gold).rotationEffect(.degrees(open ? 45 : 0))
                 }
                 .padding(.horizontal, 16).frame(minHeight: 48).contentShape(Rectangle())
             }
@@ -228,7 +228,7 @@ struct SizeGuideView: View {
                 .padding(.horizontal, 16).padding(.bottom, 16)
             }
         }
-        .overlay { RoundedRectangle(cornerRadius: 20, style: .continuous).strokeBorder(Bone.line(scheme), lineWidth: 0.8) }
+        .overlay { RoundedRectangle(cornerRadius: 20 * PLStyle.radius, style: .continuous).strokeBorder(Bone.line(scheme), lineWidth: 0.8) }
     }
 }
 
@@ -311,7 +311,7 @@ struct PieceView: View {
                         Text(prov).font(SiteFont.body(14)).foregroundStyle(Bone.inkSoft(scheme)).lineSpacing(4)
                     }
                     .padding(.horizontal, 16).padding(.vertical, 12).frame(maxWidth: .infinity, alignment: .leading)
-                    .overlay { RoundedRectangle(cornerRadius: 20, style: .continuous).strokeBorder(Bone.gold.opacity(0.3), lineWidth: 0.8) }
+                    .overlay { RoundedRectangle(cornerRadius: 20 * PLStyle.radius, style: .continuous).strokeBorder(Bone.gold.opacity(0.3), lineWidth: 0.8) }
                     .padding(.horizontal, 24)
                 }
 

@@ -39,7 +39,7 @@ struct AtlasView: View {
                         Section(a.zones[z]?.title ?? z.capitalized) {
                             ForEach(a.nodes.filter { $0.zone == z }) { n in
                                 NavigationLink { node(n, a) } label: {
-                                    VStack(alignment: .leading, spacing: 2) { Text(n.label).font(.headline); if let b = n.blurb { Text(b).font(.caption).foregroundStyle(.secondary) } }
+                                    VStack(alignment: .leading, spacing: 2) { Text(n.label).font(Font.pl(.headline)); if let b = n.blurb { Text(b).font(Font.pl(.caption)).foregroundStyle(.secondary) } }
                                 }
                             }
                         }.listRowBackground(OSRowBackground())
@@ -48,17 +48,17 @@ struct AtlasView: View {
                     ForEach(a.journeys) { j in
                         Section { ForEach(Array(j.steps.enumerated()), id: \.offset) { i, s in
                             HStack(alignment: .top) {
-                                Text("\(i + 1)").font(.caption.bold().monospacedDigit()).frame(width: 20)
-                                VStack(alignment: .leading, spacing: 2) { Text(s.label); Text([s.system, s.note].compactMap { $0 }.joined(separator: " · ")).font(.caption).foregroundStyle(.secondary) }
+                                Text("\(i + 1)").font(Font.pl(.caption).bold().monospacedDigit()).frame(width: 20)
+                                VStack(alignment: .leading, spacing: 2) { Text(s.label); Text([s.system, s.note].compactMap { $0 }.joined(separator: " · ")).font(Font.pl(.caption)).foregroundStyle(.secondary) }
                             }
                         } } header: { Text(j.title) } footer: { if let s = j.subtitle { Text(s) } }.listRowBackground(OSRowBackground())
                     }
                 default:
                     ForEach(a.schedule, id: \.self) { s in
                         VStack(alignment: .leading, spacing: 2) {
-                            HStack { Text(s.label).font(.headline); Spacer(); Text(s.timePT).font(.caption.monospacedDigit()) }
-                            Text(days(s.days)).font(.caption).foregroundStyle(.secondary)
-                            if let d = s.detail { Text(d).font(.callout) }
+                            HStack { Text(s.label).font(Font.pl(.headline)); Spacer(); Text(s.timePT).font(Font.pl(.caption).monospacedDigit()) }
+                            Text(days(s.days)).font(Font.pl(.caption)).foregroundStyle(.secondary)
+                            if let d = s.detail { Text(d).font(Font.pl(.callout)) }
                         }
                     }
                 }
@@ -112,7 +112,7 @@ struct CodexToolView: View {
                             Text(v.first ?? "").foregroundStyle(.red).frame(maxWidth: .infinity, alignment: .leading)
                             Text(v.dropFirst().joined(separator: " ")).frame(maxWidth: .infinity, alignment: .leading)
                         }
-                        .font(.callout)
+                        .font(Font.pl(.callout))
                     }
                 } header: { Text("Vocabulary install: scarcity → sovereign") } footer: { Text("Swap these out, immediately and permanently.") }.listRowBackground(OSRowBackground())
                 Section("Anchor") {
@@ -127,7 +127,7 @@ struct CodexToolView: View {
                         }
                     }
                     VStack(alignment: .leading, spacing: 6) {
-                        Text("The Day's Sovereign Frame").font(.headline)
+                        Text("The Day's Sovereign Frame").font(Font.pl(.headline))
                         TextField("Today is the [action] that advances [structure].", text: $frame, axis: .vertical)
                     }
                 } header: { Text("I · Identity installation") }.listRowBackground(OSRowBackground())
@@ -144,7 +144,7 @@ struct CodexToolView: View {
                     ForEach(log.prefix(20)) { e in
                         VStack(alignment: .leading, spacing: 2) {
                             Text(e.text)
-                            Text("\(String(e.date.prefix(10)))\(e.stateWord.isEmpty ? "" : " · \(e.stateWord)")\(e.contentSource == true ? " · #ContentSource" : "")").font(.caption).foregroundStyle(.secondary)
+                            Text("\(String(e.date.prefix(10)))\(e.stateWord.isEmpty ? "" : " · \(e.stateWord)")\(e.contentSource == true ? " · #ContentSource" : "")").font(Font.pl(.caption)).foregroundStyle(.secondary)
                         }
                     }
                 } header: { Text("The log") } footer: { Text("Kept on this iPhone only, as the web keeps it in the browser.") }.listRowBackground(OSRowBackground())
@@ -157,8 +157,8 @@ struct CodexToolView: View {
                 Section("Modules") {
                     ForEach(c.modules) { m in
                         DisclosureGroup {
-                            ForEach(m.lines, id: \.self) { Text($0).font(.callout) }
-                        } label: { VStack(alignment: .leading) { Text(m.name).font(.headline); Text(m.trigger).font(.caption).foregroundStyle(.secondary) } }
+                            ForEach(m.lines, id: \.self) { Text($0).font(Font.pl(.callout)) }
+                        } label: { VStack(alignment: .leading) { Text(m.name).font(Font.pl(.headline)); Text(m.trigger).font(Font.pl(.caption)).foregroundStyle(.secondary) } }
                     }
                 }.listRowBackground(OSRowBackground())
             }
@@ -196,7 +196,7 @@ struct SourceInterviewView: View {
                             NavigationLink { AnswerView(model: model, q: q, answer: answers[q.id] ?? "") { answers[q.id] = $0 } } label: {
                                 VStack(alignment: .leading, spacing: 2) {
                                     Text(q.prompt).lineLimit(3)
-                                    if let a = answers[q.id], !a.isEmpty { Text(a).font(.caption).foregroundStyle(.secondary).lineLimit(2) }
+                                    if let a = answers[q.id], !a.isEmpty { Text(a).font(Font.pl(.caption)).foregroundStyle(.secondary).lineLimit(2) }
                                 }
                             }
                         }
@@ -224,7 +224,7 @@ struct SourceInterviewView: View {
 
         var body: some View {
             Form {
-                Section { Text(q.prompt).font(.headline) }
+                Section { Text(q.prompt).font(Font.pl(.headline)) }
                 Section { TextEditor(text: $answer).frame(minHeight: 240) }
                 Button("Save") { Task { await save() } }
                 if let r = result { ResultLine(text: r) }
@@ -255,14 +255,14 @@ struct CommentsView: View {
                 ForEach(items) { it in
                     let posted = done.split(separator: ",").contains(Substring(it.id))
                     VStack(alignment: .leading, spacing: 6) {
-                        HStack { Text(it.account).font(.headline); Spacer(); if posted { Label("Posted", systemImage: "checkmark").font(.caption).foregroundStyle(.green) } }
-                        if let c = it.context { Text(c).font(.caption).foregroundStyle(.secondary) }
+                        HStack { Text(it.account).font(Font.pl(.headline)); Spacer(); if posted { Label("Posted", systemImage: "checkmark").font(Font.pl(.caption)).foregroundStyle(.green) } }
+                        if let c = it.context { Text(c).font(Font.pl(.caption)).foregroundStyle(.secondary) }
                         Text(it.text).plReading()
                         HStack {
                             Button("Copy", systemImage: "doc.on.doc") { UIPasteboard.general.string = it.text }
                             Button("Open the post", systemImage: "arrow.up.forward.app") { if let u = URL(string: it.post) { openURL(u) } }
                         }
-                        .buttonStyle(.bordered).font(.caption)
+                        .buttonStyle(.bordered).font(Font.pl(.caption))
                     }
                     .opacity(posted ? 0.55 : 1)
                     .swipeActions { Button(posted ? "Not posted" : "Posted") { toggle(it.id) }.tint(.green) }
@@ -301,7 +301,7 @@ struct CatalogMatrixView: View {
                             let built = cells.filter { $0.syncProductId != nil }.count
                             VStack(alignment: .leading, spacing: 2) {
                                 Text(d.design)
-                                Text("\(d.technique ?? "") · \(built) built · \(cells.count - built) open").font(.caption).foregroundStyle(.secondary)
+                                Text("\(d.technique ?? "") · \(built) built · \(cells.count - built) open").font(Font.pl(.caption)).foregroundStyle(.secondary)
                             }
                         }
                     }
@@ -331,7 +331,7 @@ struct CatalogMatrixView: View {
                                 if cell.syncProductId != nil { Text(cell.value ?? "Built").foregroundStyle(.secondary) }
                                 else { Text(cell.status == "price" ? (cell.value ?? "") : (cell.value ?? "·")).foregroundStyle(.tertiary) }
                             }
-                            .font(.callout)
+                            .font(Font.pl(.callout))
                             .swipeActions { if cell.syncProductId == nil { Button("Queue") { Task { await queue(row, cw) } }.tint(PLTone.house) } }
                         }
                     }.listRowBackground(OSRowBackground())
@@ -400,7 +400,7 @@ struct NotionView: View {
                 } header: { Text("In the pipeline") } footer: { Text("Swipe to move a piece to its next stage.") }.listRowBackground(OSRowBackground())
                 Section("Content calendar") {
                     ForEach(s.content) { r in
-                        if let u = r.url.flatMap(URL.init(string:)) { Link(destination: u) { VStack(alignment: .leading) { Text(r.name); Text(r.meta ?? "").font(.caption) } } }
+                        if let u = r.url.flatMap(URL.init(string:)) { Link(destination: u) { VStack(alignment: .leading) { Text(r.name); Text(r.meta ?? "").font(Font.pl(.caption)) } } }
                         else { Text(r.name) }
                     }
                 }.listRowBackground(OSRowBackground())
@@ -453,8 +453,8 @@ struct CraftView: View {
                         ForEach(pieces.prefix(60)) { p in
                             Button { picked = p; text = ""; voice = "" } label: {
                                 AsyncImage(url: URL(string: p.thumb ?? p.url)) { $0.resizable().scaledToFill() } placeholder: { Color.secondary.opacity(0.12) }
-                                    .frame(width: 84, height: 84).clipShape(RoundedRectangle(cornerRadius: 10, style: .continuous))
-                                    .overlay(RoundedRectangle(cornerRadius: 10, style: .continuous).stroke(picked == p ? PLTone.house : .clear, lineWidth: 3))
+                                    .frame(width: 84, height: 84).clipShape(RoundedRectangle(cornerRadius: 10 * PLStyle.radius, style: .continuous))
+                                    .overlay(RoundedRectangle(cornerRadius: 10 * PLStyle.radius, style: .continuous).stroke(picked == p ? PLTone.house : .clear, lineWidth: 3))
                             }
                             .buttonStyle(.plain)
                             .accessibilityLabel(p.title ?? p.cr)
@@ -463,12 +463,12 @@ struct CraftView: View {
                 }
                 .frame(height: 90)
                 if let p = picked {
-                    Text([p.title ?? p.cr, p.year.map { "made \($0)" }, p.medium].compactMap { $0 }.joined(separator: ", ")).font(.caption)
+                    Text([p.title ?? p.cr, p.year.map { "made \($0)" }, p.medium].compactMap { $0 }.joined(separator: ", ")).font(Font.pl(.caption))
                     Button("Write the caption") { Task { await craft(p) } }.disabled(busy)
                 }
                 if !text.isEmpty {
                     TextEditor(text: $text).frame(minHeight: 160)
-                    if !voice.isEmpty { Text(voice).font(.caption).foregroundStyle(.secondary) }
+                    if !voice.isEmpty { Text(voice).font(Font.pl(.caption)).foregroundStyle(.secondary) }
                     Button("Add to Approvals") { Task { await queue() } }.disabled(busy)
                 }
             }
@@ -593,7 +593,7 @@ struct AtlasMap: View {
                         path.addCurve(to: p1, control1: c0, control2: c1)
                         ctx.stroke(path, with: .color(PLOS.goldDim(scheme).opacity(0.7)), style: StrokeStyle(lineWidth: max(0.8, 1.6 * zoom), dash: [4 * zoom, 3 * zoom]))
                         if let l = e.label, zoom > 1.6 {
-                            ctx.draw(Text(l).font(.system(size: 9 * min(zoom, 2.5), design: .monospaced)).foregroundStyle(PLOS.dim(scheme)),
+                            ctx.draw(Text(l).font(Font.pl(size: 9 * min(zoom, 2.5), design: .monospaced)).foregroundStyle(PLOS.dim(scheme)),
                                      at: CGPoint(x: (p0.x + p1.x) / 2, y: (p0.y + p1.y) / 2))
                         }
                     }
@@ -603,8 +603,8 @@ struct AtlasMap: View {
                     let shape = RoundedRectangle(cornerRadius: 10 * max(k, 0.3), style: .continuous)
                     Button { open(n) } label: {
                         VStack(alignment: .leading, spacing: 2) {
-                            Text(n.label).font(.system(size: max(5, 15 * k), weight: .semibold, design: .monospaced)).foregroundStyle(PLOS.text(scheme)).lineLimit(2).minimumScaleFactor(0.5)
-                            if let b = n.blurb, k > 0.25 { Text(b).font(.system(size: max(4, 11 * k))).foregroundStyle(PLOS.dim(scheme)).lineLimit(3) }
+                            Text(n.label).font(Font.pl(size: max(5, 15 * k), weight: .semibold, design: .monospaced)).foregroundStyle(PLOS.text(scheme)).lineLimit(2).minimumScaleFactor(0.5)
+                            if let b = n.blurb, k > 0.25 { Text(b).font(Font.pl(size: max(4, 11 * k))).foregroundStyle(PLOS.dim(scheme)).lineLimit(3) }
                         }
                         .padding(6 * k)
                         .frame(width: r.width, height: r.height, alignment: .topLeading)

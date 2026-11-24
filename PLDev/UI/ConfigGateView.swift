@@ -18,7 +18,7 @@ struct ConfigGateView: View {
     var body: some View {
         VStack(spacing: PLSpace.margin) {
             Image(systemName: "doc.badge.gearshape")
-                .font(.largeTitle)
+                .font(Font.pl(.largeTitle))
                 .symbolRenderingMode(.hierarchical)
                 .foregroundStyle(PLTone.accent)
                 .accessibilityHidden(true)

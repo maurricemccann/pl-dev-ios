@@ -249,7 +249,7 @@ struct ArchiveView: View {
                 AsyncImage(url: URL(string: w.url)) { phase in
                     switch phase {
                     case .success(let i): i.resizable().scaledToFit()
-                    case .failure: Image(systemName: "photo").font(.largeTitle).foregroundStyle(.tertiary).frame(maxWidth: .infinity, minHeight: 200)
+                    case .failure: Image(systemName: "photo").font(Font.pl(.largeTitle)).foregroundStyle(.tertiary).frame(maxWidth: .infinity, minHeight: 200)
                     default: PLLoader().frame(maxWidth: .infinity, minHeight: 200)
                     }
                 }
@@ -278,7 +278,7 @@ struct ArchiveView: View {
                 EmptyNote(symbol: "wifi.exclamationmark", title: "Could not load the archive", detail: f, actionTitle: "Try again") { Task { await store.load(force: true) } }
             } else {
                 LazyVGrid(columns: columns, spacing: 12) {
-                    ForEach(0..<8, id: \.self) { _ in RoundedRectangle(cornerRadius: 14, style: .continuous).fill(Bone.line(scheme).opacity(0.4)).aspectRatio(0.85, contentMode: .fit) }
+                    ForEach(0..<8, id: \.self) { _ in RoundedRectangle(cornerRadius: 14 * PLStyle.radius, style: .continuous).fill(Bone.line(scheme).opacity(0.4)).aspectRatio(0.85, contentMode: .fit) }
                 }
                 .redacted(reason: .placeholder).padding(.horizontal, 24).accessibilityLabel("Loading the archive")
             }
@@ -338,9 +338,9 @@ struct ArchiveView: View {
                             }
                         }
                     }
-                    .background(Bone.raised(scheme), in: RoundedRectangle(cornerRadius: 14, style: .continuous))
-                    .overlay { RoundedRectangle(cornerRadius: 14, style: .continuous).strokeBorder(voted ? Bone.teal : Bone.line(scheme), lineWidth: voted ? 1.2 : 0.6) }
-                    .overlay(alignment: .topTrailing) { if fav { Image(systemName: "sparkle").font(.footnote).foregroundStyle(Bone.gold).padding(8) } }
+                    .background(Bone.raised(scheme), in: RoundedRectangle(cornerRadius: 14 * PLStyle.radius, style: .continuous))
+                    .overlay { RoundedRectangle(cornerRadius: 14 * PLStyle.radius, style: .continuous).strokeBorder(voted ? Bone.teal : Bone.line(scheme), lineWidth: voted ? 1.2 : 0.6) }
+                    .overlay(alignment: .topTrailing) { if fav { Image(systemName: "sparkle").font(Font.pl(.footnote)).foregroundStyle(Bone.gold).padding(8) } }
                 Text(cr).siteLabel(10)
                 Text(title).font(SiteFont.display(16)).foregroundStyle(Bone.ink(scheme)).lineLimit(2).multilineTextAlignment(.leading)
                 if let note { Text(note).siteLabel(9).foregroundStyle(Bone.goldDim) }
@@ -376,12 +376,12 @@ struct ArchiveEntryView: View {
                 AsyncImage(url: imageURL.flatMap { URL(string: $0) }) { phase in
                     switch phase {
                     case .success(let i): i.resizable().scaledToFit()
-                    case .failure: Image(systemName: "photo").font(.largeTitle).foregroundStyle(.tertiary).frame(maxWidth: .infinity, minHeight: 240)
+                    case .failure: Image(systemName: "photo").font(Font.pl(.largeTitle)).foregroundStyle(.tertiary).frame(maxWidth: .infinity, minHeight: 240)
                     default: PLLoader().frame(maxWidth: .infinity, minHeight: 240)
                     }
                 }
                 .frame(maxWidth: .infinity)
-                .clipShape(RoundedRectangle(cornerRadius: 14, style: .continuous))
+                .clipShape(RoundedRectangle(cornerRadius: 14 * PLStyle.radius, style: .continuous))
                 .accessibilityLabel(work?.title ?? labWork?.kind.capFirst ?? "The work")
                 .id(imageURL)
                 .transition(.opacity)
@@ -392,7 +392,7 @@ struct ArchiveEntryView: View {
                         .fixedSize(horizontal: false, vertical: true).accessibilityAddTraits(.isHeader)
                     if let w = work {
                         if let c = ChosenStore.shared.entry(w.cr) {
-                            Text("Chosen \u{2014} No. \(c.padded)").font(.system(size: 11, design: .monospaced)).tracking(2).foregroundStyle(Bone.gold)
+                            Text("Chosen \u{2014} No. \(c.padded)").font(Font.pl(size: 11, design: .monospaced)).tracking(2).foregroundStyle(Bone.gold)
                                 .padding(.horizontal, 8).padding(.vertical, 4).overlay { Capsule().strokeBorder(Bone.gold.opacity(0.3), lineWidth: 0.8) }
                         }
                         Text("\(w.fam)  \u{00B7}  \((w.color ?? "").replacingOccurrences(of: "-", with: " "))  \u{00B7}  \((w.med ?? "").replacingOccurrences(of: "-", with: " "))").siteLabel(10)
@@ -403,7 +403,7 @@ struct ArchiveEntryView: View {
                                 ForEach(w.metaRows, id: \.0) { row in
                                     let (l, v) = row
                                     VStack(alignment: .leading, spacing: 2) {
-                                        Text(l).font(.system(size: 11, design: .monospaced)).textCase(.uppercase).tracking(2).foregroundStyle(Bone.inkFaint(scheme))
+                                        Text(l).font(Font.pl(size: 11, design: .monospaced)).textCase(.uppercase).tracking(2).foregroundStyle(Bone.inkFaint(scheme))
                                         Text(v).font(SiteFont.body(14)).foregroundStyle(Bone.ink(scheme))
                                     }
                                     .accessibilityElement(children: .combine)
@@ -431,8 +431,8 @@ struct ArchiveEntryView: View {
                                             if case .success(let i) = p { i.resizable().scaledToFit() } else { Color.clear }
                                         }
                                         .frame(width: 64, height: 64).padding(4)
-                                        .background(Bone.raised(scheme), in: RoundedRectangle(cornerRadius: 10, style: .continuous))
-                                        .overlay { RoundedRectangle(cornerRadius: 10, style: .continuous).strokeBorder((shownImage ?? w.url) == c.url ? Bone.gold : Bone.line(scheme), lineWidth: 1) }
+                                        .background(Bone.raised(scheme), in: RoundedRectangle(cornerRadius: 10 * PLStyle.radius, style: .continuous))
+                                        .overlay { RoundedRectangle(cornerRadius: 10 * PLStyle.radius, style: .continuous).strokeBorder((shownImage ?? w.url) == c.url ? Bone.gold : Bone.line(scheme), lineWidth: 1) }
                                     }
                                     .buttonStyle(.plain)
                                     .accessibilityLabel("Colourway \((c.color ?? c.cr).replacingOccurrences(of: "-", with: " "))")

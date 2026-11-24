@@ -140,8 +140,8 @@ struct BoardsPanel: View {
                                 }.padding(.horizontal, 10).padding(.vertical, 8)
                             }
                             .frame(maxWidth: .infinity, alignment: .leading)
-                            .overlay { RoundedRectangle(cornerRadius: 12, style: .continuous).strokeBorder(Bone.line(scheme), lineWidth: 0.8) }
-                            .clipShape(RoundedRectangle(cornerRadius: 12, style: .continuous))
+                            .overlay { RoundedRectangle(cornerRadius: 12 * PLStyle.radius, style: .continuous).strokeBorder(Bone.line(scheme), lineWidth: 0.8) }
+                            .clipShape(RoundedRectangle(cornerRadius: 12 * PLStyle.radius, style: .continuous))
                         }.buttonStyle(.plain)
                     }
                 }
@@ -168,8 +168,8 @@ struct BoardsPanel: View {
                                 Bone.raised(scheme).frame(height: 120).overlay { Text(it.refId).siteLabel(10) }
                             }
                         }
-                        .clipShape(RoundedRectangle(cornerRadius: 6, style: .continuous))
-                        .overlay { RoundedRectangle(cornerRadius: 6, style: .continuous).strokeBorder(Bone.line(scheme), lineWidth: 0.8) }
+                        .clipShape(RoundedRectangle(cornerRadius: 6 * PLStyle.radius, style: .continuous))
+                        .overlay { RoundedRectangle(cornerRadius: 6 * PLStyle.radius, style: .continuous).strokeBorder(Bone.line(scheme), lineWidth: 0.8) }
                     }
                 }
             } else { SitePulse() }
@@ -280,7 +280,7 @@ struct ArtworkPicker: View {
                                 }
                                 .clipped()
                                 .overlay { Rectangle().strokeBorder(on ? Bone.gold : Bone.line(scheme), lineWidth: on ? 2.5 : 0.6) }
-                                .overlay(alignment: .topTrailing) { if on { Image(systemName: "checkmark").font(.caption2.bold()).foregroundStyle(Color(hex: 0x15120b)).padding(4).background(Bone.gold) } }
+                                .overlay(alignment: .topTrailing) { if on { Image(systemName: "checkmark").font(Font.pl(.caption2).bold()).foregroundStyle(Color(hex: 0x15120b)).padding(4).background(Bone.gold) } }
                                 .opacity(atCap ? 0.4 : 1)
                             }
                             .buttonStyle(.plain).disabled(atCap).accessibilityLabel("\(p.cr), \(p.title)\(on ? ", chosen" : "")")

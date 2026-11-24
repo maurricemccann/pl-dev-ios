@@ -241,9 +241,9 @@ struct ComposerPhotosPane: View {
                         Label(importing ? "Copying…" : "Choose from Photos", systemImage: "photo.on.rectangle.angled").frame(maxWidth: .infinity)
                     }
                     .buttonStyle(CMPPill(primary: true)).disabled(importing).accessibilityIdentifier("composer.photos.choose")
-                    Text(target.map { "Pictures and clips you choose attach to \"\($0.title)\"." } ?? "Add a shot first. Then pictures and clips you choose attach to it.").font(.system(size: 11)).foregroundStyle(CMP.dim)
-                    Text("Copied into Composer, so they stay when the library changes. Send the whole piece to render uploads them to the house first.").font(.system(size: 11)).foregroundStyle(CMP.muted)
-                    if let n = note { Text(n).font(.system(size: 11)).foregroundStyle(CMP.goldDim).accessibilityIdentifier("composer.library.note") }
+                    Text(target.map { "Pictures and clips you choose attach to \"\($0.title)\"." } ?? "Add a shot first. Then pictures and clips you choose attach to it.").font(Font.pl(size: 11)).foregroundStyle(CMP.dim)
+                    Text("Copied into Composer, so they stay when the library changes. Send the whole piece to render uploads them to the house first.").font(Font.pl(size: 11)).foregroundStyle(CMP.muted)
+                    if let n = note { Text(n).font(Font.pl(size: 11)).foregroundStyle(CMP.goldDim).accessibilityIdentifier("composer.library.note") }
                 }
                 .cmpCard(padding: 12).listRowBackground(Color.clear).listRowInsets(EdgeInsets(top: 8, leading: 16, bottom: 4, trailing: 16))
             }
@@ -289,10 +289,10 @@ struct ComposerPhotosPane: View {
                 Group {
                     if let img = extras.thumb(e.id) { Image(uiImage: img).resizable().scaledToFill() } else { Image(systemName: e.video ? "video" : "photo").foregroundStyle(CMP.muted) }
                 }
-                .frame(width: 44, height: 44).background(CMP.well).clipShape(RoundedRectangle(cornerRadius: 6, style: .continuous))
-                .overlay { RoundedRectangle(cornerRadius: 6, style: .continuous).strokeBorder(CMP.line, lineWidth: 0.6) }
+                .frame(width: 44, height: 44).background(CMP.well).clipShape(RoundedRectangle(cornerRadius: 6 * PLStyle.radius, style: .continuous))
+                .overlay { RoundedRectangle(cornerRadius: 6 * PLStyle.radius, style: .continuous).strokeBorder(CMP.line, lineWidth: 0.6) }
                 VStack(alignment: .leading, spacing: 2) {
-                    Text(e.name + e.ext).font(.system(size: 14)).foregroundStyle(CMP.text).lineLimit(1)
+                    Text(e.name + e.ext).font(Font.pl(size: 14)).foregroundStyle(CMP.text).lineLimit(1)
                     Text([e.video ? "clip" : "picture", e.width.flatMap { w in e.height.map { "\(w)×\($0)" } }, e.trimmed ? "trimmed" : nil].compactMap { $0 }.joined(separator: " · ")).cmpNum(10).foregroundStyle(CMP.muted)
                 }
                 Spacer(minLength: 6)
@@ -332,8 +332,8 @@ struct ComposerTrimSheet: View {
                     Group {
                         if let img = extras.thumb(e.id) { Image(uiImage: img).resizable().scaledToFit() } else { Color.clear }
                     }
-                    .frame(maxWidth: .infinity, maxHeight: 200).background(CMP.well).clipShape(RoundedRectangle(cornerRadius: 12, style: .continuous))
-                    Text(e.name + e.ext).font(.system(size: 18, design: .serif)).foregroundStyle(CMP.text)
+                    .frame(maxWidth: .infinity, maxHeight: 200).background(CMP.well).clipShape(RoundedRectangle(cornerRadius: 12 * PLStyle.radius, style: .continuous))
+                    Text(e.name + e.ext).font(Font.pl(size: 18, design: .serif)).foregroundStyle(CMP.text)
                     VStack(alignment: .leading, spacing: 10) {
                         HStack { Text("in").cmpLabel(10); Spacer(); Text(String(format: "%.1f s", inP * total)).cmpNum(13).foregroundStyle(CMP.text) }
                         Slider(value: $inP, in: 0...1).tint(CMP.gold).accessibilityIdentifier("composer.trim.in").accessibilityLabel("In point")
@@ -407,8 +407,8 @@ struct ComposerCurvePane: View {
                         Spacer()
                         Text("\(shown.count.formatted()) of \(data.items.count.formatted())").cmpNum(11).foregroundStyle(CMP.muted)
                     }
-                    Text(target.map { "tap a piece: attaches to \"\($0.title)\"" } ?? "add a shot to attach pieces").font(.system(size: 11)).foregroundStyle(target == nil ? CMP.muted : CMP.goldDim)
-                    if let n = note { Text(n).font(.system(size: 11)).foregroundStyle(CMP.dim).accessibilityIdentifier("composer.library.note") }
+                    Text(target.map { "tap a piece: attaches to \"\($0.title)\"" } ?? "add a shot to attach pieces").font(Font.pl(size: 11)).foregroundStyle(target == nil ? CMP.muted : CMP.goldDim)
+                    if let n = note { Text(n).font(Font.pl(size: 11)).foregroundStyle(CMP.dim).accessibilityIdentifier("composer.library.note") }
                     ScrollView(.horizontal, showsIndicators: false) {
                         HStack(spacing: 6) {
                             CMPChip(title: "all", on: cls == nil) { cls = nil }
@@ -434,7 +434,7 @@ struct ComposerCurvePane: View {
                         row(it).listRowBackground(Color.clear).listRowInsets(EdgeInsets(top: 0, leading: 16, bottom: 0, trailing: 16))
                     }
                     if shown.count > limit {
-                        Button { limit += 80 } label: { Text("Show more: \((shown.count - limit).formatted()) not shown").font(.system(size: 13)).foregroundStyle(CMP.gold).frame(maxWidth: .infinity, minHeight: 44) }
+                        Button { limit += 80 } label: { Text("Show more: \((shown.count - limit).formatted()) not shown").font(Font.pl(size: 13)).foregroundStyle(CMP.gold).frame(maxWidth: .infinity, minHeight: 44) }
                             .buttonStyle(.plain).listRowBackground(Color.clear)
                     }
                 }
@@ -473,12 +473,12 @@ struct ComposerCurvePane: View {
             HStack(spacing: 10) {
                 Group {
                     if let u = still { AsyncImage(url: u) { p in if let i = p.image { i.resizable().scaledToFill() } else { Color.clear } } }
-                    else { Text(String(it.class.prefix(3))).font(.system(size: 9, design: .monospaced)).textCase(.uppercase).foregroundStyle(CMP.muted) }
+                    else { Text(String(it.class.prefix(3))).font(Font.pl(size: 9, design: .monospaced)).textCase(.uppercase).foregroundStyle(CMP.muted) }
                 }
-                .frame(width: 44, height: 44).background(CMP.well).clipShape(RoundedRectangle(cornerRadius: 6, style: .continuous))
-                .overlay { RoundedRectangle(cornerRadius: 6, style: .continuous).strokeBorder(CMP.line, lineWidth: 0.6) }
+                .frame(width: 44, height: 44).background(CMP.well).clipShape(RoundedRectangle(cornerRadius: 6 * PLStyle.radius, style: .continuous))
+                .overlay { RoundedRectangle(cornerRadius: 6 * PLStyle.radius, style: .continuous).strokeBorder(CMP.line, lineWidth: 0.6) }
                 VStack(alignment: .leading, spacing: 2) {
-                    Text(it.name ?? it.vault_id).font(.system(size: 14)).foregroundStyle(CMP.text).lineLimit(1)
+                    Text(it.name ?? it.vault_id).font(Font.pl(size: 14)).foregroundStyle(CMP.text).lineLimit(1)
                     Text([it.class, it.origin, it.vault_id].compactMap { $0 }.joined(separator: " · ")).cmpNum(10).foregroundStyle(CMP.muted).lineLimit(1)
                 }
                 Spacer(minLength: 6)

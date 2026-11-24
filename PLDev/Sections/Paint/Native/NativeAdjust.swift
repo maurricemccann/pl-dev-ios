@@ -257,7 +257,7 @@ struct NativeAdjustSheet: View {
                         NativeChecker()
                         if let preview { Image(uiImage: preview).resizable().scaledToFit() } else { PLLoader() }
                     }
-                    .frame(height: 190).clipShape(RoundedRectangle(cornerRadius: 12, style: .continuous))
+                    .frame(height: 190).clipShape(RoundedRectangle(cornerRadius: 12 * PLStyle.radius, style: .continuous))
                     .listRowInsets(EdgeInsets(top: 8, leading: 16, bottom: 8, trailing: 16))
                 } footer: { Text(canvas.hasSelection ? "Applies inside the selection." : "Applies to the whole layer.") }
                 Section("Effect") {

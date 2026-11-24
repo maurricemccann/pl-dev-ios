@@ -303,7 +303,7 @@ struct LabMetalProbeView: View {
                         Text(l.0 + ":").foregroundStyle(PLG.gold.opacity(0.55))
                         Text(l.1).foregroundStyle(PLG.gold).multilineTextAlignment(.trailing)
                     }
-                    .font(.system(size: 11, design: .monospaced))
+                    .font(Font.pl(size: 11, design: .monospaced))
                 }
             }
             .padding(.top, 56).padding(.trailing, 18)
@@ -534,14 +534,14 @@ struct LabLifeView: View {
                 LabMetalView(scene: scene)
                 LinearGradient(colors: [.clear, Color(hex: 0x0a0a0a).opacity(0.88)], startPoint: .init(x: 0.5, y: 0.66), endPoint: .bottom).allowsHitTesting(false)
                 VStack(alignment: .trailing, spacing: 8) {
-                    Text(scene.rule).font(.system(size: 11, design: .serif)).labCaps().tracking(2).foregroundStyle(PLG.gold.opacity(0.72)).contentTransition(.numericText())
+                    Text(scene.rule).font(Font.pl(size: 11, design: .serif)).labCaps().tracking(2).foregroundStyle(PLG.gold.opacity(0.72)).contentTransition(.numericText())
                     if scene.source != "mic" {
                         LabPill(title: scene.source == "deck" ? "deck" : "listen", symbol: "mic") { Task { await listen() } }
                     }
-                    if let micLine { Text(micLine).font(.caption2).foregroundStyle(PLG.gold.opacity(0.7)).multilineTextAlignment(.trailing).frame(maxWidth: 220, alignment: .trailing) }
+                    if let micLine { Text(micLine).font(Font.pl(.caption2)).foregroundStyle(PLG.gold.opacity(0.7)).multilineTextAlignment(.trailing).frame(maxWidth: 220, alignment: .trailing) }
                 }
                 .padding(12)
-                .background { RoundedRectangle(cornerRadius: 18, style: .continuous).fill(Color(hex: 0x0e0c08).opacity(0.82)).overlay { RoundedRectangle(cornerRadius: 18, style: .continuous).strokeBorder(PLG.gold.opacity(0.28), lineWidth: 0.8) } }
+                .background { RoundedRectangle(cornerRadius: 18 * PLStyle.radius, style: .continuous).fill(Color(hex: 0x0e0c08).opacity(0.82)).overlay { RoundedRectangle(cornerRadius: 18 * PLStyle.radius, style: .continuous).strokeBorder(PLG.gold.opacity(0.28), lineWidth: 0.8) } }
                 .padding(.top, 54).padding(.trailing, 14)
             } else { LabGPUMissing() }
         }
@@ -696,14 +696,14 @@ struct LabFluidView: View {
             Color(hex: 0xf1ece1).ignoresSafeArea()
             if let scene { LabMetalView(scene: scene) } else { LabGPUMissing() }
             VStack(alignment: .leading, spacing: 0) {
-                Text("The Mirror · M1 — the stirred field").font(.system(size: 11, design: .serif)).labCaps().tracking(2.4).opacity(0.55)
+                Text("The Mirror · M1 — the stirred field").font(Font.pl(size: 11, design: .serif)).labCaps().tracking(2.4).opacity(0.55)
                 Text("What persists in the mind becomes your reality.").plHand(34, relativeTo: .largeTitle).lineSpacing(2).padding(.top, 10)
                 Text("Move across the page. The cursor stirs a still pool of gold ink — the field remembers the path of the hand, then settles, then breathes. It is meant to be felt at the edge of attention, never to announce itself.")
-                    .font(.system(size: 16, design: .serif)).lineSpacing(6).opacity(0.86).padding(.top, 14)
+                    .font(Font.pl(size: 16, design: .serif)).lineSpacing(6).opacity(0.86).padding(.top, 14)
                 Text("Prepared for luxury. You are in control of your reality. Drag slowly to draw a thin gold thread; move fast to open a wider, softer bloom that closes again on its own.")
-                    .font(.system(size: 16, design: .serif)).lineSpacing(6).opacity(0.86).padding(.top, 14)
+                    .font(Font.pl(size: 16, design: .serif)).lineSpacing(6).opacity(0.86).padding(.top, 14)
                 HStack(spacing: 10) { Text("Restraint"); Text("·"); Text("Breath"); Text("·"); Text("Gold on bone") }
-                    .font(.system(size: 13, design: .serif)).opacity(0.6).padding(.top, 24)
+                    .font(Font.pl(size: 13, design: .serif)).opacity(0.6).padding(.top, 24)
             }
             .foregroundStyle(Color(hex: 0x161310))
             .padding(.horizontal, 24).padding(.top, 70)

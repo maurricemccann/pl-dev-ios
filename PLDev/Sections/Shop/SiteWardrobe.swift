@@ -101,7 +101,7 @@ struct WardrobeCard: View {
     var body: some View {
         VStack(alignment: .leading, spacing: 14) {
             WardrobeStage(piece: piece).frame(height: 360)
-                .background(Bone.raised(scheme), in: RoundedRectangle(cornerRadius: 14, style: .continuous))
+                .background(Bone.raised(scheme), in: RoundedRectangle(cornerRadius: 14 * PLStyle.radius, style: .continuous))
             Text(piece.axiom).siteLabel()
             NavigationLink { PieceView(slug: piece.productSlug, state: ShopSection.state) } label: {
                 Text(piece.name).font(SiteFont.display(32)).foregroundStyle(Bone.ink(scheme))

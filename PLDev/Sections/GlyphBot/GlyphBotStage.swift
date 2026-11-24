@@ -110,7 +110,7 @@ struct GlyphStageFigure: View {
                 }
             }
             .overlay {
-                if missing { Image(systemName: "figure.seated.side").font(.system(size: 44)).foregroundStyle(Bone.gold.opacity(0.4)) }
+                if missing { Image(systemName: "figure.seated.side").font(Font.pl(size: 44)).foregroundStyle(Bone.gold.opacity(0.4)) }
                 else if !ready { PLThinkingOrb(size: 64) }
             }
             .shadow(color: Bone.gold.opacity(speaking ? 0.5 : 0.22), radius: speaking ? 22 : 16)

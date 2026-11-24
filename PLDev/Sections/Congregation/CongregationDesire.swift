@@ -48,7 +48,7 @@ struct DesireSheet: View {
                         }
                     }
                     .padding(24).frame(maxWidth: .infinity, alignment: .leading)
-                    .background(Color(hex: 0x0e0c08), in: RoundedRectangle(cornerRadius: 18, style: .continuous))
+                    .background(Color(hex: 0x0e0c08), in: RoundedRectangle(cornerRadius: 18 * PLStyle.radius, style: .continuous))
 
                     VStack(alignment: .leading, spacing: 10) {
                         Text("The rules of the room").siteLabel()
@@ -65,8 +65,8 @@ struct DesireSheet: View {
                                 if i < rules.count - 1 { SiteRule() }
                             }
                         }
-                        .background(Bone.ground(scheme), in: RoundedRectangle(cornerRadius: 12, style: .continuous))
-                        .overlay { RoundedRectangle(cornerRadius: 12, style: .continuous).strokeBorder(Bone.line(scheme), lineWidth: 0.8) }
+                        .background(Bone.ground(scheme), in: RoundedRectangle(cornerRadius: 12 * PLStyle.radius, style: .continuous))
+                        .overlay { RoundedRectangle(cornerRadius: 12 * PLStyle.radius, style: .continuous).strokeBorder(Bone.line(scheme), lineWidth: 0.8) }
                     }
 
                     if phase == .done { done } else { form }

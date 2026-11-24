@@ -139,7 +139,7 @@ struct ChosenStrip: View {
                         ForEach(store.entries) { e in
                             NavigationLink { ChosenWorkPage(cr: e.cr) } label: {
                                 VStack(alignment: .leading, spacing: 6) {
-                                    Text("No. \(e.padded)").font(.system(size: 11, design: .monospaced)).tracking(2).foregroundStyle(Bone.gold)
+                                    Text("No. \(e.padded)").font(Font.pl(size: 11, design: .monospaced)).tracking(2).foregroundStyle(Bone.gold)
                                     Text(e.cr).font(SiteFont.display(18)).foregroundStyle(Bone.ink(scheme))
                                     Text(e.productText.capitalized).font(SiteFont.body(12)).foregroundStyle(Bone.inkSoft(scheme))
                                 }

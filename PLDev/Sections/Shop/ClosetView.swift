@@ -157,14 +157,14 @@ struct ClosetView: View {
                     Button { active = slot } label: {
                         VStack(spacing: 4) {
                             Group {
-                                if let hung { FlatImage(url: hung.hero, padding: 2) } else { Image(systemName: slotSymbol(slot)).font(.title3).foregroundStyle(Bone.inkFaint(scheme)) }
+                                if let hung { FlatImage(url: hung.hero, padding: 2) } else { Image(systemName: slotSymbol(slot)).font(Font.pl(.title3)).foregroundStyle(Bone.inkFaint(scheme)) }
                             }
                             .frame(width: 44, height: 40)
                             Text(slot.title).font(SiteFont.body(9, relativeTo: .caption2)).textCase(.uppercase).tracking(1.2).foregroundStyle(Bone.inkSoft(scheme))
                         }
                         .frame(width: 66, height: 70)
-                        .background(Bone.raised(scheme).opacity(0.7), in: RoundedRectangle(cornerRadius: 10, style: .continuous))
-                        .overlay { RoundedRectangle(cornerRadius: 10, style: .continuous).strokeBorder(active == slot ? Bone.gold : Bone.line(scheme), lineWidth: active == slot ? 1.6 : 0.6) }
+                        .background(Bone.raised(scheme).opacity(0.7), in: RoundedRectangle(cornerRadius: 10 * PLStyle.radius, style: .continuous))
+                        .overlay { RoundedRectangle(cornerRadius: 10 * PLStyle.radius, style: .continuous).strokeBorder(active == slot ? Bone.gold : Bone.line(scheme), lineWidth: active == slot ? 1.6 : 0.6) }
                     }
                     .buttonStyle(.plain)
                     .accessibilityLabel("\(slot.title)\(hung.map { ", \($0.name)" } ?? ", empty")")
@@ -175,7 +175,7 @@ struct ClosetView: View {
             ZStack {
                 if worn.isEmpty && bag == nil {
                     VStack(spacing: 8) {
-                        Image(systemName: "hanger").font(.largeTitle).foregroundStyle(Bone.inkFaint(scheme))
+                        Image(systemName: "hanger").font(Font.pl(.largeTitle)).foregroundStyle(Bone.inkFaint(scheme))
                         Text("Nothing hung yet").font(SiteFont.display(20, italic: true)).foregroundStyle(Bone.inkSoft(scheme))
                         Text("Pick a piece below, or hang one of the house looks.").siteLabel(9).multilineTextAlignment(.center)
                     }
@@ -199,8 +199,8 @@ struct ClosetView: View {
             .frame(maxWidth: .infinity, maxHeight: .infinity)
         }
         .frame(height: 360)
-        .background(stageFill, in: RoundedRectangle(cornerRadius: 20, style: .continuous))
-        .overlay { RoundedRectangle(cornerRadius: 20, style: .continuous).strokeBorder(Bone.line(scheme), lineWidth: 0.6) }
+        .background(stageFill, in: RoundedRectangle(cornerRadius: 20 * PLStyle.radius, style: .continuous))
+        .overlay { RoundedRectangle(cornerRadius: 20 * PLStyle.radius, style: .continuous).strokeBorder(Bone.line(scheme), lineWidth: 0.6) }
         .padding(.horizontal, 24)
         .animation(.snappy, value: closet.picks)
     }
@@ -225,8 +225,8 @@ struct ClosetView: View {
                             let on = closet.slug(for: active) == p.slug
                             Button { if on { closet.remove(active) } else { closet.put(p, in: active) }; state.tick += 1 } label: {
                                 FlatImage(url: p.hero, padding: 4).frame(width: 84, height: 92)
-                                    .background(Bone.raised(scheme), in: RoundedRectangle(cornerRadius: 6, style: .continuous))
-                                    .overlay { RoundedRectangle(cornerRadius: 6, style: .continuous).strokeBorder(on ? Bone.gold : Bone.line(scheme), lineWidth: on ? 1.6 : 0.8) }
+                                    .background(Bone.raised(scheme), in: RoundedRectangle(cornerRadius: 6 * PLStyle.radius, style: .continuous))
+                                    .overlay { RoundedRectangle(cornerRadius: 6 * PLStyle.radius, style: .continuous).strokeBorder(on ? Bone.gold : Bone.line(scheme), lineWidth: on ? 1.6 : 0.8) }
                             }
                             .buttonStyle(.plain)
                             .accessibilityLabel("\(p.name)\(on ? ", in your look. Tap to take out" : "")")
@@ -263,7 +263,7 @@ struct ClosetView: View {
                             HStack {
                                 Text(closet.sizes[p.slug] ?? variant(p)?.size ?? p.sizes.first ?? "")
                                 Spacer()
-                                Image(systemName: "chevron.up.chevron.down").font(.footnote).foregroundStyle(Bone.inkFaint(scheme))
+                                Image(systemName: "chevron.up.chevron.down").font(Font.pl(.footnote)).foregroundStyle(Bone.inkFaint(scheme))
                             }
                             .font(SiteFont.body(16)).foregroundStyle(Bone.ink(scheme))
                             .padding(.horizontal, 18).frame(minHeight: 48)
@@ -342,7 +342,7 @@ struct ClosetView: View {
                                 }
                                 Spacer()
                                 Text(Money.text(price(c.piece))).monospacedDigit().foregroundStyle(Bone.inkSoft(scheme))
-                                Image(systemName: "arrow.up.right").font(.footnote).foregroundStyle(Bone.gold)
+                                Image(systemName: "arrow.up.right").font(Font.pl(.footnote)).foregroundStyle(Bone.gold)
                             }
                             .padding(.vertical, 14).frame(minHeight: 56).contentShape(Rectangle())
                         }

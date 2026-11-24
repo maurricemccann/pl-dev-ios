@@ -18,6 +18,9 @@ struct CarrySnapshot: Equatable, Sendable {
     var deep: UInt32 = 0x0e0c08, pale: UInt32 = 0xefe9dc
     var key: UInt32 = 0xc9a84c
     var accent: UInt32 = 0xe7cf86
+    /// The palette's own card colour, and whether it belongs to the pale side.
+    var surface: UInt32? = nil
+    var surfacePale = false
 }
 
 enum CarryRole {
@@ -60,8 +63,10 @@ enum PLCarry {
         let readable: (Double, Double, Double) = dark ? (lk >= 0.30 ? key : rgb(s.accent)) : (lk <= 0.55 ? key : mix(key, t, 0.45))
         switch role {
         case .ground: return color(g, alpha)
-        case .surface: return color(mix(g, t, dark ? 0.07 : 0.045), alpha)
-        case .surface2: return color(mix(g, t, dark ? 0.11 : 0.08), alpha)
+        case .surface: if let own = s.surface, s.surfacePale != dark { return color(rgb(own), alpha) }
+            return color(mix(g, t, dark ? 0.07 : 0.045), alpha)
+        case .surface2: if let own = s.surface, s.surfacePale != dark { return color(mix(rgb(own), t, 0.05), alpha) }
+            return color(mix(g, t, dark ? 0.11 : 0.08), alpha)
         case .well: return color(dark ? mix(g, (0, 0, 0), 0.30) : mix(g, t, 0.03), alpha)
         case .ink: return color(t, alpha)
         case .dim: return color(mix(t, g, 0.30), alpha)
@@ -113,6 +118,8 @@ enum PLCarry {
         next.pale = groundIsLight ? g : t
         next.key = hexValue(p.key)
         next.accent = hexValue(p.accent)
+        next.surface = p.surface.map(hexValue)
+        next.surfacePale = groundIsLight
         if let packAccent, let h = Self.hex(of: packAccent) { next.key = h }   // a theme.json accent wins, as it does for PLTone.accent
         if next != snap { snap = next; epoch.n += 1 }
     }

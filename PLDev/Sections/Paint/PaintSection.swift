@@ -81,9 +81,9 @@ struct PaintCanvasRequest: Identifiable { let id = UUID(); let work: String?; va
 
 /// PL Paint's own look (its `style.css` and kit.css): the dark ground, the warm cream text, his gold for the one active thing, panels as thin glass.
 enum PaintSkin {
-    static let ground = Color(red: 0.055, green: 0.047, blue: 0.031)     // #0e0c08
-    static let text = Color(red: 0.937, green: 0.914, blue: 0.863)       // #efe9dc
-    static let gold = Color(red: 0.788, green: 0.659, blue: 0.298)       // #c9a84c
+    static var ground: Color { PLCarry.tone(.ground, .dark, Color(red: 0.055, green: 0.047, blue: 0.031)) }     // #0e0c08
+    static var text: Color { PLCarry.tone(.ink, .dark, Color(red: 0.937, green: 0.914, blue: 0.863)) }       // #efe9dc
+    static var gold: Color { PLCarry.tone(.accent, .dark, Color(red: 0.788, green: 0.659, blue: 0.298)) }       // #c9a84c
     static let gold2 = Color(red: 0.906, green: 0.812, blue: 0.525)      // #e7cf86
 }
 
@@ -95,7 +95,7 @@ struct DailyMarkStrip: View {
         LazyVGrid(columns: Array(repeating: GridItem(.flexible(), spacing: 4), count: 7), spacing: 4) {
             ForEach(dates, id: \.self) { d in
                 let n = days[NativeDaily.key(d)] ?? 0
-                RoundedRectangle(cornerRadius: 4, style: .continuous)
+                RoundedRectangle(cornerRadius: 4 * PLStyle.radius, style: .continuous)
                     .fill(n == 0 ? Color.white.opacity(0.07) : PaintSkin.gold.opacity(min(1, 0.3 + Double(n) / 200)))
                     .frame(height: 18)
                     .accessibilityLabel("\(d.formatted(date: .abbreviated, time: .omitted)): \(n) strokes")
@@ -124,12 +124,12 @@ struct ComingSection: View {
             Section {
                 VStack(spacing: 12) {
                     Image(systemName: symbol)
-                        .font(.system(size: 44, weight: .semibold)).foregroundStyle(.white)
+                        .font(Font.pl(size: 44, weight: .semibold)).foregroundStyle(.white)
                         .frame(width: 96, height: 96)
-                        .background(Wallpaper.line.gradient, in: RoundedRectangle(cornerRadius: 22, style: .continuous))
-                    Text("\(title) is being built").font(.title2.bold())
+                        .background(Wallpaper.line.gradient, in: RoundedRectangle(cornerRadius: 22 * PLStyle.radius, style: .continuous))
+                    Text("\(title) is being built").font(Font.pl(.title2).bold())
                     Text("A native version is on the way. This tile is its place on the grid.")
-                        .font(.callout).foregroundStyle(.secondary).multilineTextAlignment(.center)
+                        .font(Font.pl(.callout)).foregroundStyle(.secondary).multilineTextAlignment(.center)
                 }
                 .frame(maxWidth: .infinity).padding(.vertical, 12)
             }

@@ -62,19 +62,19 @@ struct HomeDashboard: View {
             let lanes = (runway?.lane_runway_days ?? [:]).map { (p: $0.key, d: $0.value) }.sorted { $0.d < $1.d }
             let target = runway?.lane_runway_ceiling_days ?? 14
             if lanes.isEmpty {
-                Text(runway == nil ? "Not read yet." : "No lanes running.").font(.callout).foregroundStyle(.secondary)
+                Text(runway == nil ? "Not read yet." : "No lanes running.").font(Font.pl(.callout)).foregroundStyle(.secondary)
             }
             ForEach(lanes.prefix(7), id: \.p) { l in
                 HStack(spacing: 8) {
-                    Text(l.p.capitalized).font(.footnote).frame(width: 84, alignment: .leading).lineLimit(1).minimumScaleFactor(0.7)
+                    Text(l.p.capitalized).font(Font.pl(.footnote)).frame(width: 84, alignment: .leading).lineLimit(1).minimumScaleFactor(0.7)
                     GeometryReader { g in
                         ZStack(alignment: .leading) {
-                            Capsule().fill(.white.opacity(0.12))
+                            Capsule().fill(Color.primary.opacity(0.12))
                             Capsule().fill(l.d < 1 ? PLTone.bad : (l.d < target ? PLTone.warn : PLTone.good)).frame(width: max(4, g.size.width * CGFloat(min(l.d / target, 1))))
                         }
                     }
                     .frame(height: 8)
-                    Text(String(format: "%.1f d", l.d)).font(.system(.caption, design: .monospaced)).monospacedDigit().frame(width: 52, alignment: .trailing)
+                    Text(String(format: "%.1f d", l.d)).font(Font.pl(.caption, design: .monospaced)).monospacedDigit().frame(width: 52, alignment: .trailing)
                 }
                 .accessibilityElement(children: .ignore)
                 .accessibilityLabel("\(l.p): \(String(format: "%.1f", l.d)) days of posts left")
@@ -87,11 +87,11 @@ struct HomeDashboard: View {
                         ForEach(soon) { p in
                             VStack(alignment: .leading, spacing: 3) {
                                 AsyncImage(url: p.media_url.flatMap(URL.init(string:))) { $0.resizable().scaledToFill() } placeholder: {
-                                    Text(p.caption ?? "").font(.system(size: 9)).foregroundStyle(.secondary).padding(4).frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .topLeading)
+                                    Text(p.caption ?? "").font(Font.pl(size: 9)).foregroundStyle(.secondary).padding(4).frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .topLeading)
                                 }
-                                .frame(width: 64, height: 64).clipShape(RoundedRectangle(cornerRadius: 8, style: .continuous))
-                                .overlay { RoundedRectangle(cornerRadius: 8, style: .continuous).strokeBorder(PLOS.platform(p.platform), lineWidth: 1.5) }
-                                Text(Date.pl(p.publish_at)?.formatted(.dateTime.month(.abbreviated).day()) ?? "").font(.system(size: 9, design: .monospaced)).foregroundStyle(.secondary)
+                                .frame(width: 64, height: 64).clipShape(RoundedRectangle(cornerRadius: 8 * PLStyle.radius, style: .continuous))
+                                .overlay { RoundedRectangle(cornerRadius: 8 * PLStyle.radius, style: .continuous).strokeBorder(PLOS.platform(p.platform), lineWidth: 1.5) }
+                                Text(Date.pl(p.publish_at)?.formatted(.dateTime.month(.abbreviated).day()) ?? "").font(Font.pl(size: 9, design: .monospaced)).foregroundStyle(.secondary)
                             }
                             .accessibilityElement(children: .ignore)
                             .accessibilityLabel("\(p.platform ?? "") post, \(Date.pl(p.publish_at)?.formatted(date: .abbreviated, time: .omitted) ?? "")")
@@ -101,8 +101,8 @@ struct HomeDashboard: View {
             }
             if !lanes.isEmpty {
                 door("house/approvals") {
-                    HStack(spacing: 4) { Text("Days of posts left, target \(Int(target)). Fill it in Approvals").plLabel(10); Image(systemName: "arrow.right").font(.system(size: 10, weight: .bold)) }
-                        .foregroundStyle(.white.opacity(0.9))
+                    HStack(spacing: 4) { Text("Days of posts left, target \(Int(target)). Fill it in Approvals").plLabel(10); Image(systemName: "arrow.right").font(Font.pl(size: 10, weight: .bold)) }
+                        .foregroundStyle(Color.primary.opacity(0.9))
                 }
             }
         }
@@ -126,27 +126,27 @@ struct HomeDashboard: View {
         return VStack(alignment: .leading, spacing: 10) {
             Text("Captures").plHand(20)
             if fresh.isEmpty {
-                Text("Nothing captured today yet.").font(.callout).foregroundStyle(.secondary)
+                Text("Nothing captured today yet.").font(Font.pl(.callout)).foregroundStyle(.secondary)
             } else {
                 Text("Today, \(fresh.count)").plLabel(10).foregroundStyle(.secondary)
                 ForEach(fresh.prefix(4)) { r in
                     door("capture") {
                         HStack {
-                            Text((r.type ?? "").capitalized).font(.caption.weight(.semibold)).foregroundStyle(PLTone.accent).frame(width: 44, alignment: .leading)
-                            Text(r.label).font(.footnote).lineLimit(1)
+                            Text((r.type ?? "").capitalized).font(Font.pl(.caption).weight(.semibold)).foregroundStyle(PLTone.accent).frame(width: 44, alignment: .leading)
+                            Text(r.label).font(Font.pl(.footnote)).lineLimit(1)
                             Spacer(minLength: 4)
-                            Text(r.promoted_cr ?? r.state.label).font(.system(size: 10, design: .monospaced)).foregroundStyle(.secondary)
+                            Text(r.promoted_cr ?? r.state.label).font(Font.pl(size: 10, design: .monospaced)).foregroundStyle(.secondary)
                         }
                     }
                 }
             }
             if let b = back {
-                Divider().overlay(.white.opacity(0.15))
+                Divider().overlay(Color.primary.opacity(0.15))
                 Text("Still waiting since \(String((b.created_at ?? "").prefix(10)))").plLabel(10).foregroundStyle(.secondary)
-                Text(b.label).font(.callout).lineLimit(3)
+                Text(b.label).font(Font.pl(.callout)).lineLimit(3)
                 HStack(spacing: 8) {
                     Button("Keep") { Task { await capture.moderate(b, "approve", model: model) } }.buttonStyle(.bordered).tint(PLTone.good)
-                    door("capture") { Text("Develop").font(.callout.weight(.semibold)).padding(.horizontal, 12).padding(.vertical, 6).plGlass(in: Capsule()) }
+                    door("capture") { Text("Develop").font(Font.pl(.callout).weight(.semibold)).padding(.horizontal, 12).padding(.vertical, 6).plGlass(in: Capsule()) }
                     Button("Release") { Task { await capture.moderate(b, "reject", model: model) } }.buttonStyle(.bordered).tint(.secondary)
                 }
             }
@@ -175,7 +175,7 @@ struct HomeDashboard: View {
             Image(systemName: symbol).foregroundStyle(tint)
             Text(text).plFont(.callout, emphasized: true).lineLimit(2)
             Spacer(minLength: 0)
-            if target != nil { Image(systemName: "chevron.right").font(.caption.weight(.bold)).foregroundStyle(.secondary) }
+            if target != nil { Image(systemName: "chevron.right").font(Font.pl(.caption).weight(.bold)).foregroundStyle(.secondary) }
         }
         .padding(14)
         .plGlass(tint: tint.opacity(0.18), in: RoundedRectangle(cornerRadius: PLRadius.card, style: .continuous))
@@ -195,7 +195,7 @@ struct HomeDashboard: View {
                 HStack {
                     Text("Task Town").plHand(20)
                     Spacer()
-                    Image(systemName: "arrow.right").font(.system(size: 11, weight: .bold)).foregroundStyle(.white.opacity(0.9))
+                    Image(systemName: "arrow.right").font(Font.pl(size: 11, weight: .bold)).foregroundStyle(Color.primary.opacity(0.9))
                 }
                 if let g {
                     HStack(alignment: .top) {
@@ -222,7 +222,7 @@ struct HomeDashboard: View {
                     HStack {
                         Text("The practice").plHand(20)
                         Spacer()
-                        Image(systemName: "arrow.right").font(.system(size: 11, weight: .bold)).foregroundStyle(.white.opacity(0.9))
+                        Image(systemName: "arrow.right").font(Font.pl(size: 11, weight: .bold)).foregroundStyle(Color.primary.opacity(0.9))
                     }
                     HStack(alignment: .top) {
                         stat("This month", icon: "flame", "\(g.monthDays)", g.monthDays > 0 ? PLStatus.good : nil)
@@ -253,7 +253,7 @@ struct HomeDashboard: View {
                 }
             }
             .frame(height: CGFloat((min(days, 1200) + 33) / 34) * 9)
-            Text("\(days) days practised, each one kept").font(.caption2).foregroundStyle(.secondary)
+            Text("\(days) days practised, each one kept").font(Font.pl(.caption2)).foregroundStyle(.secondary)
         }
         .accessibilityElement(children: .ignore)
         .accessibilityLabel("\(days) days practised")
@@ -264,10 +264,10 @@ struct HomeDashboard: View {
     private var askBar: some View {
         door("glyphbot/ask") {
             HStack(spacing: 10) {
-                Image(systemName: "sparkle").foregroundStyle(.white)
-                Text("Ask GlyphBot anything").foregroundStyle(.white.opacity(0.85))
+                Image(systemName: "sparkle").foregroundStyle(Color.primary)
+                Text("Ask GlyphBot anything").foregroundStyle(Color.primary.opacity(0.85))
                 Spacer()
-                Image(systemName: "arrow.up.circle.fill").font(.title3).foregroundStyle(.white)
+                Image(systemName: "arrow.up.circle.fill").font(Font.pl(.title3)).foregroundStyle(Color.primary)
             }
             .padding(.horizontal, 16).padding(.vertical, 12)
             .plGlass(interactive: true, in: Capsule())
@@ -284,7 +284,7 @@ struct HomeDashboard: View {
                 if let at = pc?.thermal?.last?.date {
                     // the PC logs every 5 minutes: a reading over 10 minutes old is late, over 30 means the logger has stopped
                     let fresh = PLStatus.higherIsWorse(Date.now.timeIntervalSince(at) / 60, warn: 10, bad: 30)
-                    Text(at, style: .relative).font(.caption2.monospacedDigit()).foregroundStyle(fresh.tone) + Text(" ago").font(.caption2).foregroundStyle(fresh.tone)
+                    Text(at, style: .relative).font(Font.pl(.caption2).monospacedDigit()).foregroundStyle(fresh.tone) + Text(" ago").font(Font.pl(.caption2)).foregroundStyle(fresh.tone)
                 }
             }
             if let last = pc?.thermal?.last {
@@ -311,9 +311,9 @@ struct HomeDashboard: View {
                     .frame(height: 54)
                     .accessibilityLabel("Heat and CPU over the last two hours")
                 }
-                if let n = pc?.sessions { Label("\(n) Claude session\(n == 1 ? "" : "s") on the bus", systemImage: "terminal").font(.caption).foregroundStyle(.secondary) }
+                if let n = pc?.sessions { Label("\(n) Claude session\(n == 1 ? "" : "s") on the bus", systemImage: "terminal").font(Font.pl(.caption)).foregroundStyle(.secondary) }
             } else if pcFailed {
-                Text("The PC did not answer. It may be asleep, or off the tailnet.").font(.callout).foregroundStyle(.secondary)
+                Text("The PC did not answer. It may be asleep, or off the tailnet.").font(Font.pl(.callout)).foregroundStyle(.secondary)
             } else {
                 PLLoader().frame(maxWidth: .infinity)
             }
@@ -335,13 +335,13 @@ struct HomeDashboard: View {
                     stat("In the drip", icon: "drop", "\(h.queued)", nil)
                     stat("Standing", icon: "chart.bar", "\(h.standing)", nil)
                 }
-                Text("\(h.week) drafts made this week").font(.caption).foregroundStyle(.secondary)
+                Text("\(h.week) drafts made this week").font(Font.pl(.caption)).foregroundStyle(.secondary)
             } else {
-                Text("Not read yet. House opens with the full console.").font(.callout).foregroundStyle(.secondary)
+                Text("Not read yet. House opens with the full console.").font(Font.pl(.callout)).foregroundStyle(.secondary)
             }
             door("house") {   // the card's foot opens the whole room, like a widget's "see trends" (11-13)
-                HStack(spacing: 4) { Text("Open the house").plLabel(10); Image(systemName: "arrow.right").font(.system(size: 10, weight: .bold)) }
-                    .foregroundStyle(.white.opacity(0.9)).padding(.top, 2)   // white on the Today page: the key colour is the wallpaper's own (11-13)
+                HStack(spacing: 4) { Text("Open the house").plLabel(10); Image(systemName: "arrow.right").font(Font.pl(size: 10, weight: .bold)) }
+                    .foregroundStyle(Color.primary.opacity(0.9)).padding(.top, 2)   // white on the Today page: the key colour is the wallpaper's own (11-13)
             }
         }
         .frame(maxWidth: .infinity, alignment: .leading)   // full width whatever the text (11-13: a short line shrank the card)
@@ -371,12 +371,12 @@ struct HomeDashboard: View {
                 Image(systemName: "externaldrive").foregroundStyle(level.tone)
                 Text("PL DRIVE").plLabel(11).plStatusName(level)
                 Spacer()
-                Text(days.map { $0 == 0 ? "last run today" : "last run \($0) d ago" } ?? "never run").font(.caption.monospacedDigit()).foregroundStyle(level.tone)
+                Text(days.map { $0 == 0 ? "last run today" : "last run \($0) d ago" } ?? "never run").font(Font.pl(.caption).monospacedDigit()).foregroundStyle(level.tone)
             }
             if problems.isEmpty {
-                Text("Plugged in. Every folder copied on the last run.").font(.caption).foregroundStyle(.secondary)
+                Text("Plugged in. Every folder copied on the last run.").font(Font.pl(.caption)).foregroundStyle(.secondary)
             } else {
-                ForEach(problems, id: \.self) { Text($0).font(.caption).fixedSize(horizontal: false, vertical: true) }
+                ForEach(problems, id: \.self) { Text($0).font(Font.pl(.caption)).fixedSize(horizontal: false, vertical: true) }
             }
         }
         .padding(.horizontal, 8).padding(.vertical, 6)
@@ -386,8 +386,8 @@ struct HomeDashboard: View {
 
     private func stat(_ name: String, icon: String, _ value: String, _ level: PLStatus?) -> some View {
         VStack(alignment: .leading, spacing: 3) {
-            Image(systemName: icon).font(.system(size: 13, weight: .semibold)).foregroundStyle(level?.tone ?? PLTone.accent).frame(height: 16)
-            Text(value).font(.system(.title3, design: .monospaced).weight(.semibold)).monospacedDigit().plStatusValue(level)
+            Image(systemName: icon).font(Font.pl(size: 13, weight: .semibold)).foregroundStyle(level?.tone ?? PLTone.accent).frame(height: 16)
+            Text(value).font(Font.pl(.title3, design: .monospaced).weight(.semibold)).monospacedDigit().plStatusValue(level)
                 .lineLimit(1).minimumScaleFactor(0.6).contentTransition(.numericText())
             Text(name).plLabel(10).plStatusName(level).lineLimit(1).minimumScaleFactor(0.6)   // "Standing" kept its g on one line (11-13)
         }
@@ -467,17 +467,17 @@ struct HomeStatusStrip: View {
                 }
                 // a signal per address and a key per key (his note 11-13: checkmarks said nothing about what they were)
                 HStack(spacing: 8) {
-                    Image(systemName: "antenna.radiowaves.left.and.right").font(.system(size: 12, weight: .semibold)).foregroundStyle(.secondary).frame(width: 18)
+                    Image(systemName: "antenna.radiowaves.left.and.right").font(Font.pl(size: 12, weight: .semibold)).foregroundStyle(.secondary).frame(width: 18)
                     FlowRow {
                         ForEach(origins, id: \.self) { name in mark(reach: state.reach[name]).accessibilityLabel("\(name): \(label(state.reach[name]))") }
                     }
                 }
                 HStack(spacing: 8) {
-                    Image(systemName: "key.horizontal").font(.system(size: 12, weight: .semibold)).foregroundStyle(.secondary).frame(width: 18)
+                    Image(systemName: "key.horizontal").font(Font.pl(size: 12, weight: .semibold)).foregroundStyle(.secondary).frame(width: 18)
                     FlowRow {
                         ForEach(keys, id: \.key) { k in
                             Image(systemName: k.value.isEmpty ? "key.slash" : "key.fill")
-                                .font(.system(size: 17)).foregroundStyle(k.value.isEmpty ? Color.secondary : Color(hex: 0xc9a84c))
+                                .font(Font.pl(size: 17)).foregroundStyle(k.value.isEmpty ? Color.secondary : Color(hex: 0xc9a84c))
                                 .accessibilityLabel("\(k.key) key \(k.value.isEmpty ? "not set" : "set")")
                         }
                     }
@@ -494,7 +494,7 @@ struct HomeStatusStrip: View {
         let (symbol, tint): (String, Color) = {
             switch reach { case .up?: return ("cellularbars", PLTone.good); case .down?: return ("antenna.radiowaves.left.and.right.slash", PLTone.bad); default: return ("cellularbars", Color.secondary) }
         }()
-        return Image(systemName: symbol).font(.system(size: 18)).foregroundStyle(tint)
+        return Image(systemName: symbol).font(Font.pl(size: 18)).foregroundStyle(tint)
     }
 
     private func label(_ r: OriginReach?) -> String {

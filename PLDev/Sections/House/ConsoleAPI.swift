@@ -89,7 +89,7 @@ struct ResultLine: View {
     var body: some View {
         if let text {
             Label(text, systemImage: text.hasPrefix("Not") || text.contains("failed") || text.contains("did not") ? "exclamationmark.triangle" : "checkmark.circle")
-                .font(.footnote).foregroundStyle(.secondary)
+                .font(Font.pl(.footnote)).foregroundStyle(.secondary)
         }
     }
 }

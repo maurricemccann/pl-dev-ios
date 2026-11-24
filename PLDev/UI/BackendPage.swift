@@ -16,7 +16,7 @@ struct BackendPage: View {
 
     var body: some View {
         VStack(alignment: .leading, spacing: PLSpace.roomy) {
-            Text("Services").plLabel(11).foregroundStyle(.white.opacity(0.8)).padding(.top, embedded ? PLSpace.roomy : 0)
+            Text("Services").plLabel(11).foregroundStyle(Color.primary.opacity(0.8)).padding(.top, embedded ? PLSpace.roomy : 0)
             if let notice { NoteLine(symbol: "checkmark.circle", tint: PLTone.accent, text: notice) }
             LazyVGrid(columns: columns, spacing: PLSpace.roomy + PLSpace.pad) {
                 ForEach(store.tiles) { t in tile(t) }
@@ -66,26 +66,23 @@ private struct BackendTile: View {
     let symbol: String
     let name: String
     let ready: Bool
-    @AppStorage("pldev.glassBlur") private var glass = true
+    @AppStorage("pldev.styleTile") private var tileShape = "squircle"
+    @AppStorage("pldev.styleLook") private var look = "glass"
 
     var body: some View {
-        let icon = RoundedRectangle(cornerRadius: 15, style: .continuous)
         VStack(spacing: 6) {
             ZStack {
-                Image(systemName: symbol).font(.system(size: 30, weight: .medium)).symbolRenderingMode(.hierarchical)
-                    .foregroundStyle(.white).shadow(color: .black.opacity(0.25), radius: 1.5, y: 1)
+                Image(systemName: symbol).font(Font.pl(size: 30, weight: .medium)).symbolRenderingMode(.hierarchical)
                 if !ready {
-                    Image(systemName: "link.badge.plus").font(.caption.bold()).foregroundStyle(.white.opacity(0.9))
+                    Image(systemName: "link.badge.plus").font(Font.pl(.caption).bold()).foregroundStyle(Color.primary.opacity(0.9))
                         .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .bottomTrailing).padding(6)
                 }
             }
-            .frame(width: 64, height: 64)
-            .modifier(BackendGlass(shape: icon, on: glass))
+            .modifier(PLTile(shape: PLTile.shape(tileShape), look: look))
             .opacity(ready ? 1 : 0.55)
             Text(name)
                 .plFont(.caption)
-                .foregroundStyle(.white.opacity(ready ? 1 : 0.7))
-                .shadow(color: .black.opacity(0.45), radius: 2, y: 1)
+                .foregroundStyle(Color.primary.opacity(ready ? 1 : 0.7))
                 .lineLimit(2).multilineTextAlignment(.center)
         }
         .frame(maxWidth: .infinity)
@@ -96,18 +93,6 @@ private struct BackendTile: View {
     }
 }
 
-private struct BackendGlass<S: Shape>: ViewModifier {
-    let shape: S
-    let on: Bool
-
-    func body(content: Content) -> some View {
-        if on {
-            content.plGlass(tint: Wallpaper.line.opacity(0.45), in: shape)
-        } else {
-            content.background(Wallpaper.line.gradient, in: shape)
-        }
-    }
-}
 
 /// Adds a tile: the page he last shared from Safari (still on this phone), a pasted link, or a typed address. A built-in site
 /// (Cloudflare, Printful, Horizon) gets its own name and icon; any other https page becomes a custom tile limited to its own site.
@@ -149,7 +134,7 @@ struct BackendAddSheet: View {
                 Section("Becomes") {
                     if let r = result {
                         Label(r.name, systemImage: r.symbol)
-                        Text(r.startURL).font(.footnote).foregroundStyle(.secondary).lineLimit(2)
+                        Text(r.startURL).font(Font.pl(.footnote)).foregroundStyle(.secondary).lineLimit(2)
                     } else {
                         Text(address.isEmpty ? "Paste or type an https address." : "That is not an https address.").foregroundStyle(.secondary)
                     }

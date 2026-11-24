@@ -325,8 +325,8 @@ struct StreamCardView: View {
                 Text(item.gloss ?? "").font(SiteFont.body(14)).foregroundStyle(Color(hex: 0xf1ece1).opacity(0.55)).lineSpacing(5)
             }
             .padding(.horizontal, 26).padding(.vertical, 30).frame(maxWidth: .infinity, alignment: .leading)
-            .background(Color(hex: 0x0e0c08), in: RoundedRectangle(cornerRadius: 18, style: .continuous))
-            .overlay { RoundedRectangle(cornerRadius: 18, style: .continuous).strokeBorder(Bone.gold.opacity(0.25), lineWidth: 0.8) }
+            .background(Color(hex: 0x0e0c08), in: RoundedRectangle(cornerRadius: 18 * PLStyle.radius, style: .continuous))
+            .overlay { RoundedRectangle(cornerRadius: 18 * PLStyle.radius, style: .continuous).strokeBorder(Bone.gold.opacity(0.25), lineWidth: 0.8) }
             .accessibilityElement(children: .combine)
         } else {
             VStack(alignment: .leading, spacing: 12) {
@@ -344,8 +344,8 @@ struct StreamCardView: View {
                 case "drop":
                     meta(item.axiom ?? "In the shop", item.price.map(Money.text))
                     Color.clear.frame(height: 240).overlay { FlatImage(url: item.picture, padding: 8) }
-                        .background(Bone.raised(scheme).opacity(0.5), in: RoundedRectangle(cornerRadius: 10, style: .continuous))
-                        .overlay { RoundedRectangle(cornerRadius: 10, style: .continuous).strokeBorder(Bone.line(scheme), lineWidth: 0.8) }
+                        .background(Bone.raised(scheme).opacity(0.5), in: RoundedRectangle(cornerRadius: 10 * PLStyle.radius, style: .continuous))
+                        .overlay { RoundedRectangle(cornerRadius: 10 * PLStyle.radius, style: .continuous).strokeBorder(Bone.line(scheme), lineWidth: 0.8) }
                     Text(item.name ?? "A piece").font(SiteFont.display(19)).foregroundStyle(Bone.ink(scheme))
                     if let a = item.argument { Text(a).siteBody(14) }
                     if let s = item.slug {
@@ -378,8 +378,8 @@ struct StreamCardView: View {
                     default: Bone.line(scheme).opacity(0.3).frame(height: 200).overlay { PLLoader() }
                     }
                 }
-                .clipShape(RoundedRectangle(cornerRadius: 10, style: .continuous))
-                .overlay { RoundedRectangle(cornerRadius: 10, style: .continuous).strokeBorder(Bone.line(scheme), lineWidth: 0.8) }
+                .clipShape(RoundedRectangle(cornerRadius: 10 * PLStyle.radius, style: .continuous))
+                .overlay { RoundedRectangle(cornerRadius: 10 * PLStyle.radius, style: .continuous).strokeBorder(Bone.line(scheme), lineWidth: 0.8) }
             }
             .buttonStyle(.plain).accessibilityLabel(item.headline.isEmpty ? "Open the picture" : "Open \(item.headline)")
         }
@@ -413,10 +413,10 @@ struct StreamActions: View {
                 }
                 .accessibilityLabel(live.reacted ? "Reacted, \(live.reactions)" : "React, \(live.reactions)")
                 SocialPill(label: live.comments.isEmpty ? "Answer" : "\(live.comments.count)", on: open, action: { withAnimation(.snappy) { open.toggle() } }) {
-                    Image(systemName: "bubble.left").font(.system(size: 13))
+                    Image(systemName: "bubble.left").font(Font.pl(size: 13))
                 }
                 if let url = Site.page("congregation#\(item.id)") {
-                    ShareLink(item: url) { HStack(spacing: 6) { Image(systemName: "arrow.up.right").font(.system(size: 12)); Text("Share") }.sitePillLook(scheme: scheme) }
+                    ShareLink(item: url) { HStack(spacing: 6) { Image(systemName: "arrow.up.right").font(Font.pl(size: 12)); Text("Share") }.sitePillLook(scheme: scheme) }
                 }
                 Spacer(minLength: 0)
                 if ["archive", "generated", "drop"].contains(item.kind), let m = item.image ?? item.thumb { SaveButton(refType: item.kind, refId: item.id, mediaURL: m) }
@@ -481,7 +481,7 @@ struct StreamDetailView: View {
                             AsyncImage(url: url) { phase in
                                 switch phase {
                                 case .success(let i): i.resizable().scaledToFit()
-                                case .failure: Image(systemName: "photo").font(.largeTitle).foregroundStyle(.tertiary).frame(maxWidth: .infinity, minHeight: 160)
+                                case .failure: Image(systemName: "photo").font(Font.pl(.largeTitle)).foregroundStyle(.tertiary).frame(maxWidth: .infinity, minHeight: 160)
                                 default: PLLoader().frame(maxWidth: .infinity, minHeight: 160)
                                 }
                             }

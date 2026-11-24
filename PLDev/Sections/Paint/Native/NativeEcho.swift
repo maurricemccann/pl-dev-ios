@@ -161,14 +161,14 @@ struct NativeEchoBar: View {
     @Bindable var canvas: NativeCanvasModel
     var body: some View {
         VStack(spacing: 6) {
-            HStack { Image(systemName: "circle.dashed.inset.filled"); Text("Echo Fill: tap inside a closed shape").font(.footnote); Spacer(); Button("Done") { canvas.toggleEcho(false) }.buttonStyle(.borderedProminent).controlSize(.small) }
+            HStack { Image(systemName: "circle.dashed.inset.filled"); Text("Echo Fill: tap inside a closed shape").font(Font.pl(.footnote)); Spacer(); Button("Done") { canvas.toggleEcho(false) }.buttonStyle(.borderedProminent).controlSize(.small) }
             row("Spacing", $canvas.echo.step, 3...60)
             row("Line weight", $canvas.echo.weight, 1...20)
             row("Lines", $canvas.echo.count, 1...100)
             row("Start inside", $canvas.echo.first, 0...60)
-        }.padding(10).glassControl(in: RoundedRectangle(cornerRadius: 18, style: .continuous))
+        }.padding(10).glassControl(in: RoundedRectangle(cornerRadius: 18 * PLStyle.radius, style: .continuous))
     }
     private func row(_ t: String, _ v: Binding<Double>, _ r: ClosedRange<Double>) -> some View {
-        HStack { Text(t).font(.caption).frame(width: 86, alignment: .leading); Slider(value: v, in: r, step: 1); Text("\(Int(v.wrappedValue))").font(.caption.monospacedDigit()).frame(width: 30) }
+        HStack { Text(t).font(Font.pl(.caption)).frame(width: 86, alignment: .leading); Slider(value: v, in: r, step: 1); Text("\(Int(v.wrappedValue))").font(Font.pl(.caption).monospacedDigit()).frame(width: 30) }
     }
 }

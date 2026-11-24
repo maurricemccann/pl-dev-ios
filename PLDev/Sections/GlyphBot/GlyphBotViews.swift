@@ -68,7 +68,7 @@ struct AskTab: View {
                             }
                         }
                         if let f = face { GlyphUserBubble(text: f.question).id("\(f.id)-q") }
-                        if let note { Text(note).font(.footnote).foregroundStyle(.secondary) }
+                        if let note { Text(note).font(Font.pl(.footnote)).foregroundStyle(.secondary) }
                         Color.clear.frame(height: 1).id("end")
                     }
                     .padding(.horizontal, 20).padding(.vertical, 16)
@@ -80,7 +80,7 @@ struct AskTab: View {
         .safeAreaInset(edge: .bottom) {
             HStack(alignment: .bottom, spacing: 8) {
                 TextField(net.online ? "Ask the practice" : "Offline: answering from memory", text: $text, axis: .vertical).lineLimit(1...4).siteField()
-                Button { Task { await ask() } } label: { Image(systemName: "arrow.up.circle.fill").font(.largeTitle).foregroundStyle(Bone.gold).frame(minWidth: 44, minHeight: 44) }
+                Button { Task { await ask() } } label: { Image(systemName: "arrow.up.circle.fill").font(Font.pl(.largeTitle)).foregroundStyle(Bone.gold).frame(minWidth: 44, minHeight: 44) }
                     .disabled(loading || text.trimmingCharacters(in: .whitespaces).isEmpty)
                     .accessibilityLabel("Ask")
             }
@@ -119,8 +119,8 @@ struct AskTab: View {
     private var status: some View {
         HStack(spacing: 6) {
             if !net.online {   // online is already shown in the header; said once (11-13)
-                Image(systemName: "circle.dotted").font(.caption2).foregroundStyle(Bone.amber)
-                Text("Offline: answering from memory").font(.caption).foregroundStyle(.secondary)
+                Image(systemName: "circle.dotted").font(Font.pl(.caption2)).foregroundStyle(Bone.amber)
+                Text("Offline: answering from memory").font(Font.pl(.caption)).foregroundStyle(.secondary)
             }
             Spacer()
             if store.unsynced.count > 0 {
@@ -161,8 +161,8 @@ struct SourcesSheet: View {
         NavigationStack {
             List(turn.passages, id: \.self) { p in
                 VStack(alignment: .leading, spacing: 4) {
-                    Text(p.source.isEmpty ? "A passage" : p.source.replacingOccurrences(of: "-", with: " ").capitalized).font(.headline)
-                    Text(p.text).font(.callout).foregroundStyle(.secondary).lineLimit(8)
+                    Text(p.source.isEmpty ? "A passage" : p.source.replacingOccurrences(of: "-", with: " ").capitalized).font(Font.pl(.headline))
+                    Text(p.text).font(Font.pl(.callout)).foregroundStyle(.secondary).lineLimit(8)
                 }
             }
             .glyphList()
@@ -430,7 +430,7 @@ struct SitTab: View {
                             Text(GlyphBot.domainTitle(d)).font(SiteFont.body(15)).foregroundStyle(Bone.ink(scheme))
                             Spacer()
                             Text((cov[d] ?? 0) == 0 ? "Untouched" : "\(cov[d] ?? 0) answer\((cov[d] ?? 0) == 1 ? "" : "s")").font(SiteFont.body(13, relativeTo: .footnote)).foregroundStyle(Bone.inkFaint(scheme))
-                            Image(systemName: "chevron.right").font(.caption2.weight(.bold)).foregroundStyle(Bone.inkFaint(scheme))
+                            Image(systemName: "chevron.right").font(Font.pl(.caption2).weight(.bold)).foregroundStyle(Bone.inkFaint(scheme))
                         }
                         .frame(minHeight: 44).contentShape(Rectangle())
                     }
@@ -470,7 +470,7 @@ struct SitTab: View {
             }
             SiteRule()
             NavigationLink { InterviewSettingsView(sitting: sitting) } label: {
-                GlyphRow(title: "Voice and answers") { Image(systemName: "chevron.right").font(.caption2.weight(.bold)).foregroundStyle(Bone.inkFaint(scheme)) }.contentShape(Rectangle())
+                GlyphRow(title: "Voice and answers") { Image(systemName: "chevron.right").font(Font.pl(.caption2).weight(.bold)).foregroundStyle(Bone.inkFaint(scheme)) }.contentShape(Rectangle())
             }
             .buttonStyle(.plain)
         }
@@ -504,7 +504,7 @@ struct SitTab: View {
             HStack(spacing: 18) {
                 Button("Type instead") { talk.setOn(false) }
                 NavigationLink { InterviewSettingsView(sitting: sitting) } label: { Text("Voice settings") }
-            }.font(.footnote)
+            }.font(Font.pl(.footnote))
         }
     }
 
@@ -551,14 +551,14 @@ struct SitTab: View {
                 if talk.on { orbPanel } else {
                     HStack(alignment: .bottom, spacing: 8) {
                         TextField("Your answer", text: $sitting.draft, axis: .vertical).lineLimit(1...8).siteField()
-                        Button { Task { await sitting.send(model: model) } } label: { Image(systemName: "arrow.up.circle.fill").font(.largeTitle).foregroundStyle(Bone.gold).frame(minWidth: 44, minHeight: 44) }
+                        Button { Task { await sitting.send(model: model) } } label: { Image(systemName: "arrow.up.circle.fill").font(Font.pl(.largeTitle)).foregroundStyle(Bone.gold).frame(minWidth: 44, minHeight: 44) }
                             .disabled(sitting.busy || sitting.draft.trimmingCharacters(in: .whitespaces).isEmpty)
                             .accessibilityLabel("Send")
                         if talk.supported {
                             Button {
                                 talk.setOn(true)
                                 if let q = sitting.lines.last, !q.mine, !sitting.done { talk.speak(q.text) { heard in sitting.draft = heard; Task { await sitting.send(model: model) } } }
-                            } label: { Image(systemName: "mic.circle").font(.largeTitle).foregroundStyle(Bone.gold).frame(minWidth: 44, minHeight: 44) }
+                            } label: { Image(systemName: "mic.circle").font(Font.pl(.largeTitle)).foregroundStyle(Bone.gold).frame(minWidth: 44, minHeight: 44) }
                                 .accessibilityLabel("Answer by voice")
                         }
                     }
@@ -581,7 +581,7 @@ struct GlyphRecordTab: View {
 
     var body: some View {
         List {
-            if let m = state.message { Text(m).font(.footnote).foregroundStyle(.secondary) }
+            if let m = state.message { Text(m).font(Font.pl(.footnote)).foregroundStyle(.secondary) }
             if let s = state.interview {
                 Section {
                     PracticeKpis(items: [("bank questions asked", "\(s.bank?.asked ?? 0) of \(s.bank?.total ?? 0)"), ("answers on record", "\((s.coverage ?? [:]).values.reduce(0, +))")])
@@ -602,9 +602,9 @@ struct GlyphRecordTab: View {
                     Section("Recent answers") {
                         ForEach(recent) { r in
                             VStack(alignment: .leading, spacing: 4) {
-                                if let q = r.question { Text(q).font(.callout).foregroundStyle(.secondary) }
+                                if let q = r.question { Text(q).font(Font.pl(.callout)).foregroundStyle(.secondary) }
                                 Text(r.answer).plReading().lineLimit(6)
-                                HStack { if let d = r.domain { Text(GlyphBot.domainTitle(d)) }; Ago(text: r.at) }.font(.caption2).foregroundStyle(.tertiary)
+                                HStack { if let d = r.domain { Text(GlyphBot.domainTitle(d)) }; Ago(text: r.at) }.font(Font.pl(.caption2)).foregroundStyle(.tertiary)
                             }
                         }
                     }

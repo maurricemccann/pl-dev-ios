@@ -54,7 +54,7 @@ struct CurateClip: View {
             if let player { PlayerLayerView(player: player).opacity(ready ? 1 : 0).animation(.easeOut(duration: 0.2), value: ready) }
             Button { toggle() } label: {
                 Image(systemName: sound ? "speaker.wave.2.fill" : "speaker.slash.fill")
-                    .font(.system(size: 17, weight: .semibold)).foregroundStyle(.white)
+                    .font(Font.pl(size: 17, weight: .semibold)).foregroundStyle(.white)
                     .frame(width: 44, height: 44).background(.black.opacity(0.55), in: Circle())
             }
             .buttonStyle(.plain).padding(8)
@@ -95,11 +95,11 @@ struct EssayCard: View {
             if let text {
                 let parts = text.split(separator: "\n", maxSplits: 1, omittingEmptySubsequences: false).map(String.init)
                 VStack(alignment: .leading, spacing: 14) {
-                    Text(parts.first ?? "").font(.system(size: 26, design: .serif).italic()).foregroundStyle(PLC.ink)
+                    Text(parts.first ?? "").font(Font.pl(size: 26, design: .serif).italic()).foregroundStyle(PLC.ink)
                     ForEach(Array((parts.count > 1 ? parts[1] : "").trimmingCharacters(in: .whitespacesAndNewlines)
                         .components(separatedBy: "\n\n").enumerated()), id: \.offset) { _, para in
                         Text((try? AttributedString(markdown: para, options: .init(interpretedSyntax: .inlineOnlyPreservingWhitespace))) ?? AttributedString(para))
-                            .font(.system(size: 17, design: .serif)).foregroundStyle(PLC.ink).lineSpacing(5)
+                            .font(Font.pl(size: 17, design: .serif)).foregroundStyle(PLC.ink).lineSpacing(5)
                     }
                 }
                 .frame(maxWidth: .infinity, alignment: .leading).padding(.horizontal, 24).padding(.top, 26).padding(.bottom, 40)
@@ -194,7 +194,7 @@ struct CurateCardMedia: View {
     }
 
     private var label: some View {
-        Text(item.class).font(.system(size: 12, design: .monospaced)).foregroundStyle(.secondary).frame(maxWidth: .infinity, maxHeight: .infinity)
+        Text(item.class).font(Font.pl(size: 12, design: .monospaced)).foregroundStyle(.secondary).frame(maxWidth: .infinity, maxHeight: .infinity)
             .background(Color.black.opacity(0.06))
     }
 }
@@ -225,7 +225,7 @@ struct KeyCap: View {
                 .contentShape(Rectangle())
         }
         .buttonStyle(.plain)
-        .plGlass(tint: down ? tint.opacity(0.85) : tint.opacity(0.12), interactive: true, in: RoundedRectangle(cornerRadius: 18, style: .continuous))
+        .plGlass(tint: down ? tint.opacity(0.85) : tint.opacity(0.12), interactive: true, in: RoundedRectangle(cornerRadius: 18 * PLStyle.radius, style: .continuous))
         .accessibilityLabel(label)
         .accessibilityAddTraits(down ? .isSelected : [])
     }

@@ -76,7 +76,7 @@ struct NativeCanvasView: View {
     // MARK: bars
 
     private func roundButton(_ symbol: String, _ label: String, disabled: Bool = false, on: Bool = false, action: @escaping () -> Void) -> some View {
-        Button(action: action) { Image(systemName: symbol).font(.body.weight(.semibold)).frame(width: 44, height: 44) }
+        Button(action: action) { Image(systemName: symbol).font(Font.pl(.body).weight(.semibold)).frame(width: 44, height: 44) }
             .glassControl(tint: on ? Wallpaper.line : nil, in: Circle())
             .disabled(disabled).opacity(disabled ? 0.45 : 1).accessibilityLabel(label)
     }
@@ -84,19 +84,19 @@ struct NativeCanvasView: View {
     private var topBar: some View {
         HStack(spacing: 8) {
             Button { canvas.saveNow(); Task { await sync.run(model: model, canvas: canvas) }; dismiss() } label: {
-                Label("Gallery", systemImage: "chevron.backward").font(.footnote.weight(.semibold)).padding(.horizontal, 10).frame(height: 38)
+                Label("Gallery", systemImage: "chevron.backward").font(Font.pl(.footnote).weight(.semibold)).padding(.horizontal, 10).frame(height: 38)
             }.glassControl(in: Capsule()).accessibilityLabel("Gallery").accessibilityIdentifier("canvas.gallery")
             if canvas.hasDoc && folded {
                 Button { withAnimation(.snappy) { folded = false } } label: {
                     HStack(spacing: 6) {
                         Image(systemName: canvas.tool == .erase ? "eraser.fill" : canvas.tool == .smudge ? "hand.point.up.braille" : "paintbrush.pointed.fill")
-                        Text("\(Int(canvas.size))").font(.caption.monospacedDigit())
+                        Text("\(Int(canvas.size))").font(Font.pl(.caption).monospacedDigit())
                         Image(systemName: "ellipsis")
-                    }.font(.footnote.weight(.semibold)).padding(.horizontal, 10).frame(height: 38)
+                    }.font(Font.pl(.footnote).weight(.semibold)).padding(.horizontal, 10).frame(height: 38)
                 }.buttonStyle(.plain).glassControl(in: Capsule()).accessibilityLabel("Open the toolbar").accessibilityIdentifier("canvas.unfold")
             }
             if canvas.hasDoc && !folded {
-                Text(canvas.name).font(.footnote.weight(.semibold)).lineLimit(1).padding(.horizontal, 10).frame(height: 30)
+                Text(canvas.name).font(Font.pl(.footnote).weight(.semibold)).lineLimit(1).padding(.horizontal, 10).frame(height: 30)
                     .glassControl(in: Capsule()).onTapGesture { renameText = canvas.name; canvas.panel = .rename }
             }
             Spacer(minLength: 0)
@@ -118,14 +118,14 @@ struct NativeCanvasView: View {
             roundButton("slider.horizontal.below.square.filled.and.square", "Adjust strokes") { canvas.panel = .tweak }
         }
         .padding(.vertical, 10).padding(.horizontal, 5)
-        .glassControl(in: RoundedRectangle(cornerRadius: 22, style: .continuous))
+        .glassControl(in: RoundedRectangle(cornerRadius: 22 * PLStyle.radius, style: .continuous))
         .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .leading).padding(.leading, 6).padding(.top, 90).padding(.bottom, 230)
     }
 
     /// The ••• opens Actions (NativeActions.swift): tabs in a sheet that keeps its place. It was a 30-row Menu that redrew on every
     /// canvas change and jumped back to its top, so Settings, its last row, could not be reached (his note 11-14).
     private var moreMenu: some View {
-        Button { canvas.panel = .actions } label: { Image(systemName: "wrench.adjustable").font(.body.weight(.semibold)).frame(width: 44, height: 44) }
+        Button { canvas.panel = .actions } label: { Image(systemName: "wrench.adjustable").font(Font.pl(.body).weight(.semibold)).frame(width: 44, height: 44) }
             .buttonStyle(.plain)
             .glassControl(in: Circle()).accessibilityLabel("Actions").accessibilityIdentifier("canvas.actions")
     }
@@ -148,26 +148,26 @@ struct NativeCanvasView: View {
             HStack {
                 Image(systemName: "drop.fill")
                 Slider(value: $canvas.fillThreshold, in: 0...100).accessibilityLabel("ColorDrop threshold")
-                Text("\(Int(canvas.fillThreshold))%").font(.caption).monospacedDigit().frame(width: 38)
+                Text("\(Int(canvas.fillThreshold))%").font(Font.pl(.caption)).monospacedDigit().frame(width: 38)
                 Button("Done") { canvas.setMode(.draw) }.buttonStyle(.bordered)
-            }.padding(10).glassControl(in: RoundedRectangle(cornerRadius: 18, style: .continuous))
+            }.padding(10).glassControl(in: RoundedRectangle(cornerRadius: 18 * PLStyle.radius, style: .continuous))
         case .eyedrop:
             HStack {
                 Image(systemName: "eyedropper")
-                Text("Touch the picture to pick a colour.").font(.footnote)
+                Text("Touch the picture to pick a colour.").font(Font.pl(.footnote))
                 Spacer()
                 Button("Done") { canvas.setMode(.draw) }.buttonStyle(.bordered)
-            }.padding(10).glassControl(in: RoundedRectangle(cornerRadius: 18, style: .continuous))
+            }.padding(10).glassControl(in: RoundedRectangle(cornerRadius: 18 * PLStyle.radius, style: .continuous))
         case .draw:
             if canvas.echoOn { NativeEchoBar(canvas: canvas) }
             else if canvas.nodeOn { NativeNodeBar(canvas: canvas) }
             else if canvas.lightOneOn {
                 HStack {
                     Image(systemName: "lightbulb.max.fill")
-                    Text("Light one: tap inside a closed shape.").font(.footnote)
+                    Text("Light one: tap inside a closed shape.").font(Font.pl(.footnote))
                     Spacer()
                     Button("Done") { canvas.toggleLightOne(false) }.buttonStyle(.borderedProminent).controlSize(.small)
-                }.padding(10).glassControl(in: RoundedRectangle(cornerRadius: 18, style: .continuous))
+                }.padding(10).glassControl(in: RoundedRectangle(cornerRadius: 18 * PLStyle.radius, style: .continuous))
             }
             else if canvas.maskEditing { maskBar }
             else if canvas.sym != .off || canvas.guide != .off || canvas.tile != .off || canvas.facet || canvas.facetNext || canvas.seam != nil || canvas.lightsOff { assistChips }
@@ -195,9 +195,9 @@ struct NativeCanvasView: View {
                 Button("Done") { canvas.setMode(.draw) }.buttonStyle(.borderedProminent).controlSize(.small)
             }
             if canvas.selShape == .auto {
-                HStack { Text("Reach").font(.caption); Slider(value: Binding(get: { Double(canvas.selTolerance) }, set: { canvas.selTolerance = Int($0) }), in: 0...120) }
+                HStack { Text("Reach").font(Font.pl(.caption)); Slider(value: Binding(get: { Double(canvas.selTolerance) }, set: { canvas.selTolerance = Int($0) }), in: 0...120) }
             }
-        }.padding(10).glassControl(in: RoundedRectangle(cornerRadius: 18, style: .continuous))
+        }.padding(10).glassControl(in: RoundedRectangle(cornerRadius: 18 * PLStyle.radius, style: .continuous))
     }
 
     private var transformBar: some View {
@@ -222,36 +222,36 @@ struct NativeCanvasView: View {
                 }.pickerStyle(.menu).controlSize(.small)
                 Toggle("Magnetics", isOn: Binding(get: { canvas.transform?.magnetic ?? false }, set: { canvas.transform?.magnetic = $0 })).toggleStyle(.button).controlSize(.small)
                 Spacer()
-            }.font(.caption)
-        }.padding(10).glassControl(in: RoundedRectangle(cornerRadius: 18, style: .continuous))
+            }.font(Font.pl(.caption))
+        }.padding(10).glassControl(in: RoundedRectangle(cornerRadius: 18 * PLStyle.radius, style: .continuous))
     }
 
     private var maskBar: some View {
         HStack(spacing: 8) {
             Image(systemName: "circle.lefthalf.filled.inverse")
-            Text("Painting the mask").font(.footnote)
+            Text("Painting the mask").font(Font.pl(.footnote))
             Spacer()
             chip("Invert", "circle.lefthalf.filled") { canvas.invertMask() }
             chip("Apply", "checkmark.circle") { canvas.applyMask() }
             Button("Layer") { canvas.maskEditing = false; canvas.syncFlags() }.buttonStyle(.borderedProminent).controlSize(.small)
-        }.padding(10).glassControl(in: RoundedRectangle(cornerRadius: 18, style: .continuous))
+        }.padding(10).glassControl(in: RoundedRectangle(cornerRadius: 18 * PLStyle.radius, style: .continuous))
     }
 
     private var assistChips: some View {
         HStack(spacing: 6) {
-            if canvas.sym != .off { Label(canvas.sym.label, systemImage: "square.split.2x1").font(.caption2) }
-            if canvas.guide != .off { Label(canvas.guide.label, systemImage: "grid").font(.caption2) }
-            if canvas.tile != .off { Label("Tile", systemImage: "square.grid.3x3").font(.caption2) }
-            if canvas.facet || canvas.facetNext { Label(canvas.facet ? "Facet" : "Facet once", systemImage: "hexagon").font(.caption2) }
-            if canvas.seam != nil { Label(canvas.seamOn ? "Seams" : "Seams off", systemImage: "scissors").font(.caption2) }
-            if canvas.lightsOff { Label("Lights off", systemImage: "lightbulb.slash").font(.caption2) }
+            if canvas.sym != .off { Label(canvas.sym.label, systemImage: "square.split.2x1").font(Font.pl(.caption2)) }
+            if canvas.guide != .off { Label(canvas.guide.label, systemImage: "grid").font(Font.pl(.caption2)) }
+            if canvas.tile != .off { Label("Tile", systemImage: "square.grid.3x3").font(Font.pl(.caption2)) }
+            if canvas.facet || canvas.facetNext { Label(canvas.facet ? "Facet" : "Facet once", systemImage: "hexagon").font(Font.pl(.caption2)) }
+            if canvas.seam != nil { Label(canvas.seamOn ? "Seams" : "Seams off", systemImage: "scissors").font(Font.pl(.caption2)) }
+            if canvas.lightsOff { Label("Lights off", systemImage: "lightbulb.slash").font(Font.pl(.caption2)) }
             Spacer(minLength: 0)
-            Button("Assists") { canvas.panel = .assists }.font(.caption2).buttonStyle(.bordered).controlSize(.mini)
+            Button("Assists") { canvas.panel = .assists }.font(Font.pl(.caption2)).buttonStyle(.bordered).controlSize(.mini)
         }.padding(8).glassControl(in: Capsule())
     }
 
     private func chip(_ title: String, _ symbol: String, _ action: @escaping () -> Void) -> some View {
-        Button(action: action) { Label(title, systemImage: symbol).font(.caption2).labelStyle(.titleAndIcon) }.buttonStyle(.bordered).controlSize(.mini)
+        Button(action: action) { Label(title, systemImage: symbol).font(Font.pl(.caption2)).labelStyle(.titleAndIcon) }.buttonStyle(.bordered).controlSize(.mini)
     }
 
     // MARK: the dock
@@ -278,7 +278,7 @@ struct NativeCanvasView: View {
                         if canvas.tool == .paint, let ui = NativeBrushPreview.image(canvas.brush, color: UIColor(canvas.color).hex, color2: UIColor(canvas.color2).hex, size: 14, w: 120, h: 34) {
                             Image(uiImage: ui).resizable().scaledToFit().frame(height: 26)
                         }
-                        Text(canvas.tool == .paint ? canvas.brush.name : canvas.tool == .erase ? "Eraser" : "Smudge").font(.footnote).lineLimit(1)
+                        Text(canvas.tool == .paint ? canvas.brush.name : canvas.tool == .erase ? "Eraser" : "Smudge").font(Font.pl(.footnote)).lineLimit(1)
                     }
                 }.buttonStyle(.bordered).accessibilityLabel("Brush: \(canvas.brush.name)")
                 Button { canvas.panel = .colour } label: {
@@ -288,16 +288,16 @@ struct NativeCanvasView: View {
                     }
                 }.buttonStyle(.plain).accessibilityLabel("Colour")
                 Spacer(minLength: 0)
-                Text(canvas.docSize).font(.caption2).foregroundStyle(.secondary)
+                Text(canvas.docSize).font(Font.pl(.caption2)).foregroundStyle(.secondary)
             }
         }
-        .padding(12).glassControl(in: RoundedRectangle(cornerRadius: 22, style: .continuous))
+        .padding(12).glassControl(in: RoundedRectangle(cornerRadius: 22 * PLStyle.radius, style: .continuous))
     }
 
     private func dockButton(_ symbol: String, _ label: String, on: Bool, _ action: @escaping () -> Void) -> some View {
-        Button(action: action) { Image(systemName: symbol).font(.callout).frame(width: 34, height: 30).padding(.vertical, 7).padding(.horizontal, 5).contentShape(Rectangle()) }
+        Button(action: action) { Image(systemName: symbol).font(Font.pl(.callout)).frame(width: 34, height: 30).padding(.vertical, 7).padding(.horizontal, 5).contentShape(Rectangle()) }
             .buttonStyle(.plain)
-            .background(on ? Wallpaper.line.opacity(0.35) : .clear, in: RoundedRectangle(cornerRadius: 9, style: .continuous))
+            .background(on ? Wallpaper.line.opacity(0.35) : .clear, in: RoundedRectangle(cornerRadius: 9 * PLStyle.radius, style: .continuous))
             .accessibilityLabel(label)
     }
 
@@ -412,8 +412,8 @@ struct NativeWorksSheet: View {
     private func row(name: String, w: Int, h: Int, thumb: UIImage?, current: Bool) -> some View {
         HStack(spacing: 12) {
             Group { if let t = thumb { Image(uiImage: t).resizable().scaledToFit() } else { Color.secondary.opacity(0.12) } }
-                .frame(width: 56, height: 56).background(Color.secondary.opacity(0.08)).clipShape(RoundedRectangle(cornerRadius: 10, style: .continuous))
-            VStack(alignment: .leading) { Text(name).foregroundStyle(.primary); Text("\(w) × \(h)").font(.caption).foregroundStyle(.secondary) }
+                .frame(width: 56, height: 56).background(Color.secondary.opacity(0.08)).clipShape(RoundedRectangle(cornerRadius: 10 * PLStyle.radius, style: .continuous))
+            VStack(alignment: .leading) { Text(name).foregroundStyle(.primary); Text("\(w) × \(h)").font(Font.pl(.caption)).foregroundStyle(.secondary) }
             Spacer(minLength: 0)
             if current { Image(systemName: "checkmark").foregroundStyle(Wallpaper.line) }
         }
@@ -469,26 +469,26 @@ struct NativeNewCanvasSheet: View {
                 // The live size now sits at the top, and the chosen preset carries a check and a tint.
                 Section("This canvas") {
                     HStack(spacing: 14) {
-                        RoundedRectangle(cornerRadius: 3)
+                        RoundedRectangle(cornerRadius: 3 * PLStyle.radius)
                             .stroke(Color.accentColor, lineWidth: 2)
                             .aspectRatio(CGFloat(max(w, 1)) / CGFloat(max(h, 1)), contentMode: .fit)
                             .frame(width: 52, height: 52)
                         VStack(alignment: .leading, spacing: 2) {
-                            Text("\(w) × \(h)").font(.headline).monospacedDigit()
-                            if w * h > 16_777_216 { Text("Too large: the most this phone holds is 16.7 million pixels.").font(.caption).foregroundStyle(Color.red) }
-                            else { Text("\(String(format: "%.1f", Double(w * h) / 1_000_000)) million pixels").font(.caption).foregroundStyle(Color.secondary) }
+                            Text("\(w) × \(h)").font(Font.pl(.headline)).monospacedDigit()
+                            if w * h > 16_777_216 { Text("Too large: the most this phone holds is 16.7 million pixels.").font(Font.pl(.caption)).foregroundStyle(Color.red) }
+                            else { Text("\(String(format: "%.1f", Double(w * h) / 1_000_000)) million pixels").font(Font.pl(.caption)).foregroundStyle(Color.secondary) }
                         }
                     }
                 }
                 Section("Sizes") {
                     Button { w = phoneW; h = phoneH } label: {
-                        HStack { Text("Phone screen"); Spacer(minLength: 0); Text("\(phoneW) × \(phoneH)").foregroundStyle(.secondary).font(.caption)
+                        HStack { Text("Phone screen"); Spacer(minLength: 0); Text("\(phoneW) × \(phoneH)").foregroundStyle(.secondary).font(Font.pl(.caption))
                             if w == phoneW && h == phoneH { Image(systemName: "checkmark").foregroundStyle(Color.accentColor) } }
                     }
                     .listRowBackground(w == phoneW && h == phoneH ? Color.accentColor.opacity(0.18) : Color.clear)
                     ForEach(NativeToolkit.canvases, id: \.name) { c in
                         Button { w = c.w; h = c.h } label: {
-                            HStack { Text(c.name); Spacer(minLength: 0); Text("\(c.w) × \(c.h)").foregroundStyle(.secondary).font(.caption)
+                            HStack { Text(c.name); Spacer(minLength: 0); Text("\(c.w) × \(c.h)").foregroundStyle(.secondary).font(Font.pl(.caption))
                                 if w == c.w && h == c.h { Image(systemName: "checkmark").foregroundStyle(Color.accentColor) } }
                         }
                         .listRowBackground(w == c.w && h == c.h ? Color.accentColor.opacity(0.18) : Color.clear)
@@ -500,7 +500,7 @@ struct NativeNewCanvasSheet: View {
                 }
                 Section {
                     Button { make(NewCanvasSpec(w: 3150, h: 2400, transparent: false, paper: paper, hoodie717: true)); dismiss() } label: {
-                        HStack { Text("Hoodie 717 zip (seams)"); Spacer(minLength: 0); Text("3150 × 2400").foregroundStyle(.secondary).font(.caption) }
+                        HStack { Text("Hoodie 717 zip (seams)"); Spacer(minLength: 0); Text("3150 × 2400").foregroundStyle(.secondary).font(Font.pl(.caption)) }
                     }
                 } header: { Text("Garment") } footer: { Text("Printful's pieces on one sheet. A mark that runs off a sewn edge carries on at the same place on the edge it is sewn to. Save the print files from More tools.") }
                 Section("Paper") {
@@ -536,7 +536,7 @@ struct SideSlider: View {
             .gesture(DragGesture(minimumDistance: 0).onChanged { d in value = min(1, max(0, 1 - d.location.y / g.size.height)) })
         }
         .frame(width: 30, height: 150)
-        .overlay(alignment: .top) { Text(readout).font(.system(size: 9).monospacedDigit()).foregroundStyle(.white.opacity(0.8)).offset(y: -12) }
+        .overlay(alignment: .top) { Text(readout).font(Font.pl(size: 9).monospacedDigit()).foregroundStyle(.white.opacity(0.8)).offset(y: -12) }
         .padding(.top, 12)
         .accessibilityElement().accessibilityLabel(label).accessibilityValue(readout).accessibilityIdentifier(id)
         .accessibilityAdjustableAction { dir in value = min(1, max(0, value + (dir == .increment ? 0.1 : -0.1))) }

@@ -178,8 +178,8 @@ struct Swatch: View {
             .overlay(alignment: .bottomTrailing) {
                 if mine { Image(systemName: "checkmark.circle.fill").foregroundStyle(Color(hex: p.text) ?? .white).padding(8).accessibilityLabel("Your pick") }
             }
-            .clipShape(RoundedRectangle(cornerRadius: 16, style: .continuous))
-            .overlay(RoundedRectangle(cornerRadius: 16, style: .continuous).strokeBorder(.white.opacity(0.14), lineWidth: 1))
+            .clipShape(RoundedRectangle(cornerRadius: 16 * PLStyle.radius, style: .continuous))
+            .overlay(RoundedRectangle(cornerRadius: 16 * PLStyle.radius, style: .continuous).strokeBorder(.white.opacity(0.14), lineWidth: 1))
     }
 }
 
@@ -207,9 +207,9 @@ struct PickView: View {
                             ForEach(state.ranked.prefix(8)) { p in
                                 HStack(spacing: 8) {
                                     HStack(spacing: 2) { ForEach([p.ground, p.key, p.accent], id: \.self) { hex in Circle().fill(Color(hex: hex) ?? .gray).frame(width: 11, height: 11) } }
-                                    Text(p.name).font(.footnote).foregroundStyle(PLG.ink(scheme)).lineLimit(1)
+                                    Text(p.name).font(Font.pl(.footnote)).foregroundStyle(PLG.ink(scheme)).lineLimit(1)
                                     Spacer(minLength: 6)
-                                    Text("\(state.votes(p))").font(.system(.footnote, design: .monospaced)).monospacedDigit().foregroundStyle(PLG.ink(scheme))
+                                    Text("\(state.votes(p))").font(Font.pl(.footnote, design: .monospaced)).monospacedDigit().foregroundStyle(PLG.ink(scheme))
                                 }
                                 .padding(.horizontal, 8).padding(.vertical, 7)
                                 .plBar(Double(state.votes(p)), of: top, tint: PLG.gold)
@@ -224,7 +224,7 @@ struct PickView: View {
                                 if state.showResults { state.looking = p } else { state.selected = p.name }
                             } label: {
                                 Swatch(p: p, number: state.number(p), count: state.showResults ? state.votes(p) : nil, mine: state.mine == p.name)
-                                    .overlay(RoundedRectangle(cornerRadius: 16, style: .continuous)
+                                    .overlay(RoundedRectangle(cornerRadius: 16 * PLStyle.radius, style: .continuous)
                                         .strokeBorder(PLG.gold, lineWidth: state.selected == p.name ? 3 : 0))
                                     .scaleEffect(state.selected == p.name ? 1.02 : 1)
                                     .animation(.spring(duration: 0.25), value: state.selected)
@@ -242,10 +242,10 @@ struct PickView: View {
                     if state.palettes.isEmpty && state.message == nil { PLLoader().frame(maxWidth: .infinity).padding(.top, 30) }
                     if let m = state.message {
                         Label(m, systemImage: isError(m) ? "exclamationmark.triangle" : "checkmark.circle")
-                            .font(.footnote).foregroundStyle(isError(m) ? PLG.red : PLG.goldDim(scheme))
+                            .font(Font.pl(.footnote)).foregroundStyle(isError(m) ? PLG.red : PLG.goldDim(scheme))
                             .frame(maxWidth: .infinity)
                     }
-                    if state.pending != nil { Text("One pick is waiting to go in.").font(.footnote).foregroundStyle(PLG.dim(scheme)).frame(maxWidth: .infinity) }
+                    if state.pending != nil { Text("One pick is waiting to go in.").font(Font.pl(.footnote)).foregroundStyle(PLG.dim(scheme)).frame(maxWidth: .infinity) }
                 }
                 .padding(PLSpace.margin)
                 .padding(.bottom, 90)
@@ -322,10 +322,10 @@ struct PickLook: View {
                             Button { UIPasteboard.general.string = hex; copied = hex } label: {
                                 HStack(spacing: 12) {
                                     Circle().fill(Color(hex: hex) ?? .gray).frame(width: 28, height: 28).overlay(Circle().strokeBorder(.white.opacity(0.25)))
-                                    Text(role).font(.body)
+                                    Text(role).font(Font.pl(.body))
                                     Spacer()
                                     Text(hex.uppercased()).gMono(13).foregroundStyle(PLG.dim(scheme))
-                                    Image(systemName: copied == hex ? "checkmark" : "doc.on.doc").font(.footnote).foregroundStyle(PLG.goldDim(scheme))
+                                    Image(systemName: copied == hex ? "checkmark" : "doc.on.doc").font(Font.pl(.footnote)).foregroundStyle(PLG.goldDim(scheme))
                                 }
                                 .padding(.vertical, 10).contentShape(Rectangle())
                             }
@@ -336,7 +336,7 @@ struct PickLook: View {
                     .gCard(padding: 14)
                     VStack(alignment: .leading, spacing: 8) {
                         GalleryHeader(text: "The vote")
-                        Text("\(t.total) \(t.total == 1 ? "pick" : "picks")").font(.title2.bold()).contentTransition(.numericText())
+                        Text("\(t.total) \(t.total == 1 ? "pick" : "picks")").font(Font.pl(.title2).bold()).contentTransition(.numericText())
                         if t.total > 0 {
                             HStack(spacing: 8) {
                                 if t.library > 0 { GalleryChip(title: "Library", count: t.library) }
@@ -345,7 +345,7 @@ struct PickLook: View {
                                 if t.app > 0 { GalleryChip(title: "This app", count: t.app) }
                             }
                         } else {
-                            Text("Nobody has picked it yet.").font(.footnote).foregroundStyle(PLG.dim(scheme))
+                            Text("Nobody has picked it yet.").font(Font.pl(.footnote)).foregroundStyle(PLG.dim(scheme))
                         }
                     }
                     .gCard(padding: 14)

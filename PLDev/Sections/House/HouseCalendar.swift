@@ -35,7 +35,7 @@ struct HouseCalendarView: View {
                 header
                 grid
                 legend
-                if let failed { Text(failed).font(.footnote).foregroundStyle(PLOS.dim(scheme)) }
+                if let failed { Text(failed).font(Font.pl(.footnote)).foregroundStyle(PLOS.dim(scheme)) }
                 OSPanel(title: "The detail rooms") {
                     NavigationLink { CalendarView(model: model).osScreen() } label: { OSRow(title: "Content, day by day", meta: "every platform, its target, what is short") { chevron } }.buttonStyle(.plain)
                     NavigationLink { MerchView(model: model).osScreen() } label: { OSRow(title: "Merch seasons", meta: "set each colourway's season") { chevron } }.buttonStyle(.plain)
@@ -54,7 +54,7 @@ struct HouseCalendarView: View {
 
     struct DayKey: Identifiable { let id: String }
 
-    private var chevron: some View { Image(systemName: "chevron.right").font(.caption.weight(.bold)).foregroundStyle(PLOS.goldDim(scheme)) }
+    private var chevron: some View { Image(systemName: "chevron.right").font(Font.pl(.caption).weight(.bold)).foregroundStyle(PLOS.goldDim(scheme)) }
 
     // MARK: the month
 
@@ -94,7 +94,7 @@ struct HouseCalendarView: View {
                                 .frame(height: 6)
                             }
                             .frame(maxWidth: .infinity, minHeight: 52)
-                            .background { if k == today { RoundedRectangle(cornerRadius: 12, style: .continuous).fill(PLOS.gold) } }
+                            .background { if k == today { RoundedRectangle(cornerRadius: 12 * PLStyle.radius, style: .continuous).fill(PLOS.gold) } }
                         }
                         .buttonStyle(.plain)
                         .accessibilityLabel(accessibility(d, k))
@@ -108,9 +108,9 @@ struct HouseCalendarView: View {
 
     private var legend: some View {
         HStack(spacing: 16) {
-            Label { Text("Content going out").font(.caption) } icon: { Circle().fill(Self.contentDot).frame(width: 8, height: 8) }
-            Label { Text("Merch season").font(.caption) } icon: { Circle().fill(Self.merchDot).frame(width: 8, height: 8) }
-            Label { Text("Drop").font(.caption) } icon: { Circle().fill(Self.dropDot).frame(width: 8, height: 8) }
+            Label { Text("Content going out").font(Font.pl(.caption)) } icon: { Circle().fill(Self.contentDot).frame(width: 8, height: 8) }
+            Label { Text("Merch season").font(Font.pl(.caption)) } icon: { Circle().fill(Self.merchDot).frame(width: 8, height: 8) }
+            Label { Text("Drop").font(Font.pl(.caption)) } icon: { Circle().fill(Self.dropDot).frame(width: 8, height: 8) }
         }
         .foregroundStyle(PLOS.dim(scheme))
     }
@@ -137,8 +137,8 @@ struct HouseCalendarView: View {
                             AsyncImage(url: pictures[dr.product] ?? pictures[dr.cr]) { $0.resizable().scaledToFit() } placeholder: { Image(systemName: "sparkles").foregroundStyle(.secondary) }
                                 .frame(width: 64, height: 64)
                             VStack(alignment: .leading, spacing: 2) {
-                                Text(dr.product).font(.callout)
-                                Text("\(dr.cr) · \(dr.fulfilled_at == nil ? "chosen" : "made")").font(.caption).foregroundStyle(.secondary)
+                                Text(dr.product).font(Font.pl(.callout))
+                                Text("\(dr.cr) · \(dr.fulfilled_at == nil ? "chosen" : "made")").font(Font.pl(.caption)).foregroundStyle(.secondary)
                             }
                             Spacer()
                             if let u = dr.url.flatMap(URL.init(string:)) { Link(destination: u) { Image(systemName: "arrow.up.right") } }
@@ -152,11 +152,11 @@ struct HouseCalendarView: View {
                     HStack(spacing: 10) {
                         if let t = it.thumb, let u = URL(string: t) {
                             AsyncImage(url: u) { $0.resizable().scaledToFill() } placeholder: { Color.secondary.opacity(0.15) }
-                                .frame(width: 48, height: 48).clipShape(RoundedRectangle(cornerRadius: 8, style: .continuous))
+                                .frame(width: 48, height: 48).clipShape(RoundedRectangle(cornerRadius: 8 * PLStyle.radius, style: .continuous))
                         }
                         VStack(alignment: .leading, spacing: 2) {
-                            Text(it.line ?? "").font(.callout).lineLimit(2)
-                            Text("\(it.format ?? "") · \(it.status ?? "")\(Date.pl(it.at).map { " · " + $0.formatted(date: .omitted, time: .shortened) } ?? "")").font(.caption).foregroundStyle(.secondary)
+                            Text(it.line ?? "").font(Font.pl(.callout)).lineLimit(2)
+                            Text("\(it.format ?? "") · \(it.status ?? "")\(Date.pl(it.at).map { " · " + $0.formatted(date: .omitted, time: .shortened) } ?? "")").font(Font.pl(.caption)).foregroundStyle(.secondary)
                         }
                     }
                 }
@@ -173,7 +173,7 @@ struct HouseCalendarView: View {
         HStack(spacing: 12) {
             AsyncImage(url: pictures[name]) { $0.resizable().scaledToFit() } placeholder: { Image(systemName: "tshirt").foregroundStyle(.secondary) }
                 .frame(width: 64, height: 64)
-            Text(name).font(.callout)
+            Text(name).font(Font.pl(.callout))
         }
     }
 

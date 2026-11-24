@@ -86,7 +86,7 @@ struct LabRoomView: View {
                 HStack {
                     Spacer()
                     Button { dismiss() } label: {
-                        Image(systemName: "xmark").font(.system(size: 16, weight: .regular)).foregroundStyle(PLG.gold.opacity(0.75))
+                        Image(systemName: "xmark").font(Font.pl(size: 16, weight: .regular)).foregroundStyle(PLG.gold.opacity(0.75))
                             .frame(width: 44, height: 44).overlay { Circle().strokeBorder(PLG.gold.opacity(0.25), lineWidth: 1) }
                     }
                     .accessibilityLabel("Leave the room")
@@ -95,7 +95,7 @@ struct LabRoomView: View {
                 Spacer()
                 if !reduceMotion && smooth < 0.12 {
                     VStack(spacing: 8) {
-                        Text("scroll to enter").font(.system(size: 11, design: .serif)).labCaps().tracking(2.4).foregroundStyle(PLG.gold.opacity(0.7))
+                        Text("scroll to enter").font(Font.pl(size: 11, design: .serif)).labCaps().tracking(2.4).foregroundStyle(PLG.gold.opacity(0.7))
                         Rectangle().fill(PLG.gold.opacity(0.4)).frame(width: 1, height: 28)
                     }
                     .opacity(max(0, 1 - smooth * 8)).padding(.bottom, 30)
@@ -103,8 +103,8 @@ struct LabRoomView: View {
                 if reveal > 0.01 {
                     Button { dismiss() } label: {
                         VStack(spacing: 10) {
-                            Text("Enter").font(.system(size: 52, design: .serif).italic()).foregroundStyle(PLG.gold)
-                            Text("the labs").font(.system(size: 11, design: .serif)).labCaps().tracking(2.4).foregroundStyle(PLG.goldDim(.dark))
+                            Text("Enter").font(Font.pl(size: 52, design: .serif).italic()).foregroundStyle(PLG.gold)
+                            Text("the labs").font(Font.pl(size: 11, design: .serif)).labCaps().tracking(2.4).foregroundStyle(PLG.goldDim(.dark))
                         }
                         .frame(minWidth: 160, minHeight: 88)
                     }
@@ -119,8 +119,8 @@ struct LabRoomView: View {
             VStack {
                 Spacer()
                 HStack(alignment: .firstTextBaseline, spacing: 12) {
-                    Text(String(format: "%03d", Int((p * 99).rounded()) + 1)).font(.system(size: 24, design: .serif)).monospacedDigit().foregroundStyle(PLG.gold.opacity(0.55))
-                    Text("the room").font(.system(size: 10, design: .serif)).labCaps().tracking(2.2).foregroundStyle(PLG.goldDim(.dark).opacity(0.7))
+                    Text(String(format: "%03d", Int((p * 99).rounded()) + 1)).font(Font.pl(size: 24, design: .serif)).monospacedDigit().foregroundStyle(PLG.gold.opacity(0.55))
+                    Text("the room").font(Font.pl(size: 10, design: .serif)).labCaps().tracking(2.2).foregroundStyle(PLG.goldDim(.dark).opacity(0.7))
                     Spacer()
                 }
                 .padding(.leading, 24).padding(.bottom, 26).opacity(ready ? 1 : 0).animation(.easeIn(duration: 0.7), value: ready)

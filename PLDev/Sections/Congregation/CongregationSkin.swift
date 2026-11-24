@@ -118,7 +118,7 @@ struct SiteSegment: View {
                 .foregroundStyle(index == i ? Bone.ground(scheme) : Bone.inkSoft(scheme))
                 .padding(.horizontal, scrolls ? 16 : 6)
                 .frame(maxWidth: scrolls ? nil : .infinity, minHeight: 40)
-                .background { if index == i { RoundedRectangle(cornerRadius: 15, style: .continuous).fill(Bone.ink(scheme)) } }
+                .background { if index == i { RoundedRectangle(cornerRadius: 15 * PLStyle.radius, style: .continuous).fill(Bone.ink(scheme)) } }
                 .contentShape(Rectangle())
         }
         .buttonStyle(.plain)
@@ -134,7 +134,7 @@ struct SiteSegment: View {
             }
         }
         .padding(4)
-        .overlay { RoundedRectangle(cornerRadius: 20, style: .continuous).strokeBorder(Bone.line(scheme), lineWidth: 0.8) }
+        .overlay { RoundedRectangle(cornerRadius: 20 * PLStyle.radius, style: .continuous).strokeBorder(Bone.line(scheme), lineWidth: 0.8) }
     }
 }
 
@@ -144,8 +144,8 @@ private struct SiteFieldStyle: ViewModifier {
         content
             .font(SiteFont.body(15)).foregroundStyle(Bone.ink(scheme))
             .padding(.horizontal, 12).padding(.vertical, 10)
-            .background(Bone.ground(scheme).opacity(0.6), in: RoundedRectangle(cornerRadius: 10, style: .continuous))
-            .overlay { RoundedRectangle(cornerRadius: 10, style: .continuous).strokeBorder(Bone.line(scheme), lineWidth: 0.8) }
+            .background(Bone.ground(scheme).opacity(0.6), in: RoundedRectangle(cornerRadius: 10 * PLStyle.radius, style: .continuous))
+            .overlay { RoundedRectangle(cornerRadius: 10 * PLStyle.radius, style: .continuous).strokeBorder(Bone.line(scheme), lineWidth: 0.8) }
     }
 }
 
@@ -324,10 +324,10 @@ struct PostMediaView: View {
         if PostMedia.isLivingPiece(media), let url = PostMedia.livingURL(media) {
             Button { onWeb(url) } label: {
                 Text("A living piece \u{2192}").siteLabel(11).padding(.horizontal, 16).frame(minHeight: 44)
-                    .overlay { RoundedRectangle(cornerRadius: 10, style: .continuous).strokeBorder(Bone.line(scheme), lineWidth: 0.8) }
+                    .overlay { RoundedRectangle(cornerRadius: 10 * PLStyle.radius, style: .continuous).strokeBorder(Bone.line(scheme), lineWidth: 0.8) }
             }.buttonStyle(.plain)
         } else if PostMedia.isVideo(media), let url = URL(string: media) {
-            SiteVideo(url: url).frame(height: 220).clipShape(RoundedRectangle(cornerRadius: 10, style: .continuous))
+            SiteVideo(url: url).frame(height: 220).clipShape(RoundedRectangle(cornerRadius: 10 * PLStyle.radius, style: .continuous))
         } else if let url = URL(string: media) {
             Button { onOpen?(url) } label: {
                 AsyncImage(url: url) { phase in
@@ -337,8 +337,8 @@ struct PostMediaView: View {
                     default: Bone.line(scheme).opacity(0.3).frame(height: 160).overlay { PLLoader() }
                     }
                 }
-                .clipShape(RoundedRectangle(cornerRadius: 10, style: .continuous))
-                .overlay { RoundedRectangle(cornerRadius: 10, style: .continuous).strokeBorder(Bone.line(scheme), lineWidth: 0.8) }
+                .clipShape(RoundedRectangle(cornerRadius: 10 * PLStyle.radius, style: .continuous))
+                .overlay { RoundedRectangle(cornerRadius: 10 * PLStyle.radius, style: .continuous).strokeBorder(Bone.line(scheme), lineWidth: 0.8) }
             }
             .buttonStyle(.plain).disabled(onOpen == nil)
             .accessibilityLabel("Picture")
@@ -395,7 +395,7 @@ struct Lightbox: View {
                 AsyncImage(url: item.src) { phase in
                     switch phase {
                     case .success(let i): i.resizable().scaledToFit()
-                    case .failure: Image(systemName: "photo").font(.largeTitle).foregroundStyle(.white.opacity(0.5))
+                    case .failure: Image(systemName: "photo").font(Font.pl(.largeTitle)).foregroundStyle(.white.opacity(0.5))
                     default: PLLoader().tint(.white)
                     }
                 }
@@ -409,7 +409,7 @@ struct Lightbox: View {
             }
         }
         .overlay(alignment: .topTrailing) {
-            Button { dismiss() } label: { Image(systemName: "xmark").font(.headline).foregroundStyle(.white).frame(width: 44, height: 44) }
+            Button { dismiss() } label: { Image(systemName: "xmark").font(Font.pl(.headline)).foregroundStyle(.white).frame(width: 44, height: 44) }
                 .glassControl(in: Circle()).padding(16).accessibilityLabel("Close")
         }
         .onTapGesture { dismiss() }

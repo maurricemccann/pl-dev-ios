@@ -182,8 +182,8 @@ struct ShopHomeView: View {
                         if let n = d.name { Text("\u{2014} \(n)").siteLabel(10) }
                     }
                     .padding(26).frame(maxWidth: .infinity, alignment: .leading)
-                    .background(Color.white.opacity(0.03), in: RoundedRectangle(cornerRadius: 20, style: .continuous))
-                    .overlay { RoundedRectangle(cornerRadius: 20, style: .continuous).strokeBorder(Color.white.opacity(0.1), lineWidth: 0.8) }
+                    .background(Color.white.opacity(0.03), in: RoundedRectangle(cornerRadius: 20 * PLStyle.radius, style: .continuous))
+                    .overlay { RoundedRectangle(cornerRadius: 20 * PLStyle.radius, style: .continuous).strokeBorder(Color.white.opacity(0.1), lineWidth: 0.8) }
                 }
                 Button { if let u = URL(string: "pldev://section/congregation/stream") { openURL(u) } } label: { Text("State Your Reality \u{2192}").padding(.horizontal, 12) }
                     .buttonStyle(SitePill(gold: true)).fixedSize().padding(.top, 8)

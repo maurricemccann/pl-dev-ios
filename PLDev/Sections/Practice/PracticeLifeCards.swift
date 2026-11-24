@@ -87,13 +87,13 @@ struct DesireListCard: View {
         return VStack(alignment: .leading, spacing: 6) {
             HStack(alignment: .firstTextBaseline, spacing: 8) {
                 Button { Task { await toggle(d) } } label: {
-                    Image(systemName: done ? "checkmark.square.fill" : "square").font(.system(size: 20)).foregroundStyle(Candle.gold)
+                    Image(systemName: done ? "checkmark.square.fill" : "square").font(Font.pl(size: 20)).foregroundStyle(Candle.gold)
                         .frame(width: 36, height: 36).contentTransition(.symbolEffect(.replace))
                 }
                 .buttonStyle(.plain).accessibilityLabel(done ? "Reopen" : "Mark done")
-                Text("\(d.date ?? "") \u{00B7} \(d.text)").font(.system(size: 13.6)).strikethrough(done).frame(maxWidth: .infinity, alignment: .leading).textSelection(.enabled)
+                Text("\(d.date ?? "") \u{00B7} \(d.text)").font(Font.pl(size: 13.6)).strikethrough(done).frame(maxWidth: .infinity, alignment: .leading).textSelection(.enabled)
                 Button(mapped == d.id ? "close" : "map it") { withAnimation(.snappy) { mapped = mapped == d.id ? nil : d.id } }
-                    .buttonStyle(CandleGhost()).font(.system(size: 12))
+                    .buttonStyle(CandleGhost()).font(Font.pl(size: 12))
             }
             if mapped == d.id { DesireMap(model: model, desire: d).padding(.leading, 24) }
         }
@@ -146,29 +146,29 @@ struct DesireMap: View {
             PField(prompt: "I will\u{2026}", text: $b1, small: true)
             PField(prompt: "Then\u{2026}", text: $b2, small: true)
             PField(prompt: "Which leads to\u{2026}", text: $outcomeFlow, small: true)
-            HStack { Button("save flow") { Task { await saveFlow() } }.buttonStyle(CandleGhost()).font(.system(size: 12)); Spacer(minLength: 0) }
+            HStack { Button("save flow") { Task { await saveFlow() } }.buttonStyle(CandleGhost()).font(Font.pl(size: 12)); Spacer(minLength: 0) }
             if !savedFlow.isEmpty {
                 WrapLayout(spacing: 4) {
                     ForEach(Array(savedFlow.enumerated()), id: \.offset) { i, s in
                         HStack(spacing: 4) {
                             if i > 0 { Text("\u{2192}").foregroundStyle(Candle.gold) }
-                            Text(s).font(.system(size: 12.5)).padding(.horizontal, 8).padding(.vertical, 3)
-                                .background(Candle.card, in: RoundedRectangle(cornerRadius: 6, style: .continuous))
-                                .overlay { RoundedRectangle(cornerRadius: 6, style: .continuous).strokeBorder(Candle.fieldLine, lineWidth: 1) }
+                            Text(s).font(Font.pl(size: 12.5)).padding(.horizontal, 8).padding(.vertical, 3)
+                                .background(Candle.card, in: RoundedRectangle(cornerRadius: 6 * PLStyle.radius, style: .continuous))
+                                .overlay { RoundedRectangle(cornerRadius: 6 * PLStyle.radius, style: .continuous).strokeBorder(Candle.fieldLine, lineWidth: 1) }
                         }
                     }
                 }
             }
             VStack(alignment: .leading, spacing: 6) {
-                Text("WOOP \u{2014} contrast it, then plan it").font(.system(size: 10.9)).textCase(.uppercase).tracking(1.1).foregroundStyle(Candle.goldHi.opacity(0.7))
+                Text("WOOP \u{2014} contrast it, then plan it").font(Font.pl(size: 10.9)).textCase(.uppercase).tracking(1.1).foregroundStyle(Candle.goldHi.opacity(0.7))
                 PField(prompt: "Outcome \u{2014} the best real result of this\u{2026}", text: $outcome, small: true)
                 PField(prompt: "Obstacle \u{2014} the inner thing most likely to stop me\u{2026}", text: $obstacle, small: true)
                 ViewThatFits(in: .horizontal) {
                     HStack(spacing: 6) { PField(prompt: "If (the obstacle shows up as\u{2026})", text: $ifText, small: true); PField(prompt: "then I will\u{2026}", text: $thenText, small: true) }
                     VStack(spacing: 6) { PField(prompt: "If (the obstacle shows up as\u{2026})", text: $ifText, small: true); PField(prompt: "then I will\u{2026}", text: $thenText, small: true) }
                 }
-                HStack { Button("save WOOP") { Task { await saveWoop() } }.buttonStyle(CandleGhost()).font(.system(size: 12)); Spacer(minLength: 0) }
-                if let savedPlan { Text(savedPlan).font(.system(size: 12.8, design: .serif).italic()).foregroundStyle(Candle.goldHi) }
+                HStack { Button("save WOOP") { Task { await saveWoop() } }.buttonStyle(CandleGhost()).font(Font.pl(size: 12)); Spacer(minLength: 0) }
+                if let savedPlan { Text(savedPlan).font(Font.pl(size: 12.8, design: .serif).italic()).foregroundStyle(Candle.goldHi) }
             }
             .padding(.top, 8).overlay(alignment: .top) { Rectangle().fill(Candle.fieldLine).frame(height: 1) }
             CandleResult(text: result)
@@ -237,7 +237,7 @@ struct HabitsCard: View {
     private func row(_ h: PracticeHabit) -> some View {
         HStack(alignment: .top, spacing: 8) {
             Button { Task { await state.tickHabit(h, model: model); if let m = state.message { result = m; state.message = nil } } } label: {
-                Image(systemName: h.tickedToday ? "checkmark.square.fill" : "square").font(.system(size: 20)).foregroundStyle(Candle.gold)
+                Image(systemName: h.tickedToday ? "checkmark.square.fill" : "square").font(Font.pl(size: 20)).foregroundStyle(Candle.gold)
                     .frame(width: 36, height: 36).contentTransition(.symbolEffect(.replace)).symbolEffect(.bounce, value: h.tickedToday)
             }
             .buttonStyle(.plain)
@@ -246,7 +246,7 @@ struct HabitsCard: View {
                 (Text(h.cue.flatMap { $0.isEmpty ? nil : "\($0) \u{2192} " } ?? "").foregroundStyle(Candle.ink.opacity(0.55))
                  + Text(h.response)
                  + Text(h.reward.flatMap { $0.isEmpty ? nil : " \u{2192} \($0)" } ?? "").foregroundStyle(Candle.ink.opacity(0.55)))
-                    .font(.system(size: 13.6))
+                    .font(Font.pl(size: 13.6))
                 WeekDots(week: h.week)
             }
             .frame(maxWidth: .infinity, alignment: .leading).padding(.top, 7)

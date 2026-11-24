@@ -74,7 +74,7 @@ struct PackCardView: View {
     @State private var looked = false
 
     var body: some View {
-        let shape = RoundedRectangle(cornerRadius: 14, style: .continuous)
+        let shape = RoundedRectangle(cornerRadius: 14 * PLStyle.radius, style: .continuous)
         let lit = burn >= 1
         ZStack {
             face
@@ -95,14 +95,14 @@ struct PackCardView: View {
             Color.black
             if card.kind == "game" {
                 VStack(spacing: 8) {
-                    Text("Game unlocked").font(.system(size: 11)).textCase(.uppercase).tracking(1).foregroundStyle(Candle.gold)
+                    Text("Game unlocked").font(Font.pl(size: 11)).textCase(.uppercase).tracking(1).foregroundStyle(Candle.gold)
                     Text(gameName).plHand(22, relativeTo: .title2).foregroundStyle(Candle.goldHi).multilineTextAlignment(.center)
                 }
                 .padding(10)
             } else if let url {
                 AsyncImage(url: url) { img in img.resizable().scaledToFit() } placeholder: { ProgressView().tint(Candle.gold) }
             } else if looked {
-                Text("This piece has no still picture.").font(.system(size: 12)).foregroundStyle(Candle.ink.opacity(0.6)).multilineTextAlignment(.center).padding(8)
+                Text("This piece has no still picture.").font(Font.pl(size: 12)).foregroundStyle(Candle.ink.opacity(0.6)).multilineTextAlignment(.center).padding(8)
             }
         }
     }
@@ -167,7 +167,7 @@ struct PackScreen: View {
             GlyphField(strength: 0.08).ignoresSafeArea().blendMode(.screen)
             VStack(spacing: 16) {
                 HStack {
-                    Button { close() } label: { Image(systemName: "xmark").font(.system(size: 15, weight: .medium)).foregroundStyle(Candle.ink).frame(width: 44, height: 44) }
+                    Button { close() } label: { Image(systemName: "xmark").font(Font.pl(size: 15, weight: .medium)).foregroundStyle(Candle.ink).frame(width: 44, height: 44) }
                         .accessibilityLabel("Close")
                     Spacer()
                     BuddyView(model: buddy).frame(width: 46, height: 46)
@@ -223,7 +223,7 @@ struct LivePackScreen: View {
     var body: some View {
         VStack(spacing: 0) {
             HStack(spacing: 8) {
-                Button { close() } label: { Image(systemName: "xmark").font(.system(size: 15, weight: .medium)).foregroundStyle(Candle.ink).frame(width: 44, height: 44) }
+                Button { close() } label: { Image(systemName: "xmark").font(Font.pl(size: 15, weight: .medium)).foregroundStyle(Candle.ink).frame(width: 44, height: 44) }
                     .accessibilityLabel("Close")
                 Text("The pack \u{00b7} live test").candleHint()
                 Spacer()

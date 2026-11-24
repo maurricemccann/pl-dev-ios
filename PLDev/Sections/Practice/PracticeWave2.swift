@@ -24,11 +24,11 @@ struct SignalGame: View {
     var body: some View {
         VStack(spacing: 12) {
             if done {
-                Text("\(score)").font(.system(size: 44, weight: .semibold).monospacedDigit()).foregroundStyle(Candle.goldHi)
+                Text("\(score)").font(Font.pl(size: 44, weight: .semibold).monospacedDigit()).foregroundStyle(Candle.goldHi)
                 Text("\(caught) of the house's words caught").candleHint()
                 Button("Again") { begin() }.buttonStyle(CandleButton())
             } else {
-                HStack { Text("Catch the house's words. Let the noise pass.").candleHint(); Spacer(); Text("\(score)").font(.system(size: 16, weight: .semibold).monospacedDigit()).foregroundStyle(Candle.goldHi) }
+                HStack { Text("Catch the house's words. Let the noise pass.").candleHint(); Spacer(); Text("\(score)").font(Font.pl(size: 16, weight: .semibold).monospacedDigit()).foregroundStyle(Candle.goldHi) }
                 GeometryReader { geo in
                     TimelineView(.animation) { tl in
                         let t = tl.date.timeIntervalSince(start)
@@ -36,7 +36,7 @@ struct SignalGame: View {
                             ForEach(words.filter { !gone.contains($0.id) && t >= $0.born && t < $0.born + fall }) { w in
                                 let y = CGFloat((t - w.born) / fall) * (geo.size.height + 40) - 20
                                 Button { tap(w) } label: {
-                                    Text(w.text).font(.system(size: 17, weight: .medium)).foregroundStyle(Candle.ink)
+                                    Text(w.text).font(Font.pl(size: 17, weight: .medium)).foregroundStyle(Candle.ink)
                                         .padding(.horizontal, 12).frame(minHeight: 44).background(Capsule().strokeBorder(Candle.hairline))
                                 }
                                 .buttonStyle(.plain)
@@ -86,12 +86,12 @@ struct ThreeLawsRoom: View {
         let lines = (unit?.items ?? []).map(\.text).filter { $0.split(separator: " ").count <= 30 }
         VStack(alignment: .leading, spacing: 16) {
             Text("Room \(room + 1) of 3").candleHint()
-            Text(truths[room]).font(.system(size: 26, weight: .semibold, design: .serif)).foregroundStyle(Candle.goldHi)
-            if let u = unit { Text(u.about).font(.system(size: 15)).foregroundStyle(Candle.ink.opacity(0.85)) }
+            Text(truths[room]).font(Font.pl(size: 26, weight: .semibold, design: .serif)).foregroundStyle(Candle.goldHi)
+            if let u = unit { Text(u.about).font(Font.pl(size: 15)).foregroundStyle(Candle.ink.opacity(0.85)) }
             ScrollView {
                 VStack(alignment: .leading, spacing: 12) {
                     ForEach(Array(lines.prefix(shown).enumerated()), id: \.offset) { _, l in
-                        Text(l).font(.system(size: 17, design: .serif)).foregroundStyle(Candle.ink).transition(.opacity.combined(with: .move(edge: .bottom)))
+                        Text(l).font(Font.pl(size: 17, design: .serif)).foregroundStyle(Candle.ink).transition(.opacity.combined(with: .move(edge: .bottom)))
                     }
                 }
                 .frame(maxWidth: .infinity, alignment: .leading)
@@ -101,7 +101,7 @@ struct ThreeLawsRoom: View {
             } else if room < 2 {
                 Button("The next room") { withAnimation { room += 1; shown = 0 } }.buttonStyle(CandleButton())
             } else {
-                Text("Watch this.").font(.system(size: 18, design: .serif).italic()).foregroundStyle(Candle.goldHi)
+                Text("Watch this.").font(Font.pl(size: 18, design: .serif).italic()).foregroundStyle(Candle.goldHi)
                 Button("Walk through again") { withAnimation { room = 0; shown = 0 } }.buttonStyle(CandleButton())
                     .onAppear { ArcadeScores.offer(.room, 1) }
             }
@@ -127,7 +127,7 @@ struct WatchThisMoment: View {
             TimelineView(.animation) { tl in
                 Canvas { ctx, size in
                     if marks.isEmpty && reveal == nil {
-                        ctx.draw(Text("Draw the Curve.").font(.system(size: 13)).foregroundStyle(Candle.ink.opacity(0.5)), at: CGPoint(x: size.width / 2, y: size.height / 2))
+                        ctx.draw(Text("Draw the Curve.").font(Font.pl(size: 13)).foregroundStyle(Candle.ink.opacity(0.5)), at: CGPoint(x: size.width / 2, y: size.height / 2))
                     }
                     for k in marks.indices.dropFirst() {
                         let age = tl.date.timeIntervalSince(marks[k].t), a = max(0, 1 - age / 3)
@@ -146,7 +146,7 @@ struct WatchThisMoment: View {
             })
             if let r = reveal {
                 VStack(spacing: 12) {
-                    Text("Watch this.").font(.system(size: 22, design: .serif).italic()).foregroundStyle(Candle.goldHi)
+                    Text("Watch this.").font(Font.pl(size: 22, design: .serif).italic()).foregroundStyle(Candle.goldHi)
                     if let s = r.thumb, let u = URL(string: s) {
                         AsyncImage(url: u) { $0.resizable().scaledToFit() } placeholder: { ProgressView() }.frame(maxHeight: 320)
                     }

@@ -490,9 +490,9 @@ struct LabFlyView: View {
                 }
             }
             VStack(alignment: .leading, spacing: 5) {
-                Text("THE FLY").font(.system(size: 19, weight: .semibold, design: .serif)).tracking(2.6).foregroundStyle(PLG.gold)
+                Text("THE FLY").font(Font.pl(size: 19, weight: .semibold, design: .serif)).tracking(2.6).foregroundStyle(PLG.gold)
                 Text("The fly draws; the house renders. The line is the path walked by the centre of mass of whatever is firing in a brain that died several years ago.")
-                    .font(.system(size: 11, design: .monospaced)).foregroundStyle(Color(hex: 0x7a756a)).lineSpacing(3).frame(maxWidth: 300, alignment: .leading)
+                    .font(Font.pl(size: 11, design: .monospaced)).foregroundStyle(Color(hex: 0x7a756a)).lineSpacing(3).frame(maxWidth: 300, alignment: .leading)
             }
             .padding(.top, 14).padding(.leading, 20).allowsHitTesting(false)
             HStack(spacing: 22) {
@@ -508,14 +508,14 @@ struct LabFlyView: View {
 
     private func hud(_ k: String, _ v: String) -> some View {
         VStack(alignment: .leading, spacing: 1) {
-            Text(k).font(.system(size: 9.5, design: .monospaced)).foregroundStyle(Color(hex: 0x7a756a))
-            Text(v).font(.system(size: 13, weight: .bold, design: .monospaced)).foregroundStyle(Color(hex: 0xe8e4d9)).contentTransition(.numericText())
+            Text(k).font(Font.pl(size: 9.5, design: .monospaced)).foregroundStyle(Color(hex: 0x7a756a))
+            Text(v).font(Font.pl(size: 13, weight: .bold, design: .monospaced)).foregroundStyle(Color(hex: 0xe8e4d9)).contentTransition(.numericText())
         }
     }
 
     private var boot: some View {
         VStack(spacing: 14) {
-            Text(fly.bootMessage).font(.system(size: 11, design: .monospaced)).tracking(1.1).foregroundStyle(fly.bootFailed ? Color(hex: 0xd9706f) : Color(hex: 0x7a756a))
+            Text(fly.bootMessage).font(Font.pl(size: 11, design: .monospaced)).tracking(1.1).foregroundStyle(fly.bootFailed ? Color(hex: 0xd9706f) : Color(hex: 0x7a756a))
             ZStack(alignment: .leading) {
                 Rectangle().fill(Color(hex: 0x1a1813)).frame(width: 260, height: 2)
                 Rectangle().fill(PLG.gold).frame(width: 260 * fly.bootProgress, height: 2).animation(.easeOut(duration: 0.25), value: fly.bootProgress)
@@ -563,9 +563,9 @@ struct LabFlyView: View {
 
     private var panel: some View {
         VStack(alignment: .leading, spacing: 0) {
-            Text("STIMULUS").font(.system(size: 12, weight: .semibold, design: .serif)).tracking(1.7).foregroundStyle(PLG.gold)
+            Text("STIMULUS").font(Font.pl(size: 12, weight: .semibold, design: .serif)).tracking(1.7).foregroundStyle(PLG.gold)
             Text("Pick a sense. Nothing here aims at the motor channels — the wiring gets there on its own.")
-                .font(.system(size: 10.5, design: .monospaced)).foregroundStyle(Color(hex: 0x7a756a)).lineSpacing(4).padding(.top, 4).padding(.bottom, 16)
+                .font(Font.pl(size: 10.5, design: .monospaced)).foregroundStyle(Color(hex: 0x7a756a)).lineSpacing(4).padding(.top, 4).padding(.bottom, 16)
             HStack(spacing: 8) {
                 flyButton(fly.running ? "pause" : "run", on: fly.running) { fly.toggle(!fly.running) }.disabled(!fly.ready)
                 flyButton("clear", on: false) { fly.clear() }
@@ -574,39 +574,39 @@ struct LabFlyView: View {
             VStack(spacing: 5) {
                 ForEach(FlyPreset.all) { p in
                     Button { fly.choose(p) } label: {
-                        HStack { Text(p.name); Spacer(); Text(p.tag.uppercased()).font(.system(size: 9.5)).tracking(0.9).opacity(0.7) }
-                            .font(.system(size: 12, design: .monospaced))
+                        HStack { Text(p.name); Spacer(); Text(p.tag.uppercased()).font(Font.pl(size: 9.5)).tracking(0.9).opacity(0.7) }
+                            .font(Font.pl(size: 12, design: .monospaced))
                             .foregroundStyle(fly.selected == p.id ? Color(hex: 0x0a0a0a) : Color(hex: 0xe8e4d9))
                             .padding(.horizontal, 11).frame(minHeight: 44)
-                            .background(RoundedRectangle(cornerRadius: 3).fill(fly.selected == p.id ? PLG.gold : Color(hex: 0x111010)))
-                            .overlay(RoundedRectangle(cornerRadius: 3).strokeBorder(fly.selected == p.id ? PLG.gold : Color(hex: 0x1e1c18), lineWidth: 1))
+                            .background(RoundedRectangle(cornerRadius: 3 * PLStyle.radius).fill(fly.selected == p.id ? PLG.gold : Color(hex: 0x111010)))
+                            .overlay(RoundedRectangle(cornerRadius: 3 * PLStyle.radius).strokeBorder(fly.selected == p.id ? PLG.gold : Color(hex: 0x1e1c18), lineWidth: 1))
                     }
                     .buttonStyle(.plain).disabled(!fly.ready)
                 }
             }
-            Text(fly.why).font(.system(size: 10.5, design: .monospaced)).foregroundStyle(Color(hex: 0x7a756a)).lineSpacing(5)
+            Text(fly.why).font(Font.pl(size: 10.5, design: .monospaced)).foregroundStyle(Color(hex: 0x7a756a)).lineSpacing(5)
                 .padding(.leading, 10).padding(.top, 12).overlay(alignment: .leading) { Rectangle().fill(Color(hex: 0x1e1c18)).frame(width: 1) }
-            Text("WHAT THE LINE IS DOING").font(.system(size: 12, weight: .semibold, design: .serif)).tracking(1.7).foregroundStyle(PLG.gold).padding(.top, 24)
-            Text(fly.stimName).font(.system(size: 10.5, design: .monospaced)).foregroundStyle(Color(hex: 0x7a756a)).padding(.top, 4).padding(.bottom, 8)
+            Text("WHAT THE LINE IS DOING").font(Font.pl(size: 12, weight: .semibold, design: .serif)).tracking(1.7).foregroundStyle(PLG.gold).padding(.top, 24)
+            Text(fly.stimName).font(Font.pl(size: 10.5, design: .monospaced)).foregroundStyle(Color(hex: 0x7a756a)).padding(.top, 4).padding(.bottom, 8)
             ForEach(FlyModel.channels, id: \.0) { k, what in
                 let hz = fly.channelHz[k] ?? 0
                 HStack(spacing: 8) {
                     VStack(alignment: .leading, spacing: 2) {
-                        Text(k).font(.system(size: 11, design: .monospaced)).foregroundStyle(hz > 4 ? PLG.gold : Color(hex: 0xe8e4d9))
-                        Text(what).font(.system(size: 9.5, design: .monospaced)).foregroundStyle(Color(hex: 0x7a756a))
+                        Text(k).font(Font.pl(size: 11, design: .monospaced)).foregroundStyle(hz > 4 ? PLG.gold : Color(hex: 0xe8e4d9))
+                        Text(what).font(Font.pl(size: 9.5, design: .monospaced)).foregroundStyle(Color(hex: 0x7a756a))
                     }
                     Spacer()
                     ZStack(alignment: .leading) {
                         Capsule().fill(Color(hex: 0x17150f)).frame(width: 62, height: 3)
                         Capsule().fill(PLG.gold).frame(width: 62 * min(1, hz * 7 / 100), height: 3)
                     }
-                    Text(String(format: "%.0f", hz)).font(.system(size: 10, design: .monospaced)).foregroundStyle(hz > 4 ? PLG.gold : Color(hex: 0x7a756a)).frame(width: 30, alignment: .trailing).monospacedDigit()
+                    Text(String(format: "%.0f", hz)).font(Font.pl(size: 10, design: .monospaced)).foregroundStyle(hz > 4 ? PLG.gold : Color(hex: 0x7a756a)).frame(width: 30, alignment: .trailing).monospacedDigit()
                 }
                 .padding(.vertical, 6)
                 Divider().overlay(Color(hex: 0x131210))
             }
             Text("The wiring is measurement. The mapping is a choice. Which descending neurons exist and what each one does is published biology. That turn should bend a curve rather than colour it is a decision made in this drawing. The fly is real; the drawing is ours.\n\nConnectome: FlyWire v783 — Dorkenwald et al.; Schlegel et al. — CC-BY 4.0. LIF model after Shiu et al. Simulation engine from fly-brain-bench (MIT).")
-                .font(.system(size: 10, design: .monospaced)).foregroundStyle(Color(hex: 0x5c584f)).lineSpacing(5).padding(.top, 26)
+                .font(Font.pl(size: 10, design: .monospaced)).foregroundStyle(Color(hex: 0x5c584f)).lineSpacing(5).padding(.top, 26)
         }
         .padding(.horizontal, 18).padding(.top, 22).padding(.bottom, 40)
         .frame(maxWidth: .infinity, alignment: .leading).background(Color(hex: 0x070706))
@@ -614,10 +614,10 @@ struct LabFlyView: View {
 
     private func flyButton(_ title: String, on: Bool, _ action: @escaping () -> Void) -> some View {
         Button(action: action) {
-            Text(title).font(.system(size: 11, design: .monospaced)).tracking(0.7).foregroundStyle(on ? Color(hex: 0x0a0a0a) : Color(hex: 0xe8e4d9))
+            Text(title).font(Font.pl(size: 11, design: .monospaced)).tracking(0.7).foregroundStyle(on ? Color(hex: 0x0a0a0a) : Color(hex: 0xe8e4d9))
                 .padding(.horizontal, 14).frame(minHeight: 44)
-                .background(RoundedRectangle(cornerRadius: 2).fill(on ? PLG.gold : Color(hex: 0x111010)))
-                .overlay(RoundedRectangle(cornerRadius: 2).strokeBorder(on ? PLG.gold : Color(hex: 0x1e1c18), lineWidth: 1))
+                .background(RoundedRectangle(cornerRadius: 2 * PLStyle.radius).fill(on ? PLG.gold : Color(hex: 0x111010)))
+                .overlay(RoundedRectangle(cornerRadius: 2 * PLStyle.radius).strokeBorder(on ? PLG.gold : Color(hex: 0x1e1c18), lineWidth: 1))
         }
         .buttonStyle(.plain)
     }

@@ -117,13 +117,13 @@ struct LabCardsView: View {
             VStack(spacing: 18) {
                 Text("NFT Candidates — GlyphGuy × the Curve Library").gTitle(22, relativeTo: .title2).foregroundStyle(Color(hex: 0xf0ece2)).multilineTextAlignment(.center)
                 Text("First pass, not a generator — one fixed character, flat color + camera angle as the variation. Lab route, nothing minted, nothing final.")
-                    .font(.footnote).foregroundStyle(Color(hex: 0xf0ece2).opacity(0.55)).multilineTextAlignment(.center)
+                    .font(Font.pl(.footnote)).foregroundStyle(Color(hex: 0xf0ece2).opacity(0.55)).multilineTextAlignment(.center)
                 ForEach(only == nil ? cards : cards.filter { $0.id == only }) { c in
                     ZStack {
                         AsyncImage(url: URL(string: LibraryData.shared.base(model) + "/nft-candidates/\(c.id).png")) { $0.resizable().scaledToFill() } placeholder: { Color(hex: 0x1a1610) }
                         GlyphCardScene(pose: c.pose)
                     }
-                    .aspectRatio(1, contentMode: .fit).clipShape(RoundedRectangle(cornerRadius: 4)).overlay { RoundedRectangle(cornerRadius: 4).strokeBorder(PLG.gold.opacity(0.25), lineWidth: 1) }
+                    .aspectRatio(1, contentMode: .fit).clipShape(RoundedRectangle(cornerRadius: 4 * PLStyle.radius)).overlay { RoundedRectangle(cornerRadius: 4 * PLStyle.radius).strokeBorder(PLG.gold.opacity(0.25), lineWidth: 1) }
                     .onTapGesture { withAnimation(.snappy) { only = only == c.id ? nil : c.id } }
                     .accessibilityLabel("GlyphGuy card \(c.label). Tap to show alone.")
                     .overlay(alignment: .bottomLeading) { Text(c.label).gEyebrow(9).foregroundStyle(.white.opacity(0.6)).padding(8).allowsHitTesting(false) }

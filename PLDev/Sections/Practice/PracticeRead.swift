@@ -16,11 +16,11 @@ struct LessonReadStep: View {
     var body: some View {
         ScrollView {
             VStack(alignment: .leading, spacing: 22) {
-                Text("Read first").font(.system(size: 12, weight: .medium)).textCase(.uppercase).tracking(1.2).foregroundStyle(Candle.gold)
+                Text("Read first").font(Font.pl(size: 12, weight: .medium)).textCase(.uppercase).tracking(1.2).foregroundStyle(Candle.gold)
                 ForEach(Array(passages.enumerated()), id: \.offset) { _, p in
                     VStack(alignment: .leading, spacing: 8) {
-                        Text(p.text).font(.system(size: 19, design: .serif)).foregroundStyle(Candle.ink).plReading().textSelection(.enabled)
-                        Text(p.from ?? "The canon").font(.system(size: 12)).foregroundStyle(Candle.ink.opacity(0.5))
+                        Text(p.text).font(Font.pl(size: 19, design: .serif)).foregroundStyle(Candle.ink).plReading().textSelection(.enabled)
+                        Text(p.from ?? "The canon").font(Font.pl(size: 12)).foregroundStyle(Candle.ink.opacity(0.5))
                     }
                     .frame(maxWidth: .infinity, alignment: .leading)
                     .padding(.leading, 14)

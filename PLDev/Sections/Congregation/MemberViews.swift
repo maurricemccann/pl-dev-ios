@@ -464,8 +464,8 @@ struct GamesPanel: View {
                         if i < r.games.count - 1 { SiteRule() }
                     }
                 }
-                .background(Bone.raised(scheme), in: RoundedRectangle(cornerRadius: 12, style: .continuous))
-                .overlay { RoundedRectangle(cornerRadius: 12, style: .continuous).strokeBorder(Bone.line(scheme), lineWidth: 0.8) }
+                .background(Bone.raised(scheme), in: RoundedRectangle(cornerRadius: 12 * PLStyle.radius, style: .continuous))
+                .overlay { RoundedRectangle(cornerRadius: 12 * PLStyle.radius, style: .continuous).strokeBorder(Bone.line(scheme), lineWidth: 0.8) }
             }
         }
         .task { roster = try? await Site.get("api/games/list", Roster.self) }

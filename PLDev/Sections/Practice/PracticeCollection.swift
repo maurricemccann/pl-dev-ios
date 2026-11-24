@@ -48,19 +48,19 @@ struct EarnedCardFace: View {
     var body: some View {
         VStack(spacing: 10) {
             ZStack {
-                RoundedRectangle(cornerRadius: 18).fill(.black.opacity(0.35))
+                RoundedRectangle(cornerRadius: 18 * PLStyle.radius).fill(.black.opacity(0.35))
                 if let url {
                     AsyncImage(url: url) { img in img.resizable().scaledToFit() } placeholder: { ProgressView() }
-                        .clipShape(RoundedRectangle(cornerRadius: 14)).padding(10)
+                        .clipShape(RoundedRectangle(cornerRadius: 14 * PLStyle.radius)).padding(10)
                 } else if looked {
-                    Text("This piece has no still picture.").font(.footnote).foregroundStyle(.secondary).padding()
+                    Text("This piece has no still picture.").font(Font.pl(.footnote)).foregroundStyle(.secondary).padding()
                 } else {
                     ProgressView()
                 }
             }
             .aspectRatio(0.8, contentMode: .fit)
-            .overlay(RoundedRectangle(cornerRadius: 18).strokeBorder(.white.opacity(0.18)))
-            Text(card.date).font(.caption.monospacedDigit()).foregroundStyle(.secondary)
+            .overlay(RoundedRectangle(cornerRadius: 18 * PLStyle.radius).strokeBorder(.white.opacity(0.18)))
+            Text(card.date).font(Font.pl(.caption).monospacedDigit()).foregroundStyle(.secondary)
         }
         .task(id: card.piece) { url = await PracticeCards.still(for: card.piece, model: model); looked = true }
     }
@@ -78,10 +78,10 @@ struct EarnedCardSheet: View {
             ScrollView {
                 VStack(alignment: .leading, spacing: 18) {
                     if let fresh {
-                        Text("Earned tonight").font(.title2.weight(.semibold))
+                        Text("Earned tonight").font(Font.pl(.title2).weight(.semibold))
                         EarnedCardFace(model: model, card: fresh)
                     }
-                    Text("\(collection.count) in your collection").font(.headline)
+                    Text("\(collection.count) in your collection").font(Font.pl(.headline))
                     LazyVGrid(columns: [GridItem(.adaptive(minimum: 104), spacing: 10)], spacing: 10) {
                         ForEach(collection.cards) { EarnedCardFace(model: model, card: $0) }
                     }

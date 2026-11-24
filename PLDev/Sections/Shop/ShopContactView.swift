@@ -24,8 +24,8 @@ struct SiteField: View {
                 .keyboardType(keyboard).textContentType(contentType).textInputAutocapitalization(capitalize).autocorrectionDisabled(keyboard == .emailAddress)
                 .font(SiteFont.body(16)).foregroundStyle(Bone.ink(scheme))
                 .padding(.horizontal, 16).padding(.vertical, 13).frame(minHeight: 50, alignment: .topLeading)
-                .background(Bone.raised(scheme), in: RoundedRectangle(cornerRadius: 16, style: .continuous))
-                .overlay { RoundedRectangle(cornerRadius: 16, style: .continuous).strokeBorder(Bone.line(scheme), lineWidth: 0.8) }
+                .background(Bone.raised(scheme), in: RoundedRectangle(cornerRadius: 16 * PLStyle.radius, style: .continuous))
+                .overlay { RoundedRectangle(cornerRadius: 16 * PLStyle.radius, style: .continuous).strokeBorder(Bone.line(scheme), lineWidth: 0.8) }
         }
     }
 }

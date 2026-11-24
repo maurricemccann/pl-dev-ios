@@ -222,7 +222,7 @@ struct PathScreen: View {
                 .onAppear { pathBuddy.react(.returned) }
             }
             // Gemini 11-17: a big gold 0 reads as a score; day one says so instead
-            Text(record.days.isEmpty ? "Day one" : "\(record.days.count) \(record.days.count == 1 ? "day" : "days") of lessons").font(.system(size: 22, weight: .semibold)).foregroundStyle(Candle.goldHi)
+            Text(record.days.isEmpty ? "Day one" : "\(record.days.count) \(record.days.count == 1 ? "day" : "days") of lessons").font(Font.pl(size: 22, weight: .semibold)).foregroundStyle(Candle.goldHi)
             Text("\(gold) of \(course.units.count) units gold").candleHint()
             if minutes > 0 { Text("About \(max(1, minutes / 3)) \(minutes / 3 > 1 ? "lessons" : "lesson") a day for your \(minutes) minutes.").candleHint() }
             if let (u, l) = record.next(in: course) {
@@ -259,7 +259,7 @@ struct PathScreen: View {
                     Text(status).candleHint()
                 }
                 Spacer(minLength: 0)
-                Image(systemName: "chevron.down").font(.system(size: 12)).foregroundStyle(Candle.ink.opacity(0.5)).rotationEffect(.degrees(isOpen ? 180 : 0))
+                Image(systemName: "chevron.down").font(Font.pl(size: 12)).foregroundStyle(Candle.ink.opacity(0.5)).rotationEffect(.degrees(isOpen ? 180 : 0))
             }
             .frame(minHeight: 44).contentShape(Rectangle())
         }
@@ -271,7 +271,7 @@ struct PathScreen: View {
         let open = record.isOpen(u, in: course), gold = record.isGold(u)
         return PCard(title: "\(u.n) \u{00b7} \(u.title)" + (gold ? "  \u{2726} gold" : ""), hint: u.about, id: "unit-\(u.n)") {
             if !u.guidebook.isEmpty {
-                Text("Read").font(.system(size: 11)).textCase(.uppercase).tracking(1).foregroundStyle(Candle.ink.opacity(0.5))
+                Text("Read").font(Font.pl(size: 11)).textCase(.uppercase).tracking(1).foregroundStyle(Candle.ink.opacity(0.5))
                 ForEach(u.guidebook) { p in pageRow(p, u) }
             }
             if u.playableLessons.isEmpty {
@@ -302,9 +302,9 @@ struct PathScreen: View {
                 } label: {
                     HStack {
                         Image(systemName: Academy.read[key] == nil ? "circle" : "checkmark.circle.fill").foregroundStyle(Candle.gold)
-                        Text(p.title.capitalized).font(.system(size: 14)).foregroundStyle(Candle.ink)
+                        Text(p.title.capitalized).font(Font.pl(size: 14)).foregroundStyle(Candle.ink)
                         Spacer(minLength: 0)
-                        Image(systemName: "chevron.right").font(.system(size: 11)).foregroundStyle(Candle.ink.opacity(0.4))
+                        Image(systemName: "chevron.right").font(Font.pl(size: 11)).foregroundStyle(Candle.ink.opacity(0.4))
                     }
                     .frame(minHeight: 44).contentShape(Rectangle())
                 }
@@ -363,10 +363,10 @@ struct LessonView: View {
             CandleGround()
             VStack(spacing: 18) {
                 HStack {
-                    Button { close() } label: { Image(systemName: "xmark").font(.system(size: 15, weight: .medium)).foregroundStyle(Candle.ink).frame(width: 44, height: 44) }
+                    Button { close() } label: { Image(systemName: "xmark").font(Font.pl(size: 15, weight: .medium)).foregroundStyle(Candle.ink).frame(width: 44, height: 44) }
                         .accessibilityLabel("Close the lesson")
                     ProgressView(value: Double(index), total: Double(max(1, run.exercises.count))).tint(Candle.gold)
-                    Text("\(min(index + 1, run.exercises.count)) / \(run.exercises.count)").font(.system(size: 12).monospacedDigit()).foregroundStyle(Candle.ink.opacity(0.6))
+                    Text("\(min(index + 1, run.exercises.count)) / \(run.exercises.count)").font(Font.pl(size: 12).monospacedDigit()).foregroundStyle(Candle.ink.opacity(0.6))
                 }
                 if finished { done }
                 else if pausing { pauseCard }
@@ -413,7 +413,7 @@ struct LessonView: View {
 
     @ViewBuilder private func exercise(_ e: CourseExercise) -> some View {
         VStack(alignment: .leading, spacing: 14) {
-            Text(e.prompt).font(.system(size: 13)).textCase(.uppercase).tracking(1).foregroundStyle(Candle.gold)
+            Text(e.prompt).font(Font.pl(size: 13)).textCase(.uppercase).tracking(1).foregroundStyle(Candle.gold)
             ExerciseBody(exercise: e, locked: answered != nil, model: model) { result in
                 let ok = result || !Self.graded(e)   // Codex: kept work never records a miss or plays the wrong sound
                 answered = ok
@@ -425,9 +425,9 @@ struct LessonView: View {
             .id(e.id + "\(index)")
             if let answered {
                 VStack(alignment: .leading, spacing: 8) {
-                    Text(answered ? (Self.graded(e) ? "Right." : "Kept.") : "Not this time. It comes back later.").font(.system(size: 15, weight: .medium)).foregroundStyle(answered ? Candle.goldHi : Candle.ink)
-                    if !answered, let a = shown(e) { Text(a).font(.system(size: 14)).foregroundStyle(Candle.ink) }
-                    if let why = e.why { Text(why).font(.system(size: 14, design: .serif).italic()).foregroundStyle(Candle.goldHi).lineSpacing(3) }
+                    Text(answered ? (Self.graded(e) ? "Right." : "Kept.") : "Not this time. It comes back later.").font(Font.pl(size: 15, weight: .medium)).foregroundStyle(answered ? Candle.goldHi : Candle.ink)
+                    if !answered, let a = shown(e) { Text(a).font(Font.pl(size: 14)).foregroundStyle(Candle.ink) }
+                    if let why = e.why { Text(why).font(Font.pl(size: 14, design: .serif).italic()).foregroundStyle(Candle.goldHi).lineSpacing(3) }
                     Button(index + 1 < run.exercises.count ? "Continue" : "Finish") { advance() }.buttonStyle(CandleButton())
                 }
                 .candleCard()
@@ -547,14 +547,14 @@ struct OptionExercise: View {
     var body: some View {
         VStack(alignment: .leading, spacing: 12) {
             // Gemini 11-17: the question sits in its own card; the answers are full-width rows and the right one fills gold
-            if let text { Text(text).font(.system(size: 19)).foregroundStyle(Candle.ink).lineSpacing(4).fixedSize(horizontal: false, vertical: true)
+            if let text { Text(text).font(Font.pl(size: 19)).foregroundStyle(Candle.ink).lineSpacing(4).fixedSize(horizontal: false, vertical: true)
                 .frame(maxWidth: .infinity, alignment: .leading).candleCard(padding: 18).padding(.bottom, 6) }
             ForEach(Array(options.enumerated()), id: \.offset) { i, o in
                 Button { guard !locked else { return }; withAnimation(.snappy(duration: 0.22)) { picked = i }; answer(i == correct) } label: {
-                    Text(o).font(.system(size: 16, weight: filled(i) ? .semibold : .regular)).foregroundStyle(filled(i) ? Candle.bg : Candle.ink).multilineTextAlignment(.leading)
+                    Text(o).font(Font.pl(size: 16, weight: filled(i) ? .semibold : .regular)).foregroundStyle(filled(i) ? Candle.bg : Candle.ink).multilineTextAlignment(.leading)
                         .frame(maxWidth: .infinity, minHeight: 52, alignment: .leading).padding(.horizontal, 16).padding(.vertical, 6)
-                        .background { RoundedRectangle(cornerRadius: 14, style: .continuous).fill(filled(i) ? Candle.gold : Candle.ink.opacity(i == picked ? 0.1 : 0.03)) }
-                        .overlay { RoundedRectangle(cornerRadius: 14, style: .continuous).strokeBorder(line(i), lineWidth: locked && i == correct ? 2 : 1) }
+                        .background { RoundedRectangle(cornerRadius: 14 * PLStyle.radius, style: .continuous).fill(filled(i) ? Candle.gold : Candle.ink.opacity(i == picked ? 0.1 : 0.03)) }
+                        .overlay { RoundedRectangle(cornerRadius: 14 * PLStyle.radius, style: .continuous).strokeBorder(line(i), lineWidth: locked && i == correct ? 2 : 1) }
                         .scaleEffect(i == picked && !reduceMotion ? 1.02 : 1)
                         .accessibilityAddTraits(i == picked ? .isSelected : [])
                         .contentShape(Rectangle())
@@ -587,19 +587,19 @@ struct TileExercise: View {
     var body: some View {
         VStack(alignment: .leading, spacing: 14) {
             if let shownFirst, !hidden {
-                Text(shownFirst).font(.system(size: 20)).foregroundStyle(Candle.goldHi).lineSpacing(4)
+                Text(shownFirst).font(Font.pl(size: 20)).foregroundStyle(Candle.goldHi).lineSpacing(4)
                 Button("Hide it") { hidden = true }.buttonStyle(CandleGhost())
             } else {
                 Text(built.isEmpty ? "Tap the pieces in order." : built.map(\.word).joined(separator: separator))
-                    .font(.system(size: 19)).foregroundStyle(built.isEmpty ? Candle.ink.opacity(0.4) : Candle.ink).lineSpacing(4)
+                    .font(Font.pl(size: 19)).foregroundStyle(built.isEmpty ? Candle.ink.opacity(0.4) : Candle.ink).lineSpacing(4)
                     .frame(maxWidth: .infinity, minHeight: 70, alignment: .topLeading).padding(12)
-                    .overlay { RoundedRectangle(cornerRadius: 8, style: .continuous).strokeBorder(Candle.fieldLine, lineWidth: 1) }
+                    .overlay { RoundedRectangle(cornerRadius: 8 * PLStyle.radius, style: .continuous).strokeBorder(Candle.fieldLine, lineWidth: 1) }
                 PracticeFlow(spacing: 8) {
                     ForEach(pool, id: \.id) { t in
                         Button(t.word) { guard !locked else { return }; built.append(t); pool.removeAll { $0.id == t.id }; check() }.buttonStyle(CandleGhost())
                     }
                 }
-                if !built.isEmpty && !locked { Button("Undo") { if let l = built.popLast() { pool.append(l) } }.buttonStyle(.plain).font(.system(size: 13)).foregroundStyle(Candle.ink.opacity(0.6)).frame(minHeight: 44) }
+                if !built.isEmpty && !locked { Button("Undo") { if let l = built.popLast() { pool.append(l) } }.buttonStyle(.plain).font(Font.pl(size: 13)).foregroundStyle(Candle.ink.opacity(0.6)).frame(minHeight: 44) }
             }
         }
         .onAppear { if pool.isEmpty && built.isEmpty { pool = Array(target.enumerated()).map { (id: $0.offset, word: $0.element) }.shuffled() } }
@@ -622,9 +622,9 @@ struct BannedWordExercise: View {
             PracticeFlow(spacing: 6) {
                 ForEach(Array(words.enumerated()), id: \.offset) { i, w in
                     Button { guard !locked else { return }; if picked.contains(i) { picked.remove(i) } else { picked.insert(i) } } label: {
-                        Text(w).font(.system(size: 17)).foregroundStyle(picked.contains(i) ? Color.black : Candle.ink)
+                        Text(w).font(Font.pl(size: 17)).foregroundStyle(picked.contains(i) ? Color.black : Candle.ink)
                             .padding(.horizontal, 6).frame(minHeight: 44)
-                            .background(picked.contains(i) ? Candle.gold : Color.clear, in: RoundedRectangle(cornerRadius: 6, style: .continuous))
+                            .background(picked.contains(i) ? Candle.gold : Color.clear, in: RoundedRectangle(cornerRadius: 6 * PLStyle.radius, style: .continuous))
                     }
                     .buttonStyle(.plain)
                 }
@@ -648,7 +648,7 @@ struct ReflectExercise: View {
     @State private var line = ""
     var body: some View {
         VStack(alignment: .leading, spacing: 12) {
-            Text(text).font(.system(size: 19)).foregroundStyle(Candle.ink).lineSpacing(4).fixedSize(horizontal: false, vertical: true)
+            Text(text).font(Font.pl(size: 19)).foregroundStyle(Candle.ink).lineSpacing(4).fixedSize(horizontal: false, vertical: true)
             PField(prompt: "One line.", text: $line, lines: 3)
             if !locked { Button("Done") { keep(); answer(true) }.buttonStyle(CandleButton()).disabled(line.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty) }
         }

@@ -38,7 +38,7 @@ struct ReviewCard: View {
     var body: some View {
         PCard(title: "Weekly review", id: "review") {
             if due {
-                Text("seven days on the record \u{2014} close the loop").font(.system(size: 12)).foregroundStyle(Candle.ink.opacity(0.5))
+                Text("seven days on the record \u{2014} close the loop").font(Font.pl(size: 12)).foregroundStyle(Candle.ink.opacity(0.5))
                 PField(prompt: "What worked this week?", text: $worked, lines: 2)
                 PField(prompt: "What gets adjusted?", text: $adjust, lines: 2)
                 PField(prompt: "What gets celebrated \u{2014} effort counts.", text: $celebrate, lines: 2)
@@ -52,7 +52,7 @@ struct ReviewCard: View {
             }
             if let l = latest {
                 VStack(alignment: .leading, spacing: 0) {
-                    Text("last sealed \(l.date)").font(.system(size: 12)).foregroundStyle(Candle.ink.opacity(0.5)).padding(.bottom, 4)
+                    Text("last sealed \(l.date)").font(Font.pl(size: 12)).foregroundStyle(Candle.ink.opacity(0.5)).padding(.bottom, 4)
                     if let s = l.ai_summary, !s.isEmpty { CoachNote(text: s) }
                     line("worked", l.worked); line("adjust", l.adjust); line("celebrate", l.celebrate)
                 }
@@ -66,7 +66,7 @@ struct ReviewCard: View {
         VStack(spacing: 0) {
             CandleRule()
             (Text("\(k):").foregroundStyle(Candle.goldHi).fontWeight(.medium) + Text(" \(v.flatMap { $0.isEmpty ? nil : $0 } ?? "\u{2014}")"))
-                .font(.system(size: 13.6)).foregroundStyle(Candle.ink.opacity(0.85)).frame(maxWidth: .infinity, alignment: .leading).padding(.vertical, 8)
+                .font(Font.pl(size: 13.6)).foregroundStyle(Candle.ink.opacity(0.85)).frame(maxWidth: .infinity, alignment: .leading).padding(.vertical, 8)
         }
         .padding(.top, 6)
     }
@@ -109,12 +109,12 @@ struct RehearsalsCard: View {
             } else {
                 let avg = Double(week.map(\.intensity).reduce(0, +)) / Double(week.count)
                 (Text("\(week.count)").fontWeight(.semibold) + Text(" rehearsal\(week.count == 1 ? "" : "s") this week \u{00B7} avg intensity ") + Text(String(format: "%.1f", avg)).fontWeight(.semibold) + Text("/5"))
-                    .font(.system(size: 13.6)).foregroundStyle(Candle.ink.opacity(0.85))
+                    .font(Font.pl(size: 13.6)).foregroundStyle(Candle.ink.opacity(0.85))
                 VStack(spacing: 0) {
                     ForEach(week.prefix(5)) { s in
                         CandleRule()
                         Text("\(s.date ?? "") \u{00B7} \(s.intensity)/5 \u{00B7} \(String((s.desire_text ?? "").prefix(60)))")
-                            .font(.system(size: 13.6)).foregroundStyle(Candle.ink.opacity(0.85)).frame(maxWidth: .infinity, alignment: .leading).padding(.vertical, 8)
+                            .font(Font.pl(size: 13.6)).foregroundStyle(Candle.ink.opacity(0.85)).frame(maxWidth: .infinity, alignment: .leading).padding(.vertical, 8)
                     }
                 }
             }
@@ -144,7 +144,7 @@ struct StoryHistoryCard: View {
                     (Text(t.date).fontWeight(.semibold).foregroundStyle(Candle.goldHi)
                      + Text(" \u{2014} \(t.story.flatMap { $0.isEmpty ? nil : $0 } ?? "(no morning entry)")")
                      + Text(t.story_shifted.flatMap { $0.isEmpty ? nil : " \u{2192} shifted: \($0)" } ?? ""))
-                        .font(.system(size: 13.6)).foregroundStyle(Candle.ink.opacity(0.85)).lineSpacing(3)
+                        .font(Font.pl(size: 13.6)).foregroundStyle(Candle.ink.opacity(0.85)).lineSpacing(3)
                         .frame(maxWidth: .infinity, alignment: .leading).padding(.vertical, 8).textSelection(.enabled)
                 }
             }

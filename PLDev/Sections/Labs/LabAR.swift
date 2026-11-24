@@ -122,8 +122,8 @@ struct LabARView: View {
             }
             if !ar.note.isEmpty && ar.mode != .idle {
                 VStack { Spacer()
-                    Text(ar.note).font(.system(size: 11)).tracking(0.9).foregroundStyle(PLG.gold.opacity(0.8)).multilineTextAlignment(.center)
-                        .padding(.horizontal, 14).padding(.vertical, 8).background(RoundedRectangle(cornerRadius: 10).fill(Color(hex: 0x0e0c08).opacity(0.7)).overlay { RoundedRectangle(cornerRadius: 10).strokeBorder(PLG.gold.opacity(0.27), lineWidth: 1) })
+                    Text(ar.note).font(Font.pl(size: 11)).tracking(0.9).foregroundStyle(PLG.gold.opacity(0.8)).multilineTextAlignment(.center)
+                        .padding(.horizontal, 14).padding(.vertical, 8).background(RoundedRectangle(cornerRadius: 10 * PLStyle.radius).fill(Color(hex: 0x0e0c08).opacity(0.7)).overlay { RoundedRectangle(cornerRadius: 10 * PLStyle.radius).strokeBorder(PLG.gold.opacity(0.27), lineWidth: 1) })
                         .padding(.bottom, ar.mode == .room ? 130 : 24).padding(.horizontal, 30) }
                 .allowsHitTesting(false)
             }
@@ -142,20 +142,20 @@ struct LabARView: View {
 
     private var gate: some View {
         VStack(spacing: 22) {
-            Text("Wrap the world in curves").font(.system(size: 13, weight: .light)).tracking(4.4).textCase(.uppercase).foregroundStyle(PLG.gold)
+            Text("Wrap the world in curves").font(Font.pl(size: 13, weight: .light)).tracking(4.4).textCase(.uppercase).foregroundStyle(PLG.gold)
             Button { Task { await ar.openCamera() } } label: {
-                Text("Open camera").font(.system(size: 12)).tracking(2.6).textCase(.uppercase).foregroundStyle(PLG.gold).padding(.horizontal, 30).frame(minHeight: 52)
+                Text("Open camera").font(Font.pl(size: 12)).tracking(2.6).textCase(.uppercase).foregroundStyle(PLG.gold).padding(.horizontal, 30).frame(minHeight: 52)
                     .overlay { Capsule().strokeBorder(PLG.gold, lineWidth: 1) }
             }.buttonStyle(.plain)
             Button { ar.openRoom() } label: {
-                Text("Wrap the room").font(.system(size: 12)).tracking(2.6).textCase(.uppercase).foregroundStyle(PLG.gold).padding(.horizontal, 30).frame(minHeight: 52)
+                Text("Wrap the room").font(Font.pl(size: 12)).tracking(2.6).textCase(.uppercase).foregroundStyle(PLG.gold).padding(.horizontal, 30).frame(minHeight: 52)
                     .overlay { Capsule().strokeBorder(PLG.gold.opacity(0.55), lineWidth: 1) }
             }.buttonStyle(.plain)
             Button { ar.preview() } label: {
-                Text("Preview without camera").font(.system(size: 10)).tracking(2).textCase(.uppercase).foregroundStyle(PLG.gold.opacity(0.53)).frame(minHeight: 44)
+                Text("Preview without camera").font(Font.pl(size: 10)).tracking(2).textCase(.uppercase).foregroundStyle(PLG.gold.opacity(0.53)).frame(minHeight: 44)
             }.buttonStyle(.plain)
             Text("Tap grants camera and motion access. Turn the phone — the curves hold to the world. The room mode tracks a floor or a table and keeps the pattern on it.")
-                .font(.system(size: 10)).tracking(0.6).lineSpacing(4).foregroundStyle(PLG.gold.opacity(0.4)).multilineTextAlignment(.center).frame(maxWidth: 300)
+                .font(Font.pl(size: 10)).tracking(0.6).lineSpacing(4).foregroundStyle(PLG.gold.opacity(0.4)).multilineTextAlignment(.center).frame(maxWidth: 300)
         }
         .padding(24)
     }

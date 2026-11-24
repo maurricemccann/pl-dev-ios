@@ -65,9 +65,9 @@ struct NativeLayersSheet: View {
         return HStack {
             Button { canvas.setGroup(id, "open", !(g?.open ?? true), history: false) } label: { Image(systemName: (g?.open ?? true) ? "chevron.down" : "chevron.right").frame(width: 44, height: 44).contentShape(Rectangle()) }.buttonStyle(.plain)
             Image(systemName: "folder")
-            Text(g?.name ?? "Group").font(.subheadline.weight(.semibold))
+            Text(g?.name ?? "Group").font(Font.pl(.subheadline).weight(.semibold))
             Spacer()
-            Text(blendLetter(g?.blend ?? "source-over") + ((g?.opacity ?? 1) < 1 ? " \(Int((g?.opacity ?? 1) * 100))" : "")).font(.caption2).foregroundStyle(.secondary)
+            Text(blendLetter(g?.blend ?? "source-over") + ((g?.opacity ?? 1) < 1 ? " \(Int((g?.opacity ?? 1) * 100))" : "")).font(Font.pl(.caption2)).foregroundStyle(.secondary)
             Button { canvas.setGroup(id, "vis", !(g?.visible ?? true)) } label: { Image(systemName: (g?.visible ?? true) ? "eye" : "eye.slash") }.buttonStyle(.plain)
         }
         .contentShape(Rectangle())
@@ -93,12 +93,12 @@ struct NativeLayersSheet: View {
             LayerThumb(canvas: canvas, index: row.id, version: canvas.docVersion).frame(width: 46, height: 34)
             VStack(alignment: .leading, spacing: 1) {
                 HStack(spacing: 4) {
-                    if row.clip { Image(systemName: "arrow.turn.down.right").font(.caption2) }
+                    if row.clip { Image(systemName: "arrow.turn.down.right").font(Font.pl(.caption2)) }
                     Text(row.name).lineLimit(1)
                     if row.ref { tag("ref") }
                     if row.assist == true || (row.assist == nil && canvas.assist && canvas.guide != .off) { tag("assist") }
                 }
-                Text(subtitle(row)).font(.caption2).foregroundStyle(.secondary).lineLimit(1)
+                Text(subtitle(row)).font(Font.pl(.caption2)).foregroundStyle(.secondary).lineLimit(1)
             }
             Spacer(minLength: 0)
             if row.hasMask {
@@ -132,7 +132,7 @@ struct NativeLayersSheet: View {
         }
     }
 
-    private func tag(_ t: String) -> some View { Text(t).font(.system(size: 9, weight: .semibold)).padding(.horizontal, 4).padding(.vertical, 1).background(Color.secondary.opacity(0.2), in: Capsule()) }
+    private func tag(_ t: String) -> some View { Text(t).font(Font.pl(size: 9, weight: .semibold)).padding(.horizontal, 4).padding(.vertical, 1).background(Color.secondary.opacity(0.2), in: Capsule()) }
     private func blendLetter(_ id: String) -> String {
         let m: [String: String] = ["source-over": "N", "multiply": "M", "screen": "S", "overlay": "O", "darken": "D", "lighten": "L", "color-dodge": "CD", "color-burn": "CB", "hard-light": "HL", "soft-light": "SL", "difference": "DF", "exclusion": "EX", "hue": "H", "saturation": "SA", "color": "C", "luminosity": "LU"]
         return m[id] ?? "X"
@@ -150,9 +150,9 @@ struct NativeLayersSheet: View {
         if canvas.selectedGroup != 0, let g = canvas.groupRows.first(where: { $0.id == canvas.selectedGroup }) {
             Section("Group · \(g.name)") {
                 HStack {
-                    Image(systemName: "circle.lefthalf.filled").font(.caption)
+                    Image(systemName: "circle.lefthalf.filled").font(Font.pl(.caption))
                     Slider(value: Binding(get: { g.opacity }, set: { canvas.setGroup(g.id, "op", ($0 * 100).rounded() / 100, history: false) }), in: 0...1) { e in if !e { canvas.markChanged() } }
-                    Text("\(Int((g.opacity * 100).rounded()))%").font(.caption).monospacedDigit().frame(width: 40)
+                    Text("\(Int((g.opacity * 100).rounded()))%").font(Font.pl(.caption)).monospacedDigit().frame(width: 40)
                 }
                 Picker("Blend", selection: Binding(get: { g.blend }, set: { canvas.setGroup(g.id, "blend", $0) })) { ForEach(NativeBlend.modes) { Text($0.label).tag($0.id) } }
                 actions
@@ -160,21 +160,21 @@ struct NativeLayersSheet: View {
         } else if let row = canvas.layerRows.first(where: { $0.id == canvas.activeLayer }) {
             Section("Layer · \(row.name)") {
                 HStack {
-                    Image(systemName: "circle.lefthalf.filled").font(.caption)
+                    Image(systemName: "circle.lefthalf.filled").font(Font.pl(.caption))
                     Slider(value: Binding(get: { row.opacity }, set: { canvas.setLayer("op", ($0 * 100).rounded() / 100, at: row.id, history: false) }), in: 0...1) { e in
                         if e { canvas.beginLayerEdit("op", at: row.id) } else { canvas.endLayerEdit(); canvas.markChanged() }
                     }.accessibilityLabel("Layer opacity")
-                    Text("\(Int((row.opacity * 100).rounded()))%").font(.caption).monospacedDigit().frame(width: 40, alignment: .trailing)
+                    Text("\(Int((row.opacity * 100).rounded()))%").font(Font.pl(.caption)).monospacedDigit().frame(width: 40, alignment: .trailing)
                 }
                 Picker("Blend", selection: Binding(get: { row.blend }, set: { canvas.setLayer("blend", $0, at: row.id) })) {
                     ForEach(NativeBlend.modes) { Text($0.label).tag($0.id) }
                 }.pickerStyle(.menu)
                 HStack {
-                    Image(systemName: "sparkles").font(.caption)
+                    Image(systemName: "sparkles").font(Font.pl(.caption))
                     Slider(value: Binding(get: { row.glow }, set: { canvas.setLayer("glow", ($0 * 100).rounded() / 100, at: row.id, history: false) }), in: 0...1) { e in
                         if e { canvas.beginLayerEdit("glow", at: row.id) } else { canvas.endLayerEdit(); canvas.markChanged() }
                     }.accessibilityLabel("Glow")
-                    Text("Glow").font(.caption).frame(width: 40, alignment: .trailing)
+                    Text("Glow").font(Font.pl(.caption)).frame(width: 40, alignment: .trailing)
                 }
                 Toggle("Alpha lock (paints only where there are pixels)", isOn: Binding(get: { row.lock }, set: { canvas.setLayer("lock", $0, at: row.id) }))
                 Toggle("Clip to the layer below", isOn: Binding(get: { row.clip }, set: { _ in canvas.setActive(row.id); canvas.toggleClip() }))
@@ -209,8 +209,8 @@ struct LayerThumb: View {
             if let d = canvas.doc, d.layers.indices.contains(index), let img = thumb(d.layers[index]) { Image(uiImage: img).resizable().scaledToFit() }
             else { Color.secondary.opacity(0.1) }
         }
-        .background(Color.secondary.opacity(0.12), in: RoundedRectangle(cornerRadius: 5, style: .continuous))
-        .clipShape(RoundedRectangle(cornerRadius: 5, style: .continuous))
+        .background(Color.secondary.opacity(0.12), in: RoundedRectangle(cornerRadius: 5 * PLStyle.radius, style: .continuous))
+        .clipShape(RoundedRectangle(cornerRadius: 5 * PLStyle.radius, style: .continuous))
     }
     private func thumb(_ l: NativeLayer) -> UIImage? {
         guard let src = l.pixels.image() else { return nil }

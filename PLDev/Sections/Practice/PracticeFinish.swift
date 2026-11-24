@@ -14,9 +14,9 @@ struct LessonFinishCard: View {
     var body: some View {
         VStack(spacing: 10) {
             Text("Lesson complete").plHand(28, relativeTo: .title).foregroundStyle(Candle.goldHi).multilineTextAlignment(.center)
-            Text(anchor).font(.subheadline.weight(.medium)).foregroundStyle(Candle.gold).multilineTextAlignment(.center)
+            Text(anchor).font(Font.pl(.subheadline).weight(.medium)).foregroundStyle(Candle.gold).multilineTextAlignment(.center)
             if let line = lesson.read?.first?.text {
-                Text(line).font(.system(.callout, design: .serif)).foregroundStyle(Candle.ink).multilineTextAlignment(.center)
+                Text(line).font(Font.pl(.callout, design: .serif)).foregroundStyle(Candle.ink).multilineTextAlignment(.center)
                     .lineLimit(3).lineSpacing(4).padding(.top, 6)
             }
             Rectangle().fill(Candle.ink.opacity(0.1)).frame(height: 1).padding(.top, 8)

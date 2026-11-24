@@ -152,8 +152,8 @@ struct PreparationGame: View {
                 Text("Do not anticipate. Tap the instant it flares.").candleHint()
                 Button("Begin") { start() }.buttonStyle(CandleButton())
             } else {
-                Text(label).font(.system(size: 17, weight: .medium)).foregroundStyle(Candle.ink).frame(minHeight: 24)
-                if let principle, phase == .result { Text(principle).font(.system(size: 14, design: .serif).italic()).foregroundStyle(Candle.goldHi).multilineTextAlignment(.center) }
+                Text(label).font(Font.pl(size: 17, weight: .medium)).foregroundStyle(Candle.ink).frame(minHeight: 24)
+                if let principle, phase == .result { Text(principle).font(Font.pl(size: 14, design: .serif).italic()).foregroundStyle(Candle.goldHi).multilineTextAlignment(.center) }
             }
         }
         .sensoryFeedback(PLHaptic.success, trigger: scores.count)
@@ -236,7 +236,7 @@ struct ReturnGame: View {
                 }
             }
             .frame(height: 330)
-            Text(status).font(.system(size: 15)).foregroundStyle(Candle.ink).multilineTextAlignment(.center)
+            Text(status).font(Font.pl(size: 15)).foregroundStyle(Candle.ink).multilineTextAlignment(.center)
             if sequence.isEmpty { Button("Begin") { grow() }.buttonStyle(CandleButton()) }
         }
         .sensoryFeedback(PLHaptic.select, trigger: lit ?? -1)
@@ -331,19 +331,19 @@ struct RunnerGame: View {
                     ctx.stroke(fig, with: .color(Candle.gold), lineWidth: 2)
                     for o in m.obstacles {
                         ctx.fill(Path(CGRect(x: o.x - 4, y: ground - o.h, width: 8, height: o.h)), with: .color(Color(red: 160 / 255, green: 60 / 255, blue: 60 / 255).opacity(0.75)))
-                        ctx.draw(Text(o.label).font(.system(size: 10, weight: .medium)).foregroundStyle(Candle.ink.opacity(0.7)), at: CGPoint(x: o.x, y: ground - o.h - 10))
+                        ctx.draw(Text(o.label).font(Font.pl(size: 10, weight: .medium)).foregroundStyle(Candle.ink.opacity(0.7)), at: CGPoint(x: o.x, y: ground - o.h - 10))
                     }
-                    ctx.draw(Text("\(Int(m.days)) days").font(.system(size: 14).monospacedDigit()).foregroundStyle(Candle.goldHi), at: CGPoint(x: size.width - 50, y: 20))
+                    ctx.draw(Text("\(Int(m.days)) days").font(Font.pl(size: 14).monospacedDigit()).foregroundStyle(Candle.goldHi), at: CGPoint(x: size.width - 50, y: 20))
                 }
             }
             .frame(height: 300)
-            .background(Color(red: 8 / 255, green: 8 / 255, blue: 8 / 255), in: RoundedRectangle(cornerRadius: 10, style: .continuous))
+            .background(Color(red: 8 / 255, green: 8 / 255, blue: 8 / 255), in: RoundedRectangle(cornerRadius: 10 * PLStyle.radius, style: .continuous))
             .contentShape(Rectangle())
             .onTapGesture { if m.running { m.jump() } }
             .accessibilityLabel("The run. Tap to jump.")
             if m.over {
                 Text("\(Int(m.days)) days of practice.").plHand(28, relativeTo: .title).foregroundStyle(Candle.goldHi)
-                Text(endLines.randomElement() ?? "Despite the conditions.").font(.system(size: 14, design: .serif).italic()).foregroundStyle(Candle.goldHi).multilineTextAlignment(.center)
+                Text(endLines.randomElement() ?? "Despite the conditions.").font(Font.pl(size: 14, design: .serif).italic()).foregroundStyle(Candle.goldHi).multilineTextAlignment(.center)
                 Text("Best \(ArcadeScores.best(.practice)) days").candleHint()
                 Button("Run again") { m.reset() }.buttonStyle(CandleButton())
             } else if !m.running {
@@ -371,21 +371,21 @@ struct CompoundGame: View {
                 ForEach(0..<16, id: \.self) { i in
                     let v = board[i]
                     Text(v == 0 ? "" : (Self.stages[v] ?? "\(v)"))
-                        .font(.system(size: 13, weight: .semibold)).minimumScaleFactor(0.6).lineLimit(1)
+                        .font(Font.pl(size: 13, weight: .semibold)).minimumScaleFactor(0.6).lineLimit(1)
                         .foregroundStyle(v >= 64 ? Color.black : Candle.ink)
                         .frame(maxWidth: .infinity).frame(height: 72)
-                        .background(v == 0 ? Candle.field : Candle.gold.opacity(min(1, 0.15 + log2(Double(max(v, 2))) * 0.08)), in: RoundedRectangle(cornerRadius: 8, style: .continuous))
+                        .background(v == 0 ? Candle.field : Candle.gold.opacity(min(1, 0.15 + log2(Double(max(v, 2))) * 0.08)), in: RoundedRectangle(cornerRadius: 8 * PLStyle.radius, style: .continuous))
                 }
             }
             .padding(8)
-            .background(Candle.card, in: RoundedRectangle(cornerRadius: 12, style: .continuous))
+            .background(Candle.card, in: RoundedRectangle(cornerRadius: 12 * PLStyle.radius, style: .continuous))
             .highPriorityGesture(DragGesture(minimumDistance: 20).onEnded { v in
                 let dx = v.translation.width, dy = v.translation.height
                 move(abs(dx) > abs(dy) ? (dx > 0 ? 1 : 3) : (dy > 0 ? 2 : 0))
             })
             .accessibilityLabel("The board. Swipe to merge.")
             if state == "won" { Text("Year 7. The practice compounds.").plHand(24, relativeTo: .title2).foregroundStyle(Candle.goldHi) }
-            if state == "over" { Text("No moves left. \(score) points.").font(.system(size: 15)).foregroundStyle(Candle.ink) }
+            if state == "over" { Text("No moves left. \(score) points.").font(Font.pl(size: 15)).foregroundStyle(Candle.ink) }
             if state != "play" { Button("Again") { start() }.buttonStyle(CandleButton()) }
             Text("Swipe up, down, left or right.").candleHint()
         }
@@ -474,7 +474,7 @@ struct RestoreGame: View {
                 .frame(maxWidth: .infinity)
             }
             .aspectRatio(1, contentMode: .fit)
-            if solved && moves > 0, let piece { Text([piece.title, piece.cr].compactMap { $0 }.joined(separator: " · ")).font(.system(size: 15, weight: .medium)).foregroundStyle(Candle.goldHi) }
+            if solved && moves > 0, let piece { Text([piece.title, piece.cr].compactMap { $0 }.joined(separator: " · ")).font(Font.pl(size: 15, weight: .medium)).foregroundStyle(Candle.goldHi) }
             HStack(spacing: 10) {
                 if image != nil { Button(hint ? "Hide the work" : "Show the work") { hint.toggle() }.buttonStyle(CandleGhost()) }
                 Button("New piece") { Task { await load() } }.buttonStyle(CandleGhost())
@@ -489,11 +489,11 @@ struct RestoreGame: View {
         if let image, let cg = image.cgImage {
             let w = cg.width / 4, h = cg.height / 4
             if let part = cg.cropping(to: CGRect(x: (v % 4) * w, y: (v / 4) * h, width: w, height: h)) {
-                Image(uiImage: UIImage(cgImage: part)).resizable().clipShape(RoundedRectangle(cornerRadius: 4, style: .continuous))
+                Image(uiImage: UIImage(cgImage: part)).resizable().clipShape(RoundedRectangle(cornerRadius: 4 * PLStyle.radius, style: .continuous))
             }
         } else {
-            Text(Self.words[min(v, 14)]).font(.system(size: 11, weight: .semibold)).minimumScaleFactor(0.5).lineLimit(1).foregroundStyle(Candle.ink)
-                .frame(maxWidth: .infinity, maxHeight: .infinity).background(Candle.card, in: RoundedRectangle(cornerRadius: 4, style: .continuous))
+            Text(Self.words[min(v, 14)]).font(Font.pl(size: 11, weight: .semibold)).minimumScaleFactor(0.5).lineLimit(1).foregroundStyle(Candle.ink)
+                .frame(maxWidth: .infinity, maxHeight: .infinity).background(Candle.card, in: RoundedRectangle(cornerRadius: 4 * PLStyle.radius, style: .continuous))
         }
     }
 
@@ -556,7 +556,7 @@ struct ResonanceGame: View {
                         ArcadeGlyph(index: grid[i], colour: picked == i ? Color.black : Candle.ink)
                             .padding(5)
                             .frame(maxWidth: .infinity).aspectRatio(1, contentMode: .fit)
-                            .background(picked == i ? Candle.goldHi : Candle.card, in: RoundedRectangle(cornerRadius: 6, style: .continuous))
+                            .background(picked == i ? Candle.goldHi : Candle.card, in: RoundedRectangle(cornerRadius: 6 * PLStyle.radius, style: .continuous))
                     }
                     .buttonStyle(.plain)
                 }

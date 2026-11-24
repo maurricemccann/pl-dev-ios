@@ -22,7 +22,7 @@ enum CMP {
     static var node: Color { PLCarry.tone(.surface2, .dark, Color(hex: 0x201a13)) }
     static var nodeLine: Color { PLCarry.tone(.line, .dark, Color(hex: 0xc9a84c).opacity(0.20), alpha: 0.9) }
     static var edge: Color { PLCarry.tone(.accent, .dark, Color(hex: 0xc9a84c).opacity(0.55), alpha: 0.55) }
-    static let radius: CGFloat = 14
+    static var radius: CGFloat { 14 * PLStyle.radius }
 
     /// A board lane's colour: the house's own, never a new hue.
     static func lane(_ id: String) -> Color {
@@ -36,7 +36,7 @@ enum CMP {
 /// The ground behind every Composer screen: ink with his curve tile faint over it.
 struct CMPGround: View {
     var body: some View {
-        ZStack { CMP.bg; HouseGround().opacity(0.35).blendMode(.screen) }.ignoresSafeArea()
+        ZStack { if PLStyle.themed { HouseGround() } else { CMP.bg; HouseGround().opacity(0.35).blendMode(.screen) } }.ignoresSafeArea()
     }
 }
 
@@ -52,7 +52,7 @@ struct CMPCard: ViewModifier {
             .frame(maxWidth: .infinity, alignment: .leading)
             .background {
                 ZStack(alignment: .top) {
-                    shape.fill(CMP.surface.opacity(0.42))
+                    shape.fill(CMP.surface.opacity(PLStyle.themed ? 0 : 0.42))
                     LinearGradient(colors: [.white.opacity(0.07), .clear], startPoint: .top, endPoint: .bottom).frame(maxHeight: .infinity, alignment: .top).mask(shape).allowsHitTesting(false)
                 }
                 .plGlass(in: shape)
@@ -68,7 +68,7 @@ extension View {
     /// `.num`: numbers are data, tabular, in the instrument face.
     func cmpNum(_ size: CGFloat = 12) -> some View { font(.system(size: size, design: .monospaced)).monospacedDigit() }
     /// The display face on the piece name and panel headings (Cormorant on the web, New York here).
-    func cmpDisplay(_ size: CGFloat = 22, relativeTo style: Font.TextStyle = .title2) -> some View { font(.system(size: size, weight: .regular, design: .serif)) }
+    func cmpDisplay(_ size: CGFloat = 22, relativeTo style: Font.TextStyle = .title2) -> some View { font(.plDisplay(size, relativeTo: style, or: .system(size: size, weight: .regular, design: .serif))) }
     /// The screen: ink ground, gold tint, dark scheme (the web board has no light mode), Lists see-through.
     func cmpScreen() -> some View {
         scrollContentBackground(.hidden).background { CMPGround() }.tint(CMP.gold).environment(\.colorScheme, .dark)
@@ -81,7 +81,7 @@ struct CMPPill: ButtonStyle {
     var compact = false
     func makeBody(configuration: Configuration) -> some View {
         configuration.label
-            .font(.system(size: compact ? 12 : 13, weight: .medium))
+            .font(Font.pl(size: compact ? 12 : 13, weight: .medium))
             .foregroundStyle(primary ? CMP.text : CMP.dim)
             .padding(.horizontal, compact ? 12 : 16).frame(minHeight: compact ? 36 : 44)
             .background { if primary { Capsule().fill(CMP.gold.opacity(0.14)) } }
@@ -101,7 +101,7 @@ struct CMPChip: View {
     var body: some View {
         Button(action: action) {
             HStack(spacing: 4) {
-                Text(title).font(.system(size: 12))
+                Text(title).font(Font.pl(size: 12))
                 if let count { Text("\(count)").cmpNum(10).opacity(0.6) }
             }
             .foregroundStyle(on ? CMP.text : CMP.dim)

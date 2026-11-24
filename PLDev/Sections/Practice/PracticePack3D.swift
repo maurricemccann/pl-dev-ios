@@ -205,7 +205,7 @@ struct Pack3DStage: View {
             }
             .contentShape(Rectangle())
             .onTapGesture { tapped = true; scene?.open() }
-            if !tapped { Text("Tap to open").font(.system(size: 13)).foregroundStyle(Candle.ink.opacity(0.7)).padding(.bottom, 12) }
+            if !tapped { Text("Tap to open").font(Font.pl(size: 13)).foregroundStyle(Candle.ink.opacity(0.7)).padding(.bottom, 12) }
         }
         .onDisappear { scene?.stop() }
         .accessibilityElement().accessibilityLabel("A pack. Tap to open.").accessibilityAddTraits(.isButton)
@@ -222,7 +222,7 @@ struct Pack3DStage: View {
             }
             let name = (c.game ?? "").replacingOccurrences(of: "-", with: " ").capitalized
             let r = ImageRenderer(content: VStack(spacing: 10) {
-                Text("Game unlocked").font(.system(size: 22)).textCase(.uppercase).tracking(2).foregroundStyle(Candle.gold)
+                Text("Game unlocked").font(Font.pl(size: 22)).textCase(.uppercase).tracking(2).foregroundStyle(Candle.gold)
                 Text(name).plHand(44, relativeTo: .title).foregroundStyle(Candle.goldHi).multilineTextAlignment(.center)
             }.padding(24).frame(width: 504, height: 720).background(Color.black))
             r.scale = 1

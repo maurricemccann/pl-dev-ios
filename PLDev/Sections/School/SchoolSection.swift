@@ -153,8 +153,8 @@ struct SchoolView: View {
                 ForEach(state.tracks) { t in
                     Button { state.open = t } label: {
                         VStack(alignment: .leading, spacing: 3) {
-                            Text(t.title).font(.headline).foregroundStyle(.primary)
-                            Text("\(t.sub) · \(t.slides.count) steps").font(.subheadline).foregroundStyle(.secondary)
+                            Text(t.title).font(Font.pl(.headline)).foregroundStyle(.primary)
+                            Text("\(t.sub) · \(t.slides.count) steps").font(Font.pl(.subheadline)).foregroundStyle(.secondary)
                         }
                         .frame(maxWidth: .infinity, alignment: .leading)
                         .contentShape(Rectangle())
@@ -167,8 +167,8 @@ struct SchoolView: View {
                         Button { Task { await state.player.toggle(h.id, state: state, model: model) } } label: {
                             HStack {
                                 VStack(alignment: .leading, spacing: 3) {
-                                    Text(h.title).font(.headline).foregroundStyle(.primary)
-                                    Text(h.sub).font(.subheadline).foregroundStyle(.secondary)
+                                    Text(h.title).font(Font.pl(.headline)).foregroundStyle(.primary)
+                                    Text(h.sub).font(Font.pl(.subheadline)).foregroundStyle(.secondary)
                                 }
                                 Spacer()
                                 if state.player.loading == h.id { ProgressView() }
@@ -208,7 +208,7 @@ struct TrackView: View {
         .safeAreaInset(edge: .bottom) { bar }
         .sheet(isPresented: $notes) {
             NavigationStack {
-                ScrollView { Text(currentNotes).font(.body).padding().frame(maxWidth: .infinity, alignment: .leading) }
+                ScrollView { Text(currentNotes).font(Font.pl(.body)).padding().frame(maxWidth: .infinity, alignment: .leading) }
                     .navigationTitle("Notes").navigationBarTitleDisplayMode(.inline)
                     .toolbar { ToolbarItem(placement: .confirmationAction) { Button("Done") { notes = false } } }
             }
@@ -231,14 +231,14 @@ struct TrackView: View {
                 Button { Task { await state.player.toggle(c.id, state: state, model: model) } } label: {
                     Group {
                         if state.player.loading == c.id { ProgressView() }
-                        else { Image(systemName: on ? "pause.fill" : "play.fill").font(.title2).contentTransition(.symbolEffect(.replace)) }
+                        else { Image(systemName: on ? "pause.fill" : "play.fill").font(Font.pl(.title2)).contentTransition(.symbolEffect(.replace)) }
                     }
                     .frame(width: 44, height: 44)
                 }
                 .accessibilityLabel(on ? "Pause \(c.name)" : "Play \(c.name)")
                 VStack(alignment: .leading, spacing: 1) {
                     // the step counter lives here, not in the top bar: there it pushed the track's name out on the longer Beat titles (S351 frames)
-                    Text(page == 0 ? "pads" : "step \(page) of \(track.slides.count)").font(.caption.monospacedDigit()).foregroundStyle(.secondary)
+                    Text(page == 0 ? "pads" : "step \(page) of \(track.slides.count)").font(Font.pl(.caption).monospacedDigit()).foregroundStyle(.secondary)
                         .contentTransition(.numericText())
                     Text(c.name).lineLimit(1)
                 }
@@ -267,12 +267,12 @@ struct PadGrid: View {
                 HStack(spacing: 5) {
                     ForEach(0..<8, id: \.self) { j in
                         let i = line * 8 + j, on = i < steps.count && steps[i]
-                        if j == 4 { RoundedRectangle(cornerRadius: 1).fill(Color.accentColor.opacity(0.55)).frame(width: 3) }
-                        RoundedRectangle(cornerRadius: 9, style: .continuous)
+                        if j == 4 { RoundedRectangle(cornerRadius: 1 * PLStyle.radius).fill(Color.accentColor.opacity(0.55)).frame(width: 3) }
+                        RoundedRectangle(cornerRadius: 9 * PLStyle.radius, style: .continuous)
                             .fill(on ? (Color(hex: color) ?? .accentColor) : Color.secondary.opacity(j < 4 ? 0.22 : 0.12))
                             .frame(height: 44)
                             .overlay(alignment: .bottom) {
-                                Text("\(i + 1)").font(.system(size: 12, weight: on ? .bold : .regular).monospacedDigit())
+                                Text("\(i + 1)").font(Font.pl(size: 12, weight: on ? .bold : .regular).monospacedDigit())
                                     .foregroundStyle(on ? Color.black.opacity(0.8) : .secondary).padding(.bottom, 3)
                             }
                             .accessibilityLabel("Pad \(i + 1), \(on ? "on" : "off")")
@@ -288,14 +288,14 @@ struct PadsPage: View {
     let rows: [PadRow]
     var body: some View {
         VStack(alignment: .leading, spacing: 8) {
-            Text("THE WHOLE TRACK · EVERY PAD ROW").font(.caption).foregroundStyle(Color.accentColor)
+            Text("THE WHOLE TRACK · EVERY PAD ROW").font(Font.pl(.caption)).foregroundStyle(Color.accentColor)
             if rows.isEmpty { Text("No pad rows in this track.").foregroundStyle(.secondary) }
             ForEach(Array(rows.enumerated()), id: \.offset) { i, r in
                 if i == 0 || rows[i - 1].heading != r.heading {
                     Divider().padding(.top, 6)
-                    Text(r.heading.uppercased()).font(.caption).foregroundStyle(.secondary)
+                    Text(r.heading.uppercased()).font(Font.pl(.caption)).foregroundStyle(.secondary)
                 }
-                Text(r.label).font(.subheadline)
+                Text(r.label).font(Font.pl(.subheadline))
                 PadGrid(steps: r.steps, color: r.color)
             }
         }
@@ -307,19 +307,19 @@ struct StepPage: View {
     let lesson: SchoolLesson
     var body: some View {
         VStack(alignment: .leading, spacing: 14) {
-            if !lesson.eyebrow.isEmpty { Text(lesson.eyebrow.uppercased()).font(.caption).foregroundStyle(Color.accentColor) }
-            Text(lesson.title).font(.title.bold())
-            ForEach(lesson.chips, id: \.self) { Text($0).font(.footnote.monospaced()).padding(.horizontal, 12).padding(.vertical, 6).background(.quaternary, in: Capsule()) }
+            if !lesson.eyebrow.isEmpty { Text(lesson.eyebrow.uppercased()).font(Font.pl(.caption)).foregroundStyle(Color.accentColor) }
+            Text(lesson.title).font(Font.pl(.title).bold())
+            ForEach(lesson.chips, id: \.self) { Text($0).font(Font.pl(.footnote).monospaced()).padding(.horizontal, 12).padding(.vertical, 6).background(.quaternary, in: Capsule()) }
             ForEach(Array(lesson.grids.enumerated()), id: \.offset) { _, g in
                 VStack(alignment: .leading, spacing: 4) {
-                    if !g.label.isEmpty { Text(g.label).font(.subheadline) }
+                    if !g.label.isEmpty { Text(g.label).font(Font.pl(.subheadline)) }
                     PadGrid(steps: g.steps, color: g.color)
                 }
             }
             ForEach(Array(lesson.blocks.enumerated()), id: \.offset) { _, b in
                 VStack(alignment: .leading, spacing: 4) {
-                    if !b.head.isEmpty { Text(b.head).font(.headline) }
-                    if !b.text.isEmpty { Text(b.text).font(.body) }
+                    if !b.head.isEmpty { Text(b.head).font(Font.pl(.headline)) }
+                    if !b.text.isEmpty { Text(b.text).font(Font.pl(.body)) }
                 }
             }
             if lesson.table.count > 1 {

@@ -30,6 +30,37 @@ enum PLStyle {
     static var space: CGFloat { scale("pldev.styleSpace") }
     /// Home's app tiles: squircle, circle or square.
     static var tile: String { UserDefaults.standard.string(forKey: "pldev.styleTile") ?? "squircle" }
+    /// True once a theme or a colourway is worn: section skins then take the theme's ground, cards and faces.
+    static var themed: Bool { _ = PLCarry.epoch.n; return PLCarry.snap.active || UserDefaults.standard.string(forKey: "pldev.themeId") != nil }
+    /// The card style when the Glass page has never been touched (the old "Glass controls off" switch still means solid).
+    static var cardStyle: String {
+        let d = UserDefaults.standard
+        return d.string(forKey: "pldev.glass.card.style") ?? (d.object(forKey: "pldev.glassBlur") as? Bool == false ? "solid" : "frosted")
+    }
+    /// The chosen text face as a font name; nil = Apple's own.
+    static var textFont: String? {
+        _ = PLCarry.epoch.n   // a view that drew text redraws when the theme changes
+        let face = UserDefaults.standard.string(forKey: "pldev.font") ?? "system"
+        switch face {
+        case "system": return nil
+        case "jost": return "Jost-Book"
+        case "courier": return "CourierPrime-Regular"
+        case "v2": return PLFace.handV2
+        default: let n = HouseFonts.name(face); return n == "system" ? nil : n
+        }
+    }
+    /// The chosen title face as a font name, only once themed; nil = leave the screen's own.
+    static var titleFont: String? {
+        guard themed else { return nil }
+        let face = UserDefaults.standard.string(forKey: "pldev.titleFace") ?? "v1"
+        switch face {
+        case "v1": return PLFace.handV1
+        case "v2": return PLFace.handV2
+        case "ransom": return PLFace.ransom
+        case "ledger": return PLFace.ledger
+        default: let n = HouseFonts.name(face); return n == "system" ? nil : n
+        }
+    }
     /// One repeat of the curve wallpaper, in points (his reference is 300).
     static var repeatSize: CGFloat { let v = UserDefaults.standard.double(forKey: "pldev.styleRepeat"); return v > 0 ? v : 300 }
     private static func scale(_ key: String) -> CGFloat { let v = UserDefaults.standard.double(forKey: key); return v > 0 ? v : 1 }
@@ -73,6 +104,41 @@ enum HouseFonts {
         guard let p = CGDataProvider(url: url as CFURL), let f = CGFont(p), let n = f.postScriptName as String? else { return nil }
         _ = CTFontManagerRegisterFontsForURL(url as CFURL, .process, nil)   // false only means it was already registered
         return n
+    }
+}
+
+/// The theme's face wherever a screen asked for Apple's (S353·7b1e: "a lot of these themes looked the same" — the text face only
+/// reached views that used plFont). Same arguments as Font.system; with no face chosen it IS Font.system.
+extension Font {
+    static func pl(size: CGFloat, weight: Font.Weight? = nil, design: Font.Design? = nil) -> Font {
+        guard let face = PLStyle.textFont else { return .system(size: size, weight: weight, design: design) }
+        let f = Font.custom(face, fixedSize: face.contains("Mono") ? size * 0.92 : size)
+        return weight.map { f.weight($0) } ?? f
+    }
+
+    static func pl(_ style: Font.TextStyle, design: Font.Design? = nil, weight: Font.Weight? = nil) -> Font {
+        guard let face = PLStyle.textFont else { return .system(style, design: design, weight: weight) }
+        let size: CGFloat
+        switch style {
+        case .largeTitle: size = 34
+        case .title: size = 28
+        case .title2: size = 22
+        case .title3: size = 20
+        case .headline, .body: size = 17
+        case .callout: size = 16
+        case .subheadline: size = 15
+        case .footnote: size = 13
+        case .caption: size = 12
+        default: size = 11
+        }
+        let f = Font.custom(face, size: face.contains("Mono") ? size * 0.92 : size, relativeTo: style)
+        let w = weight ?? (style == .headline ? .semibold : nil)
+        return w.map { f.weight($0) } ?? f
+    }
+
+    /// A screen's display line: the theme's title face once themed, else the font the screen already used.
+    static func plDisplay(_ size: CGFloat, relativeTo style: Font.TextStyle = .title, or fallback: Font) -> Font {
+        PLStyle.titleFont.map { .custom($0, size: size, relativeTo: style) } ?? fallback
     }
 }
 

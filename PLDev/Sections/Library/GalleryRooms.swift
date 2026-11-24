@@ -77,7 +77,7 @@ struct GalleryRoomsView: View {
     }
     private func row(_ r: GalleryRoom) -> some View {
         NavigationLink { r.view(model) } label: {
-            Label { VStack(alignment: .leading) { Text(r.title); Text(r.line).font(.caption).foregroundStyle(.secondary) } } icon: { Image(systemName: r.symbol) }
+            Label { VStack(alignment: .leading) { Text(r.title); Text(r.line).font(Font.pl(.caption)).foregroundStyle(.secondary) } } icon: { Image(systemName: r.symbol) }
         }
     }
 }
@@ -97,8 +97,8 @@ struct SourceView: View {
         }) { s, _ in
             ScrollView([.vertical, .horizontal]) {
                 VStack(alignment: .leading, spacing: 8) {
-                    if let sub = s.sub { Text(sub).font(.callout).foregroundStyle(.secondary) }
-                    Text(s.code ?? "").font(.system(.caption, design: .monospaced)).textSelection(.enabled)
+                    if let sub = s.sub { Text(sub).font(Font.pl(.callout)).foregroundStyle(.secondary) }
+                    Text(s.code ?? "").font(Font.pl(.caption, design: .monospaced)).textSelection(.enabled)
                 }
                 .padding()
             }
@@ -160,7 +160,7 @@ struct ArchiveRoom: View {
                         AsyncImage(url: URL(string: p.url ?? "")) { $0.resizable().scaledToFit().transition(.opacity) } placeholder: { Color.clear }
                     }
                     VStack(alignment: .leading, spacing: 4) {
-                        Text([p.cr, p.cat, p.medium, p.body].compactMap { $0 }.joined(separator: " · ")).font(.caption).foregroundStyle(.secondary)
+                        Text([p.cr, p.cat, p.medium, p.body].compactMap { $0 }.joined(separator: " · ")).font(Font.pl(.caption)).foregroundStyle(.secondary)
                         if let n = p.note, !n.isEmpty { Text(n).plReading() }
                     }
                     .padding()
@@ -280,7 +280,7 @@ struct CinematicRoom: View {
                         AsyncImage(url: poster(it)) { $0.resizable().scaledToFill() } placeholder: { Color(hex: 0x1a1610) }
                             .frame(height: 100).clipped()
                             .overlay(alignment: .bottomTrailing) {
-                                if let d = it.duration { Text(Duration.seconds(d).formatted(.time(pattern: .minuteSecond))).font(.caption2.monospacedDigit()).padding(3).background(.black.opacity(0.5)).foregroundStyle(.white) }
+                                if let d = it.duration { Text(Duration.seconds(d).formatted(.time(pattern: .minuteSecond))).font(Font.pl(.caption2).monospacedDigit()).padding(3).background(.black.opacity(0.5)).foregroundStyle(.white) }
                             }
                     }
                     .buttonStyle(.plain)
@@ -356,7 +356,7 @@ struct VaultRoom: View {
                                     VStack(alignment: .leading) {
                                         Text(f.name).lineLimit(1)
                                         Text([f.size.map { ByteCountFormatter.string(fromByteCount: Int64($0), countStyle: .file) }, f.uploaded.map { String($0.prefix(10)) }].compactMap { $0 }.joined(separator: " · "))
-                                            .font(.caption).foregroundStyle(.secondary)
+                                            .font(Font.pl(.caption)).foregroundStyle(.secondary)
                                     }
                                 }
                             }
@@ -375,8 +375,8 @@ struct VaultRoom: View {
         NavigationLink { room.view(model) } label: {
             VStack(alignment: .leading, spacing: 4) {
                 Text(kind).gEyebrow(9.5).foregroundStyle(PLG.goldDim(.dark))
-                Text(big).font(.system(size: 28, weight: .regular, design: .serif).italic()).monospacedDigit().foregroundStyle(PLG.gold)
-                Text(line).font(.system(size: 11, design: .monospaced)).foregroundStyle(PLG.dim(.dark))
+                Text(big).font(Font.pl(size: 28, weight: .regular, design: .serif).italic()).monospacedDigit().foregroundStyle(PLG.gold)
+                Text(line).font(Font.pl(size: 11, design: .monospaced)).foregroundStyle(PLG.dim(.dark))
             }
             .gCard(padding: 12, radius: 16)
         }
@@ -408,9 +408,9 @@ struct PrintfulRoom: View {
             HStack(spacing: 12) {
                 AsyncImage(url: URL(string: t.m ?? "")) { $0.resizable().scaledToFit() } placeholder: { Color.secondary.opacity(0.1) }.frame(width: 64, height: 64)
                 VStack(alignment: .leading, spacing: 2) {
-                    Text(t.t ?? "").font(.headline)
-                    Text([t.c, t.s].compactMap { $0 }.joined(separator: " · ")).font(.caption).foregroundStyle(.secondary)
-                    if t.dead == true { Text("Discontinued").font(.caption2).foregroundStyle(PLTone.house) }
+                    Text(t.t ?? "").font(Font.pl(.headline))
+                    Text([t.c, t.s].compactMap { $0 }.joined(separator: " · ")).font(Font.pl(.caption)).foregroundStyle(.secondary)
+                    if t.dead == true { Text("Discontinued").font(Font.pl(.caption2)).foregroundStyle(PLTone.house) }
                 }
                 Spacer()
                 if hearted.contains(String(t.id)) { Image(systemName: "heart.fill").foregroundStyle(PLG.gold) }
@@ -427,7 +427,7 @@ struct PrintfulRoom: View {
         .safeAreaInset(edge: .top) {
             VStack(alignment: .leading, spacing: 6) {
                 Text("Seven hundred pieces sat unpublished when the old storefront closed. Heart what comes home to Psyched Luxuries, delete what doesn't; what you leave alone gets drafted.")
-                    .font(.footnote).foregroundStyle(.secondary).plReading()
+                    .font(Font.pl(.footnote)).foregroundStyle(.secondary).plReading()
                 Picker("View", selection: $view) { Text("To review").tag("review"); Text("♥").tag("hearted"); Text("Deleted").tag("deleted"); Text("All").tag("all") }
             }
                 .pickerStyle(.segmented).padding(.horizontal).padding(.vertical, 6).background(.bar)
@@ -487,7 +487,7 @@ struct ClassifyRoom: View {
             if let p = cur {
                 Section {
                     AsyncImage(url: URL(string: p.thumb ?? p.url ?? "")) { $0.resizable().scaledToFit() } placeholder: { PLLoader() }.frame(maxHeight: 300)
-                    Text(p.cr).font(.caption).foregroundStyle(.secondary)
+                    Text(p.cr).font(Font.pl(.caption)).foregroundStyle(.secondary)
                     TextField("Title", text: $title)
                     TextField("Year (optional, 2009 to 2030)", text: $year).keyboardType(.numberPad)
                 }
@@ -567,8 +567,8 @@ struct KitRoom: View {
                     ForEach(k.colors?.palettes ?? []) { p in
                         HStack {
                             HStack(spacing: 0) { ForEach([p.ground, p.text, p.key, p.accent].compactMap { $0 }, id: \.self) { Rectangle().fill(Color(hex: $0) ?? .clear) } }
-                                .frame(width: 96, height: 28).clipShape(RoundedRectangle(cornerRadius: 6, style: .continuous))
-                            VStack(alignment: .leading) { Text(p.name); if let u = p.use { Text(u).font(.caption).foregroundStyle(.secondary) } }
+                                .frame(width: 96, height: 28).clipShape(RoundedRectangle(cornerRadius: 6 * PLStyle.radius, style: .continuous))
+                            VStack(alignment: .leading) { Text(p.name); if let u = p.use { Text(u).font(Font.pl(.caption)).foregroundStyle(.secondary) } }
                         }
                     }
                 }
@@ -582,7 +582,7 @@ struct KitRoom: View {
     @ViewBuilder private func group(_ title: String, _ items: [Named]?) -> some View {
         if let items, !items.isEmpty {
             Section(title) {
-                ForEach(items) { n in VStack(alignment: .leading) { Text(n.name); if let u = n.use ?? n.role { Text(u).font(.caption).foregroundStyle(.secondary) } } }
+                ForEach(items) { n in VStack(alignment: .leading) { Text(n.name); if let u = n.use ?? n.role { Text(u).font(Font.pl(.caption)).foregroundStyle(.secondary) } } }
             }
         }
     }
@@ -595,10 +595,10 @@ struct ToolsRoom: View {
     var body: some View {
         let pieces = data.items.filter { ($0.class == "code-piece" || $0.class == "lab") && (search.isEmpty || ($0.name ?? "").localizedCaseInsensitiveContains(search) || $0.item_id.localizedCaseInsensitiveContains(search)) }
         List {
-            Section { Text("Every piece's full code, from /api/source. Touch a piece to read it, or share it.").font(.footnote).foregroundStyle(.secondary) }
+            Section { Text("Every piece's full code, from /api/source. Touch a piece to read it, or share it.").font(Font.pl(.footnote)).foregroundStyle(.secondary) }
             ForEach(pieces) { p in
                 NavigationLink { SourceView(model: model, id: p.item_id) } label: {
-                    VStack(alignment: .leading) { Text(p.name ?? p.item_id); Text(p.item_id).font(.caption.monospaced()).foregroundStyle(.secondary) }
+                    VStack(alignment: .leading) { Text(p.name ?? p.item_id); Text(p.item_id).font(Font.pl(.caption).monospaced()).foregroundStyle(.secondary) }
                 }
             }
         }

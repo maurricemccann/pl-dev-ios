@@ -40,7 +40,7 @@ struct NativeMoreToolsSheet: View {
                         Toggle("Seam mode: marks carry across sewn edges", isOn: Binding(get: { canvas.seamOn }, set: { _ in canvas.toggleSeam() }))
                         Button { dismiss(); Task { try? await Task.sleep(for: .milliseconds(400)); canvas.seamPrintFiles() } } label: { Label("Save print files", systemImage: "square.and.arrow.up.on.square") }
                     } else {
-                        Text("Seam mode needs a garment template. Start a new canvas and choose Hoodie 717 zip.").font(.footnote).foregroundStyle(.secondary)
+                        Text("Seam mode needs a garment template. Start a new canvas and choose Hoodie 717 zip.").font(Font.pl(.footnote)).foregroundStyle(.secondary)
                         Button { dismiss(); canvas.panel = .newCanvas } label: { Label("New canvas", systemImage: "plus") }
                     }
                 } header: { Text("Seams") } footer: {

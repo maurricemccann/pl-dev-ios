@@ -68,11 +68,11 @@ struct TarotCard: View {
             if !spread.isEmpty {
                 let c = PracticeDraws.deck[spread[pos]]
                 VStack(spacing: 6) {
-                    Text(c.num).font(.system(size: 11)).tracking(3.3).textCase(.uppercase).foregroundStyle(Candle.ink.opacity(0.5))
-                    Text(c.symbol).font(.system(size: 40)).foregroundStyle(Candle.gold)
+                    Text(c.num).font(Font.pl(size: 11)).tracking(3.3).textCase(.uppercase).foregroundStyle(Candle.ink.opacity(0.5))
+                    Text(c.symbol).font(Font.pl(size: 40)).foregroundStyle(Candle.gold)
                     Text(c.name).plHand(26, relativeTo: .title2).foregroundStyle(Candle.goldHi)
                     Text(c.reading).plHand(18, relativeTo: .body).foregroundStyle(Candle.ink).multilineTextAlignment(.center).lineSpacing(4).textSelection(.enabled)
-                    Text(c.law).font(.system(size: 10.5)).tracking(2.1).textCase(.uppercase).foregroundStyle(Candle.ink.opacity(0.5)).padding(.top, 4)
+                    Text(c.law).font(Font.pl(size: 10.5)).tracking(2.1).textCase(.uppercase).foregroundStyle(Candle.ink.opacity(0.5)).padding(.top, 4)
                     Text("\(pos + 1) of 3").candleHint()
                 }
                 .frame(maxWidth: .infinity).padding(.vertical, 10)

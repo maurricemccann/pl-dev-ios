@@ -176,7 +176,7 @@ struct JarvisView: View {
                 promptBox
             }
         }
-        .font(.system(size: 13, design: .monospaced))
+        .font(Font.pl(size: 13, design: .monospaced))
         .foregroundStyle(ink)
         .background(Color(hex: 0x0d0b08).ignoresSafeArea())
         .navigationTitle("Jarvis").navigationBarTitleDisplayMode(.inline).toolbarColorScheme(.dark, for: .navigationBar)
@@ -189,11 +189,11 @@ struct JarvisView: View {
 
     private var titleBar: some View {
         HStack {
-            Text("\u{273B}").font(.system(size: 14, design: .monospaced)).foregroundStyle(accent)
+            Text("\u{273B}").font(Font.pl(size: 14, design: .monospaced)).foregroundStyle(accent)
             Spacer()
             HStack(spacing: 5) {
                 Circle().fill(j.online == true ? amber : dim).frame(width: 6, height: 6)
-                Text(j.online == nil ? "waking" : j.online == true ? "present" : "asleep").font(.system(size: 10, design: .monospaced)).textCase(.uppercase).tracking(1.5)
+                Text(j.online == nil ? "waking" : j.online == true ? "present" : "asleep").font(Font.pl(size: 10, design: .monospaced)).textCase(.uppercase).tracking(1.5)
             }
             .foregroundStyle(j.online == true ? amber : dim).frame(minWidth: 64, alignment: .trailing)
         }
@@ -203,10 +203,10 @@ struct JarvisView: View {
     private var asleep: some View {
         VStack(spacing: 10) {
             Spacer()
-            Text("Jarvis is at your desk.").font(.system(size: 15, design: .monospaced))
+            Text("Jarvis is at your desk.").font(Font.pl(size: 15, design: .monospaced))
             Text("Your machine is off, or this phone is not on Tailscale. Turn Tailscale on, then pull to try again.")
-                .font(.system(size: 12, design: .monospaced)).foregroundStyle(dim).multilineTextAlignment(.center).padding(.horizontal, 30)
-            Button("Try again") { Task { await j.boot() } }.font(.system(size: 12, design: .monospaced)).foregroundStyle(accent).frame(minHeight: 44)
+                .font(Font.pl(size: 12, design: .monospaced)).foregroundStyle(dim).multilineTextAlignment(.center).padding(.horizontal, 30)
+            Button("Try again") { Task { await j.boot() } }.font(Font.pl(size: 12, design: .monospaced)).foregroundStyle(accent).frame(minHeight: 44)
             Spacer()
         }
         .frame(maxWidth: .infinity)
@@ -215,18 +215,18 @@ struct JarvisView: View {
     private var welcome: some View {
         VStack(alignment: .leading, spacing: 6) {
             HStack(spacing: 8) { Text("\u{273B}").foregroundStyle(accent); Text("Jarvis \u{2014} local fleet terminal") }
-            Text(j.tagline).font(.system(size: 12, design: .monospaced)).foregroundStyle(dim)
-            (Text("brain: ").foregroundStyle(dim) + Text(j.brains.first { $0.key == j.brain }?.label ?? "\u{25C6} Conductor").foregroundStyle(amber)).font(.system(size: 11, design: .monospaced))
+            Text(j.tagline).font(Font.pl(size: 12, design: .monospaced)).foregroundStyle(dim)
+            (Text("brain: ").foregroundStyle(dim) + Text(j.brains.first { $0.key == j.brain }?.label ?? "\u{25C6} Conductor").foregroundStyle(amber)).font(Font.pl(size: 11, design: .monospaced))
         }
         .padding(12)
-        .background(accent.opacity(0.05), in: RoundedRectangle(cornerRadius: 10, style: .continuous))
-        .overlay { RoundedRectangle(cornerRadius: 10, style: .continuous).strokeBorder(accent.opacity(0.33), lineWidth: 1) }
+        .background(accent.opacity(0.05), in: RoundedRectangle(cornerRadius: 10 * PLStyle.radius, style: .continuous))
+        .overlay { RoundedRectangle(cornerRadius: 10 * PLStyle.radius, style: .continuous).strokeBorder(accent.opacity(0.33), lineWidth: 1) }
     }
 
     private func fold(_ title: String, _ open: Binding<Bool>, @ViewBuilder _ content: () -> some View) -> some View {
         VStack(alignment: .leading, spacing: 6) {
             Button { withAnimation(.snappy) { open.wrappedValue.toggle() } } label: {
-                Text("\(open.wrappedValue ? "\u{25BE}" : "\u{25B8}") \(title)").font(.system(size: 10, design: .monospaced)).textCase(.uppercase).tracking(1.5).foregroundStyle(dim).frame(minHeight: 36)
+                Text("\(open.wrappedValue ? "\u{25BE}" : "\u{25B8}") \(title)").font(Font.pl(size: 10, design: .monospaced)).textCase(.uppercase).tracking(1.5).foregroundStyle(dim).frame(minHeight: 36)
             }
             if open.wrappedValue {
                 VStack(alignment: .leading, spacing: 8) { content() }
@@ -239,7 +239,7 @@ struct JarvisView: View {
         fold("brains \u{00B7} context", $stripOpen) {
             WrapPills(items: j.brains.map { ($0.key, $0.label) }, selected: j.brain, accent: accent, dim: dim) { j.brain = $0; focused = true }
             ForEach(Array(j.recent.prefix(3).enumerated()), id: \.offset) { _, t in
-                Text("~ \(t.you ?? "\u{2014}")").font(.system(size: 11, design: .monospaced)).foregroundStyle(dim).lineLimit(1)
+                Text("~ \(t.you ?? "\u{2014}")").font(Font.pl(size: 11, design: .monospaced)).foregroundStyle(dim).lineLimit(1)
             }
         }
     }
@@ -257,7 +257,7 @@ struct JarvisView: View {
                                 Button("report \u{2197}") { Task { await j.open(report: saved, title: f.label) } }.foregroundStyle(amber).frame(minHeight: 36)
                             }
                         }
-                        .font(.system(size: 11, design: .monospaced))
+                        .font(Font.pl(size: 11, design: .monospaced))
                     }
                 }
             }
@@ -303,8 +303,8 @@ struct JarvisView: View {
                 if live { Text("\u{258B}").foregroundStyle(accent) }
             }
             if !live, let code = Self.pieceCode(body) {
-                ScrollView(.horizontal) { Text(code).font(.system(size: 11, design: .monospaced)).foregroundStyle(ink).padding(10) }
-                    .background(.black.opacity(0.3), in: RoundedRectangle(cornerRadius: 8, style: .continuous))
+                ScrollView(.horizontal) { Text(code).font(Font.pl(size: 11, design: .monospaced)).foregroundStyle(ink).padding(10) }
+                    .background(.black.opacity(0.3), in: RoundedRectangle(cornerRadius: 8 * PLStyle.radius, style: .continuous))
                     .overlay(alignment: .topTrailing) { Button { UIPasteboard.general.string = code; j.note = "Piece code copied." } label: { Image(systemName: "doc.on.doc").padding(8) }.foregroundStyle(dim) }
             }
         }
@@ -326,7 +326,7 @@ struct JarvisView: View {
 
     private var promptBox: some View {
         VStack(spacing: 4) {
-            if let n = j.note { Text(n).font(.system(size: 11, design: .monospaced)).foregroundStyle(dim).onTapGesture { j.note = nil } }
+            if let n = j.note { Text(n).font(Font.pl(size: 11, design: .monospaced)).foregroundStyle(dim).onTapGesture { j.note = nil } }
             HStack(spacing: 8) {
                 Text(">").foregroundStyle(accent)
                 TextField(j.recording ? (j.heard.isEmpty ? "Listening\u{2026}" : j.heard) : "Talk to the fleet\u{2026}", text: $input).focused($focused).disabled(j.busy).submitLabel(.send)
@@ -343,13 +343,13 @@ struct JarvisView: View {
                 }
             }
             .padding(.horizontal, 10)
-            .background(.white.opacity(0.02), in: RoundedRectangle(cornerRadius: 10, style: .continuous))
-            .overlay { RoundedRectangle(cornerRadius: 10, style: .continuous).strokeBorder(j.busy ? accent.opacity(0.4) : .white.opacity(0.14), lineWidth: 1) }
+            .background(.white.opacity(0.02), in: RoundedRectangle(cornerRadius: 10 * PLStyle.radius, style: .continuous))
+            .overlay { RoundedRectangle(cornerRadius: 10 * PLStyle.radius, style: .continuous).strokeBorder(j.busy ? accent.opacity(0.4) : .white.opacity(0.14), lineWidth: 1) }
             HStack {
                 Text("\u{23CE} send \u{00B7} mic voice \u{00B7} speaker speak aloud").foregroundStyle(dim.opacity(0.67))
                 Spacer()
                 Text(j.busy ? "working\u{2026}" : j.online == nil ? "waking" : "ready").foregroundStyle(dim.opacity(0.67))
-            }.font(.system(size: 10, design: .monospaced)).padding(.horizontal, 4)
+            }.font(Font.pl(size: 10, design: .monospaced)).padding(.horizontal, 4)
         }
         .padding(.horizontal, 12).padding(.bottom, 6).padding(.top, 6)
     }
@@ -393,10 +393,10 @@ private struct WrapPills: View {
         JarvisFlowRows {
             ForEach(items, id: \.0) { k, label in
                 Button { pick(k) } label: {
-                    Text(label).font(.system(size: 11, design: .monospaced)).foregroundStyle(selected == k ? accent : dim)
+                    Text(label).font(Font.pl(size: 11, design: .monospaced)).foregroundStyle(selected == k ? accent : dim)
                         .padding(.horizontal, 8).padding(.vertical, 7)
-                        .background(selected == k ? accent.opacity(0.08) : .clear, in: RoundedRectangle(cornerRadius: 8, style: .continuous))
-                        .overlay { RoundedRectangle(cornerRadius: 8, style: .continuous).strokeBorder(selected == k ? accent : .white.opacity(0.12), lineWidth: 1) }
+                        .background(selected == k ? accent.opacity(0.08) : .clear, in: RoundedRectangle(cornerRadius: 8 * PLStyle.radius, style: .continuous))
+                        .overlay { RoundedRectangle(cornerRadius: 8 * PLStyle.radius, style: .continuous).strokeBorder(selected == k ? accent : .white.opacity(0.12), lineWidth: 1) }
                 }
                 .buttonStyle(.plain)
             }

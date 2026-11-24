@@ -262,7 +262,7 @@ struct NativeSyncSheet: View {
             List {
                 Section {
                     LabeledContent("State", value: sync.state)
-                    if !sync.detail.isEmpty { Text(sync.detail).font(.footnote).foregroundStyle(.secondary) }
+                    if !sync.detail.isEmpty { Text(sync.detail).font(Font.pl(.footnote)).foregroundStyle(.secondary) }
                     if let l = sync.last { LabeledContent("Last sync", value: l.formatted(.relative(presentation: .named))) }
                     LabeledContent("Works on this phone", value: "\(NativeStore.loadIndex().list.count)")
                     LabeledContent("Streak", value: "\(NativeDaily.streak) days")

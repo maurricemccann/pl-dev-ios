@@ -25,7 +25,7 @@ struct RewriteExercise: View {
 
     var body: some View {
         VStack(alignment: .leading, spacing: 12) {
-            Text(original).font(.system(size: 17, design: .serif).italic()).foregroundStyle(Candle.ink.opacity(0.8)).fixedSize(horizontal: false, vertical: true)
+            Text(original).font(Font.pl(size: 17, design: .serif).italic()).foregroundStyle(Candle.ink.opacity(0.8)).fixedSize(horizontal: false, vertical: true)
             if !locked {
                 PField(prompt: "Your rewrite. Declarative. Spare.", text: $text, lines: 4)
                 Button(busy ? "The examiner is reading…" : "Face the examiner") { Task { await grade() } }
@@ -35,10 +35,10 @@ struct RewriteExercise: View {
                     Button("Continue without a grade") { answer(true) }.buttonStyle(CandleGhost())
                 }
             }
-            if let critique { Text(critique).font(.system(size: 14, design: .serif).italic()).foregroundStyle(Candle.goldHi).fixedSize(horizontal: false, vertical: true) }
+            if let critique { Text(critique).font(Font.pl(size: 14, design: .serif).italic()).foregroundStyle(Candle.goldHi).fixedSize(horizontal: false, vertical: true) }
             if let model {
-                Text("The examiner's rewrite").font(.system(size: 11)).textCase(.uppercase).tracking(1).foregroundStyle(Candle.gold)
-                Text(model).font(.system(size: 15)).foregroundStyle(Candle.ink).fixedSize(horizontal: false, vertical: true)
+                Text("The examiner's rewrite").font(Font.pl(size: 11)).textCase(.uppercase).tracking(1).foregroundStyle(Candle.gold)
+                Text(model).font(Font.pl(size: 15)).foregroundStyle(Candle.ink).fixedSize(horizontal: false, vertical: true)
             }
         }
     }
@@ -86,11 +86,11 @@ struct SayItExercise: View {
 
     var body: some View {
         VStack(alignment: .leading, spacing: 14) {
-            Text(target).font(.system(size: 20)).foregroundStyle(Candle.goldHi).lineSpacing(4).fixedSize(horizontal: false, vertical: true)
+            Text(target).font(Font.pl(size: 20)).foregroundStyle(Candle.goldHi).lineSpacing(4).fixedSize(horizontal: false, vertical: true)
             Text(heard.isEmpty ? (listening ? "Listening…" : "Tap the microphone and say it.") : heard)
-                .font(.system(size: 15)).foregroundStyle(heard.isEmpty ? Candle.ink.opacity(0.5) : Candle.ink)
+                .font(Font.pl(size: 15)).foregroundStyle(heard.isEmpty ? Candle.ink.opacity(0.5) : Candle.ink)
                 .frame(maxWidth: .infinity, minHeight: 60, alignment: .topLeading).padding(12)
-                .overlay { RoundedRectangle(cornerRadius: 8, style: .continuous).strokeBorder(Candle.fieldLine, lineWidth: 1) }
+                .overlay { RoundedRectangle(cornerRadius: 8 * PLStyle.radius, style: .continuous).strokeBorder(Candle.fieldLine, lineWidth: 1) }
             if let note { Text(note).candleHint() }
             if !locked {
                 HStack(spacing: 10) {
@@ -158,8 +158,8 @@ struct DrawItExercise: View {
                 .onChange(of: geo.size) { _, s in side_ = min(s.width, s.height) * 0.8; centre_ = CGPoint(x: s.width / 2, y: s.height / 2) }
             }
             .frame(height: 300)
-            .background(Candle.field, in: RoundedRectangle(cornerRadius: 10, style: .continuous))
-            .overlay { RoundedRectangle(cornerRadius: 10, style: .continuous).strokeBorder(Candle.fieldLine, lineWidth: 1) }
+            .background(Candle.field, in: RoundedRectangle(cornerRadius: 10 * PLStyle.radius, style: .continuous))
+            .overlay { RoundedRectangle(cornerRadius: 10 * PLStyle.radius, style: .continuous).strokeBorder(Candle.fieldLine, lineWidth: 1) }
             if let score { Text("You covered \(Int(score * 100)) % of the mark.").candleHint() }
             if !locked {
                 HStack(spacing: 10) {

@@ -69,7 +69,7 @@ struct ComposerLibraryRoom: View {
                             .swipeActions(edge: .trailing) { Button { attach(a) } label: { Label("Attach", systemImage: "plus") }.tint(CMP.gold).disabled(target == nil) }
                     }
                     if rows.count > limit {
-                        Button { limit += 100 } label: { Text("Show more: \((rows.count - limit).formatted()) not shown").font(.system(size: 13)).foregroundStyle(CMP.gold).frame(maxWidth: .infinity, minHeight: 44) }
+                        Button { limit += 100 } label: { Text("Show more: \((rows.count - limit).formatted()) not shown").font(Font.pl(size: 13)).foregroundStyle(CMP.gold).frame(maxWidth: .infinity, minHeight: 44) }
                             .buttonStyle(.plain).listRowBackground(Color.clear)
                     }
                 }
@@ -104,14 +104,14 @@ struct ComposerLibraryRoom: View {
             if let m = lib.manifest {
                 Text("indexed \(m.generated.replacingOccurrences(of: "T", with: " "))\(m.probed ? "" : " · durations not probed")").cmpNum(10).foregroundStyle(CMP.muted)
             }
-            if let l = targetLabel { Text("tap an asset: attaches to \(l)").font(.system(size: 11)).foregroundStyle(CMP.goldDim) }
-            else { Text("add a shot to attach assets").font(.system(size: 11)).foregroundStyle(CMP.muted) }
-            if let n = note { Text(n).font(.system(size: 11)).foregroundStyle(CMP.dim) }
+            if let l = targetLabel { Text("tap an asset: attaches to \(l)").font(Font.pl(size: 11)).foregroundStyle(CMP.goldDim) }
+            else { Text("add a shot to attach assets").font(Font.pl(size: 11)).foregroundStyle(CMP.muted) }
+            if let n = note { Text(n).font(Font.pl(size: 11)).foregroundStyle(CMP.dim) }
             let missing = lib.manifest?.roots.filter { !$0.present } ?? []
             if !missing.isEmpty {
                 Text("\(missing.count) root\(missing.count > 1 ? "s" : "") not mounted. This list is incomplete: \(missing.map(\.catalog).joined(separator: ", ")).")
-                    .font(.system(size: 11)).foregroundStyle(CMP.warn).padding(8).frame(maxWidth: .infinity, alignment: .leading)
-                    .background(CMP.surface2.opacity(0.5), in: RoundedRectangle(cornerRadius: 8, style: .continuous))
+                    .font(Font.pl(size: 11)).foregroundStyle(CMP.warn).padding(8).frame(maxWidth: .infinity, alignment: .leading)
+                    .background(CMP.surface2.opacity(0.5), in: RoundedRectangle(cornerRadius: 8 * PLStyle.radius, style: .continuous))
             }
             ScrollView(.horizontal, showsIndicators: false) {
                 HStack(spacing: 6) {
@@ -139,12 +139,12 @@ struct ComposerLibraryRoom: View {
             HStack(spacing: 10) {
                 Group {
                     if let img = lib.image(a.id) { Image(uiImage: img).resizable().scaledToFill() }
-                    else { Text(String(a.socket.rawValue.prefix(3))).font(.system(size: 9, design: .monospaced)).textCase(.uppercase).foregroundStyle(a.socket.color) }
+                    else { Text(String(a.socket.rawValue.prefix(3))).font(Font.pl(size: 9, design: .monospaced)).textCase(.uppercase).foregroundStyle(a.socket.color) }
                 }
-                .frame(width: 44, height: 44).background(CMP.well).clipShape(RoundedRectangle(cornerRadius: 6, style: .continuous))
-                .overlay { RoundedRectangle(cornerRadius: 6, style: .continuous).strokeBorder(CMP.line, lineWidth: 0.6) }
+                .frame(width: 44, height: 44).background(CMP.well).clipShape(RoundedRectangle(cornerRadius: 6 * PLStyle.radius, style: .continuous))
+                .overlay { RoundedRectangle(cornerRadius: 6 * PLStyle.radius, style: .continuous).strokeBorder(CMP.line, lineWidth: 0.6) }
                 VStack(alignment: .leading, spacing: 2) {
-                    Text(a.name).font(.system(size: 14)).foregroundStyle(CMP.text).lineLimit(1)
+                    Text(a.name).font(Font.pl(size: 14)).foregroundStyle(CMP.text).lineLimit(1)
                     HStack(spacing: 6) {
                         CMPDot(color: a.socket.color, size: 6)
                         Text([a.socket.rawValue, a.catalog, a.ext.replacingOccurrences(of: ".", with: ""), composerBytes(a.bytes)].joined(separator: " · ")).cmpNum(10).foregroundStyle(CMP.muted).lineLimit(1)
@@ -187,13 +187,13 @@ struct AssetDetail: View {
                 VStack(alignment: .leading, spacing: 14) {
                     Group {
                         if let img = lib.image(asset.id) { Image(uiImage: img).resizable().scaledToFit() }
-                        else { Image(systemName: asset.kind == "audio" ? "waveform" : asset.kind == "model" ? "cube" : asset.kind == "curve" ? "scribble" : "photo").font(.system(size: 44)).foregroundStyle(asset.socket.color) }
+                        else { Image(systemName: asset.kind == "audio" ? "waveform" : asset.kind == "model" ? "cube" : asset.kind == "curve" ? "scribble" : "photo").font(Font.pl(size: 44)).foregroundStyle(asset.socket.color) }
                     }
-                    .frame(maxWidth: .infinity, minHeight: 160, maxHeight: 280).background(CMP.well).clipShape(RoundedRectangle(cornerRadius: 12, style: .continuous))
-                    Text(asset.name + asset.ext).font(.system(size: 20, design: .serif)).foregroundStyle(CMP.text)
+                    .frame(maxWidth: .infinity, minHeight: 160, maxHeight: 280).background(CMP.well).clipShape(RoundedRectangle(cornerRadius: 12 * PLStyle.radius, style: .continuous))
+                    Text(asset.name + asset.ext).font(Font.pl(size: 20, design: .serif)).foregroundStyle(CMP.text)
                     VStack(alignment: .leading, spacing: 8) {
-                        HStack(spacing: 8) { CMPDot(color: asset.socket.color); Text(asset.socket.rawValue).font(.system(size: 14, weight: .medium)).foregroundStyle(CMP.text); Text(asset.socket.carries).font(.system(size: 13)).foregroundStyle(CMP.dim) }
-                        Text(asset.socket.why).font(.system(size: 13)).foregroundStyle(CMP.dim)
+                        HStack(spacing: 8) { CMPDot(color: asset.socket.color); Text(asset.socket.rawValue).font(Font.pl(size: 14, weight: .medium)).foregroundStyle(CMP.text); Text(asset.socket.carries).font(Font.pl(size: 13)).foregroundStyle(CMP.dim) }
+                        Text(asset.socket.why).font(Font.pl(size: 13)).foregroundStyle(CMP.dim)
                     }.cmpCard()
                     VStack(alignment: .leading, spacing: 8) {
                         line("catalog", asset.catalog); line("size", composerBytes(asset.bytes))

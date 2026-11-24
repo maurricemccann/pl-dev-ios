@@ -49,14 +49,14 @@ struct SeedsGame: View {
                 HStack {
                     Text("Phrase \(round + 1) of \(min(rounds, deck.count))").candleHint()
                     Spacer()
-                    Text(left > 0 ? "+\(left * 2)" : "no bonus").font(.system(size: 13).monospacedDigit()).foregroundStyle(Candle.goldHi)
+                    Text(left > 0 ? "+\(left * 2)" : "no bonus").font(Font.pl(size: 13).monospacedDigit()).foregroundStyle(Candle.goldHi)
                 }
                 if shown {
                     Text(words.joined(separator: " ")).candleH2().multilineTextAlignment(.center)
                     Button("I have it") { withAnimation { shown = false }; started = .now }.buttonStyle(CandleButton())
                 } else {
                     Text(words.prefix(placed).joined(separator: " ") + (placed < words.count ? " …" : ""))
-                        .font(.system(size: 20, weight: .medium)).foregroundStyle(Candle.ink).multilineTextAlignment(.center).frame(minHeight: 60)
+                        .font(Font.pl(size: 20, weight: .medium)).foregroundStyle(Candle.ink).multilineTextAlignment(.center).frame(minHeight: 60)
                     SeedChips(chips: chips, flash: flash) { tap($0, left: left) }
                     if let lastRound { Text("Last phrase: \(lastRound)").candleHint() }
                 }
@@ -66,7 +66,7 @@ struct SeedsGame: View {
 
     private var end: some View {
         VStack(spacing: 14) {
-            Text("\(total)").font(.system(size: 44, weight: .semibold).monospacedDigit()).foregroundStyle(Candle.goldHi)
+            Text("\(total)").font(Font.pl(size: 44, weight: .semibold).monospacedDigit()).foregroundStyle(Candle.goldHi)
             Text("points from five phrases").candleHint()
             Button("Again") { mode = nil }.buttonStyle(CandleButton())
         }
@@ -111,7 +111,7 @@ struct SeedChips: View {
         SeedWrap(spacing: 8) {
                 ForEach(chips) { c in
                     Button { tap(c.id) } label: {
-                        Text(c.word).font(.system(size: 16)).foregroundStyle(flash == c.id ? Color.red.opacity(0.9) : Candle.ink)
+                        Text(c.word).font(Font.pl(size: 16)).foregroundStyle(flash == c.id ? Color.red.opacity(0.9) : Candle.ink)
                             .padding(.horizontal, 14).frame(minHeight: 44)
                             .background(Capsule().strokeBorder(flash == c.id ? Color.red.opacity(0.7) : Candle.gold.opacity(0.6), lineWidth: 1))
                     }
@@ -161,7 +161,7 @@ struct CurveGame: View {
         VStack(spacing: 14) {
             Text(phase == .done ? "Alignment, five strokes" : "Stroke \(round + 1) of \(rounds)").candleHint()
             if phase == .done {
-                Text("\(scores.reduce(0, +) / max(1, scores.count))").font(.system(size: 44, weight: .semibold).monospacedDigit()).foregroundStyle(Candle.goldHi)
+                Text("\(scores.reduce(0, +) / max(1, scores.count))").font(Font.pl(size: 44, weight: .semibold).monospacedDigit()).foregroundStyle(Candle.goldHi)
                 Button("Again") { deck = Array(PracticeMapArt.strokes.indices).shuffled(); round = 0; scores = []; phase = .watch; drawStart = .now }.buttonStyle(CandleButton())
             } else {
                 GeometryReader { geo in
@@ -192,7 +192,7 @@ struct CurveGame: View {
                 case .watch: Button("Hide it, I'll draw it") { drawn = []; phase = .draw }.buttonStyle(CandleButton())
                 case .draw: Text("Redraw his stroke from memory, one line.").candleHint()
                 case .scored:
-                    Text("\(scores.last ?? 0)").font(.system(size: 28, weight: .semibold).monospacedDigit()).foregroundStyle(Candle.goldHi)
+                    Text("\(scores.last ?? 0)").font(Font.pl(size: 28, weight: .semibold).monospacedDigit()).foregroundStyle(Candle.goldHi)
                     Button(round + 1 < rounds ? "Next stroke" : "Finish") {
                         round += 1; drawn = []
                         if round >= rounds { phase = .done; ArcadeScores.offer(.curve, scores.reduce(0, +) / max(1, scores.count)) } else { phase = .watch; drawStart = .now }
@@ -238,10 +238,10 @@ struct ArchitectGame: View {
                         Text(Self.pillars[i].name).candleH2()
                         Text(Self.pillars[i].line).candleHint()
                         TextField(Self.pillars[i].hint, text: $text[i], axis: .vertical).lineLimit(2...5).disabled(sealed)
-                            .padding(12).background(RoundedRectangle(cornerRadius: 12).strokeBorder(Candle.hairline))
+                            .padding(12).background(RoundedRectangle(cornerRadius: 12 * PLStyle.radius).strokeBorder(Candle.hairline))
                         ProgressView(value: Double(r.score), total: 100).tint(r.score >= 80 ? Candle.goldHi : Candle.gold)
-                        Text("Clarity \(r.score)").font(.system(size: 12).monospacedDigit()).foregroundStyle(Candle.goldHi)
-                        ForEach(r.notes, id: \.self) { Text($0).font(.system(size: 13)).foregroundStyle(Candle.ink.opacity(0.8)) }
+                        Text("Clarity \(r.score)").font(Font.pl(size: 12).monospacedDigit()).foregroundStyle(Candle.goldHi)
+                        ForEach(r.notes, id: \.self) { Text($0).font(Font.pl(size: 13)).foregroundStyle(Candle.ink.opacity(0.8)) }
                     }
                     .candleCard()
                 }
@@ -321,16 +321,16 @@ struct OraclePathsGame: View {
         let node = Self.paths[at] ?? Self.paths["root"]!
         VStack(alignment: .leading, spacing: 18) {
             Text("Step \(min(trail.count + 1, 5))").candleHint()
-            Text(node.text).font(.system(size: 20, design: .serif)).foregroundStyle(Candle.ink).lineSpacing(4).fixedSize(horizontal: false, vertical: true)
+            Text(node.text).font(Font.pl(size: 20, design: .serif)).foregroundStyle(Candle.ink).lineSpacing(4).fixedSize(horizontal: false, vertical: true)
             if node.choices.isEmpty {
-                Text("Watch this.").font(.system(size: 16, design: .serif).italic()).foregroundStyle(Candle.goldHi)
+                Text("Watch this.").font(Font.pl(size: 16, design: .serif).italic()).foregroundStyle(Candle.goldHi)
                 if !trail.isEmpty { Text("Your path: " + trail.joined(separator: " · ")).candleHint() }
                 Button("Ask again") { at = "root"; trail = [] }.buttonStyle(CandleButton())
             } else {
                 ForEach(node.choices.indices, id: \.self) { k in
                     let c = node.choices[k]
                     Button { trail.append(c.0); at = c.1; if Self.paths[c.1]?.choices.isEmpty ?? true { OracleRecord.save(trail, ending: c.1) } } label: {
-                        Text(c.0).font(.system(size: 16)).foregroundStyle(Candle.ink).frame(maxWidth: .infinity, minHeight: 44, alignment: .leading).candleCard(padding: 14)
+                        Text(c.0).font(Font.pl(size: 16)).foregroundStyle(Candle.ink).frame(maxWidth: .infinity, minHeight: 44, alignment: .leading).candleCard(padding: 14)
                     }
                     .buttonStyle(.plain)
                 }

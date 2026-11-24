@@ -99,9 +99,9 @@ struct PerformancePage: View {
                 tasksCard
             } else {
                 VStack(alignment: .leading, spacing: 4) {
-                    Text("Pulse").plFont(.title2, emphasized: true).foregroundStyle(.white)
+                    Text("Pulse").plFont(.title2, emphasized: true).foregroundStyle(Color.primary)
                     Text(failed ? "Could not read the house. Pull down to try again." : (data == nil ? "Reading the house…" : "Reach first, then money, then the machine."))
-                        .plFont(.footnote).foregroundStyle(.white.opacity(0.75))
+                        .plFont(.footnote).foregroundStyle(Color.primary.opacity(0.75))
                 }
                 weekCard
                 // reach first (both reviews 11-14: the constraint is reach, not production)
@@ -154,9 +154,9 @@ struct PerformancePage: View {
                     HStack(alignment: .firstTextBaseline, spacing: 8) {
                         Text(title).plHand(20)
                         Spacer(minLength: 6)
-                        Text(glance).font(.system(.title3, design: .monospaced).weight(.semibold)).monospacedDigit()
+                        Text(glance).font(Font.pl(.title3, design: .monospaced).weight(.semibold)).monospacedDigit()
                             .foregroundStyle(PLTone.accent).lineLimit(1).minimumScaleFactor(0.6).contentTransition(.numericText())
-                        Image(systemName: "chevron.down").font(.caption.weight(.bold)).foregroundStyle(.secondary)
+                        Image(systemName: "chevron.down").font(Font.pl(.caption).weight(.bold)).foregroundStyle(.secondary)
                             .rotationEffect(.degrees(isOpen ? 180 : 0))
                     }
                     .contentShape(Rectangle())
@@ -191,7 +191,7 @@ struct PerformancePage: View {
 
     private func figure(_ name: String, _ value: String) -> some View {
         VStack(alignment: .leading, spacing: 2) {
-            Text(value).font(.system(.title3, design: .monospaced).weight(.semibold)).monospacedDigit().lineLimit(1).minimumScaleFactor(0.6)
+            Text(value).font(Font.pl(.title3, design: .monospaced).weight(.semibold)).monospacedDigit().lineLimit(1).minimumScaleFactor(0.6)
             Text(name).plLabel(10).foregroundStyle(.secondary).lineLimit(1).minimumScaleFactor(0.7)
         }
         .frame(maxWidth: .infinity, alignment: .leading)
@@ -216,7 +216,7 @@ struct PerformancePage: View {
                 Button { withAnimation(.snappy) { goalsOpen.toggle() } } label: {
                     HStack(spacing: 4) {
                         Text(goalsOpen ? "Hide the goals" : "The goals").plLabel(10)
-                        Image(systemName: "chevron.right").font(.system(size: 9, weight: .bold)).rotationEffect(.degrees(goalsOpen ? 90 : 0))
+                        Image(systemName: "chevron.right").font(Font.pl(size: 9, weight: .bold)).rotationEffect(.degrees(goalsOpen ? 90 : 0))
                     }
                     .foregroundStyle(.secondary).frame(minHeight: 32).contentShape(Rectangle())
                 }
@@ -226,9 +226,9 @@ struct PerformancePage: View {
                 ForEach(Array((m?.lines ?? []).enumerated()), id: \.offset) { _, line in
                     VStack(alignment: .leading, spacing: 4) {
                         HStack {
-                            Text(line.label).font(.caption)
+                            Text(line.label).font(Font.pl(.caption))
                             Spacer()
-                            Text(m?.ytd.map { String(format: "%.2f%%", min($0 / max(line.amount, 1), 1) * 100) } ?? "\u{2014}").font(.caption).monospacedDigit().foregroundStyle(.secondary)
+                            Text(m?.ytd.map { String(format: "%.2f%%", min($0 / max(line.amount, 1), 1) * 100) } ?? "\u{2014}").font(Font.pl(.caption)).monospacedDigit().foregroundStyle(.secondary)
                         }
                         ProgressView(value: min((m?.ytd ?? 0) / max(line.amount, 1), 1)).tint(PLTone.accent)
                     }
@@ -271,8 +271,8 @@ struct PerformancePage: View {
                         HStack(spacing: 6) {
                             Circle().fill(level(r)).frame(width: 9, height: 9)
                             VStack(alignment: .leading, spacing: 1) {
-                                Text(r.channel.capitalized).font(.callout.weight(.semibold)).foregroundStyle(PLOS.platform(r.channel)).lineLimit(1).minimumScaleFactor(0.7)
-                                if r.engagement < 10 { Text("not enough to compare").font(.caption2).foregroundStyle(.secondary) }
+                                Text(r.channel.capitalized).font(Font.pl(.callout).weight(.semibold)).foregroundStyle(PLOS.platform(r.channel)).lineLimit(1).minimumScaleFactor(0.7)
+                                if r.engagement < 10 { Text("not enough to compare").font(Font.pl(.caption2)).foregroundStyle(.secondary) }
                             }
                         }
                         .frame(maxWidth: .infinity, alignment: .leading)
@@ -281,15 +281,15 @@ struct PerformancePage: View {
                         Text(count(r.likes)).frame(width: 44, alignment: .trailing)
                         Text(count(r.comments)).frame(width: 66, alignment: .trailing)
                     }
-                    .font(.system(.footnote, design: .monospaced)).monospacedDigit()
+                    .font(Font.pl(.footnote, design: .monospaced)).monospacedDigit()
                     .accessibilityElement(children: .combine)
                 }
                 Text("\(count(l?.comments_total)) comments across every platform in 14 days. Green: landing. Amber: some response. Grey: not enough to compare.")
-                    .font(.caption2).foregroundStyle(.secondary)
+                    .font(Font.pl(.caption2)).foregroundStyle(.secondary)
                 if let b = l?.best, let c = b.caption, !c.isEmpty { post("Best", b, c) }
                 if let w = l?.weakest, let c = w.caption, !c.isEmpty { post("Weakest", w, c) }
             } else {
-                Text(data == nil ? "Not read yet." : "No posts measured in the last 14 days.").font(.callout).foregroundStyle(.secondary)
+                Text(data == nil ? "Not read yet." : "No posts measured in the last 14 days.").font(Font.pl(.callout)).foregroundStyle(.secondary)
             }
             Divider()
             weeklyCard   // the 13 weeks, inside What landed (merged 11-14)
@@ -311,9 +311,9 @@ struct PerformancePage: View {
         return VStack(alignment: .leading, spacing: 10) {
             Text("Needs your attention").plHand(20)
             if data == nil {
-                Text("Not read yet.").font(.callout).foregroundStyle(.secondary)
+                Text("Not read yet.").font(Font.pl(.callout)).foregroundStyle(.secondary)
             } else if lines.isEmpty {
-                Label("Nothing is waiting on you.", systemImage: "checkmark.circle.fill").font(.callout).foregroundStyle(PLTone.good)
+                Label("Nothing is waiting on you.", systemImage: "checkmark.circle.fill").font(Font.pl(.callout)).foregroundStyle(PLTone.good)
             }
             ForEach(lines) { a in
                 Button {
@@ -321,11 +321,11 @@ struct PerformancePage: View {
                     if let u = URL(string: "pldev://" + path) { openURL(u) }
                 } label: {
                     HStack {
-                        Text(a.label).font(.callout)
+                        Text(a.label).font(Font.pl(.callout))
                         Spacer(minLength: 8)
-                        Text(a.count.map { "\($0)" } ?? "not read").font(.system(.callout, design: .monospaced).weight(.semibold)).monospacedDigit()
+                        Text(a.count.map { "\($0)" } ?? "not read").font(Font.pl(.callout, design: .monospaced).weight(.semibold)).monospacedDigit()
                             .foregroundStyle(a.count == nil ? Color.secondary : PLTone.warn)
-                        Image(systemName: "chevron.right").font(.caption2.weight(.bold)).foregroundStyle(.secondary)
+                        Image(systemName: "chevron.right").font(Font.pl(.caption2).weight(.bold)).foregroundStyle(.secondary)
                     }
                     .contentShape(Rectangle())
                 }
@@ -342,16 +342,16 @@ struct PerformancePage: View {
         card("Orders", glance: count(data?.orders?.count)) {
             let rows = data?.orders ?? []
             if rows.isEmpty {
-                Text(data == nil ? "Not read yet." : "No orders yet.").font(.callout).foregroundStyle(.secondary)
+                Text(data == nil ? "Not read yet." : "No orders yet.").font(Font.pl(.callout)).foregroundStyle(.secondary)
             }
             ForEach(rows) { o in
                 HStack(alignment: .firstTextBaseline) {
                     VStack(alignment: .leading, spacing: 1) {
-                        Text(o.day).font(.system(.footnote, design: .monospaced))
+                        Text(o.day).font(Font.pl(.footnote, design: .monospaced))
                     }
                     Spacer(minLength: 8)
-                    Text(dollars(o.total)).font(.system(.callout, design: .monospaced)).monospacedDigit()
-                    Text((o.status ?? "").replacingOccurrences(of: "_", with: " ").capitalized).font(.caption2).foregroundStyle(orderTone(o.status))
+                    Text(dollars(o.total)).font(Font.pl(.callout, design: .monospaced)).monospacedDigit()
+                    Text((o.status ?? "").replacingOccurrences(of: "_", with: " ").capitalized).font(Font.pl(.caption2)).foregroundStyle(orderTone(o.status))
                         .lineLimit(1).minimumScaleFactor(0.7).frame(width: 78, alignment: .trailing)
                 }
                 .accessibilityElement(children: .combine)
@@ -390,9 +390,9 @@ struct PerformancePage: View {
                     Text("Pages they open").plLabel(10).foregroundStyle(.secondary).padding(.top, 4)
                     ForEach(pages.prefix(6)) { p in
                         HStack {
-                            Text(p.path).font(.system(.footnote, design: .monospaced)).lineLimit(1).truncationMode(.middle)
+                            Text(p.path).font(Font.pl(.footnote, design: .monospaced)).lineLimit(1).truncationMode(.middle)
                             Spacer(minLength: 8)
-                            Text("\(p.views)").font(.system(.footnote, design: .monospaced)).monospacedDigit()
+                            Text("\(p.views)").font(Font.pl(.footnote, design: .monospaced)).monospacedDigit()
                         }
                     }
                 }
@@ -400,10 +400,10 @@ struct PerformancePage: View {
                     Text("Where they came from").plLabel(10).foregroundStyle(.secondary).padding(.top, 4)
                     ForEach(sources.prefix(6)) { x in
                         HStack {
-                            Text(x.source == "(direct)" ? "Typed or bookmarked" : x.source).font(.footnote).lineLimit(1)
-                            if x.medium != "(none)" && !x.medium.isEmpty { Text(x.medium).font(.caption2).foregroundStyle(.secondary) }
+                            Text(x.source == "(direct)" ? "Typed or bookmarked" : x.source).font(Font.pl(.footnote)).lineLimit(1)
+                            if x.medium != "(none)" && !x.medium.isEmpty { Text(x.medium).font(Font.pl(.caption2)).foregroundStyle(.secondary) }
                             Spacer(minLength: 8)
-                            Text("\(x.sessions)").font(.system(.footnote, design: .monospaced)).monospacedDigit()
+                            Text("\(x.sessions)").font(Font.pl(.footnote, design: .monospaced)).monospacedDigit()
                         }
                     }
                 }
@@ -414,21 +414,21 @@ struct PerformancePage: View {
                     figure("Visitor to order, 28 days", visitors > 0 ? String(format: "%.1f%%", Double(recentOrders) / Double(visitors) * 100) : "\u{2014}")
                 } else {
                     Label("The visitor-to-order rate opens at 5 orders (now \(orders)); fewer cannot carry a rate.", systemImage: "lock")
-                        .font(.caption2).foregroundStyle(.secondary)
+                        .font(Font.pl(.caption2)).foregroundStyle(.secondary)
                 }
                 if visitors < 500 {
-                    Label("Page drop-off opens at 500 visitors a month (now \(visitors)).", systemImage: "lock").font(.caption2).foregroundStyle(.secondary)
+                    Label("Page drop-off opens at 500 visitors a month (now \(visitors)).", systemImage: "lock").font(Font.pl(.caption2)).foregroundStyle(.secondary)
                 }
-                Text("Last 28 days, Google Analytics. Read \(String((s.as_of ?? "").prefix(10))).").font(.caption2).foregroundStyle(.secondary)
+                Text("Last 28 days, Google Analytics. Read \(String((s.as_of ?? "").prefix(10))).").font(Font.pl(.caption2)).foregroundStyle(.secondary)
             } else {
-                Text(data == nil ? "Not read yet." : "No site read yet: the PC board posts it each night.").font(.callout).foregroundStyle(.secondary)
+                Text(data == nil ? "Not read yet." : "No site read yet: the PC board posts it each night.").font(Font.pl(.callout)).foregroundStyle(.secondary)
             }
         }
     }
 
     /// A column head as an icon: never wraps, and says its word to VoiceOver.
     private func head(_ symbol: String, _ name: String) -> some View {
-        Image(systemName: symbol).font(.system(size: 11, weight: .semibold)).accessibilityLabel(name)
+        Image(systemName: symbol).font(Font.pl(size: 11, weight: .semibold)).accessibilityLabel(name)
     }
 
     // MARK: the screen is a practice (his idea 11-14; Codex and Gemini's build-first set, all four by his ruling)
@@ -446,8 +446,8 @@ struct PerformancePage: View {
         } label: {
             VStack(alignment: .leading, spacing: 8) {
                 Text("Tonight").plHand(22)
-                Text(data == nil ? "Reading the house\u{2026}" : move.text).font(.title3.weight(.semibold)).foregroundStyle(.white).multilineTextAlignment(.leading)
-                HStack(spacing: 4) { Text("Do it").plLabel(10); Image(systemName: "arrow.right").font(.system(size: 10, weight: .bold)) }.foregroundStyle(PLTone.accent)
+                Text(data == nil ? "Reading the house\u{2026}" : move.text).font(Font.pl(.title3).weight(.semibold)).foregroundStyle(Color.primary).multilineTextAlignment(.leading)
+                HStack(spacing: 4) { Text("Do it").plLabel(10); Image(systemName: "arrow.right").font(Font.pl(size: 10, weight: .bold)) }.foregroundStyle(PLTone.accent)
             }
             .frame(maxWidth: .infinity, alignment: .leading)
             .padding(16)
@@ -465,21 +465,21 @@ struct PerformancePage: View {
             HStack {
                 Text("First 100 patrons").plLabel(10).foregroundStyle(.secondary)
                 Spacer()
-                Text(seats.count >= 100 ? "All 100 seats filled" : "Next: patron \(seats.count + 1)").font(.system(.caption, design: .monospaced)).foregroundStyle(PLTone.accent)
+                Text(seats.count >= 100 ? "All 100 seats filled" : "Next: patron \(seats.count + 1)").font(Font.pl(.caption, design: .monospaced)).foregroundStyle(PLTone.accent)
             }
             LazyVGrid(columns: Array(repeating: GridItem(.flexible(), spacing: 3), count: 10), spacing: 3) {
                 ForEach(1...100, id: \.self) { n in
                     let filled = n <= seats.count, next = n == seats.count + 1
-                    RoundedRectangle(cornerRadius: 3, style: .continuous)
+                    RoundedRectangle(cornerRadius: 3 * PLStyle.radius, style: .continuous)
                         .fill(filled ? PLTone.accent : Color.white.opacity(0.06))
-                        .overlay { RoundedRectangle(cornerRadius: 3, style: .continuous).strokeBorder(next ? PLTone.accent : Color.clear, lineWidth: 1.2) }
-                        .overlay { if filled || next { Text("\(n)").font(.system(size: 8, weight: .semibold, design: .monospaced)).foregroundStyle(filled ? Color.black : PLTone.accent) } }
+                        .overlay { RoundedRectangle(cornerRadius: 3 * PLStyle.radius, style: .continuous).strokeBorder(next ? PLTone.accent : Color.clear, lineWidth: 1.2) }
+                        .overlay { if filled || next { Text("\(n)").font(Font.pl(size: 8, weight: .semibold, design: .monospaced)).foregroundStyle(filled ? Color.black : PLTone.accent) } }
                         .aspectRatio(1, contentMode: .fit)
                 }
             }
             .accessibilityElement(children: .ignore)
             .accessibilityLabel("\(seats.count) of the first 100 patron seats filled")
-            if let last = seats.last { Text("Latest: patron \(last.seat), \(last.day)").font(.caption2).foregroundStyle(.secondary) }
+            if let last = seats.last { Text("Latest: patron \(last.seat), \(last.day)").font(Font.pl(.caption2)).foregroundStyle(.secondary) }
         }
         .padding(.top, 4)
     }
@@ -506,23 +506,23 @@ struct PerformancePage: View {
             let moves = moveLog.split(separator: "\n").compactMap { l -> String? in let p = l.split(separator: "|"); return p.count == 2 && String(p[0]) >= since ? String(p[1]) : nil }
             if !moves.isEmpty {
                 let by = Dictionary(moves.map { ($0, 1) }, uniquingKeysWith: +).sorted { $0.value > $1.value }
-                Text("Your moves: " + by.map { "\($0.key) \($0.value)" }.joined(separator: " · ")).font(.footnote).foregroundStyle(.secondary)
+                Text("Your moves: " + by.map { "\($0.key) \($0.value)" }.joined(separator: " · ")).font(Font.pl(.footnote)).foregroundStyle(.secondary)
             }
             experimentRows(thisWeek: thisWeek, lastWeek: lastWeek)
             proposalRows(moves: moves, thisWeek: thisWeek)
             if let d = decisions[lastWeek], !d.isEmpty {
                 VStack(alignment: .leading, spacing: 2) {
                     Text("Last week you decided").plLabel(10).foregroundStyle(.secondary)
-                    Text(d).font(.callout)
+                    Text(d).font(Font.pl(.callout))
                 }
             }
             VStack(alignment: .leading, spacing: 4) {
                 Text("One decision for this week").plLabel(10).foregroundStyle(.secondary)
                 TextField(decisions[thisWeek] ?? "What will you do differently?", text: $decisionDraft, axis: .vertical)
-                    .font(.callout).lineLimit(1...3)
+                    .font(Font.pl(.callout)).lineLimit(1...3)
                     .onSubmit { saveDecision(thisWeek) }
                 if !decisionDraft.isEmpty {
-                    Button("Keep it") { saveDecision(thisWeek) }.font(.footnote.weight(.semibold)).tint(PLTone.accent)
+                    Button("Keep it") { saveDecision(thisWeek) }.font(Font.pl(.footnote).weight(.semibold)).tint(PLTone.accent)
                 }
             }
         }
@@ -535,22 +535,22 @@ struct PerformancePage: View {
         if let e = ex[lastWeek], !e.isEmpty {
             VStack(alignment: .leading, spacing: 2) {
                 Text("Last week's experiment").plLabel(10).foregroundStyle(.secondary)
-                Text(e).font(.callout)
-                if let w = weeks.last { Text("This week so far: \(w.posts) posts, \(w.reach) reach, \(w.engagement) likes and comments. A hypothesis, not proof.").font(.caption2).foregroundStyle(.secondary) }
+                Text(e).font(Font.pl(.callout))
+                if let w = weeks.last { Text("This week so far: \(w.posts) posts, \(w.reach) reach, \(w.engagement) likes and comments. A hypothesis, not proof.").font(Font.pl(.caption2)).foregroundStyle(.secondary) }
             }
         }
         VStack(alignment: .leading, spacing: 4) {
             if let best = data?.top_posts?.first {
-                Text("Best post: \(best.channel.capitalized), \(best.engagement) likes and comments").font(.caption2).foregroundStyle(.secondary)
+                Text("Best post: \(best.channel.capitalized), \(best.engagement) likes and comments").font(Font.pl(.caption2)).foregroundStyle(.secondary)
             }
-            TextField(ex[thisWeek] ?? "One experiment from it this week", text: $experimentDraft, axis: .vertical).font(.callout).lineLimit(1...3)
+            TextField(ex[thisWeek] ?? "One experiment from it this week", text: $experimentDraft, axis: .vertical).font(Font.pl(.callout)).lineLimit(1...3)
             if !experimentDraft.isEmpty {
                 Button("Keep the experiment") {
                     var d = ex; d[thisWeek] = String(experimentDraft.trimmingCharacters(in: .whitespacesAndNewlines).prefix(280))
                     if let s = try? JSONEncoder().encode(d), let j = String(data: s, encoding: .utf8) { experimentsJSON = j }
                     experimentDraft = ""
                 }
-                .font(.footnote.weight(.semibold)).tint(PLTone.accent)
+                .font(Font.pl(.footnote).weight(.semibold)).tint(PLTone.accent)
             }
         }
     }
@@ -564,7 +564,7 @@ struct PerformancePage: View {
                                          thisWeek: thisWeek, lastActedWeek: proposalWeek.isEmpty ? nil : proposalWeek))
         if let p {
             VStack(alignment: .leading, spacing: 6) {
-                Label(p.text, systemImage: "wand.and.stars").font(.callout)
+                Label(p.text, systemImage: "wand.and.stars").font(Font.pl(.callout))
                 HStack(spacing: 8) {
                     Button("Yes") {
                         let log = (try? JSONDecoder().decode([ProposalRules.Change].self, from: Data(appliedJSON.utf8))) ?? []
@@ -596,14 +596,14 @@ struct PerformancePage: View {
         card("Founder tasks") {
             let rows = data?.tasks ?? []
             if rows.isEmpty {
-                Text(data == nil ? "Not read yet." : "Nothing open.").font(.callout).foregroundStyle(.secondary)
+                Text(data == nil ? "Not read yet." : "Nothing open.").font(Font.pl(.callout)).foregroundStyle(.secondary)
             }
             ForEach(rows) { t in
                 HStack(alignment: .top, spacing: 8) {
-                    Image(systemName: "circle").font(.caption).foregroundStyle(PLTone.accent).padding(.top, 3)
+                    Image(systemName: "circle").font(Font.pl(.caption)).foregroundStyle(PLTone.accent).padding(.top, 3)
                     VStack(alignment: .leading, spacing: 1) {
-                        Text(t.title).font(.callout)
-                        if let d = t.due, !d.isEmpty { Text("Due \(String(d.prefix(10)))").font(.caption2).foregroundStyle(.secondary) }
+                        Text(t.title).font(Font.pl(.callout))
+                        if let d = t.due, !d.isEmpty { Text("Due \(String(d.prefix(10)))").font(Font.pl(.caption2)).foregroundStyle(.secondary) }
                     }
                 }
             }
@@ -616,25 +616,25 @@ struct PerformancePage: View {
     /// question mark is a call to make. The board itself opens from the last row.
     @ViewBuilder private var boardRows: some View {
         HStack(alignment: .firstTextBaseline) {
-            Text("Standing Board").font(.caption.weight(.semibold)).foregroundStyle(.secondary)
+            Text("Standing Board").font(Font.pl(.caption).weight(.semibold)).foregroundStyle(.secondary)
             Spacer()
-            if let b = board { Text("\(b.rows.count) · pulled \(b.pulled)").font(.caption2).foregroundStyle(.secondary) }
+            if let b = board { Text("\(b.rows.count) · pulled \(b.pulled)").font(Font.pl(.caption2)).foregroundStyle(.secondary) }
         }
         if let b = board {
-            if b.rows.isEmpty { Text("Nothing waiting on you.").font(.callout).foregroundStyle(.secondary) }
+            if b.rows.isEmpty { Text("Nothing waiting on you.").font(Font.pl(.callout)).foregroundStyle(.secondary) }
             ForEach(Array(b.rows.enumerated()), id: \.offset) { _, r in
                 HStack(alignment: .top, spacing: 8) {
-                    Image(systemName: r.call ? "questionmark.circle" : "hand.raised").font(.caption).foregroundStyle(PLTone.accent).padding(.top, 3)
+                    Image(systemName: r.call ? "questionmark.circle" : "hand.raised").font(Font.pl(.caption)).foregroundStyle(PLTone.accent).padding(.top, 3)
                         .accessibilityLabel(r.call ? "Your call" : "Your hands")
-                    Text(r.text).font(.callout)
+                    Text(r.text).font(Font.pl(.callout))
                 }
             }
             if let u = b.link {
-                Button { openURL(u) } label: { Label("Open the Standing Board", systemImage: "arrow.up.right.square").font(.callout) }
+                Button { openURL(u) } label: { Label("Open the Standing Board", systemImage: "arrow.up.right.square").font(Font.pl(.callout)) }
                     .frame(minHeight: 44, alignment: .leading)
             }
         } else {
-            Text("The board has not been read yet. The PC sends it every 5 minutes.").font(.callout).foregroundStyle(.secondary)
+            Text("The board has not been read yet. The PC sends it every 5 minutes.").font(Font.pl(.callout)).foregroundStyle(.secondary)
         }
     }
 
@@ -660,26 +660,26 @@ struct PerformancePage: View {
             let leads = data?.suggestions?.leads ?? []
             let shown = leads.filter { judged[$0.id]?.can != false }
             if leads.isEmpty {
-                Text(data == nil ? "Not read yet." : "The scouts have nothing open.").font(.callout).foregroundStyle(.secondary)
+                Text(data == nil ? "Not read yet." : "The scouts have nothing open.").font(Font.pl(.callout)).foregroundStyle(.secondary)
             } else if shown.isEmpty {
-                Text("Nothing here that you can start this week.").font(.callout).foregroundStyle(.secondary)
+                Text("Nothing here that you can start this week.").font(Font.pl(.callout)).foregroundStyle(.secondary)
             }
             ForEach(shown) { l in
                 VStack(alignment: .leading, spacing: 3) {
-                    Text(l.name).font(.callout.weight(.semibold))
-                    if let w = l.why, !w.isEmpty { Text(w).font(.footnote).foregroundStyle(.secondary).lineLimit(3) }
+                    Text(l.name).font(Font.pl(.callout).weight(.semibold))
+                    if let w = l.why, !w.isEmpty { Text(w).font(Font.pl(.footnote)).foregroundStyle(.secondary).lineLimit(3) }
                     if let j = judged[l.id] {
-                        if !j.step.isEmpty { Label(j.step, systemImage: "arrow.right.circle").font(.footnote).foregroundStyle(PLTone.good) }
+                        if !j.step.isEmpty { Label(j.step, systemImage: "arrow.right.circle").font(Font.pl(.footnote)).foregroundStyle(PLTone.good) }
                     } else {
                         Text(judging ? "Checking it against what you can do\u{2026}" : "Not checked by the phone: Apple Intelligence is off or still loading.")
-                            .font(.caption2).foregroundStyle(.secondary)
+                            .font(Font.pl(.caption2)).foregroundStyle(.secondary)
                     }
-                    if let d = l.deadline, !d.isEmpty { Text("Deadline \(d)").font(.caption2).foregroundStyle(PLTone.warn) }
+                    if let d = l.deadline, !d.isEmpty { Text("Deadline \(d)").font(Font.pl(.caption2)).foregroundStyle(PLTone.warn) }
                 }
                 .padding(.vertical, 3)
             }
             let hidden = leads.count - shown.count
-            if hidden > 0 { Text("\(hidden) left out: not doable on your terms.").font(.caption2).foregroundStyle(.secondary) }
+            if hidden > 0 { Text("\(hidden) left out: not doable on your terms.").font(Font.pl(.caption2)).foregroundStyle(.secondary) }
         }
     }
 
@@ -706,7 +706,7 @@ struct PerformancePage: View {
     private func post(_ name: String, _ p: Performance.Post, _ caption: String) -> some View {
         VStack(alignment: .leading, spacing: 2) {
             Text("\(name) · \((p.channel ?? "").capitalized) · \(p.day ?? "") · \(count(p.engagement)) engaged").plLabel(10).foregroundStyle(.secondary)
-            Text(caption).font(.footnote).lineLimit(3)
+            Text(caption).font(Font.pl(.footnote)).lineLimit(3)
         }
         .padding(.top, 4)
     }
@@ -718,14 +718,14 @@ struct PerformancePage: View {
             let rows = data?.months ?? []
             let top = max(rows.map(\.total).max() ?? 0, 1)
             if rows.isEmpty {
-                Text(data == nil ? "Not read yet." : "No orders this year.").font(.callout).foregroundStyle(.secondary)
+                Text(data == nil ? "Not read yet." : "No orders this year.").font(Font.pl(.callout)).foregroundStyle(.secondary)
             }
             ForEach(rows) { r in
                 VStack(alignment: .leading, spacing: 3) {
                     HStack {
-                        Text(r.month).font(.system(.footnote, design: .monospaced))
+                        Text(r.month).font(Font.pl(.footnote, design: .monospaced))
                         Spacer()
-                        Text("\(dollars(r.total)) · \(r.orders) order\(r.orders == 1 ? "" : "s")").font(.system(.footnote, design: .monospaced)).monospacedDigit().foregroundStyle(.secondary)
+                        Text("\(dollars(r.total)) · \(r.orders) order\(r.orders == 1 ? "" : "s")").font(Font.pl(.footnote, design: .monospaced)).monospacedDigit().foregroundStyle(.secondary)
                     }
                     ProgressView(value: min(r.total / top, 1)).tint(PLTone.accent)
                 }
@@ -747,11 +747,11 @@ struct PerformancePage: View {
                 .chartXAxisLabel("posts that week").chartYAxisLabel("reach")
                 .frame(height: 140)
                 .accessibilityLabel("Reach against posts, one dot per week")
-                Text("Each dot is a week. If the dots climb to the right, posting more moved reach.").font(.caption2).foregroundStyle(.secondary)
+                Text("Each dot is a week. If the dots climb to the right, posting more moved reach.").font(Font.pl(.caption2)).foregroundStyle(.secondary)
             }
             let top = Double(max(rows.map(\.engagement).max() ?? 0, 1))
             if rows.isEmpty {
-                Text(data == nil ? "Not read yet." : "No posts measured.").font(.callout).foregroundStyle(.secondary)
+                Text(data == nil ? "Not read yet." : "No posts measured.").font(Font.pl(.callout)).foregroundStyle(.secondary)
             } else {
                 HStack {
                     Text("Week of").plLabel(10).frame(maxWidth: .infinity, alignment: .leading)
@@ -769,7 +769,7 @@ struct PerformancePage: View {
                         Text("\(r.reach)").frame(width: 60, alignment: .trailing)
                         Text("\(r.engagement)").frame(width: 64, alignment: .trailing)
                     }
-                    .font(.system(.footnote, design: .monospaced)).monospacedDigit()
+                    .font(Font.pl(.footnote, design: .monospaced)).monospacedDigit()
                     ProgressView(value: min(Double(r.engagement) / top, 1)).tint(PLTone.accent)
                 }
                 .accessibilityElement(children: .combine)
@@ -782,20 +782,20 @@ struct PerformancePage: View {
         card("Best posts, 30 days", glance: count(data?.top_posts?.first?.engagement)) {
             let rows = data?.top_posts ?? []
             if rows.isEmpty {
-                Text(data == nil ? "Not read yet." : "No posts measured.").font(.callout).foregroundStyle(.secondary)
+                Text(data == nil ? "Not read yet." : "No posts measured.").font(Font.pl(.callout)).foregroundStyle(.secondary)
             }
             ForEach(rows) { r in
                 VStack(alignment: .leading, spacing: 2) {
                     HStack(spacing: 6) {
-                        Text(r.channel.capitalized).font(.caption.weight(.semibold)).foregroundStyle(PLOS.platform(r.channel))
-                        Text(String(r.day.suffix(5))).font(.system(.caption2, design: .monospaced)).foregroundStyle(.secondary)
+                        Text(r.channel.capitalized).font(Font.pl(.caption).weight(.semibold)).foregroundStyle(PLOS.platform(r.channel))
+                        Text(String(r.day.suffix(5))).font(Font.pl(.caption2, design: .monospaced)).foregroundStyle(.secondary)
                         Spacer(minLength: 4)
-                        Label("\(r.engagement)", systemImage: "heart").font(.system(.caption, design: .monospaced))
-                        if (r.reach ?? 0) > 0 { Label(count(r.reach), systemImage: "eye").font(.system(.caption, design: .monospaced)) }
+                        Label("\(r.engagement)", systemImage: "heart").font(Font.pl(.caption, design: .monospaced))
+                        if (r.reach ?? 0) > 0 { Label(count(r.reach), systemImage: "eye").font(Font.pl(.caption, design: .monospaced)) }
                     }
                     .foregroundStyle(.secondary)
                     .accessibilityElement(children: .combine)
-                    Text(r.caption).font(.footnote).lineLimit(3)
+                    Text(r.caption).font(Font.pl(.footnote)).lineLimit(3)
                 }
                 .padding(.vertical, 2)
             }
@@ -815,9 +815,9 @@ struct PerformancePage: View {
             }
             ForEach(c?.jobs ?? []) { j in
                 HStack {
-                    Text(j.job).font(.footnote).lineLimit(1)
+                    Text(j.job).font(Font.pl(.footnote)).lineLimit(1)
                     Spacer()
-                    Text("\(j.calls)").font(.system(.footnote, design: .monospaced)).monospacedDigit().foregroundStyle(.secondary)
+                    Text("\(j.calls)").font(Font.pl(.footnote, design: .monospaced)).monospacedDigit().foregroundStyle(.secondary)
                 }
             }
             Divider()
@@ -831,13 +831,13 @@ struct PerformancePage: View {
                     figure("Week limit", u.week?.pct.map { String(format: "%.0f%%", $0) } ?? "\u{2014}")
                 }
                 if let b = u.block, let left = b.minutes_left, b.active == true {
-                    Text("Block ends \(b.block_end ?? ""), \(left) min left. Read \(String((b.generated ?? "").prefix(16))).").font(.caption2).foregroundStyle(.secondary)
+                    Text("Block ends \(b.block_end ?? ""), \(left) min left. Read \(String((b.generated ?? "").prefix(16))).").font(Font.pl(.caption2)).foregroundStyle(.secondary)
                 }
                 if let w = u.week, w.pct != nil {
-                    Text("Week limit read \(String((w.read_at ?? "").prefix(16)))\(w.resets.map { ", resets \($0)" } ?? "").").font(.caption2).foregroundStyle(.secondary)
+                    Text("Week limit read \(String((w.read_at ?? "").prefix(16)))\(w.resets.map { ", resets \($0)" } ?? "").").font(Font.pl(.caption2)).foregroundStyle(.secondary)
                 } else {
                     Text("The limits show here once a Claude Code session on the PC has read them.")
-                        .font(.caption2).foregroundStyle(.secondary)
+                        .font(Font.pl(.caption2)).foregroundStyle(.secondary)
                 }
                 Divider()
                 Text("Console credit").plLabel(10).foregroundStyle(.secondary)
@@ -850,12 +850,12 @@ struct PerformancePage: View {
                         figure("Spent, 30 days", dollars(c.spent_30d))
                     }
                     Text("Read off the Console \(String((c.read_at ?? "").prefix(16)))\(c.expires.map { ", credit expires \(String($0.prefix(10)))" } ?? ""). Board, batches, agents and web search all draw on it.")
-                        .font(.caption2).foregroundStyle(.secondary)
+                        .font(Font.pl(.caption2)).foregroundStyle(.secondary)
                 } else {
-                    Text("Shows once a session has read the Console's Billing page.").font(.caption2).foregroundStyle(.secondary)
+                    Text("Shows once a session has read the Console's Billing page.").font(Font.pl(.caption2)).foregroundStyle(.secondary)
                 }
             } else {
-                Text(claudeFailed ? "Could not reach the PC (Tailscale may be off)." : "Reading the PC\u{2026}").font(.caption2).foregroundStyle(.secondary)
+                Text(claudeFailed ? "Could not reach the PC (Tailscale may be off)." : "Reading the PC\u{2026}").font(Font.pl(.caption2)).foregroundStyle(.secondary)
             }
         }
     }

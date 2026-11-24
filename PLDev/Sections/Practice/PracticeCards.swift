@@ -19,9 +19,9 @@ struct PracticeBubble: View {
                     .font(mine ? .system(size: 14) : .system(size: 14, design: .serif).italic())
                     .foregroundStyle(mine ? Candle.bg : Candle.goldHi).lineSpacing(3)
                     .padding(.horizontal, 11).padding(.vertical, 8)
-                    .background(mine ? Candle.gold : Candle.card, in: RoundedRectangle(cornerRadius: 8, style: .continuous))
-                    .overlay { if !mine { RoundedRectangle(cornerRadius: 8, style: .continuous).strokeBorder(Candle.fieldLine, lineWidth: 1) } }
-                if let caption { Text(caption).font(.caption2).foregroundStyle(Candle.ink.opacity(0.5)) }
+                    .background(mine ? Candle.gold : Candle.card, in: RoundedRectangle(cornerRadius: 8 * PLStyle.radius, style: .continuous))
+                    .overlay { if !mine { RoundedRectangle(cornerRadius: 8 * PLStyle.radius, style: .continuous).strokeBorder(Candle.fieldLine, lineWidth: 1) } }
+                if let caption { Text(caption).font(Font.pl(.caption2)).foregroundStyle(Candle.ink.opacity(0.5)) }
             }
             if !mine { Spacer(minLength: 40) }
         }
@@ -50,7 +50,7 @@ struct StreakCard: View {
                    text: Candle.goldHi, dim: Candle.ink.opacity(0.6), size: 96)
             if n > 0 {
                 Text("\(n) this month")
-                    .font(.system(size: 12.8)).foregroundStyle(Candle.ink.opacity(0.6))
+                    .font(Font.pl(size: 12.8)).foregroundStyle(Candle.ink.opacity(0.6))
             }
         }
         .frame(maxWidth: .infinity).padding(.vertical, 22)
@@ -79,10 +79,10 @@ struct ScratchpadCard: View {
                 VStack(spacing: -6) {
                     ForEach(Array(notes.enumerated()), id: \.element.id) { i, n in
                         let depth = min(i, 4)
-                        Text(n.text).font(.system(size: 13.6)).foregroundStyle(Candle.ink).frame(maxWidth: .infinity, alignment: .leading)
+                        Text(n.text).font(Font.pl(size: 13.6)).foregroundStyle(Candle.ink).frame(maxWidth: .infinity, alignment: .leading)
                             .padding(.horizontal, 12).padding(.vertical, 10)
-                            .background(Candle.card.opacity(0.85), in: RoundedRectangle(cornerRadius: 8, style: .continuous))
-                            .overlay { RoundedRectangle(cornerRadius: 8, style: .continuous).strokeBorder(Candle.fieldLine, lineWidth: 1) }
+                            .background(Candle.card.opacity(0.85), in: RoundedRectangle(cornerRadius: 8 * PLStyle.radius, style: .continuous))
+                            .overlay { RoundedRectangle(cornerRadius: 8 * PLStyle.radius, style: .continuous).strokeBorder(Candle.fieldLine, lineWidth: 1) }
                             .opacity([1, 0.8, 0.6, 0.4, 0.25][depth]).scaleEffect([1, 0.98, 0.96, 0.94, 0.92][depth])
                             .zIndex(Double(notes.count - i))
                             .contextMenu { Button("Copy", systemImage: "doc.on.doc") { UIPasteboard.general.string = n.text } }
@@ -139,7 +139,7 @@ struct WinsCard: View {
                     CandleRule()
                     HStack(alignment: .firstTextBaseline, spacing: 6) {
                         KindPill(kind: l.kind)
-                        Text(l.text).font(.system(size: 13.6)).foregroundStyle(Candle.ink.opacity(0.85)).frame(maxWidth: .infinity, alignment: .leading)
+                        Text(l.text).font(Font.pl(size: 13.6)).foregroundStyle(Candle.ink.opacity(0.85)).frame(maxWidth: .infinity, alignment: .leading)
                     }
                     .padding(.vertical, 7)
                     .accessibilityElement(children: .combine)
@@ -205,7 +205,7 @@ struct CheckinCard: View {
             CandleResult(text: result)
             CoachNote(text: note)
             if evening, let cards, cards.count > 0 {
-                Button("\(cards.count) cards earned \u{00b7} show") { fresh = nil; showCards = true }.buttonStyle(.plain).font(.footnote)
+                Button("\(cards.count) cards earned \u{00b7} show") { fresh = nil; showCards = true }.buttonStyle(.plain).font(Font.pl(.footnote))
             }
         }
         .task(id: state.today?.date ?? "") {
@@ -266,7 +266,7 @@ struct TruthCard: View {
     var body: some View {
         PCard(title: "Which Truth?", id: "truth") {
             if let t = current {
-                Text(t.scenario).font(.system(size: 14)).foregroundStyle(Candle.ink).frame(maxWidth: .infinity, alignment: .leading)
+                Text(t.scenario).font(Font.pl(size: 14)).foregroundStyle(Candle.ink).frame(maxWidth: .infinity, alignment: .leading)
                 ViewThatFits(in: .horizontal) {
                     HStack(spacing: 6) { picks(t) }
                     VStack(alignment: .leading, spacing: 6) { picks(t) }
@@ -315,7 +315,7 @@ struct LessonCard: View {
     var body: some View {
         if let l = state.lesson {
             PCard(title: l.lesson.title, id: "lesson") {
-                Text(l.lesson.lesson).font(.system(size: 16)).foregroundStyle(Candle.ink).lineSpacing(5).textSelection(.enabled)
+                Text(l.lesson.lesson).font(Font.pl(size: 16)).foregroundStyle(Candle.ink).lineSpacing(5).textSelection(.enabled)
                 PField(prompt: l.lesson.applicationPrompt, text: $answer, lines: 3)
                 if !answer.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty {
                     HStack { Button("Keep it as a note") { Task { await keep(l) } }.buttonStyle(CandleGhost()); Spacer(minLength: 0) }
@@ -361,9 +361,9 @@ struct ReframeCard: View {
             VStack(spacing: 0) {
                 ForEach(saved) { r in
                     CandleRule()
-                    (Text(r.belief).font(.system(size: 13)).strikethrough().foregroundStyle(Candle.ink.opacity(0.5))
+                    (Text(r.belief).font(Font.pl(size: 13)).strikethrough().foregroundStyle(Candle.ink.opacity(0.5))
                      + Text("  \u{2192}  ").foregroundStyle(Candle.gold)
-                     + Text(r.reframe).font(.system(size: 13, design: .serif).italic()).foregroundStyle(Candle.goldHi))
+                     + Text(r.reframe).font(Font.pl(size: 13, design: .serif).italic()).foregroundStyle(Candle.goldHi))
                         .lineSpacing(3).frame(maxWidth: .infinity, alignment: .leading).padding(.vertical, 8)
                         .contextMenu { Button("Copy the reframe", systemImage: "doc.on.doc") { UIPasteboard.general.string = r.reframe } }
                 }

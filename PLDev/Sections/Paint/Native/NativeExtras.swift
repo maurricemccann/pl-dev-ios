@@ -76,7 +76,7 @@ struct NativeRepeatSheet: View {
                     .aspectRatio(1, contentMode: .fit)
                 } else { PLLoader() }
                 Text("Nine copies side by side. Look along the lines where they meet: if you can see where one copy ends and the next begins, slide the picture half way round again and fill that seam.")
-                    .font(.footnote).foregroundStyle(.secondary).padding(.horizontal)
+                    .font(Font.pl(.footnote)).foregroundStyle(.secondary).padding(.horizontal)
             }
             .navigationTitle("Check the repeat")
             .navigationBarTitleDisplayMode(.inline)

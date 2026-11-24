@@ -16,12 +16,16 @@ enum Candle {
     static var pillLine: Color { PLCarry.blend(0.17, .dark, Color(hex: 0x3a331f)) }
     static var rule: Color { PLCarry.blend(0.09, .dark, Color(hex: 0x221e15)) }
     static var hairline: Color { PLCarry.tone(.line, .dark, Color(red: 201 / 255, green: 168 / 255, blue: 76 / 255).opacity(0.16), alpha: 0.72) }
-    static let radius: CGFloat = 12
+    static var radius: CGFloat { 12 * PLStyle.radius }
 }
 
 /// `body` background: two radial warms over the base, fixed.
 struct CandleGround: View {
     var body: some View {
+        if PLStyle.themed { HouseGround() } else { candle }
+    }
+
+    private var candle: some View {
         ZStack {
             Candle.bg
             RadialGradient(colors: [PLCarry.tone(.surface, .dark, Color(hex: 0x17130a)), .clear], center: UnitPoint(x: 0.2, y: 0), startRadius: 0, endRadius: 520)
@@ -36,11 +40,14 @@ struct CandleCard: ViewModifier {
     var padding: CGFloat = 16
     func body(content: Content) -> some View {
         let shape = RoundedRectangle(cornerRadius: Candle.radius, style: .continuous)
-        content
-            .padding(padding).frame(maxWidth: .infinity, alignment: .leading)
-            .background(Candle.card.opacity(0.55), in: shape)
-            .background(.ultraThinMaterial.opacity(0.5), in: shape)
-            .overlay { shape.strokeBorder(Candle.hairline, lineWidth: 1) }
+        let inner = content.padding(padding).frame(maxWidth: .infinity, alignment: .leading)
+        if PLStyle.themed {
+            inner.plGlass(in: shape)
+        } else {
+            inner.background(Candle.card.opacity(0.55), in: shape)
+                .background(.ultraThinMaterial.opacity(0.5), in: shape)
+                .overlay { shape.strokeBorder(Candle.hairline, lineWidth: 1) }
+        }
     }
 }
 
@@ -70,9 +77,9 @@ struct CandleButton: ButtonStyle {
     @Environment(\.isEnabled) private var enabled
     func makeBody(configuration: Configuration) -> some View {
         configuration.label
-            .font(.system(size: 16, weight: .semibold)).foregroundStyle(Candle.bg)
+            .font(Font.pl(size: 16, weight: .semibold)).foregroundStyle(Candle.bg)
             .padding(.horizontal, 16).frame(minHeight: 44)
-            .background(configuration.isPressed ? Candle.goldHi : Candle.gold, in: RoundedRectangle(cornerRadius: 6, style: .continuous))
+            .background(configuration.isPressed ? Candle.goldHi : Candle.gold, in: RoundedRectangle(cornerRadius: 6 * PLStyle.radius, style: .continuous))
             .opacity(enabled ? 1 : 0.45)
     }
 }
@@ -84,7 +91,7 @@ struct CandleChip: View {
     let action: () -> Void
     var body: some View {
         Button(action: action) {
-            Text(title).font(.system(size: 13.5)).foregroundStyle(on ? Candle.goldHi : Candle.ink)
+            Text(title).font(Font.pl(size: 13.5)).foregroundStyle(on ? Candle.goldHi : Candle.ink)
                 .padding(.horizontal, 15).frame(minHeight: 36)
                 .overlay { Capsule().strokeBorder(on ? Candle.gold : Candle.pillLine, lineWidth: 1) }
                 .opacity(on ? 1 : 0.6)
@@ -114,7 +121,7 @@ struct CandleTabs: View {
 
     private func row(label: Bool) -> some View {
         HStack(spacing: 8) {
-            if label { Text("the practice").font(.system(size: 17.6)).tracking(0.7).foregroundStyle(Candle.goldHi).lineLimit(1).fixedSize(); Spacer(minLength: 8) }
+            if label { Text("the practice").font(Font.pl(size: 17.6)).tracking(0.7).foregroundStyle(Candle.goldHi).lineLimit(1).fixedSize(); Spacer(minLength: 8) }
             ForEach(titles.indices, id: \.self) { i in CandleChip(title: titles[i], on: index == i) { withAnimation(.snappy) { index = i } }.fixedSize() }
         }
     }
@@ -137,8 +144,8 @@ struct PField: View {
             .foregroundStyle(serif ? Candle.goldHi : Candle.ink)
             .padding(small ? EdgeInsets(top: 7, leading: 10, bottom: 7, trailing: 10) : EdgeInsets(top: 10, leading: 10, bottom: 10, trailing: 10))
             .frame(maxWidth: .infinity, minHeight: lines > 1 ? 72 : nil, alignment: .topLeading)
-            .background(Candle.field, in: RoundedRectangle(cornerRadius: 6, style: .continuous))
-            .overlay { RoundedRectangle(cornerRadius: 6, style: .continuous).strokeBorder(Candle.fieldLine, lineWidth: 1) }
+            .background(Candle.field, in: RoundedRectangle(cornerRadius: 6 * PLStyle.radius, style: .continuous))
+            .overlay { RoundedRectangle(cornerRadius: 6 * PLStyle.radius, style: .continuous).strokeBorder(Candle.fieldLine, lineWidth: 1) }
             .autocorrectionDisabled(false)
     }
 }
@@ -153,13 +160,13 @@ struct PSelect<T: Hashable>: View {
             Picker("", selection: $value) { ForEach(options, id: \.0) { Text($0.1).tag($0.0) } }
         } label: {
             HStack(spacing: 8) {
-                Text(options.first { $0.0 == value }?.1 ?? "").font(.system(size: 16)).foregroundStyle(Candle.ink).lineLimit(1)
+                Text(options.first { $0.0 == value }?.1 ?? "").font(Font.pl(size: 16)).foregroundStyle(Candle.ink).lineLimit(1)
                 if fill { Spacer(minLength: 0) }
-                Image(systemName: "chevron.up.chevron.down").font(.system(size: 11)).foregroundStyle(Candle.ink.opacity(0.5))
+                Image(systemName: "chevron.up.chevron.down").font(Font.pl(size: 11)).foregroundStyle(Candle.ink.opacity(0.5))
             }
             .padding(10).frame(maxWidth: fill ? .infinity : nil, minHeight: 44, alignment: .leading)
-            .background(Candle.field, in: RoundedRectangle(cornerRadius: 6, style: .continuous))
-            .overlay { RoundedRectangle(cornerRadius: 6, style: .continuous).strokeBorder(Candle.fieldLine, lineWidth: 1) }
+            .background(Candle.field, in: RoundedRectangle(cornerRadius: 6 * PLStyle.radius, style: .continuous))
+            .overlay { RoundedRectangle(cornerRadius: 6 * PLStyle.radius, style: .continuous).strokeBorder(Candle.fieldLine, lineWidth: 1) }
         }
         .menuStyle(.button).buttonStyle(.plain)
     }
@@ -170,9 +177,9 @@ struct CandleGhost: ButtonStyle {
     @Environment(\.isEnabled) private var enabled
     func makeBody(configuration: Configuration) -> some View {
         configuration.label
-            .font(.system(size: 13)).foregroundStyle(Candle.ink)
+            .font(Font.pl(size: 13)).foregroundStyle(Candle.ink)
             .padding(.horizontal, 14).frame(minHeight: 44)
-            .overlay { RoundedRectangle(cornerRadius: 6, style: .continuous).strokeBorder(configuration.isPressed ? Candle.gold : Candle.pillLine, lineWidth: 1) }
+            .overlay { RoundedRectangle(cornerRadius: 6 * PLStyle.radius, style: .continuous).strokeBorder(configuration.isPressed ? Candle.gold : Candle.pillLine, lineWidth: 1) }
             .contentShape(Rectangle())
             .opacity(enabled ? 1 : 0.45)
     }
@@ -183,7 +190,7 @@ struct CoachNote: View {
     let text: String
     var body: some View {
         if !text.isEmpty {
-            Text(text).font(.system(size: 14.7, design: .serif).italic()).foregroundStyle(Candle.goldHi).lineSpacing(4)
+            Text(text).font(Font.pl(size: 14.7, design: .serif).italic()).foregroundStyle(Candle.goldHi).lineSpacing(4)
                 .frame(maxWidth: .infinity, alignment: .leading).textSelection(.enabled).padding(.top, 4)
         }
     }
@@ -206,7 +213,7 @@ struct PCard<Content: View>: View {
     var body: some View {
         VStack(alignment: .leading, spacing: 10) {
             Text(title).candleH2().accessibilityAddTraits(.isHeader)
-            if let hint { Text(hint).font(.system(size: 12)).foregroundStyle(Candle.ink.opacity(0.5)) }
+            if let hint { Text(hint).font(Font.pl(size: 12)).foregroundStyle(Candle.ink.opacity(0.5)) }
             content()
         }
         .candleCard(padding: 17.6)
@@ -219,7 +226,7 @@ struct KindPill: View {
     let kind: String
     var body: some View {
         let win = kind == "win"
-        Text(win ? "win" : "noticed").font(.system(size: 10.9)).textCase(.uppercase).tracking(0.9)
+        Text(win ? "win" : "noticed").font(Font.pl(size: 10.9)).textCase(.uppercase).tracking(0.9)
             .foregroundStyle(win ? Candle.goldHi : Candle.ink.opacity(0.8))
             .padding(.horizontal, 8).padding(.vertical, 2)
             .background(win ? Candle.gold.opacity(0.18) : .clear, in: Capsule())
@@ -242,7 +249,7 @@ struct CandleRule: View { var body: some View { Rectangle().fill(Candle.rule).fr
 /// `.vision-empty`.
 struct QuietLine: View {
     let text: String
-    var body: some View { Text(text).font(.system(size: 13.6)).foregroundStyle(Candle.ink.opacity(0.5)) }
+    var body: some View { Text(text).font(Font.pl(size: 13.6)).foregroundStyle(Candle.ink.opacity(0.5)) }
 }
 
 /// `<details><summary>`: a disclosure with the hint-style summary.
@@ -254,10 +261,10 @@ struct PDetails<Content: View>: View {
         VStack(alignment: .leading, spacing: 8) {
             Button { withAnimation(.snappy) { open.toggle() } } label: {
                 HStack(spacing: 6) {
-                    Image(systemName: "triangle.fill").font(.system(size: 7)).rotationEffect(.degrees(open ? 180 : 90))
+                    Image(systemName: "triangle.fill").font(Font.pl(size: 7)).rotationEffect(.degrees(open ? 180 : 90))
                     Text(summary)
                 }
-                .font(.system(size: 12)).foregroundStyle(Candle.ink.opacity(0.5)).frame(minHeight: 36, alignment: .leading)
+                .font(Font.pl(size: 12)).foregroundStyle(Candle.ink.opacity(0.5)).frame(minHeight: 36, alignment: .leading)
             }
             .buttonStyle(.plain).accessibilityAddTraits(.isButton).accessibilityValue(open ? "expanded" : "collapsed")
             if open { content() }

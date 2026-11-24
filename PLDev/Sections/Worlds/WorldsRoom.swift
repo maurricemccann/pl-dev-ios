@@ -73,7 +73,7 @@ struct WorldsRoom: View {
             }
             if archive.failed {
                 Section {
-                    Text("The archive did not load, so the frames stay gold.").font(.footnote).foregroundStyle(.secondary)
+                    Text("The archive did not load, so the frames stay gold.").font(Font.pl(.footnote)).foregroundStyle(.secondary)
                     Button("Try again") { Task { await archive.load(model: model, force: true) } }
                 }
             }
@@ -95,10 +95,10 @@ struct WorldsRoom: View {
                 VStack(alignment: .leading, spacing: 3) {
                     Text(r.eyebrow).gEyebrow(10).foregroundStyle(PLG.goldDim(.dark))
                     Text(r.title).gTitle(22)
-                    Text(r.line).font(.caption).foregroundStyle(.secondary)
+                    Text(r.line).font(Font.pl(.caption)).foregroundStyle(.secondary)
                 }
                 Spacer(minLength: 0)
-                Image(systemName: "chevron.right").font(.footnote.weight(.semibold)).foregroundStyle(.tertiary)
+                Image(systemName: "chevron.right").font(Font.pl(.footnote).weight(.semibold)).foregroundStyle(.tertiary)
             }
             .contentShape(Rectangle())
         }
@@ -113,16 +113,16 @@ struct WorldsRoom: View {
         let works = archive.pieces
         let url = works.isEmpty ? nil : works[r.thumbIndex % works.count].thumbURL
         ZStack {
-            RoundedRectangle(cornerRadius: 12, style: .continuous).fill(Color(hex: 0x1a1610))
+            RoundedRectangle(cornerRadius: 12 * PLStyle.radius, style: .continuous).fill(Color(hex: 0x1a1610))
             if let url {
                 AsyncImage(url: url) { $0.resizable().scaledToFill() } placeholder: { Image(systemName: r.symbol).foregroundStyle(PLG.gold.opacity(0.6)) }
             } else {
-                Image(systemName: r.symbol).font(.title3).foregroundStyle(PLG.gold.opacity(0.6))
+                Image(systemName: r.symbol).font(Font.pl(.title3)).foregroundStyle(PLG.gold.opacity(0.6))
             }
         }
         .frame(width: 58, height: 72)
-        .clipShape(RoundedRectangle(cornerRadius: 12, style: .continuous))
-        .overlay(RoundedRectangle(cornerRadius: 12, style: .continuous).strokeBorder(PLG.gold.opacity(0.25), lineWidth: 0.8))
+        .clipShape(RoundedRectangle(cornerRadius: 12 * PLStyle.radius, style: .continuous))
+        .overlay(RoundedRectangle(cornerRadius: 12 * PLStyle.radius, style: .continuous).strokeBorder(PLG.gold.opacity(0.25), lineWidth: 0.8))
         .accessibilityHidden(true)
     }
 }

@@ -31,16 +31,16 @@ struct BoardRoom: View {
                 Section {
                     ForEach(outbox.waiting) { w in
                         VStack(alignment: .leading, spacing: 6) {
-                            HStack(spacing: 8) { Image(systemName: "paperplane").foregroundStyle(CMP.warn); Text("\(w.piece) · \(w.shot)").font(.system(size: 14, weight: .medium)).foregroundStyle(CMP.text).lineLimit(1) }
-                            Text(w.look).font(.system(size: 12)).foregroundStyle(CMP.dim)
-                            if let n = w.note { Text(n).font(.system(size: 11)).foregroundStyle(CMP.muted) }
+                            HStack(spacing: 8) { Image(systemName: "paperplane").foregroundStyle(CMP.warn); Text("\(w.piece) · \(w.shot)").font(Font.pl(size: 14, weight: .medium)).foregroundStyle(CMP.text).lineLimit(1) }
+                            Text(w.look).font(Font.pl(size: 12)).foregroundStyle(CMP.dim)
+                            if let n = w.note { Text(n).font(Font.pl(size: 11)).foregroundStyle(CMP.muted) }
                             Text("made \(w.made.formatted(.relative(presentation: .named)))").cmpLabel(9)
                         }
                         .cmpCard(padding: 12, warn: false).listRowBackground(Color.clear).listRowSeparator(.hidden).listRowInsets(EdgeInsets(top: 4, leading: 16, bottom: 4, trailing: 16))
                         .swipeActions(edge: .leading) { Button(role: .destructive) { outbox.discard(w.id) } label: { Label("Discard", systemImage: "trash") } }
                         .swipeActions(edge: .trailing) { Button { Task { await retry() } } label: { Label("Try now", systemImage: "arrow.clockwise") }.tint(CMP.gold) }
                     }
-                } header: { Text("Waiting for the house · \(outbox.waiting.count)").cmpLabel(10) } footer: { Text("These cards are made and kept on this phone. They go to the board the next time it can take them.").font(.caption).foregroundStyle(CMP.muted) }
+                } header: { Text("Waiting for the house · \(outbox.waiting.count)").cmpLabel(10) } footer: { Text("These cards are made and kept on this phone. They go to the board the next time it can take them.").font(Font.pl(.caption)).foregroundStyle(CMP.muted) }
             }
             if shown.isEmpty && !state.failed {
                 Section {
@@ -61,7 +61,7 @@ struct BoardRoom: View {
                         }
                     } header: {
                         HStack(spacing: 6) { Circle().fill(CMP.lane(l)).frame(width: 7, height: 7); Text("\(ComposerModel.label(l)) · \(cards.count)").cmpLabel(10) }
-                    } footer: { Text(ComposerModel.why(l)).font(.caption).foregroundStyle(CMP.muted) }
+                    } footer: { Text(ComposerModel.why(l)).font(Font.pl(.caption)).foregroundStyle(CMP.muted) }
                 }
             }
         }
@@ -89,7 +89,7 @@ struct BoardRoom: View {
     private var header: some View {
         VStack(alignment: .leading, spacing: 10) {
             HStack(alignment: .firstTextBaseline) {
-                Text("\(state.cards.count) card\(state.cards.count == 1 ? "" : "s") · the house moves them; you rule on /curate").font(.system(size: 11)).foregroundStyle(CMP.muted)
+                Text("\(state.cards.count) card\(state.cards.count == 1 ? "" : "s") · the house moves them; you rule on /curate").font(Font.pl(size: 11)).foregroundStyle(CMP.muted)
                 Spacer(minLength: 6)
                 Group {
                     if state.failed { Text("not reachable").foregroundStyle(CMP.danger) }
@@ -97,7 +97,7 @@ struct BoardRoom: View {
                     else { Text("pulling…").foregroundStyle(CMP.muted) }
                 }.cmpNum(10)
             }
-            if state.source == "r2" { Text("The PC published this board. It shows the last state it saved.").font(.system(size: 11)).foregroundStyle(CMP.dim) }
+            if state.source == "r2" { Text("The PC published this board. It shows the last state it saved.").font(Font.pl(size: 11)).foregroundStyle(CMP.dim) }
             ScrollView(.horizontal, showsIndicators: false) {
                 HStack(spacing: 6) {
                     CMPChip(title: "all", count: state.cards.count, on: lane == nil) { lane = nil }
@@ -128,17 +128,17 @@ struct CardRow: View {
         VStack(alignment: .leading, spacing: 6) {
             HStack(alignment: .firstTextBaseline, spacing: 8) {
                 Circle().fill(CMP.lane(card.lane)).frame(width: 8, height: 8)
-                Text("\(card.piece ?? "piece") · \(card.shot ?? card.id)").font(.system(size: 15, weight: .medium)).foregroundStyle(CMP.text).lineLimit(2)
+                Text("\(card.piece ?? "piece") · \(card.shot ?? card.id)").font(Font.pl(size: 15, weight: .medium)).foregroundStyle(CMP.text).lineLimit(2)
             }
             if card.look != nil || card.bed != nil {
-                Text([card.look, card.bed.map { "+ " + $0.replacingOccurrences(of: ".wav", with: "").replacingOccurrences(of: ".mp3", with: "") }].compactMap { $0 }.joined(separator: " ")).font(.system(size: 13)).foregroundStyle(CMP.dim)
+                Text([card.look, card.bed.map { "+ " + $0.replacingOccurrences(of: ".wav", with: "").replacingOccurrences(of: ".mp3", with: "") }].compactMap { $0 }.joined(separator: " ")).font(Font.pl(size: 13)).foregroundStyle(CMP.dim)
             }
             if card.lane == "rendering" || card.lane == "sent" {
                 if let f = card.fraction { ProgressView(value: f).tint(CMP.gold) }
                 if let p = card.progress { Text(p).cmpNum(11).foregroundStyle(CMP.dim) }
             }
-            if let f = card.file { Text(f.replacingOccurrences(of: "pl-short-his-", with: "")).font(.system(size: 12, design: .monospaced)).foregroundStyle(CMP.gold).lineLimit(1).truncationMode(.middle) }
-            if let n = card.note, !n.isEmpty { Text(String(n.prefix(160))).font(.system(size: 12)).foregroundStyle(CMP.danger) }
+            if let f = card.file { Text(f.replacingOccurrences(of: "pl-short-his-", with: "")).font(Font.pl(size: 12, design: .monospaced)).foregroundStyle(CMP.gold).lineLimit(1).truncationMode(.middle) }
+            if let n = card.note, !n.isEmpty { Text(String(n.prefix(160))).font(Font.pl(size: 12)).foregroundStyle(CMP.danger) }
             Text(ComposerBoardTime.short(card.at ?? card.created)).cmpNum(10).foregroundStyle(CMP.muted)
         }
         .cmpCard(padding: 12, warn: card.lane == "failed")
@@ -317,26 +317,26 @@ struct ComposerHandbookView: View {
 
     @ViewBuilder private func block(_ b: Block) -> some View {
         switch b {
-        case .text(let t): Text(t).font(.system(size: 15)).foregroundStyle(CMP.text).plReading()
-        case .note(let t): Label { Text(t).font(.system(size: 13)).foregroundStyle(CMP.dim) } icon: { Image(systemName: "lightbulb").foregroundStyle(CMP.gold) }.cmpCard()
+        case .text(let t): Text(t).font(Font.pl(size: 15)).foregroundStyle(CMP.text).plReading()
+        case .note(let t): Label { Text(t).font(Font.pl(size: 13)).foregroundStyle(CMP.dim) } icon: { Image(systemName: "lightbulb").foregroundStyle(CMP.gold) }.cmpCard()
         case .steps(let s):
             VStack(alignment: .leading, spacing: 10) {
                 ForEach(Array(s.enumerated()), id: \.offset) { i, t in
-                    HStack(alignment: .top, spacing: 10) { Text("\(i + 1)").cmpNum(12).foregroundStyle(CMP.gold).frame(width: 18, alignment: .trailing); Text(t).font(.system(size: 14)).foregroundStyle(CMP.text).plReading() }
+                    HStack(alignment: .top, spacing: 10) { Text("\(i + 1)").cmpNum(12).foregroundStyle(CMP.gold).frame(width: 18, alignment: .trailing); Text(t).font(Font.pl(size: 14)).foregroundStyle(CMP.text).plReading() }
                 }
             }.cmpCard()
         case .sockets:
             VStack(alignment: .leading, spacing: 10) {
                 ForEach([ComposerSocket.media, .curve, .audio, .value, .model, .path, .shot], id: \.self) { s in
-                    HStack(alignment: .top, spacing: 8) { CMPDot(color: s.color, size: 9).padding(.top, 4); VStack(alignment: .leading, spacing: 1) { Text("\(s.rawValue): \(s.carries)").font(.system(size: 14, weight: .medium)).foregroundStyle(CMP.text); Text(s.why).font(.system(size: 12)).foregroundStyle(CMP.dim) } }
+                    HStack(alignment: .top, spacing: 8) { CMPDot(color: s.color, size: 9).padding(.top, 4); VStack(alignment: .leading, spacing: 1) { Text("\(s.rawValue): \(s.carries)").font(Font.pl(size: 14, weight: .medium)).foregroundStyle(CMP.text); Text(s.why).font(Font.pl(size: 12)).foregroundStyle(CMP.dim) } }
                 }
             }.cmpCard()
         case .nodes:
             VStack(alignment: .leading, spacing: 12) {
                 ForEach(NodeKind.allCases, id: \.self) { k in
                     VStack(alignment: .leading, spacing: 3) {
-                        HStack(spacing: 6) { CMPDot(color: k.spec.output?.color ?? CMP.muted, size: 8); Text(k.spec.label).font(.system(size: 15, design: .serif)).foregroundStyle(CMP.text) }
-                        Text(k.spec.why).font(.system(size: 13)).foregroundStyle(CMP.dim)
+                        HStack(spacing: 6) { CMPDot(color: k.spec.output?.color ?? CMP.muted, size: 8); Text(k.spec.label).font(Font.pl(size: 15, design: .serif)).foregroundStyle(CMP.text) }
+                        Text(k.spec.why).font(Font.pl(size: 13)).foregroundStyle(CMP.dim)
                         if !k.spec.inputs.isEmpty { Text("in: " + k.spec.inputs.map { "\($0.label) (\($0.accepts.map(\.rawValue).joined(separator: "/")))" }.joined(separator: ", ")).cmpNum(10).foregroundStyle(CMP.muted) }
                         Text("out: " + (k.spec.output?.rawValue ?? "nothing")).cmpNum(10).foregroundStyle(CMP.muted)
                     }
@@ -344,8 +344,8 @@ struct ComposerHandbookView: View {
             }.cmpCard()
         case .transitions:
             VStack(alignment: .leading, spacing: 8) {
-                ForEach(composerTransitions) { t in HStack(alignment: .top, spacing: 10) { Text(t.word).cmpNum(12).foregroundStyle(CMP.gold).frame(width: 70, alignment: .leading); Text(t.why).font(.system(size: 13)).foregroundStyle(CMP.dim) } }
-                Text("A transition is a word and, for the timed ones, seconds (dissolve 0.5). A piece-wide default is inherited by every shot unless it names its own.").font(.system(size: 12)).foregroundStyle(CMP.muted)
+                ForEach(composerTransitions) { t in HStack(alignment: .top, spacing: 10) { Text(t.word).cmpNum(12).foregroundStyle(CMP.gold).frame(width: 70, alignment: .leading); Text(t.why).font(Font.pl(size: 13)).foregroundStyle(CMP.dim) } }
+                Text("A transition is a word and, for the timed ones, seconds (dissolve 0.5). A piece-wide default is inherited by every shot unless it names its own.").font(Font.pl(size: 12)).foregroundStyle(CMP.muted)
             }.cmpCard()
         }
     }

@@ -381,7 +381,7 @@ struct LabARRoomView: View {
                     })
             if !found {   // no coaching overlay without an ARCoachingOverlayView session of its own, so the house draws the line
                 Label("Finding the floor and walls. Move the phone slowly.", systemImage: "viewfinder")
-                    .font(.system(size: 12, weight: .medium)).foregroundStyle(.white).padding(.horizontal, 14).frame(minHeight: 44)
+                    .font(Font.pl(size: 12, weight: .medium)).foregroundStyle(.white).padding(.horizontal, 14).frame(minHeight: 44)
                     .glassEffect(.regular, in: Capsule())
                     .opacity(pulse ? 1 : 0.6)
                     .onAppear { if reduceMotion { pulse = true } else { withAnimation(.easeInOut(duration: 1).repeatForever()) { pulse = true } } }
@@ -390,9 +390,9 @@ struct LabARRoomView: View {
             }
             VStack(alignment: .leading, spacing: 8) {
                 HStack(spacing: 8) {
-                    Button { panel.toggle(); box.showStats = panel } label: { Image(systemName: panel ? "ladybug.fill" : "ladybug").font(.system(size: 17)).foregroundStyle(.white).frame(width: 44, height: 44) }
+                    Button { panel.toggle(); box.showStats = panel } label: { Image(systemName: panel ? "ladybug.fill" : "ladybug").font(Font.pl(size: 17)).foregroundStyle(.white).frame(width: 44, height: 44) }
                         .glassEffect(.regular.interactive(), in: Circle()).accessibilityLabel(panel ? "Hide the debugger" : "Show the debugger")
-                    Button { wrapOn.toggle(); box.wrapOn = wrapOn; say(wrapOn ? "Walls and floor wrapped." : "Wrap hidden. Tap a surface to place the art.") } label: { Image(systemName: wrapOn ? "square.grid.3x3.fill" : "square.grid.3x3").font(.system(size: 17)).foregroundStyle(.white).frame(width: 44, height: 44) }
+                    Button { wrapOn.toggle(); box.wrapOn = wrapOn; say(wrapOn ? "Walls and floor wrapped." : "Wrap hidden. Tap a surface to place the art.") } label: { Image(systemName: wrapOn ? "square.grid.3x3.fill" : "square.grid.3x3").font(Font.pl(size: 17)).foregroundStyle(.white).frame(width: 44, height: 44) }
                         .glassEffect(.regular.interactive(), in: Circle()).accessibilityLabel(wrapOn ? "Hide the wrap on floor and walls" : "Wrap the floor and walls")
                 }
                 if panel { debugPanel }
@@ -430,9 +430,9 @@ struct LabARRoomView: View {
             row("work", s.work)
             row("error", s.error)
         }
-        .font(.system(size: 11, design: .monospaced)).foregroundStyle(.white)
+        .font(Font.pl(size: 11, design: .monospaced)).foregroundStyle(.white)
         .padding(10).frame(maxWidth: 300, alignment: .leading)
-        .glassEffect(.regular, in: RoundedRectangle(cornerRadius: 14))
+        .glassEffect(.regular, in: RoundedRectangle(cornerRadius: 14 * PLStyle.radius))
         .allowsHitTesting(false)
         .accessibilityElement(children: .combine)
     }
@@ -446,7 +446,7 @@ struct LabARRoomView: View {
         VStack(spacing: 8) {
             if let movie {
                 HStack(spacing: 10) {
-                    ShareLink(item: movie) { Label("Save or share the video", systemImage: "square.and.arrow.up").font(.system(size: 13, weight: .medium)).padding(.horizontal, 14).frame(minHeight: 44) }
+                    ShareLink(item: movie) { Label("Save or share the video", systemImage: "square.and.arrow.up").font(Font.pl(size: 13, weight: .medium)).padding(.horizontal, 14).frame(minHeight: 44) }
                         .glassEffect(.regular.interactive(), in: Capsule())
                     Button { self.movie = nil } label: { Image(systemName: "xmark").frame(width: 44, height: 44) }
                         .glassEffect(.regular.interactive(), in: Circle()).accessibilityLabel("Close")
@@ -457,9 +457,9 @@ struct LabARRoomView: View {
                     .pickerStyle(.segmented).frame(maxWidth: .infinity)
                 Picker("Mode", selection: $drawMode) { Text("Place").tag(false); Text("Draw").tag(true) }
                     .pickerStyle(.segmented).frame(maxWidth: .infinity)
-                Button { toggleRecord() } label: { Image(systemName: recording ? "stop.circle.fill" : "record.circle").font(.system(size: 22)).foregroundStyle(recording ? .red : .white).frame(width: 44, height: 44) }
+                Button { toggleRecord() } label: { Image(systemName: recording ? "stop.circle.fill" : "record.circle").font(Font.pl(size: 22)).foregroundStyle(recording ? .red : .white).frame(width: 44, height: 44) }
                     .glassEffect(.regular.interactive(), in: Circle()).accessibilityLabel(recording ? "Stop recording" : "Record")
-                Button { box.clear() } label: { Image(systemName: "trash").font(.system(size: 17)).foregroundStyle(.white).frame(width: 44, height: 44) }
+                Button { box.clear() } label: { Image(systemName: "trash").font(Font.pl(size: 17)).foregroundStyle(.white).frame(width: 44, height: 44) }
                     .glassEffect(.regular.interactive(), in: Circle()).accessibilityLabel("Clear the patches and curves placed")
             }
         }

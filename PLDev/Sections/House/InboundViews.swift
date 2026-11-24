@@ -134,7 +134,7 @@ struct InboundTab: View {
                         StatTile(title: "Content runway", value: "\(state.runway?.instagram_pending ?? 0)", line: "\(state.runway?.reels_remaining ?? 0) reels in manifest", alert: state.runway?.low == true)
                         if let f = state.stats?.following { StatTile(title: "IG following", value: f.formatted(), line: "keep unfollowing non-mutuals") }
                     }
-                    Text("Each against yesterday.").font(.caption).foregroundStyle(PLOS.dim(scheme))
+                    Text("Each against yesterday.").font(Font.pl(.caption)).foregroundStyle(PLOS.dim(scheme))
                 }
             }
             .padding(.horizontal, 14).padding(.bottom, 24)
@@ -165,7 +165,7 @@ struct InboundTab: View {
 
     private func door<D: View>(_ title: String, _ meta: String, @ViewBuilder _ dest: @escaping () -> D) -> some View {
         NavigationLink { dest().osScreen() } label: {
-            OSRow(title: title, meta: meta) { Image(systemName: "chevron.right").font(.caption.weight(.bold)).foregroundStyle(PLOS.goldDim(scheme)) }
+            OSRow(title: title, meta: meta) { Image(systemName: "chevron.right").font(Font.pl(.caption).weight(.bold)).foregroundStyle(PLOS.goldDim(scheme)) }
         }
         .buttonStyle(.plain)
     }
@@ -180,11 +180,11 @@ struct StatTile: View {
     var body: some View {
         VStack(alignment: .leading, spacing: 3) {
             Text(title).plLabel().foregroundStyle(.secondary)
-            Text(value).font(.title2.weight(.semibold)).monospacedDigit().foregroundStyle(alert ? Color.red : Color.primary).contentTransition(.numericText())
-            Text(line).font(.caption2).foregroundStyle(.secondary).lineLimit(2)
+            Text(value).font(Font.pl(.title2).weight(.semibold)).monospacedDigit().foregroundStyle(alert ? Color.red : Color.primary).contentTransition(.numericText())
+            Text(line).font(Font.pl(.caption2)).foregroundStyle(.secondary).lineLimit(2)
         }
         .frame(maxWidth: .infinity, alignment: .leading).padding(10)
-        .background(Color.secondary.opacity(0.1), in: RoundedRectangle(cornerRadius: 12, style: .continuous))
+        .background(Color.secondary.opacity(0.1), in: RoundedRectangle(cornerRadius: 12 * PLStyle.radius, style: .continuous))
         .accessibilityElement(children: .combine)
     }
 }
@@ -197,9 +197,9 @@ struct OracleSignalView: View {
         Loaded(load: { try await Console.q("oracle", [Row].self, model: model) }) { rows, _ in
             List(rows) { r in
                 VStack(alignment: .leading, spacing: 4) {
-                    Text(r.question ?? "").font(.headline)
-                    Text(r.answer ?? "").font(.callout).foregroundStyle(.secondary).lineLimit(4).plReading()
-                    HStack { Text(r.via ?? ""); Spacer(); Ago(text: r.asked_at) }.font(.caption2).foregroundStyle(.tertiary)
+                    Text(r.question ?? "").font(Font.pl(.headline))
+                    Text(r.answer ?? "").font(Font.pl(.callout)).foregroundStyle(.secondary).lineLimit(4).plReading()
+                    HStack { Text(r.via ?? ""); Spacer(); Ago(text: r.asked_at) }.font(Font.pl(.caption2)).foregroundStyle(.tertiary)
                 }
             }
         }
@@ -212,8 +212,8 @@ struct Kpi: View {
     let value: String
     var body: some View {
         VStack(alignment: .leading, spacing: 2) {
-            Text(value).font(.title3.bold()).monospacedDigit().minimumScaleFactor(0.6).lineLimit(1)
-            Text(title).font(.caption).foregroundStyle(.secondary)
+            Text(value).font(Font.pl(.title3).bold()).monospacedDigit().minimumScaleFactor(0.6).lineLimit(1)
+            Text(title).font(Font.pl(.caption)).foregroundStyle(.secondary)
         }
         .frame(maxWidth: .infinity, alignment: .leading)
         .accessibilityElement(children: .combine)
@@ -234,7 +234,7 @@ struct InboxView: View {
                 ForEach(threads) { t in
                     NavigationLink { DMThreadView(model: model, email: t.email, title: t.handle ?? t.email) } label: {
                         VStack(alignment: .leading, spacing: 2) {
-                            HStack { Text(t.handle.map { "@\($0)" } ?? t.email).font(.headline); Spacer(); Ago(text: t.last_at).font(.caption).foregroundStyle(.secondary) }
+                            HStack { Text(t.handle.map { "@\($0)" } ?? t.email).font(Font.pl(.headline)); Spacer(); Ago(text: t.last_at).font(Font.pl(.caption)).foregroundStyle(.secondary) }
                             Text(t.last_body ?? "").lineLimit(2).foregroundStyle(.secondary)
                         }
                         .badge(t.unread ?? 0)
@@ -265,7 +265,7 @@ struct DMThreadView: View {
                         if m.sender == "founder" { Spacer(minLength: 40) }
                         Text(m.body).plReading()
                             .padding(10)
-                            .background(m.sender == "founder" ? PLTone.house.opacity(0.25) : Color.secondary.opacity(0.15), in: RoundedRectangle(cornerRadius: 16, style: .continuous))
+                            .background(m.sender == "founder" ? PLTone.house.opacity(0.25) : Color.secondary.opacity(0.15), in: RoundedRectangle(cornerRadius: 16 * PLStyle.radius, style: .continuous))
                         if m.sender != "founder" { Spacer(minLength: 40) }
                     }
                     .listRowSeparator(.hidden)
@@ -279,7 +279,7 @@ struct DMThreadView: View {
         .safeAreaInset(edge: .bottom) {
             HStack {
                 TextField("Message", text: $draft, axis: .vertical).lineLimit(1...5).textFieldStyle(.roundedBorder)
-                Button { Task { await send() } } label: { Image(systemName: "arrow.up.circle.fill").font(.title) }
+                Button { Task { await send() } } label: { Image(systemName: "arrow.up.circle.fill").font(Font.pl(.title)) }
                     .disabled(draft.trimmingCharacters(in: .whitespaces).isEmpty || sending)
                     .accessibilityLabel("Send")
             }
@@ -325,7 +325,7 @@ struct SupportView: View {
             ForEach(rows) { m in
                 VStack(alignment: .leading, spacing: 4) {
                     HStack {
-                        Text(m.name ?? m.email ?? "").font(.headline)
+                        Text(m.name ?? m.email ?? "").font(Font.pl(.headline))
                         Spacer()
                         PLChip(word: m.status == "resolved" ? "resolved" : "new", tint: m.status == "resolved" ? PLOS.ok : PLOS.warn)
                     }
@@ -336,7 +336,7 @@ struct SupportView: View {
                         Spacer()
                         Ago(text: m.created_at)
                     }
-                    .font(.caption).foregroundStyle(.secondary)
+                    .font(Font.pl(.caption)).foregroundStyle(.secondary)
                 }
                 .swipeActions {
                     Button(m.status == "resolved" ? "Reopen" : "Resolve") { Task { await toggle(m) } }.tint(m.status == "resolved" ? PLTone.house : .green)
@@ -372,15 +372,15 @@ struct SeedRegistrationsView: View {
             List {
                 if items.isEmpty { ContentUnavailableView("None waiting", systemImage: "seal", description: Text("When a holder registers a seed, it waits here for you to authenticate.")) }
                 if !items.isEmpty {
-                    Section { PLBigTile(number: "\(items.count)", label: "Waiting for you to authenticate", tint: PLOS.warn) { Image(systemName: "seal").font(.title).foregroundStyle(PLOS.gold) } }
+                    Section { PLBigTile(number: "\(items.count)", label: "Waiting for you to authenticate", tint: PLOS.warn) { Image(systemName: "seal").font(Font.pl(.title)).foregroundStyle(PLOS.gold) } }
                         .listRowBackground(OSRowBackground())
                 }
                 ForEach(items) { it in
                     NavigationLink { SeedAuthView(model: model, item: it, done: reload) } label: {
                         VStack(alignment: .leading, spacing: 3) {
-                            HStack { Text(it.holder_name ?? "").font(.headline); Spacer(); if (it.unsent ?? 0) > 0 { PLChip(word: "certificate not sent", tint: PLOS.warn) } }
-                            Text(it.holder_email ?? "").font(.caption).foregroundStyle(.secondary)
-                            if let s = it.submitted_at { Ago(text: s).font(.caption2).foregroundStyle(.secondary) }
+                            HStack { Text(it.holder_name ?? "").font(Font.pl(.headline)); Spacer(); if (it.unsent ?? 0) > 0 { PLChip(word: "certificate not sent", tint: PLOS.warn) } }
+                            Text(it.holder_email ?? "").font(Font.pl(.caption)).foregroundStyle(.secondary)
+                            if let s = it.submitted_at { Ago(text: s).font(Font.pl(.caption2)).foregroundStyle(.secondary) }
                         }
                     }
                 }
@@ -470,13 +470,13 @@ struct RecordView: View {
                     ForEach(shown) { p in
                         VStack(alignment: .leading, spacing: 2) {
                             HStack {
-                                Text(p.name ?? p.email).font(.headline)
+                                Text(p.name ?? p.email).font(Font.pl(.headline))
                                 if (p.founding ?? 0) > 0 { Image(systemName: "star.fill").foregroundStyle(PLTone.house).accessibilityLabel("Founding") }
                             }
                             HStack(spacing: 5) {
                                 if let s = p.stage, !s.isEmpty { PLChip(word: s, tint: PLOS.gold) }
                                 if let v = p.provenance, !v.isEmpty { PLChip(word: v, tint: PLOS.dim(scheme)) }
-                                if let j = p.joined_at { Text(String(j.prefix(10))).font(.caption2.monospaced()).foregroundStyle(.secondary) }
+                                if let j = p.joined_at { Text(String(j.prefix(10))).font(Font.pl(.caption2).monospaced()).foregroundStyle(.secondary) }
                             }
                         }
                     }
@@ -508,7 +508,7 @@ struct LeadsView: View {
                 }
                 ForEach(leads) { l in
                     VStack(alignment: .leading, spacing: 4) {
-                        Text(l.name ?? l.email).font(.headline)
+                        Text(l.name ?? l.email).font(Font.pl(.headline))
                         HStack(spacing: 5) {
                             if let s = l.stage { PLChip(word: s, tint: PLOS.gold) }
                             if let i = l.intent { PLChip(word: i, tint: PLOS.philosophy) }
@@ -554,11 +554,11 @@ struct TallyView: View {
                     Section("Founder requests waiting") {
                         ForEach(q) { a in
                             VStack(alignment: .leading) {
-                                Text("\(a.cr ?? "") · \(a.product ?? "")").font(.headline)
+                                Text("\(a.cr ?? "") · \(a.product ?? "")").font(Font.pl(.headline))
                                 HStack(spacing: 6) {
                                     let h = a.promise_hours_left ?? 99
                                     PLChip(word: h < 0 ? "promise overdue \(Int(-h)) h" : "\(Int(h)) h left", tint: h < 0 ? PLOS.danger : (h < 24 ? PLOS.warn : PLOS.ok))
-                                    Text(a.email ?? "").font(.caption).foregroundStyle(.secondary).lineLimit(1)
+                                    Text(a.email ?? "").font(Font.pl(.caption)).foregroundStyle(.secondary).lineLimit(1)
                                 }
                             }
                         }
@@ -569,7 +569,7 @@ struct TallyView: View {
                     let topPoints = Double((t.ranked ?? []).map { $0.points ?? 0 }.max() ?? 1)
                     ForEach(t.ranked ?? []) { p in
                         VStack(alignment: .leading, spacing: 4) {
-                            HStack { Text(p.cr).font(.headline); Spacer(); Text("\(p.points ?? 0) pts").monospacedDigit() }
+                            HStack { Text(p.cr).font(Font.pl(.headline)); Spacer(); Text("\(p.points ?? 0) pts").monospacedDigit() }
                             HStack(spacing: 5) { ForEach((p.products ?? []).prefix(4)) { PLChip(word: "\($0.product) \($0.points ?? 0)", tint: PLOS.dim(scheme)) } }
                         }
                         .padding(.horizontal, 6).padding(.vertical, 4)
@@ -616,10 +616,10 @@ struct MetricTrend: View {
             HStack(alignment: .firstTextBaseline) {
                 Text(title).plLabel(11).foregroundStyle(.secondary)
                 Spacer()
-                Text(now, format: .number).font(.system(.title2, design: .monospaced).weight(.semibold))
+                Text(now, format: .number).font(Font.pl(.title2, design: .monospaced).weight(.semibold))
             }
             Text(moved == 0 ? "No change in these \(pts.count) days." : "\(moved > 0 ? "+" : "")\(moved) \(unit) in these \(pts.count) days.")
-                .font(.caption).foregroundStyle(moved > 0 ? PLOS.ok : moved < 0 ? PLOS.danger : .secondary)
+                .font(Font.pl(.caption)).foregroundStyle(moved > 0 ? PLOS.ok : moved < 0 ? PLOS.danger : .secondary)
             if pts.count > 1 && pts.contains(where: { $0.1 != first }) {
                 Chart(pts, id: \.0) { p in
                     LineMark(x: .value("Day", p.0, unit: .day), y: .value(unit, p.1)).interpolationMethod(.stepEnd).foregroundStyle(PLTone.accent)

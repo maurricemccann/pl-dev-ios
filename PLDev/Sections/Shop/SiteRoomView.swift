@@ -53,7 +53,7 @@ struct SiteRoomView: View {
                     HStack {
                         Spacer()
                         Button { dismiss() } label: {
-                            Image(systemName: "xmark").font(.system(size: 16, weight: .light)).foregroundStyle(Bone.gold.opacity(0.7))
+                            Image(systemName: "xmark").font(Font.pl(size: 16, weight: .light)).foregroundStyle(Bone.gold.opacity(0.7))
                                 .frame(width: 44, height: 44).overlay { Circle().strokeBorder(Bone.gold.opacity(0.2), lineWidth: 1) }
                         }
                         .accessibilityLabel("Leave the room")

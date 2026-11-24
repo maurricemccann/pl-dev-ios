@@ -107,7 +107,7 @@ struct CurateView: View {
             } label: {
                 HStack(spacing: 6) {
                     Text(state.mode.title).gTitle(21).foregroundStyle(state.mode.isMaybes ? PLC.maybe : PLG.ink(scheme)).lineLimit(1).minimumScaleFactor(0.7)
-                    Image(systemName: "chevron.down").font(.system(size: 9, weight: .bold)).foregroundStyle(PLG.gold)
+                    Image(systemName: "chevron.down").font(Font.pl(size: 9, weight: .bold)).foregroundStyle(PLG.gold)
                 }
                 .frame(minHeight: 44)
             }
@@ -202,11 +202,11 @@ struct CurateView: View {
                     if let last = state.history.last {
                         let said = state.carried(last.item).comment
                         Text("Last: \(last.dir.uppercased()) · \(last.item.name ?? last.item.vault_id)\(said.isEmpty ? "" : ": \u{201C}\(said)\u{201D}")")
-                            .font(.system(size: 11, design: .monospaced)).foregroundStyle(PLG.dim(scheme)).lineLimit(2).multilineTextAlignment(.center)
+                            .font(Font.pl(size: 11, design: .monospaced)).foregroundStyle(PLG.dim(scheme)).lineLimit(2).multilineTextAlignment(.center)
                     }
                     if it.class == "archive-work", (it.sub ?? "").contains("· edited") {
                         Button("Keep · use the original") { Task { await state.keepOriginal(model: model) } }
-                            .font(.system(size: 10.5)).textCase(.uppercase).tracking(1.3).foregroundStyle(PLG.dim(scheme)).frame(minHeight: 44)
+                            .font(Font.pl(size: 10.5)).textCase(.uppercase).tracking(1.3).foregroundStyle(PLG.dim(scheme)).frame(minHeight: 44)
                     }
                 }
             }
@@ -244,11 +244,11 @@ struct CurateView: View {
                 HStack(spacing: 6) {
                     ForEach(state.currentTags, id: \.self) { t in
                         Button { Task { tagFailed = !(await state.setTag(t, on: false, model: model)) } } label: {
-                            Label(t, systemImage: "xmark").labelStyle(.titleAndIcon).font(.caption)
+                            Label(t, systemImage: "xmark").labelStyle(.titleAndIcon).font(Font.pl(.caption))
                         }
                         .buttonStyle(.bordered).tint(PLG.gold).accessibilityLabel("Remove tag \(t)")
                     }
-                    TextField("Add a tag", text: $tagInput).font(.caption).frame(minWidth: 90).submitLabel(.done)
+                    TextField("Add a tag", text: $tagInput).font(Font.pl(.caption)).frame(minWidth: 90).submitLabel(.done)
                         .textInputAutocapitalization(.never).autocorrectionDisabled()
                         .onSubmit { let t = tagInput; tagInput = ""; Task { tagFailed = !(await state.setTag(t, on: true, model: model)) } }
                 }
@@ -259,7 +259,7 @@ struct CurateView: View {
                 HStack(spacing: 6) {
                     ForEach(Array(hits), id: \.self) { t in
                         Button(t) { tagInput = ""; Task { tagFailed = !(await state.setTag(t, on: true, model: model)) } }
-                            .font(.caption).buttonStyle(.bordered)
+                            .font(Font.pl(.caption)).buttonStyle(.bordered)
                     }
                 }
             }
@@ -273,8 +273,8 @@ struct CurateView: View {
             .lineLimit(2...4).focused($noteFocus)
             .onChange(of: state.note) { _, v in if v.count > 500 { state.note = String(v.prefix(500)) } }
             .padding(12)
-            .background(PLG.surface(scheme).opacity(0.6), in: RoundedRectangle(cornerRadius: 10, style: .continuous))
-            .overlay { RoundedRectangle(cornerRadius: 10, style: .continuous).strokeBorder(PLC.maybe, lineWidth: 1) }
+            .background(PLG.surface(scheme).opacity(0.6), in: RoundedRectangle(cornerRadius: 10 * PLStyle.radius, style: .continuous))
+            .overlay { RoundedRectangle(cornerRadius: 10 * PLStyle.radius, style: .continuous).strokeBorder(PLC.maybe, lineWidth: 1) }
     }
 
     private func caption(_ it: LibraryItem) -> some View {
@@ -354,10 +354,10 @@ struct CurateView: View {
     }
 
     private func stampText(_ t: String, _ c: Color) -> some View {
-        Text(t).font(.system(size: 22, weight: .bold, design: .monospaced)).tracking(2).foregroundStyle(c)
+        Text(t).font(Font.pl(size: 22, weight: .bold, design: .monospaced)).tracking(2).foregroundStyle(c)
             .padding(.horizontal, 14).padding(.vertical, 6)
-            .background(.white.opacity(0.85), in: RoundedRectangle(cornerRadius: 8, style: .continuous))
-            .overlay { RoundedRectangle(cornerRadius: 8, style: .continuous).strokeBorder(c, lineWidth: 3) }
+            .background(.white.opacity(0.85), in: RoundedRectangle(cornerRadius: 8 * PLStyle.radius, style: .continuous))
+            .overlay { RoundedRectangle(cornerRadius: 8 * PLStyle.radius, style: .continuous).strokeBorder(c, lineWidth: 3) }
     }
 
     // MARK: controls
@@ -422,9 +422,9 @@ struct CurateEmpty: View {
     private func count(_ c: String) -> Int? { state.waiting[c] }
     private func door(_ title: String, _ m: CurateMode, n: Int? = nil, orange: Bool = false) -> some View {
         Button { Task { await state.select(m, model: model) } } label: {
-            Text("\(title)\(n.map { " (\($0.formatted()))" } ?? "") →").font(.system(size: 12, design: .monospaced)).foregroundStyle(orange ? .white : PLG.bg(scheme))
+            Text("\(title)\(n.map { " (\($0.formatted()))" } ?? "") →").font(Font.pl(size: 12, design: .monospaced)).foregroundStyle(orange ? .white : PLG.bg(scheme))
                 .padding(.horizontal, 14).frame(minHeight: 44)
-                .background(orange ? PLC.orange(.light) : PLG.ink(scheme), in: RoundedRectangle(cornerRadius: 8, style: .continuous))
+                .background(orange ? PLC.orange(.light) : PLG.ink(scheme), in: RoundedRectangle(cornerRadius: 8 * PLStyle.radius, style: .continuous))
         }.buttonStyle(.plain)
     }
 
@@ -433,7 +433,7 @@ struct CurateEmpty: View {
             VStack(spacing: 14) {
                 Text("Queue clear").gEyebrow(12).foregroundStyle(PLG.gold)
                 Text("Nothing left to decide").gTitle(26).foregroundStyle(PLG.ink(scheme))
-                Text("\(state.mode.short.lowercased()) · this session").font(.system(size: 11, design: .monospaced)).foregroundStyle(PLG.dim(scheme))
+                Text("\(state.mode.short.lowercased()) · this session").font(Font.pl(size: 11, design: .monospaced)).foregroundStyle(PLG.dim(scheme))
                 PLStageBar(stages: [.init(name: "Keep", count: state.kept, tint: PLC.keep), .init(name: "Maybe", count: state.maybes, tint: PLC.maybe), .init(name: "Cut", count: state.cuts, tint: PLC.cut)],
                            text: PLG.ink(scheme), dim: PLG.dim(scheme)).padding(.horizontal, 24)
                 FlowLayout {

@@ -129,32 +129,21 @@ struct SectionTile: View {
         return parts.joined(separator: ", ")
     }
 
-    @AppStorage("pldev.glassBlur") private var glass = true
     @AppStorage("pldev.styleTile") private var tileShape = "squircle"   // the theme's tile: squircle, circle or square (S353·7b1e)
+    @AppStorage("pldev.styleLook") private var look = "glass"   // and what it draws over the glass: keys, rings, frames
+    @AppStorage("pldev.styleIcons") private var iconSet = "pl"
 
-    /// The Home Screen's tinted look (his reference, 11-13): every icon the same glass, washed in the wallpaper's colour,
-    /// a frosted white glyph on it. One colour for every app; the symbol tells them apart.
+    /// One app on Home: the theme's tile, its glyph, the name under it in the theme's ink.
     var body: some View {
-        let icon: AnyShape = switch tileShape {
-        case "circle": AnyShape(Circle())
-        case "square": AnyShape(RoundedRectangle(cornerRadius: 5, style: .continuous))
-        default: AnyShape(RoundedRectangle(cornerRadius: 15, style: .continuous))
-        }
         VStack(spacing: 6) {
-            ZStack {
-                Group {
-                    if let mine = PLIcon.forSection[entry.manifest.id] { PLIcon.image(mine).resizable().scaledToFit().frame(width: 34, height: 34) }
-                    else { Image(systemName: entry.manifest.symbol).font(.system(size: 30, weight: .medium)).symbolRenderingMode(.hierarchical) }
-                }
-                    .foregroundStyle(LinearGradient(colors: [.white, Color(red: 1, green: 0.93, blue: 0.86)], startPoint: .top, endPoint: .bottom))
-                    .shadow(color: .black.opacity(0.25), radius: 1.5, y: 1)
-                if !ready {
-                    Image(systemName: "key.fill").font(.caption.bold()).foregroundStyle(.white.opacity(0.9))
-                        .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .bottomTrailing).padding(6)
-                }
+            Group {
+                if iconSet == "pl", let mine = PLIcon.forSection[entry.manifest.id] { PLIcon.image(mine).resizable().scaledToFit().frame(width: 34, height: 34) }
+                else { Image(systemName: entry.manifest.symbol).font(Font.pl(size: 28, weight: .medium)).symbolRenderingMode(.hierarchical) }
             }
-            .frame(width: 64, height: 64)
-            .modifier(TileGlass(shape: icon, on: glass))
+            .modifier(PLTile(shape: PLTile.shape(tileShape), look: look))
+            .overlay(alignment: .bottomTrailing) {
+                if !ready { Image(systemName: "key.fill").font(Font.pl(.caption).bold()).foregroundStyle(.primary).padding(4) }
+            }
             .opacity(ready ? 1 : 0.55)
             .overlay(alignment: .topTrailing) {
                 if let badge = entry.badge, badge > 0 {
@@ -165,8 +154,7 @@ struct SectionTile: View {
             }
             Text(entry.manifest.title)
                 .plFont(.caption)
-                .foregroundStyle(.white.opacity(ready ? 1 : 0.7))
-                .shadow(color: .black.opacity(0.45), radius: 2, y: 1)   // white on a busy wallpaper, as Springboard draws it
+                .foregroundStyle(Color.primary.opacity(ready ? 1 : 0.7))
                 .lineLimit(1)
         }
         .frame(maxWidth: .infinity)
@@ -177,21 +165,28 @@ struct SectionTile: View {
     }
 }
 
-/// The icon plate: Liquid Glass washed in the wallpaper's line colour; a solid plate when glass is off in Settings.
-private struct TileGlass<S: Shape>: ViewModifier {
-    let shape: S
-    let on: Bool
+/// A 64 point tile: the tile glass from Settings, the theme's look over it, the glyph on top.
+struct PLTile: ViewModifier {
+    let shape: AnyShape
+    let look: String
+    @State private var kit = HouseKit.shared
+    @Environment(\.colorScheme) private var scheme
 
-    @AppStorage("pldev.cardLine") private var line = false
+    static func shape(_ name: String) -> AnyShape {
+        switch name {
+        case "circle": AnyShape(Circle())
+        case "square": AnyShape(RoundedRectangle(cornerRadius: 12 * PLStyle.radius, style: .continuous))
+        default: AnyShape(RoundedRectangle(cornerRadius: 15 * PLStyle.radius, style: .continuous))
+        }
+    }
 
     func body(content: Content) -> some View {
-        if on {
-            content.plGlass(tint: Wallpaper.line.opacity(0.45), in: shape)
-        } else if line {
-            content.background(Wallpaper.line.opacity(0.14), in: shape).overlay(shape.stroke(Wallpaper.line, lineWidth: 1.5))
-        } else {
-            content.background(Wallpaper.line.gradient, in: shape)
-        }
+        let p = kit.palette
+        content
+            .foregroundStyle(TileLook.glyph(look, key: p.keyColor, scheme: scheme))
+            .frame(width: 64, height: 64)
+            .background { if look != "glass" && look != "bare" { TileLook(look: look, shape: shape, key: p.keyColor, accent: p.accentColor) } }
+            .modifier(PLSurface(part: .tile, tint: nil, interactive: false, shape: shape))
     }
 }
 
@@ -204,27 +199,15 @@ struct Wallpaper: View {
     /// The psyground stencil (his curve tile, alpha only, 300 pt a repeat), loaded once and shared with every screen's ground.
     @MainActor static var stencil: UIImage?
     let model: AppModel
-    @State private var kit = HouseKit.shared
     @State private var ready = Wallpaper.stencil != nil
-    @AppStorage("pldev.tileStrength") private var strength = 0.5   // Settings: how strongly the curves show; 0.5 = his reference
     @AppStorage("pldev.styleRepeat") private var repeatSize = 300.0   // the theme's curve scale (S353·7b1e)
-    @AppStorage("pldev.styleWall") private var wall = ""   // a theme's archive piece, "mode|url" (his picks 11-24)
 
     init(model: AppModel) { self.model = model }
 
     var body: some View {
-        ZStack {
-            kit.palette.groundColor
-            if !wall.isEmpty {
-                ThemeWall(spec: wall, key: kit.palette.keyColor, strength: strength)
-            } else if ready, let tile = Self.stencil {
-                Image(uiImage: tile).renderingMode(.template).resizable(resizingMode: .tile)
-                    .foregroundStyle(kit.palette.keyColor).opacity(strength <= 0 ? 0 : min(1, 0.15 + strength * 1.7))   // 0 = no curves (E ink, macOS)
-            }
-        }
-        .ignoresSafeArea()
-        .accessibilityHidden(true)
-        .task(id: repeatSize) { await Self.load(model: model); ready = Self.stencil != nil }
+        ThemeGround(quiet: false)
+            .id(ready)
+            .task(id: repeatSize) { await Self.load(model: model); ready = Self.stencil != nil }
     }
 
     private static var cacheURL: URL? {
@@ -344,7 +327,7 @@ struct ThemeWall: View {
     /// Only https addresses on the archive's own bucket are fetched (the spec comes from code, never from a page).
     @MainActor static func load(_ address: String) async -> UIImage? {
         if let hit = cache[address] { return hit }
-        guard let url = URL(string: address), url.scheme == "https", url.host?.hasSuffix(".r2.dev") == true else { return nil }
+        guard let url = URL(string: address), url.scheme == "https", url.host?.hasSuffix(".r2.dev") == true || url.host == "assets.psychedluxuries.com" else { return nil }
         let dir = FileManager.default.urls(for: .cachesDirectory, in: .userDomainMask)[0].appendingPathComponent("walls", isDirectory: true)
         let file = dir.appendingPathComponent(url.lastPathComponent + ".jpg")
         if let d = try? Data(contentsOf: file), let img = UIImage(data: d) { cache[address] = img; return img }

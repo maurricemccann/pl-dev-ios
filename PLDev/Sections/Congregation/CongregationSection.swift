@@ -141,7 +141,7 @@ struct CongregationSettingsRows: View {
                     SettingsLabel(kind.label, "bell", Color(uiColor: .systemGray))
                 }
             }
-            Text("The activity list and its notice show these kinds. News that a post went live or was removed always reaches you.").font(.footnote).foregroundStyle(.secondary)
+            Text("The activity list and its notice show these kinds. News that a post went live or was removed always reaches you.").font(Font.pl(.footnote)).foregroundStyle(.secondary)
         }
     }
 }

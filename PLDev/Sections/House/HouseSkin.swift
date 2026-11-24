@@ -18,7 +18,7 @@ enum PLOS {
     static let warn = Color(hex: 0xb07d2a)
     static let danger = Color(hex: 0xc0392b)
     static let philosophy = Color(hex: 0x9b72cf)
-    static let radius: CGFloat = 18
+    static var radius: CGFloat { 18 * PLStyle.radius }
     /// pl-os ModerationPanel PLATFORM_COLORS: every draft wears its platform's colour.
     static func platform(_ p: String?) -> Color {
         switch p ?? "instagram" {
@@ -40,8 +40,10 @@ struct OSGround: View {
     @Environment(\.colorScheme) private var scheme
     var body: some View {
         ZStack {
-            PLOS.bg(scheme)
-            HouseGround().opacity(0.9).blendMode(scheme == .dark ? .screen : .multiply)
+            if PLStyle.themed { HouseGround() } else {
+                PLOS.bg(scheme)
+                HouseGround().opacity(0.9).blendMode(scheme == .dark ? .screen : .multiply)
+            }
         }
         .ignoresSafeArea()
     }
@@ -59,7 +61,7 @@ struct OSCard: ViewModifier {
             .frame(maxWidth: .infinity, alignment: .leading)
             .background {
                 ZStack(alignment: .top) {
-                    shape.fill(PLOS.surface(scheme).opacity(scheme == .dark ? 0.28 : 0.34))
+                    shape.fill(PLOS.surface(scheme).opacity(PLStyle.themed ? 0 : scheme == .dark ? 0.28 : 0.34))
                     LinearGradient(colors: [.white.opacity(scheme == .dark ? 0.08 : 0.16), .white.opacity(0.02), .clear], startPoint: .top, endPoint: .bottom)
                         .frame(maxHeight: .infinity, alignment: .top).mask(shape).allowsHitTesting(false)
                 }
@@ -97,7 +99,7 @@ struct OSPanel<Content: View>: View {
                     Text(title).plHand(19, relativeTo: .headline).foregroundStyle(owed ? PLOS.danger : PLOS.dim(scheme))
                     Spacer()
                     if let badge { Text(badge).osValue(13).foregroundStyle(PLOS.gold) }
-                    Image(systemName: "chevron.right").font(.caption2.weight(.bold)).foregroundStyle(PLOS.goldDim(scheme))
+                    Image(systemName: "chevron.right").font(Font.pl(.caption2).weight(.bold)).foregroundStyle(PLOS.goldDim(scheme))
                         .rotationEffect(.degrees(isOpen ? 90 : 0))
                 }
                 .contentShape(Rectangle())
@@ -119,15 +121,15 @@ struct OSRow<Trailing: View>: View {
     var body: some View {
         HStack(alignment: .center, spacing: 10) {
             VStack(alignment: .leading, spacing: 3) {
-                Text(title).font(.subheadline).foregroundStyle(PLOS.text(scheme)).multilineTextAlignment(.leading)
-                if let meta { Text(meta).font(.system(size: 11, design: .monospaced)).foregroundStyle(PLOS.dim(scheme)) }
+                Text(title).font(Font.pl(.subheadline)).foregroundStyle(PLOS.text(scheme)).multilineTextAlignment(.leading)
+                if let meta { Text(meta).font(Font.pl(size: 11, design: .monospaced)).foregroundStyle(PLOS.dim(scheme)) }
             }
             Spacer(minLength: 0)
             trailing()
         }
         .padding(12)
-        .background(PLOS.surface2(scheme).opacity(scheme == .dark ? 0.32 : 0.4), in: RoundedRectangle(cornerRadius: 12, style: .continuous))
-        .overlay { RoundedRectangle(cornerRadius: 12, style: .continuous).strokeBorder(PLOS.line(scheme), lineWidth: 0.6) }
+        .background(PLOS.surface2(scheme).opacity(scheme == .dark ? 0.32 : 0.4), in: RoundedRectangle(cornerRadius: 12 * PLStyle.radius, style: .continuous))
+        .overlay { RoundedRectangle(cornerRadius: 12 * PLStyle.radius, style: .continuous).strokeBorder(PLOS.line(scheme), lineWidth: 0.6) }
     }
 }
 extension OSRow where Trailing == EmptyView { init(title: String, meta: String? = nil) { self.init(title: title, meta: meta) { EmptyView() } } }
@@ -154,7 +156,7 @@ struct OSHeader: View {
             // the way home, inside the header card, never floating over the page (his word 11-13: "no way to go back home")
             Button { dismiss() } label: {
                 HStack(spacing: 4) {
-                    Image(systemName: "chevron.left").font(.system(size: 15, weight: .semibold))
+                    Image(systemName: "chevron.left").font(Font.pl(size: 15, weight: .semibold))
                     Image("PLIcons/pl-mark").resizable().scaledToFit().frame(width: 28, height: 28)
                 }
                 .foregroundStyle(PLOS.gold)
@@ -168,7 +170,7 @@ struct OSHeader: View {
             TimelineView(.periodic(from: .now, by: 15)) { ctx in
                 VStack(alignment: .trailing, spacing: 0) {
                     Text(ctx.date.formatted(Date.FormatStyle(date: .omitted, time: .shortened, timeZone: TimeZone(identifier: "America/Los_Angeles")!)))
-                        .font(.system(.title3, design: .serif).italic()).foregroundStyle(PLOS.gold)
+                        .font(Font.pl(.title3, design: .serif).italic()).foregroundStyle(PLOS.gold)
                     Text("LA · " + ctx.date.formatted(Date.FormatStyle(timeZone: TimeZone(identifier: "America/Los_Angeles")!).weekday(.abbreviated).month(.abbreviated).day()))
                         .osEyebrow(8).foregroundStyle(PLOS.dim(scheme))
                 }
@@ -202,7 +204,7 @@ struct OSTabBar: View {
         let on = tab == t
         return Button { withAnimation(.snappy) { tab = t } } label: {
             VStack(spacing: 3) {
-                Image(systemName: symbol).font(.system(size: 17, weight: .medium))
+                Image(systemName: symbol).font(Font.pl(size: 17, weight: .medium))
                 Text(title).osEyebrow(8)
             }
             .foregroundStyle(on ? Color.black : PLOS.dim(scheme))
@@ -210,7 +212,7 @@ struct OSTabBar: View {
             .background { if on { Capsule().fill(PLOS.gold) } }
             .overlay(alignment: .topTrailing) {
                 if t == .founder, badge > 0 {
-                    Text("\(badge)").font(.system(size: 10, weight: .bold, design: .monospaced)).foregroundStyle(.black)
+                    Text("\(badge)").font(Font.pl(size: 10, weight: .bold, design: .monospaced)).foregroundStyle(.black)
                         .padding(.horizontal, 5).padding(.vertical, 1).background(PLOS.gold, in: Capsule()).overlay { Capsule().strokeBorder(.black.opacity(0.3)) }
                         .offset(x: -6, y: -2)
                 }
@@ -237,7 +239,7 @@ struct OSKpis: View {
                     VStack(alignment: .leading, spacing: 2) {
                         Text(items[i].0).plHand(15, relativeTo: .footnote).foregroundStyle(level.map { PLOS.dim(scheme).mix(with: $0.tone, by: 0.4) } ?? PLOS.dim(scheme)).lineLimit(1).minimumScaleFactor(0.7)
                         Text(items[i].1).osValue(28).foregroundStyle(level?.tone ?? PLOS.text(scheme)).contentTransition(.numericText()).lineLimit(1).minimumScaleFactor(0.6)
-                        if let sub = items[i].2 { Text(sub).font(.system(size: 10, design: .monospaced)).foregroundStyle(PLOS.dim(scheme)) }
+                        if let sub = items[i].2 { Text(sub).font(Font.pl(size: 10, design: .monospaced)).foregroundStyle(PLOS.dim(scheme)) }
                     }
                     .frame(maxWidth: .infinity, alignment: .leading)
                     .padding(.horizontal, level == nil ? 0 : 8).padding(.vertical, level == nil ? 0 : 6)
@@ -248,7 +250,7 @@ struct OSKpis: View {
             if let status {
                 HStack(spacing: 6) {
                     Circle().fill(status.1).frame(width: 7, height: 7)
-                    Text(status.0).font(.system(size: 12, design: .monospaced)).foregroundStyle(PLOS.dim(scheme))
+                    Text(status.0).font(Font.pl(size: 12, design: .monospaced)).foregroundStyle(PLOS.dim(scheme))
                 }
             }
         }

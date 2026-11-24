@@ -85,8 +85,8 @@ struct MeditationCard: View {
                 let t = reduceMotion ? 2750 : tl.date.timeIntervalSince(start) * 1000
                 VStack(spacing: 8) {
                     Group { if mode == "bloom" { CoherenceBloom(tMs: t) } else { PrismView(tMs: t) } }
-                        .aspectRatio(3 / 2, contentMode: .fit).clipShape(RoundedRectangle(cornerRadius: 8, style: .continuous))
-                    Text(Breath.phase(t).u < 0.5 ? "breathe in..." : "breathe out...").font(.system(size: 13.6)).foregroundStyle(Candle.ink.opacity(0.7))
+                        .aspectRatio(3 / 2, contentMode: .fit).clipShape(RoundedRectangle(cornerRadius: 8 * PLStyle.radius, style: .continuous))
+                    Text(Breath.phase(t).u < 0.5 ? "breathe in..." : "breathe out...").font(Font.pl(size: 13.6)).foregroundStyle(Candle.ink.opacity(0.7))
                 }
             }
             RehearsalSection(model: model, state: state, flow: $rehearsal)
@@ -131,16 +131,16 @@ struct RehearsalSection: View {
                     Button("Rehearse it \u{2014} 2 minutes") { begin() }.buttonStyle(CandleGhost()).fixedSize().disabled(flow.chosen.isEmpty)
                 }
             case .live:
-                Text(Self.stages[stage]).font(.system(size: 16, design: .serif).italic()).foregroundStyle(Candle.goldHi).multilineTextAlignment(.center)
+                Text(Self.stages[stage]).font(Font.pl(size: 16, design: .serif).italic()).foregroundStyle(Candle.goldHi).multilineTextAlignment(.center)
                     .lineSpacing(4).frame(maxWidth: .infinity, minHeight: 56).id(stage).transition(.opacity)
                 Button("end early") { end() }.buttonStyle(CandleGhost())
             case .rate:
-                Text("How vivid did it get \u{2014} how much did it land?").font(.system(size: 12)).foregroundStyle(Candle.ink.opacity(0.5))
+                Text("How vivid did it get \u{2014} how much did it land?").font(Font.pl(size: 12)).foregroundStyle(Candle.ink.opacity(0.5))
                 HStack(spacing: 6) {
                     ForEach(1...5, id: \.self) { n in Button("\(n)") { Task { await save(n) } }.buttonStyle(CandleButton()).frame(minWidth: 44) }
                 }
             case .done:
-                Text("Logged. The scene compounds.").font(.system(size: 15, design: .serif).italic()).foregroundStyle(Candle.goldHi).padding(.vertical, 10)
+                Text("Logged. The scene compounds.").font(Font.pl(size: 15, design: .serif).italic()).foregroundStyle(Candle.goldHi).padding(.vertical, 10)
             }
             CandleResult(text: result)
         }

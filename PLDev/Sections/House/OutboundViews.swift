@@ -85,12 +85,12 @@ struct OutboundTab: View {
                                 HStack {
                                     Text(r.channel == "instagram" ? "IG" : "@").osEyebrow(9).foregroundStyle(.white).padding(.horizontal, 6).padding(.vertical, 2)
                                         .background(PLOS.platform(r.channel == "instagram" ? "instagram" : "threads"), in: Capsule())
-                                    Ago(text: r.sent_at).font(.caption2).foregroundStyle(PLOS.dim(scheme))
+                                    Ago(text: r.sent_at).font(Font.pl(.caption2)).foregroundStyle(PLOS.dim(scheme))
                                     Spacer()
-                                    Label("\(r.reach ?? 0)", systemImage: "eye").font(.caption2.monospacedDigit()).foregroundStyle(PLOS.dim(scheme))
-                                    Label("\(r.likes ?? 0)", systemImage: "heart").font(.caption2.monospacedDigit()).foregroundStyle(PLOS.dim(scheme))
+                                    Label("\(r.reach ?? 0)", systemImage: "eye").font(Font.pl(.caption2).monospacedDigit()).foregroundStyle(PLOS.dim(scheme))
+                                    Label("\(r.likes ?? 0)", systemImage: "heart").font(Font.pl(.caption2).monospacedDigit()).foregroundStyle(PLOS.dim(scheme))
                                 }
-                                Text(r.caption_excerpt ?? "").font(.callout).foregroundStyle(PLOS.text(scheme)).lineLimit(2)
+                                Text(r.caption_excerpt ?? "").font(Font.pl(.callout)).foregroundStyle(PLOS.text(scheme)).lineLimit(2)
                                 // pl-os PostReachPanel: each post's reach as a bar against the top post
                                 GeometryReader { g in Capsule().fill(PLOS.gold.opacity(0.7)).frame(width: max(4, g.size.width * CGFloat(r.reach ?? 0) / CGFloat(top))) }.frame(height: 4)
                             }
@@ -112,7 +112,7 @@ struct OutboundTab: View {
                 OSPanel(title: "Make more", startOpen: true) {
                     Button { Task { await craft() } } label: { Text(crafting ? "Crafting…" : "Craft more +") }.buttonStyle(OSPill()).disabled(crafting)
                     if let r = result { ResultLine(text: r) }
-                    Text("Congregation feed drafts: review and push them in PL Feed.").font(.caption).foregroundStyle(PLOS.dim(scheme))
+                    Text("Congregation feed drafts: review and push them in PL Feed.").font(Font.pl(.caption)).foregroundStyle(PLOS.dim(scheme))
                 }
                 OSPanel(title: "More doors") {
                     door("Tempo · this week's plan and email") { TempoView(model: model) }
@@ -142,7 +142,7 @@ struct OutboundTab: View {
 
     private func door<D: View>(_ title: String, @ViewBuilder _ dest: @escaping () -> D) -> some View {
         NavigationLink { dest().osScreen() } label: {
-            OSRow(title: title) { Image(systemName: "chevron.right").font(.caption.weight(.bold)).foregroundStyle(PLOS.goldDim(scheme)) }
+            OSRow(title: title) { Image(systemName: "chevron.right").font(Font.pl(.caption).weight(.bold)).foregroundStyle(PLOS.goldDim(scheme)) }
         }
         .buttonStyle(.plain)
     }
@@ -172,7 +172,7 @@ struct SignalsView: View {
     let model: AppModel
     var body: some View {
         Loaded(load: { try await Console.q("signals", [OutboundModel.Signal].self, model: model) }) { rows, _ in
-            List(rows) { r in VStack(alignment: .leading) { Text(r.title ?? ""); Ago(text: r.at).font(.caption).foregroundStyle(.secondary) } }
+            List(rows) { r in VStack(alignment: .leading) { Text(r.title ?? ""); Ago(text: r.at).font(Font.pl(.caption)).foregroundStyle(.secondary) } }
         }
         .navigationTitle("Signals sent")
     }
@@ -207,14 +207,14 @@ struct CalendarView: View {
             VStack(alignment: .leading, spacing: 3) {
                 ForEach(platforms, id: \.self) { p in
                     HStack(spacing: 2) {
-                        Text(p == "pl_feed" ? "PL feed" : p.capitalized).font(.system(size: 9, weight: .semibold)).foregroundStyle(PLOS.platform(p))
+                        Text(p == "pl_feed" ? "PL feed" : p.capitalized).font(Font.pl(size: 9, weight: .semibold)).foregroundStyle(PLOS.platform(p))
                             .frame(width: 58, alignment: .leading).lineLimit(1).minimumScaleFactor(0.7)
                         ForEach(days) { d in
                             let cell = d.platforms?[p]
                             let have = cell?.items?.count ?? 0, want = (cell?.target ?? [:]).values.reduce(0, +), short = (cell?.short ?? [:]).values.reduce(0, +)
-                            RoundedRectangle(cornerRadius: 2, style: .continuous)
+                            RoundedRectangle(cornerRadius: 2 * PLStyle.radius, style: .continuous)
                                 .fill(cell?.paused == true ? PLOS.dim(scheme).opacity(0.08) : (have > 0 ? PLOS.platform(p).opacity(want > 0 ? 0.3 + 0.7 * min(1, Double(have) / Double(want)) : 0.8) : PLOS.dim(scheme).opacity(0.14)))
-                                .overlay { RoundedRectangle(cornerRadius: 2, style: .continuous).strokeBorder(d.date == page ? PLOS.gold : (short > 0 && cell?.paused != true ? PLOS.warn : .clear), lineWidth: 1.2) }
+                                .overlay { RoundedRectangle(cornerRadius: 2 * PLStyle.radius, style: .continuous).strokeBorder(d.date == page ? PLOS.gold : (short > 0 && cell?.paused != true ? PLOS.warn : .clear), lineWidth: 1.2) }
                                 .frame(height: 14)
                                 .onTapGesture { withAnimation(.snappy) { page = d.date } }
                         }
@@ -225,11 +225,11 @@ struct CalendarView: View {
             }
             .padding(.horizontal).padding(.top, 8)
             HStack(spacing: 12) {
-                HStack(spacing: 4) { RoundedRectangle(cornerRadius: 2).strokeBorder(PLOS.warn, lineWidth: 1.5).frame(width: 10, height: 10); Text("short") }
-                HStack(spacing: 4) { RoundedRectangle(cornerRadius: 2).strokeBorder(PLOS.gold, lineWidth: 1.5).frame(width: 10, height: 10); Text("showing") }
+                HStack(spacing: 4) { RoundedRectangle(cornerRadius: 2 * PLStyle.radius).strokeBorder(PLOS.warn, lineWidth: 1.5).frame(width: 10, height: 10); Text("short") }
+                HStack(spacing: 4) { RoundedRectangle(cornerRadius: 2 * PLStyle.radius).strokeBorder(PLOS.gold, lineWidth: 1.5).frame(width: 10, height: 10); Text("showing") }
                 Spacer()
             }
-            .font(.system(size: 9, design: .monospaced)).foregroundStyle(PLOS.dim(scheme)).padding(.horizontal).padding(.top, 4)
+            .font(Font.pl(size: 9, design: .monospaced)).foregroundStyle(PLOS.dim(scheme)).padding(.horizontal).padding(.top, 4)
             fillLine.padding(.horizontal).padding(.vertical, 6)
             // pl-os's day pager: one day a page, swiped sideways, opening at today
             ScrollView(.horizontal) {
@@ -257,7 +257,7 @@ struct CalendarView: View {
                 Text("Filler: no run recorded yet.")
             }
         }
-        .font(.caption.monospaced()).foregroundStyle(.secondary).frame(maxWidth: .infinity, alignment: .leading)
+        .font(Font.pl(.caption).monospaced()).foregroundStyle(.secondary).frame(maxWidth: .infinity, alignment: .leading)
     }
 
     private func dayPage(_ d: Day) -> some View {
@@ -273,19 +273,19 @@ struct CalendarView: View {
                         if let f = fill, !f.live {
                             ForEach((f.moves ?? []).filter { $0.platform == p && $0.date == d.date }, id: \.id) { m in
                                 Label("Would slot \(m.format ?? "") · \(Date.pl(m.to)?.formatted(date: .omitted, time: .shortened) ?? "")", systemImage: "square.dashed")
-                                    .font(.caption).foregroundStyle(PLOS.gold.opacity(0.8))
+                                    .font(Font.pl(.caption)).foregroundStyle(PLOS.gold.opacity(0.8))
                             }
                         }
                         ForEach(cell?.items ?? []) { it in
                             HStack(spacing: 10) {
                                 if let t = it.thumb, let u = URL(string: t) {
                                     AsyncImage(url: u) { $0.resizable().scaledToFill() } placeholder: { Color.secondary.opacity(0.15) }
-                                        .frame(width: 44, height: 44).clipShape(RoundedRectangle(cornerRadius: 8, style: .continuous))
+                                        .frame(width: 44, height: 44).clipShape(RoundedRectangle(cornerRadius: 8 * PLStyle.radius, style: .continuous))
                                 }
                                 VStack(alignment: .leading, spacing: 2) {
-                                    Text(it.line ?? "").lineLimit(2).font(.callout)
+                                    Text(it.line ?? "").lineLimit(2).font(Font.pl(.callout))
                                     Text("\(it.format ?? "") · \(it.status ?? "")\(Date.pl(it.at).map { " · " + $0.formatted(date: .omitted, time: .shortened) } ?? "")")
-                                        .font(.caption).foregroundStyle(.secondary)
+                                        .font(Font.pl(.caption)).foregroundStyle(.secondary)
                                 }
                             }
                         }
@@ -293,7 +293,7 @@ struct CalendarView: View {
                         HStack {
                             Text(p == "pl_feed" ? "PL feed" : p.capitalized).fontWeight(.semibold).foregroundStyle(PLOS.platform(p))
                             Spacer()
-                            if cell?.paused == true { Text("paused").font(.caption).foregroundStyle(.secondary) }
+                            if cell?.paused == true { Text("paused").font(Font.pl(.caption)).foregroundStyle(.secondary) }
                             else {
                                 let target = (cell?.target ?? [:]).map { "\($0.value) \($0.key == "any" ? "" : $0.key)".trimmingCharacters(in: .whitespaces) }.sorted().joined(separator: " + ")
                                 let want = (cell?.target ?? [:]).values.reduce(0, +), have = cell?.items?.count ?? 0
@@ -304,8 +304,8 @@ struct CalendarView: View {
                                     }
                                     .frame(width: 18, height: 18).accessibilityHidden(true)
                                 }
-                                Text("\(have)\(target.isEmpty ? "" : " of " + target)").font(.callout.monospacedDigit())
-                                if short > 0 { Text("\(short) short").font(.caption.bold()).foregroundStyle(PLOS.warn) }
+                                Text("\(have)\(target.isEmpty ? "" : " of " + target)").font(Font.pl(.callout).monospacedDigit())
+                                if short > 0 { Text("\(short) short").font(Font.pl(.caption).bold()).foregroundStyle(PLOS.warn) }
                             }
                         }
                     }
@@ -373,14 +373,14 @@ struct TempoView: View {
                     ForEach((w.strategy?.angles ?? []).sorted { ($0.priority ?? 9) < ($1.priority ?? 9) }) { a in
                         HStack(alignment: .top, spacing: 12) {
                             // the priority as a filled badge: P1 is the brightest
-                            Text("\(a.priority ?? 0)").font(.system(.headline, design: .monospaced)).foregroundStyle(PLOS.bg(scheme))
+                            Text("\(a.priority ?? 0)").font(Font.pl(.headline, design: .monospaced)).foregroundStyle(PLOS.bg(scheme))
                                 .frame(width: 30, height: 30)
                                 .background(PLOS.gold.opacity(max(0.3, 1.0 - Double((a.priority ?? 1) - 1) * 0.14)), in: Circle())
                                 .accessibilityLabel("Priority \(a.priority ?? 0)")
                             VStack(alignment: .leading, spacing: 5) {
-                                Text(a.angle ?? "").font(.headline)
+                                Text(a.angle ?? "").font(Font.pl(.headline))
                                 if let h = a.hook { Text("“\(h)”").plHand(20, relativeTo: .callout) }
-                                if let pr = a.persona { Text(pr).font(.footnote).foregroundStyle(PLOS.dim(scheme)) }
+                                if let pr = a.persona { Text(pr).font(Font.pl(.footnote)).foregroundStyle(PLOS.dim(scheme)) }
                                 HStack(spacing: 6) {
                                     if let g = a.glyph { PLChip(word: g, tint: PLOS.gold) }
                                     if let c = a.doctrine_cluster { PLChip(word: c.replacingOccurrences(of: "-", with: " "), tint: PLOS.philosophy) }
@@ -392,9 +392,9 @@ struct TempoView: View {
                 } header: { Text("This week's angles\(w.strategy?.used_by_wave.map { " · \($0) waves used" } ?? "")") }.listRowBackground(OSRowBackground())
                 if let e = w.email {
                     Section {
-                        Text(e.subject ?? "").font(.headline)
+                        Text(e.subject ?? "").font(Font.pl(.headline))
                         PLStateDot(word: (e.status ?? "").capitalized, tint: e.status == "sent" ? PLOS.ok : (e.status == "approved" ? PLOS.gold : PLOS.warn), text: PLOS.text(scheme))
-                        if let p = preview?.body_text { Text(p).font(.callout).plReading().lineLimit(12) }
+                        if let p = preview?.body_text { Text(p).font(Font.pl(.callout)).plReading().lineLimit(12) }
                         HStack {
                             ConfirmButton(title: "Approve", question: "Approve this email to go out to the list?") { await act { try await Console.post("api/email/moderate", ["email_id": e.id, "action": "approve"], model: model); return "Approved." } }
                             Button("Hold") { Task { await act { try await Console.post("api/email/moderate", ["email_id": e.id, "action": "hold"], model: model); return "Held." } } }
@@ -409,7 +409,7 @@ struct TempoView: View {
             if let n = reel?.next {
                 Section {
                     PLBigTile(number: "\(reel?.remaining ?? 0)", label: "Reels left", tint: PLOS.gold, text: PLOS.text(scheme), dim: PLOS.dim(scheme)) {
-                        Image(systemName: "film.stack").font(.title).foregroundStyle(PLOS.goldDim(scheme))
+                        Image(systemName: "film.stack").font(Font.pl(.title)).foregroundStyle(PLOS.goldDim(scheme))
                     }
                     LabeledContent("Next reel", value: n.file ?? "")
                     if let c = n.collection { LabeledContent("From", value: c) }
@@ -481,9 +481,9 @@ struct FeedView: View {
                     HStack(spacing: 10) {
                         if let u = p.media_url.flatMap(URL.init(string:)) {
                             AsyncImage(url: u) { $0.resizable().scaledToFill() } placeholder: { Color.secondary.opacity(0.15) }
-                                .frame(width: 52, height: 52).clipShape(RoundedRectangle(cornerRadius: 8, style: .continuous))
+                                .frame(width: 52, height: 52).clipShape(RoundedRectangle(cornerRadius: 8 * PLStyle.radius, style: .continuous))
                         }
-                        VStack(alignment: .leading, spacing: 2) { Text(p.caption ?? "").lineLimit(3); Ago(text: p.created_at).font(.caption).foregroundStyle(.secondary) }
+                        VStack(alignment: .leading, spacing: 2) { Text(p.caption ?? "").lineLimit(3); Ago(text: p.created_at).font(Font.pl(.caption)).foregroundStyle(.secondary) }
                     }
                     .contextMenu { if p.feed_post_id != nil { Button("Change the picture", systemImage: "photo.on.rectangle") { swapping = p } } }
                     .swipeActions { if p.feed_post_id != nil { Button("Picture") { swapping = p }.tint(PLOS.gold) } }
@@ -537,7 +537,7 @@ struct DripView: View {
                     ForEach(days[day] ?? []) { r in
                     HStack(alignment: .top, spacing: 10) {
                         VStack(alignment: .leading, spacing: 2) {
-                            HStack { Text((r.platform ?? "").capitalized).font(.caption.bold()).foregroundStyle(PLOS.platform(r.platform)); Spacer(); Ago(text: r.publish_at).font(.caption) }.foregroundStyle(.secondary)
+                            HStack { Text((r.platform ?? "").capitalized).font(Font.pl(.caption).bold()).foregroundStyle(PLOS.platform(r.platform)); Spacer(); Ago(text: r.publish_at).font(Font.pl(.caption)) }.foregroundStyle(.secondary)
                             Text(r.caption ?? "").lineLimit(3)
                         }
                     }
@@ -565,13 +565,13 @@ struct VaultView: View {
                 else {
                     Section {
                         PLBigTile(number: "\(rows.count)", label: "Held back", tint: PLOS.warn, text: PLOS.text(scheme), dim: PLOS.dim(scheme)) {
-                            Text("\(rows.filter { $0.rewrite_caption != nil }.count) with a rewrite").font(.system(size: 11, design: .monospaced)).foregroundStyle(PLOS.dim(scheme))
+                            Text("\(rows.filter { $0.rewrite_caption != nil }.count) with a rewrite").font(Font.pl(size: 11, design: .monospaced)).foregroundStyle(PLOS.dim(scheme))
                         }
                     }.listRowBackground(OSRowBackground())
                 }
                 ForEach(rows) { r in
                     VStack(alignment: .leading, spacing: 6) {
-                        Text((r.platform ?? "").capitalized).font(.caption.bold()).foregroundStyle(PLOS.platform(r.platform))
+                        Text((r.platform ?? "").capitalized).font(Font.pl(.caption).bold()).foregroundStyle(PLOS.platform(r.platform))
                         Text(r.caption ?? "").lineLimit(5)
                         if let rw = r.rewrite_caption { Text("Rewrite: ").bold() + Text(rw) }
                         if let v = r.violations, !v.isEmpty { HStack(spacing: 5) { ForEach(v.prefix(3), id: \.self) { PLChip(word: $0, tint: PLOS.warn) } } }
@@ -611,10 +611,10 @@ struct ReachView: View {
                 } header: { Text("Last \(rows.count) posts") }.listRowBackground(OSRowBackground())
                 ForEach(rows) { r in
                     VStack(alignment: .leading, spacing: 4) {
-                        HStack(spacing: 6) { Text((r.channel ?? "").capitalized).font(.caption.bold()).foregroundStyle(PLOS.platform(r.channel)); Spacer(); Ago(text: r.sent_at).font(.caption) }.foregroundStyle(.secondary)
+                        HStack(spacing: 6) { Text((r.channel ?? "").capitalized).font(Font.pl(.caption).bold()).foregroundStyle(PLOS.platform(r.channel)); Spacer(); Ago(text: r.sent_at).font(Font.pl(.caption)) }.foregroundStyle(.secondary)
                         Text(r.caption_excerpt ?? "").lineLimit(2)
                         HStack(spacing: 14) { Label("\(r.reach ?? 0)", systemImage: "eye"); Label("\(r.likes ?? 0)", systemImage: "heart"); Label("\(r.comments ?? 0)", systemImage: "bubble.right") }
-                            .font(.caption.monospacedDigit())
+                            .font(Font.pl(.caption).monospacedDigit())
                     }
                     .padding(.horizontal, 6).padding(.vertical, 4)
                     .plBar(Double((r.reach ?? 0) + (r.likes ?? 0) + (r.comments ?? 0)), of: top, tint: PLOS.platform(r.channel))
@@ -658,18 +658,18 @@ struct OpportunityView: View {
                     VStack(alignment: .leading, spacing: 5) {
                         HStack(alignment: .firstTextBaseline, spacing: 8) {
                             Circle().fill(confidenceTone(l.confidence)).frame(width: 9, height: 9)
-                            Text(l.name ?? "").font(.headline)
+                            Text(l.name ?? "").font(Font.pl(.headline))
                             Spacer()
                             PLChip(word: l.status ?? "new", tint: statusTone(l.status ?? "new"))
                         }
-                        if let w = l.why_fits { Text(w).font(.callout) }
-                        if let t = l.what_it_takes { Text("Takes: \(t)").font(.caption).foregroundStyle(.secondary) }
+                        if let w = l.why_fits { Text(w).font(Font.pl(.callout)) }
+                        if let t = l.what_it_takes { Text("Takes: \(t)").font(Font.pl(.caption)).foregroundStyle(.secondary) }
                         HStack(spacing: 6) {
                             if let c = l.confidence { PLChip(word: String(c.prefix(18)), tint: confidenceTone(c)) }
                             if let d = l.deadline, !d.isEmpty { PLChip(word: "due " + d, tint: PLOS.warn) }
                             if let s = l.source_url.flatMap(URL.init(string:)) { Link("Source", destination: s) }
                         }
-                        .font(.caption)
+                        .font(Font.pl(.caption))
                     }
                     .swipeActions(edge: .trailing) {
                         Button("Pursue") { Task { await set(l, "pursued", reload) } }.tint(.green)
@@ -706,14 +706,14 @@ struct OutboundLeadsView: View {
               }
               ForEach(leads) { l in
                 VStack(alignment: .leading, spacing: 4) {
-                    Text(l.name ?? "").font(.headline)
+                    Text(l.name ?? "").font(Font.pl(.headline))
                     HStack(spacing: 5) {
                         if let s = l.stage { PLChip(word: s, tint: PLOS.gold) }
                         if let n = l.niche { PLChip(word: n, tint: PLOS.dim(scheme)) }
                         if let p = l.location { PLChip(word: p, tint: PLOS.dim(scheme)) }
                     }
-                    if let w = l.website, let u = URL(string: w.hasPrefix("http") ? w : "https://\(w)") { Link(w, destination: u).font(.caption) }
-                    if let o = l.opener { Text(o).font(.caption) }
+                    if let w = l.website, let u = URL(string: w.hasPrefix("http") ? w : "https://\(w)") { Link(w, destination: u).font(Font.pl(.caption)) }
+                    if let o = l.opener { Text(o).font(Font.pl(.caption)) }
                 }
               }
             }
@@ -760,9 +760,9 @@ struct PinterestView: View {
                             if let t = s.account?.account_type { PLChip(word: t, tint: PLOS.dim(scheme)) }
                         }
                     } else {
-                        Text("Pinterest refused the house's sign-in. Connect it again in pl-os on the laptop: Pinterest's sign-in returns to that page.").font(.footnote).foregroundStyle(.secondary)
+                        Text("Pinterest refused the house's sign-in. Connect it again in pl-os on the laptop: Pinterest's sign-in returns to that page.").font(Font.pl(.footnote)).foregroundStyle(.secondary)
                     }
-                    if let e = s.error { Label(e, systemImage: "exclamationmark.triangle").font(.footnote).foregroundStyle(PLOS.warn) }
+                    if let e = s.error { Label(e, systemImage: "exclamationmark.triangle").font(Font.pl(.footnote)).foregroundStyle(PLOS.warn) }
                 }.listRowBackground(OSRowBackground())
                 if s.connected == true {
                     Section {
@@ -770,8 +770,8 @@ struct PinterestView: View {
                         ForEach(s.queue ?? []) { r in
                             HStack(spacing: 12) {
                                 AsyncImage(url: r.media_url.flatMap(URL.init(string:))) { $0.resizable().scaledToFill() } placeholder: { Color.secondary.opacity(0.15) }
-                                    .frame(width: 52, height: 52).clipShape(RoundedRectangle(cornerRadius: 8, style: .continuous))
-                                Text(r.caption ?? "").font(.callout).lineLimit(3)
+                                    .frame(width: 52, height: 52).clipShape(RoundedRectangle(cornerRadius: 8 * PLStyle.radius, style: .continuous))
+                                Text(r.caption ?? "").font(Font.pl(.callout)).lineLimit(3)
                                 Spacer(minLength: 0)
                                 // a Pin is published by approving its draft (his tap), through the real publisher with its title, link and board
                                 Link("Approve", destination: URL(string: "pldev://section/house/approvals")!)
@@ -785,7 +785,7 @@ struct PinterestView: View {
                                 ForEach(s.pins ?? []) { p in
                                     Link(destination: URL(string: p.link ?? "") ?? URL(string: "https://www.pinterest.com")!) {
                                         AsyncImage(url: p.image.flatMap(URL.init(string:))) { $0.resizable().scaledToFill() } placeholder: { Color.secondary.opacity(0.15) }
-                                            .frame(width: 84, height: 84).clipShape(RoundedRectangle(cornerRadius: 8, style: .continuous))
+                                            .frame(width: 84, height: 84).clipShape(RoundedRectangle(cornerRadius: 8 * PLStyle.radius, style: .continuous))
                                     }
                                     .accessibilityLabel(p.description ?? "Pin")
                                 }

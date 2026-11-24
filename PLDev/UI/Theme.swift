@@ -84,6 +84,7 @@ enum PLText {
             let f = Font.custom(house, size: jostSize * scale, relativeTo: style)
             return w >= 600 ? f.bold() : f
         }
+        if face == "v2" { return .custom(PLFace.handV2, size: jostSize * scale, relativeTo: style) }
         if face == "jost" {
             let name = w >= 700 ? "Jost-Bold" : w >= 600 ? "Jost-Semi" : w >= 500 ? "Jost-Medium" : "Jost-Book"
             return .custom(name, size: jostSize * scale, relativeTo: style)
@@ -120,6 +121,8 @@ private struct PLFontModifier: ViewModifier {
         let scale = min(1.3, max(0.9, textSize / 100))
         if isTitle, let pack = ThemePack.shared.titleFont {
             content.font(text.packFont(pack, scale: scale))
+        } else if isTitle, let title = PLStyle.titleFont {
+            content.font(text.packFont(title, scale: scale))
         } else {
             content.font(text.font(face: face, scale: scale, bold: legibilityWeight == .bold, emphasized: emphasized))
         }
@@ -129,8 +132,7 @@ private struct PLFontModifier: ViewModifier {
 private struct GlassControl<S: Shape>: ViewModifier {
     let tint: Color?
     let shape: S
-    @AppStorage("pldev.glassBlur") private var glass = true
-    @AppStorage("pldev.glassClear") private var clear = false
+    @AppStorage("pldev.glass.card.style") private var style = ""
 
     init(tint: Color?, shape: S) {
         self.tint = tint
@@ -138,31 +140,54 @@ private struct GlassControl<S: Shape>: ViewModifier {
     }
 
     func body(content: Content) -> some View {
-        if glass {
-            content.glassEffect((clear ? Glass.clear : Glass.regular).tint(tint).interactive(), in: shape)
+        let s = style.isEmpty ? PLStyle.cardStyle : style
+        if s == "frosted" || s == "clear" {
+            content.glassEffect((s == "clear" ? Glass.clear : Glass.regular).tint(tint).interactive(), in: shape)
         } else {
-            content.background(tint ?? PLTone.plate, in: shape)   // glass switched off in Settings: a plain solid control
+            content.background(tint ?? PLTone.plate, in: shape)
         }
     }
 }
 
-/// Every glass surface (cards, tiles, bars, pills) reads the two Settings switches, the same as controls do: glass off = a plain solid
-/// surface, see-through on = Apple's clear glass instead of the regular one.
-private struct PLGlass<S: Shape>: ViewModifier {
+/// Every glass surface (cards, tiles, bars, pills) reads the Glass page: style, tint and see-through, with Home tiles set apart
+/// from cards (his ruling 11-24: "the full panel").
+struct PLSurface<S: Shape>: ViewModifier {
+    enum Part: String { case card, tile }
+    let part: Part
     let tint: Color?
     let interactive: Bool
     let shape: S
-    @AppStorage("pldev.glassBlur") private var glass = true
-    @AppStorage("pldev.glassClear") private var clear = false
-    @AppStorage("pldev.cardLine") private var line = false   // a theme's outlined cards (S353·7b1e)
+    @AppStorage private var style: String
+    @AppStorage private var amount: Double
+    @AppStorage private var through: Double
+    @Environment(\.colorScheme) private var scheme
+
+    init(part: Part, tint: Color?, interactive: Bool, shape: S) {
+        self.part = part
+        self.tint = tint
+        self.interactive = interactive
+        self.shape = shape
+        _style = AppStorage(wrappedValue: PLStyle.cardStyle, "pldev.glass.\(part.rawValue).style")
+        _amount = AppStorage(wrappedValue: part == .tile ? 0.45 : 0, "pldev.glass.\(part.rawValue).tint")
+        _through = AppStorage(wrappedValue: 0.5, "pldev.glass.\(part.rawValue).through")
+    }
 
     func body(content: Content) -> some View {
-        if glass {
-            content.glassEffect((clear ? Glass.clear : Glass.regular).tint(tint).interactive(interactive), in: shape)
-        } else if line {
-            content.background((tint ?? PLTone.plate).opacity(0.3), in: shape).overlay(shape.stroke(PLTone.accent.opacity(0.85), lineWidth: 1))
-        } else {
-            content.background(tint ?? PLTone.plate, in: shape)
+        let key = PLTone.accent
+        let surface = PLCarry.tone(.surface, scheme, Color(uiColor: .secondarySystemGroupedBackground))
+        let wash: Color? = tint ?? (amount > 0 ? key.opacity(amount * 0.6) : nil)
+        // see-through 0.5 and no tint = Apple's glass as it was; lower lays the card colour behind it
+        let backing = max(0, 0.5 - through) * 1.8
+        switch style {
+        case "clear":
+            content.glassEffect(Glass.clear.tint(wash).interactive(interactive), in: shape).background(surface.opacity(backing), in: shape)
+        case "solid":
+            content.background(wash ?? .clear, in: shape).background(surface.opacity(1 - through * 0.6), in: shape)
+        case "outline":
+            content.background(wash?.opacity(0.5) ?? .clear, in: shape).background(surface.opacity((1 - through) * 0.8), in: shape)
+                .overlay(shape.stroke(key.opacity(0.85), lineWidth: 1).allowsHitTesting(false))
+        default:
+            content.glassEffect(Glass.regular.tint(wash).interactive(interactive), in: shape).background(surface.opacity(backing), in: shape)
         }
     }
 }
@@ -170,7 +195,7 @@ private struct PLGlass<S: Shape>: ViewModifier {
 extension View {
     /// A glass surface that follows Settings (see-through, glass on or off). Use this, never `.glassEffect(.regular...)` directly.
     func plGlass<S: Shape>(tint: Color? = nil, interactive: Bool = false, in shape: S) -> some View {
-        modifier(PLGlass(tint: tint, interactive: interactive, shape: shape))
+        modifier(PLSurface(part: .card, tint: tint, interactive: interactive, shape: shape))
     }
 }
 

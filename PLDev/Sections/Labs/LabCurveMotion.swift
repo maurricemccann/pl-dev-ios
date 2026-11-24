@@ -19,7 +19,7 @@ struct LabCurveMotionView: View {
             LazyVStack(spacing: 0) {
                 VStack(spacing: 18) {
                     Text("Psyched Luxuries · Living Archive").gEyebrow(9).foregroundStyle(PLG.gold.opacity(0.5))
-                    Text("The Curve in Motion").font(.system(size: 40, design: .serif).italic()).foregroundStyle(Color(hex: 0xf5eed8)).multilineTextAlignment(.center)
+                    Text("The Curve in Motion").font(Font.pl(size: 40, design: .serif).italic()).foregroundStyle(Color(hex: 0xf5eed8)).multilineTextAlignment(.center)
                     Text("Seven years rendered in real time").gEyebrow(11).foregroundStyle(PLG.gold.opacity(0.4)).multilineTextAlignment(.center)
                 }
                 .padding(.horizontal, 32).padding(.top, 40).padding(.bottom, 44).frame(maxWidth: .infinity)
@@ -55,8 +55,8 @@ struct LabCurveMotionView: View {
                 .overlay(alignment: .bottom) {
                     if let label { Text(label).gEyebrow(9).foregroundStyle(labelTint).multilineTextAlignment(.center).padding(.bottom, 26).allowsHitTesting(false) }
                 }
-                .clipShape(RoundedRectangle(cornerRadius: 22, style: .continuous))
-                .overlay { RoundedRectangle(cornerRadius: 22, style: .continuous).strokeBorder(Color.white.opacity(0.15), lineWidth: 1) }
+                .clipShape(RoundedRectangle(cornerRadius: 22 * PLStyle.radius, style: .continuous))
+                .overlay { RoundedRectangle(cornerRadius: 22 * PLStyle.radius, style: .continuous).strokeBorder(Color.white.opacity(0.15), lineWidth: 1) }
                 .shadow(color: .black.opacity(0.4), radius: 14, y: 8)
                 .padding(.horizontal, 16).padding(.bottom, 32)
                 .onScrollVisibilityChange(threshold: 0.05) { v in if v { live.insert(n) } else { live.remove(n) } }
@@ -334,7 +334,7 @@ private final class CMTubes: @unchecked Sendable {
         var faces: [[GraphicsContext.ResolvedText]] = []
         if matrix {
             faces = Self.sizes.map { sz in
-                Self.chars.map { ch in gc.resolve(Text(String(ch)).font(.system(size: sz, design: .monospaced)).foregroundStyle(cmRGB(0, 255, 70))) }
+                Self.chars.map { ch in gc.resolve(Text(String(ch)).font(Font.pl(size: sz, design: .monospaced)).foregroundStyle(cmRGB(0, 255, 70))) }
             }
         }
 

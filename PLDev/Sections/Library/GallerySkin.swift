@@ -16,7 +16,7 @@ enum PLG {
     static let teal = Color(hex: 0x2d8a6e)     // a keep
     static let amber = Color(hex: 0xdb9314)    // a maybe
     static let orange = Color(hex: 0xd9702a)   // the ring on cloud batches and API renders
-    static let radius: CGFloat = 18
+    static var radius: CGFloat { 18 * PLStyle.radius }
 }
 
 /// The page ground: obsidian (or cream) with his curve tile faint over it.
@@ -24,8 +24,10 @@ struct GalleryGround: View {
     @Environment(\.colorScheme) private var scheme
     var body: some View {
         ZStack {
-            PLG.bg(scheme)
-            HouseGround().opacity(0.55).blendMode(scheme == .dark ? .screen : .multiply)
+            if PLStyle.themed { HouseGround() } else {
+                PLG.bg(scheme)
+                HouseGround().opacity(0.55).blendMode(scheme == .dark ? .screen : .multiply)
+            }
         }
         .ignoresSafeArea()
     }
@@ -44,7 +46,7 @@ struct GalleryCard: ViewModifier {
             .frame(maxWidth: .infinity, alignment: .leading)
             .background {
                 ZStack(alignment: .top) {
-                    shape.fill(PLG.surface(scheme).opacity(scheme == .dark ? 0.62 : 0.72))
+                    shape.fill(PLG.surface(scheme).opacity(PLStyle.themed ? 0 : scheme == .dark ? 0.62 : 0.72))
                     LinearGradient(colors: [.white.opacity(scheme == .dark ? 0.08 : 0.2), .clear], startPoint: .top, endPoint: .bottom)
                         .frame(maxHeight: .infinity, alignment: .top).mask(shape).allowsHitTesting(false)
                 }
@@ -59,7 +61,7 @@ extension View {
     /// The small gold label: caps in the sans, spaced 0.28 em.
     func gEyebrow(_ size: CGFloat = 10) -> some View { font(.system(size: size, weight: .medium)).textCase(.uppercase).tracking(size * 0.28) }
     /// The page title and card names: Cormorant italic (New York italic natively).
-    func gTitle(_ size: CGFloat = 34, relativeTo style: Font.TextStyle = .largeTitle) -> some View { font(.system(size: size, weight: .regular, design: .serif).italic()) }
+    func gTitle(_ size: CGFloat = 34, relativeTo style: Font.TextStyle = .largeTitle) -> some View { font(.plDisplay(size, relativeTo: style, or: .system(size: size, weight: .regular, design: .serif).italic())) }
     /// A figure or id in the instrument face.
     func gMono(_ size: CGFloat = 12) -> some View { font(.system(size: size, weight: .semibold, design: .monospaced)) }
     /// Gallery screens: the page ground, gold tint, lists see-through with glass rows, the nav bar kept quiet.
@@ -74,8 +76,8 @@ extension View {
 struct GalleryRowBG: View {
     @Environment(\.colorScheme) private var scheme
     var body: some View {
-        RoundedRectangle(cornerRadius: 14, style: .continuous).fill(PLG.surface(scheme).opacity(0.6))
-            .overlay { RoundedRectangle(cornerRadius: 14, style: .continuous).strokeBorder(PLG.line(scheme), lineWidth: 0.6) }
+        RoundedRectangle(cornerRadius: 14 * PLStyle.radius, style: .continuous).fill(PLG.surface(scheme).opacity(0.6))
+            .overlay { RoundedRectangle(cornerRadius: 14 * PLStyle.radius, style: .continuous).strokeBorder(PLG.line(scheme), lineWidth: 0.6) }
             .padding(.vertical, 2)
     }
 }
@@ -90,7 +92,7 @@ struct GalleryChip: View {
     var body: some View {
         HStack(spacing: 6) {
             Text(title).gEyebrow(10.5)
-            if let count { Text(count.formatted()).font(.system(size: 12, weight: .bold, design: .monospaced)).monospacedDigit() }
+            if let count { Text(count.formatted()).font(Font.pl(size: 12, weight: .bold, design: .monospaced)).monospacedDigit() }
         }
         .foregroundStyle(on ? Color(hex: 0x15120b) : (tint ?? PLG.dim(scheme)))
         .padding(.horizontal, 14).frame(minHeight: 40)

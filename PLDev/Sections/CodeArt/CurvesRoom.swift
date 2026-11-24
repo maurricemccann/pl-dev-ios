@@ -213,14 +213,14 @@ struct NativeCurvesRoom: View {
             if live { LivePieceView(pieceID: p.id, fps: 30).allowsHitTesting(false) }
             else if let u = p.still { AsyncImage(url: u) { $0.resizable().scaledToFill() } placeholder: { Color.clear } }
             else if let g = p.ground { Color(hex: g) ?? Color.secondary.opacity(0.12) }
-            Text(p.name).font(.system(size: 9, weight: .semibold)).tracking(0.5).foregroundStyle(.white).lineLimit(1)
+            Text(p.name).font(Font.pl(size: 9, weight: .semibold)).tracking(0.5).foregroundStyle(.white).lineLimit(1)
                 .padding(.horizontal, 6).padding(.vertical, 3).frame(maxWidth: .infinity)
                 .background(LinearGradient(colors: [.clear, .black.opacity(0.55)], startPoint: .top, endPoint: .bottom))
                 .frame(maxHeight: .infinity, alignment: .bottom)
             if likes.liked.contains(p.id) { Image(systemName: "heart.fill").foregroundStyle(.orange).padding(6) }
         }
         .aspectRatio(4.0 / 5.0, contentMode: .fit)
-        .clipShape(RoundedRectangle(cornerRadius: 8, style: .continuous))
+        .clipShape(RoundedRectangle(cornerRadius: 8 * PLStyle.radius, style: .continuous))
     }
 }
 
@@ -276,7 +276,7 @@ struct PieceStage: View {
                     }
                 }
                 ToolbarItem(placement: .bottomBar) { CodeArtSoundMenu(model: model) }
-                ToolbarItem(placement: .bottomBar) { Text("\(index + 1) of \(entries.count)").font(.caption).monospacedDigit() }
+                ToolbarItem(placement: .bottomBar) { Text("\(index + 1) of \(entries.count)").font(Font.pl(.caption)).monospacedDigit() }
             }
             .toolbarBackground(.visible, for: .bottomBar)
             .sheet(item: $shareItem) { CodeArtShareSheet(items: $0.items).presentationDetents([.medium, .large]) }

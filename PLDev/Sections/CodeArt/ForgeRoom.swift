@@ -66,10 +66,10 @@ struct ForgeBench: View {
                     else { ContentUnavailableView("Nothing running", systemImage: "scribble.variable", description: Text("Run the code to see it here.")) }
                 }
                 .aspectRatio(4.0 / 5.0, contentMode: .fit)
-                .clipShape(RoundedRectangle(cornerRadius: 14, style: .continuous))
+                .clipShape(RoundedRectangle(cornerRadius: 14 * PLStyle.radius, style: .continuous))
                 .listRowInsets(EdgeInsets())
                 .listRowBackground(Color.clear)
-                if let problem { Label(problem, systemImage: "exclamationmark.triangle").font(.footnote).foregroundStyle(.red) }
+                if let problem { Label(problem, systemImage: "exclamationmark.triangle").font(Font.pl(.footnote)).foregroundStyle(.red) }
             }
             Section("Describe it") {
                 TextField("A slow gold spiral that pulses on the beat", text: $prompt, axis: .vertical).lineLimit(1...4).focused($editing)
@@ -79,7 +79,7 @@ struct ForgeBench: View {
             }
             Section("The code") {
                 TextEditor(text: $code)
-                    .font(.system(size: 12, design: .monospaced))
+                    .font(Font.pl(size: 12, design: .monospaced))
                     .frame(minHeight: 240)
                     .scrollContentBackground(.hidden)
                     .focused($editing)

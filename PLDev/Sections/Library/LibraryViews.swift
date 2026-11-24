@@ -161,10 +161,10 @@ struct LibraryView: View {
             filters
             if let t = tagFilter { renameRow(t) }
             ResultLine(text: line)
-            Text("\(total.formatted()) shown · orange ring = cloud batch or API render").font(.system(size: 11)).foregroundStyle(PLG.dim(scheme))
+            Text("\(total.formatted()) shown · orange ring = cloud batch or API render").font(Font.pl(size: 11)).foregroundStyle(PLG.dim(scheme))
             if total == 0, !data.items.isEmpty {
                 Text("Nothing here under these filters. \(verdict == .unmarked ? "Every item in this scope has a verdict. Pick a batch above, or All." : "")")
-                    .font(.footnote).foregroundStyle(PLG.dim(scheme))
+                    .font(Font.pl(.footnote)).foregroundStyle(PLG.dim(scheme))
             }
         }
         .padding(.horizontal, 16).padding(.top, 4)
@@ -190,7 +190,7 @@ struct LibraryView: View {
                                     Text("\(c[.maybe] ?? 0)~").foregroundStyle(PLG.amber)
                                     Text("\(c[.cut] ?? 0)✕").foregroundStyle(PLG.red)
                                 }
-                                .font(.system(size: 11, weight: .semibold, design: .monospaced)).monospacedDigit()
+                                .font(Font.pl(size: 11, weight: .semibold, design: .monospaced)).monospacedDigit()
                             }
                             .gCard(padding: 12, radius: 18, active: batch == b).fixedSize()
                         }
@@ -271,7 +271,7 @@ struct LibraryView: View {
 
     private func chipMenu<C: View>(_ title: String, @ViewBuilder content: () -> C) -> some View {
         Menu { content() } label: {
-            HStack(spacing: 6) { Text(title).font(.system(size: 14, weight: .medium)); Image(systemName: "chevron.down").font(.caption2) }
+            HStack(spacing: 6) { Text(title).font(Font.pl(size: 14, weight: .medium)); Image(systemName: "chevron.down").font(Font.pl(.caption2)) }
                 .foregroundStyle(PLG.ink(scheme)).padding(.horizontal, 14).frame(minHeight: 44)
                 .overlay { Capsule().strokeBorder(PLG.gold.opacity(0.45), lineWidth: 0.9) }
         }
@@ -306,9 +306,9 @@ struct LibraryView: View {
         return Button { if selecting { tapSel(it.vault_id, n: n) } else { open = it } } label: {
             Tile(item: it, mark: m, url: data.media(it, model: model).still)
                 .overlay(alignment: .topLeading) {
-                    if selecting { Image(systemName: picked.contains(it.vault_id) ? "checkmark.circle.fill" : "circle").font(.title3).foregroundStyle(.white, picked.contains(it.vault_id) ? Color.accentColor : .black.opacity(0.3)).padding(6) }
+                    if selecting { Image(systemName: picked.contains(it.vault_id) ? "checkmark.circle.fill" : "circle").font(Font.pl(.title3)).foregroundStyle(.white, picked.contains(it.vault_id) ? Color.accentColor : .black.opacity(0.3)).padding(6) }
                 }
-                .overlay { if picked.contains(it.vault_id) { RoundedRectangle(cornerRadius: 14, style: .continuous).strokeBorder(PLG.ink(scheme), lineWidth: 3) } }
+                .overlay { if picked.contains(it.vault_id) { RoundedRectangle(cornerRadius: 14 * PLStyle.radius, style: .continuous).strokeBorder(PLG.ink(scheme), lineWidth: 3) } }
         }
         .buttonStyle(.plain)
         .accessibilityLabel("\(it.name ?? it.item_id), \(Verdict.of(m).rawValue)")
@@ -321,11 +321,11 @@ struct LibraryView: View {
         let tags = (data.tags[it.vault_id] ?? []).map { "#" + $0 }
         let meta = ([it.class, it.source ?? "", data.batchOf[it.vault_id].map(libFmtBatch) ?? ""] + tags).filter { !$0.isEmpty }.joined(separator: " · ")
         return HStack(spacing: 10) {
-            if selecting { Image(systemName: picked.contains(it.vault_id) ? "checkmark.circle.fill" : "circle").font(.title3).foregroundStyle(picked.contains(it.vault_id) ? PLG.gold : PLG.dim(scheme)) }
+            if selecting { Image(systemName: picked.contains(it.vault_id) ? "checkmark.circle.fill" : "circle").font(Font.pl(.title3)).foregroundStyle(picked.contains(it.vault_id) ? PLG.gold : PLG.dim(scheme)) }
             Tile(item: it, mark: m, url: data.media(it, model: model).still).frame(width: 44, height: 55)
             VStack(alignment: .leading, spacing: 2) {
                 Text(it.name ?? it.item_id).gTitle(16).foregroundStyle(PLG.ink(scheme)).lineLimit(1)
-                Text(meta).font(.system(size: 10.5, design: .monospaced)).foregroundStyle(PLG.dim(scheme)).lineLimit(1)
+                Text(meta).font(Font.pl(size: 10.5, design: .monospaced)).foregroundStyle(PLG.dim(scheme)).lineLimit(1)
             }
             Spacer(minLength: 0)
             if !selecting { VerdictButtons(v: v, size: 40) { w in Task { await apply([it.vault_id], w) } } }
@@ -390,7 +390,7 @@ struct LibraryView: View {
 
     private func bulk(_ w: String, _ symbol: String, _ tint: Color?, _ label: String) -> some View {
         Button { let ids = Array(picked); Task { await apply(ids, w); picked.removeAll() } } label: {
-            VStack(spacing: 1) { Image(systemName: symbol); Text(label).font(.system(size: 9, weight: .semibold)) }
+            VStack(spacing: 1) { Image(systemName: symbol); Text(label).font(Font.pl(size: 9, weight: .semibold)) }
         }
             .tint(tint).disabled(picked.isEmpty).accessibilityLabel(label)
     }
@@ -497,7 +497,7 @@ struct Tile: View {
         ZStack(alignment: .topTrailing) {
             Color(hex: 0x1a1610)
             if let url { AsyncImage(url: url) { $0.resizable().scaledToFill() } placeholder: { Color.clear } }
-            else { Text(item.name ?? item.vault_id).font(.caption2).padding(4) }
+            else { Text(item.name ?? item.vault_id).font(Font.pl(.caption2)).padding(4) }
         }
         .overlay(alignment: .bottomTrailing) {
             Circle().fill(Verdict.of(mark).tint ?? PLG.dim(.dark)).frame(width: 12, height: 12).opacity(mark == nil ? 0.35 : 1)
@@ -505,17 +505,17 @@ struct Tile: View {
         }
         .overlay(alignment: .topLeading) {
             if item.class == "cinematic" || item.class == "code-piece" {
-                Image(systemName: "play.fill").font(.system(size: 9, weight: .bold)).foregroundStyle(.white).padding(5).background(.black.opacity(0.5), in: RoundedRectangle(cornerRadius: 4)).padding(5)
+                Image(systemName: "play.fill").font(Font.pl(size: 9, weight: .bold)).foregroundStyle(.white).padding(5).background(.black.opacity(0.5), in: RoundedRectangle(cornerRadius: 4 * PLStyle.radius)).padding(5)
             }
         }
         .overlay(alignment: .bottomLeading) {
-            Text(item.name ?? item.vault_id).font(.system(size: 9, weight: .semibold)).tracking(0.5).foregroundStyle(.white)
+            Text(item.name ?? item.vault_id).font(Font.pl(size: 9, weight: .semibold)).tracking(0.5).foregroundStyle(.white)
                 .lineLimit(1).truncationMode(.middle)   // names share their start (pl-short-his-...): keep the end that tells them apart (Gemini review, checked 11-13)
                 .padding(.leading, 6).padding(.trailing, 26).padding(.vertical, 3)
         }
         .aspectRatio(4.0 / 5.0, contentMode: .fit)
-        .clipShape(RoundedRectangle(cornerRadius: 14, style: .continuous))
-        .overlay(RoundedRectangle(cornerRadius: 14, style: .continuous).strokeBorder(item.source == "cloud-batch" || item.source == "on-model" ? PLG.orange : PLG.gold.opacity(0.22), lineWidth: item.source == "cloud-batch" || item.source == "on-model" ? 2 : 0.8))
+        .clipShape(RoundedRectangle(cornerRadius: 14 * PLStyle.radius, style: .continuous))
+        .overlay(RoundedRectangle(cornerRadius: 14 * PLStyle.radius, style: .continuous).strokeBorder(item.source == "cloud-batch" || item.source == "on-model" ? PLG.orange : PLG.gold.opacity(0.22), lineWidth: item.source == "cloud-batch" || item.source == "on-model" ? 2 : 0.8))
     }
 }
 
@@ -634,7 +634,7 @@ struct PieceViewer: View {
             else if let s = m.still { AsyncImage(url: s) { $0.resizable().scaledToFit() } placeholder: { PLLoader() } }
             else { Text(it.name ?? it.vault_id).foregroundStyle(PLG.dim(scheme)) }
         }
-        .clipShape(RoundedRectangle(cornerRadius: 14, style: .continuous))
+        .clipShape(RoundedRectangle(cornerRadius: 14 * PLStyle.radius, style: .continuous))
         .padding(.horizontal, 12)
     }
 
@@ -653,7 +653,7 @@ struct PieceViewer: View {
                     if ringed { Text(it.source == "cloud-batch" ? "Cloud batch" : "API render").gEyebrow(10.5).foregroundStyle(PLG.orange) }
                     Text(it.name ?? it.item_id).gTitle(19).foregroundStyle(PLG.ink(scheme)).lineLimit(1)
                     Text(([it.item_id, it.class, it.source ?? "", data.batchOf[it.vault_id].map(libFmtBatch) ?? "", v.rawValue] + (data.tags[it.vault_id] ?? []).map { "#" + $0 }).filter { !$0.isEmpty }.joined(separator: " · "))
-                        .font(.system(size: 10.5, design: .monospaced)).foregroundStyle(PLG.dim(scheme)).lineLimit(2).multilineTextAlignment(.center)
+                        .font(Font.pl(size: 10.5, design: .monospaced)).foregroundStyle(PLG.dim(scheme)).lineLimit(2).multilineTextAlignment(.center)
                 }
             }
             VerdictButtons(v: v, size: 56) { w in Task { await set(w) } }

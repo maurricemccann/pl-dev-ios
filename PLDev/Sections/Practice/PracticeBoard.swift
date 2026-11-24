@@ -30,7 +30,7 @@ struct VisionBoardCard: View {
             WrapLayout(spacing: 6) {
                 ForEach(Self.sources, id: \.0) { s in CandleChip(title: s.1, on: source == s.0) { source = s.0 } }
                 PhotosPicker(selection: $photo, matching: .images) {
-                    Text(uploading ? "adding\u{2026}" : "+ your own").font(.system(size: 13.5)).foregroundStyle(Candle.ink).padding(.horizontal, 15).frame(minHeight: 36)
+                    Text(uploading ? "adding\u{2026}" : "+ your own").font(Font.pl(size: 13.5)).foregroundStyle(Candle.ink).padding(.horizontal, 15).frame(minHeight: 36)
                         .overlay { Capsule().strokeBorder(Candle.pillLine, lineWidth: 1) }.opacity(0.6)
                 }
                 .disabled(uploading)
@@ -44,8 +44,8 @@ struct VisionBoardCard: View {
                         Button { Task { await toggle(c.url, c.alt) } } label: {
                             Color.clear.frame(height: 100)
                                 .overlay { AsyncImage(url: Practice.imageURL(c.url, model: model)) { $0.resizable().scaledToFill() } placeholder: { Candle.field } }
-                                .clipShape(RoundedRectangle(cornerRadius: 6, style: .continuous))
-                                .overlay { RoundedRectangle(cornerRadius: 6, style: .continuous).strokeBorder(c.pinned ? Candle.gold : .clear, lineWidth: 2) }
+                                .clipShape(RoundedRectangle(cornerRadius: 6 * PLStyle.radius, style: .continuous))
+                                .overlay { RoundedRectangle(cornerRadius: 6 * PLStyle.radius, style: .continuous).strokeBorder(c.pinned ? Candle.gold : .clear, lineWidth: 2) }
                         }
                         .buttonStyle(.plain)
                         .accessibilityLabel("\(c.alt.isEmpty ? "Picture" : c.alt), \(c.pinned ? "chosen, tap to let go" : "tap to choose")")

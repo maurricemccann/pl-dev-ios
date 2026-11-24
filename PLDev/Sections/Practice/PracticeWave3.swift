@@ -26,7 +26,7 @@ struct CurveFieldGame: View {
                             ctx.stroke(rig.path(i), with: .color(i % 2 == 0 ? Candle.gold : Candle.goldHi.opacity(0.7)), style: StrokeStyle(lineWidth: 22, lineCap: .round))
                         }
                         for k in found.sorted() where k < hidden.count {
-                            ctx.draw(Text(hidden[k].text).font(.system(size: 14, design: .serif)).foregroundStyle(Candle.ink), at: hidden[k].at)
+                            ctx.draw(Text(hidden[k].text).font(Font.pl(size: 14, design: .serif)).foregroundStyle(Candle.ink), at: hidden[k].at)
                         }
                     }
                 }
@@ -76,7 +76,7 @@ struct ApostleLayer: View {
                 } else {
                     Text("Played: " + played.map(\.title).joined(separator: ", ")).candleHint()
                     if let draft {
-                        Text(draft).font(.system(size: 19, design: .serif)).foregroundStyle(Candle.ink).candleCard()
+                        Text(draft).font(Font.pl(size: 19, design: .serif)).foregroundStyle(Candle.ink).candleCard()
                         HStack {
                             Button("Keep it") { kept.insert(draft, at: 0); UserDefaults.standard.set(kept, forKey: "apostle.kept"); self.draft = nil; ArcadeScores.offer(.apostle, kept.count) }.buttonStyle(CandleButton())
                             Button("Let it go") { self.draft = nil }.buttonStyle(CandleButton())
@@ -88,7 +88,7 @@ struct ApostleLayer: View {
                 }
                 if !kept.isEmpty {
                     Text("Kept").candleH2().padding(.top, 8)
-                    ForEach(kept, id: \.self) { Text($0).font(.system(size: 15, design: .serif)).foregroundStyle(Candle.ink.opacity(0.85)) }
+                    ForEach(kept, id: \.self) { Text($0).font(Font.pl(size: 15, design: .serif)).foregroundStyle(Candle.ink.opacity(0.85)) }
                 }
             }
             .padding(20)

@@ -98,10 +98,10 @@ struct NativeBrushSheet: View {
                 if let ui = NativeBrushPreview.image(b, color: UIColor(canvas.color).hex, color2: UIColor(canvas.color2).hex) { Image(uiImage: ui).resizable().scaledToFit() } else { Color.clear }
             }
             .frame(width: 150, height: 40)
-            .background(Color(.secondarySystemGroupedBackground).opacity(0.6), in: RoundedRectangle(cornerRadius: 8, style: .continuous))
+            .background(Color(.secondarySystemGroupedBackground).opacity(0.6), in: RoundedRectangle(cornerRadius: 8 * PLStyle.radius, style: .continuous))
             VStack(alignment: .leading, spacing: 2) {
                 Text(b.name).foregroundStyle(.primary)
-                if let n = b.note { Text(n).font(.caption2).foregroundStyle(.secondary).lineLimit(2) }
+                if let n = b.note { Text(n).font(Font.pl(.caption2)).foregroundStyle(.secondary).lineLimit(2) }
             }
             Spacer(minLength: 0)
             if b.id == canvas.brush.id { Image(systemName: "checkmark").foregroundStyle(Wallpaper.line) }
@@ -196,7 +196,7 @@ struct NativeStudioSheet: View {
                             preview = NativeBrushPreview.image(B, color: UIColor(canvas.color).hex, color2: UIColor(canvas.color2).hex, size: canvas.size, w: 600, h: 140, cached: false)
                         }
                     TextField("Name", text: $name)
-                    if let n = B.note { Text(n).font(.footnote).foregroundStyle(.secondary) }
+                    if let n = B.note { Text(n).font(Font.pl(.footnote)).foregroundStyle(.secondary) }
                 }
                 ForEach(groups, id: \.0) { g in
                     Section(g.0) { ForEach(g.1, id: \.self) { control($0) } }
@@ -218,7 +218,7 @@ struct NativeStudioSheet: View {
     @ViewBuilder private func control(_ key: String) -> some View {
         if let p = NativeToolkit.params.first(where: { $0.key == key }) {
             VStack(alignment: .leading, spacing: 2) {
-                HStack { Text(label(key)).font(.subheadline); Spacer(); Text(format(B.n(key), p)).font(.caption).monospacedDigit().foregroundStyle(.secondary) }
+                HStack { Text(label(key)).font(Font.pl(.subheadline)); Spacer(); Text(format(B.n(key), p)).font(Font.pl(.caption)).monospacedDigit().foregroundStyle(.secondary) }
                 Slider(value: Binding(get: { B.n(key) }, set: { edited = B.setting(key, ($0 / p.step).rounded() * p.step) }), in: p.min...p.max)
             }
         } else if let c = NativeToolkit.choices.first(where: { $0.key == key }) {
@@ -226,7 +226,7 @@ struct NativeStudioSheet: View {
         } else if key == "color" || key == "color2" || key == "gapFillColor" || key == "channelColor" || key == "channel2Color" {
             let hex = B.t(key)
             HStack {
-                Text(label(key)).font(.subheadline); Spacer()
+                Text(label(key)).font(Font.pl(.subheadline)); Spacer()
                 ColorPicker("", selection: Binding(get: { Hex.rgb(hex).map { Color(red: $0.0, green: $0.1, blue: $0.2) } ?? .clear }, set: { edited = B.setting(key, UIColor($0).hex) }), supportsOpacity: false).labelsHidden()
                 if !hex.isEmpty { Button { edited = B.setting(key, "") } label: { Image(systemName: "xmark.circle") }.buttonStyle(.plain) }
             }

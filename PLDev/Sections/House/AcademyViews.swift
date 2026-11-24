@@ -120,7 +120,7 @@ struct AcademyView: View {
                     }
                     Spacer()
                     Text(live == nil ? "…" : live == true ? "\u{25CF} live" : "\u{25CB} unreachable")
-                        .font(.system(size: 11, design: .monospaced))
+                        .font(Font.pl(size: 11, design: .monospaced))
                         .foregroundStyle(live == true ? Color(hex: 0xa8d4a0) : live == false ? Color(hex: 0xc98a8a) : PLOS.dim(scheme))
                 }
                 .osCard(padding: 14)
@@ -140,14 +140,14 @@ struct AcademyView: View {
                         let done = docs.filter { Academy.read[$0.key] != nil }.count
                         NavigationLink { AcademySectionView(section: sections.first { $0.id == s.id }, fallbackTitle: s.title).osScreen() } label: {
                             HStack(alignment: .top, spacing: 14) {
-                                Text(s.roman).font(.system(size: 11, design: .monospaced)).foregroundStyle(PLOS.dim(scheme)).frame(width: 26, alignment: .leading).padding(.top, 2)
+                                Text(s.roman).font(Font.pl(size: 11, design: .monospaced)).foregroundStyle(PLOS.dim(scheme)).frame(width: 26, alignment: .leading).padding(.top, 2)
                                 VStack(alignment: .leading, spacing: 3) {
-                                    Text(s.title).font(.subheadline).foregroundStyle(PLOS.text(scheme))
-                                    Text(s.blurb).font(.system(size: 11, design: .monospaced)).foregroundStyle(PLOS.dim(scheme)).multilineTextAlignment(.leading)
+                                    Text(s.title).font(Font.pl(.subheadline)).foregroundStyle(PLOS.text(scheme))
+                                    Text(s.blurb).font(Font.pl(size: 11, design: .monospaced)).foregroundStyle(PLOS.dim(scheme)).multilineTextAlignment(.leading)
                                     if !docs.isEmpty { Text("\(done) of \(docs.count) absorbed").osEyebrow(9).foregroundStyle(PLOS.goldDim(scheme)).padding(.top, 2) }
                                 }
                                 Spacer(minLength: 0)
-                                Image(systemName: "chevron.right").font(.caption2.weight(.bold)).foregroundStyle(PLOS.goldDim(scheme)).padding(.top, 4)
+                                Image(systemName: "chevron.right").font(Font.pl(.caption2).weight(.bold)).foregroundStyle(PLOS.goldDim(scheme)).padding(.top, 4)
                             }
                             .osCard(padding: 14)
                         }
@@ -155,7 +155,7 @@ struct AcademyView: View {
                     }
                 }
                 HStack {
-                    Text("pl-academy.psychedluxuries.workers.dev").font(.system(size: 10, design: .monospaced)).foregroundStyle(PLOS.dim(scheme)).opacity(0.6)
+                    Text("pl-academy.psychedluxuries.workers.dev").font(Font.pl(size: 10, design: .monospaced)).foregroundStyle(PLOS.dim(scheme)).opacity(0.6)
                     Spacer()
                     Text("Watch this.").plHand(18, relativeTo: .callout).foregroundStyle(PLOS.goldDim(scheme))
                 }
@@ -179,9 +179,9 @@ struct AcademyView: View {
     private func room<D: View>(_ title: String, _ sub: String, _ symbol: String, @ViewBuilder _ dest: @escaping () -> D) -> some View {
         NavigationLink { dest().osScreen() } label: {
             VStack(alignment: .leading, spacing: 6) {
-                Image(systemName: symbol).font(.title3).foregroundStyle(PLOS.gold)
+                Image(systemName: symbol).font(Font.pl(.title3)).foregroundStyle(PLOS.gold)
                 Text(title).osEyebrow(11).foregroundStyle(PLOS.text(scheme))
-                Text(sub).font(.system(size: 11)).foregroundStyle(PLOS.dim(scheme)).multilineTextAlignment(.leading)
+                Text(sub).font(Font.pl(size: 11)).foregroundStyle(PLOS.dim(scheme)).multilineTextAlignment(.leading)
             }
             .frame(maxWidth: .infinity, alignment: .leading).osCard(padding: 12)
         }
@@ -211,7 +211,7 @@ struct AcademyCanonView: View {
                 ForEach(sections) { s in
                     VStack(alignment: .leading, spacing: 8) {
                         Text(s.title).osEyebrow(12).foregroundStyle(PLOS.gold)
-                        Text(s.blurb).font(.system(.callout, design: .serif).italic()).foregroundStyle(PLOS.dim(scheme))
+                        Text(s.blurb).font(Font.pl(.callout, design: .serif).italic()).foregroundStyle(PLOS.dim(scheme))
                         ForEach(s.docs) { d in docRow(d, section: s) }
                         ClaimRow(section: s, email: email)
                     }
@@ -233,13 +233,13 @@ struct AcademyCanonView: View {
                     Button("Link") { let v = draft.trimmingCharacters(in: .whitespaces).lowercased(); if v.contains("@") { email = v; Academy.email = v } }
                         .buttonStyle(OSPill())
                 }
-                .padding(12).background(PLOS.surface2(scheme).opacity(0.4), in: RoundedRectangle(cornerRadius: 12, style: .continuous))
-                Text("Track your climb: link the email you use on the site.").font(.footnote).foregroundStyle(PLOS.dim(scheme))
+                .padding(12).background(PLOS.surface2(scheme).opacity(0.4), in: RoundedRectangle(cornerRadius: 12 * PLStyle.radius, style: .continuous))
+                Text("Track your climb: link the email you use on the site.").font(Font.pl(.footnote)).foregroundStyle(PLOS.dim(scheme))
             } else {
                 HStack {
-                    Text("Climb tracked · \(email)").font(.footnote).foregroundStyle(PLOS.dim(scheme))
+                    Text("Climb tracked · \(email)").font(Font.pl(.footnote)).foregroundStyle(PLOS.dim(scheme))
                     Spacer()
-                    Button("Change") { email = ""; Academy.email = "" }.font(.footnote)
+                    Button("Change") { email = ""; Academy.email = "" }.font(Font.pl(.footnote))
                 }
             }
         }
@@ -248,8 +248,8 @@ struct AcademyCanonView: View {
     private func docRow(_ d: AcademyHTML.Doc, section: AcademyHTML.Section) -> some View {
         NavigationLink { AcademyReaderView(doc: d, sectionTitle: section.title).osScreen() } label: {
             HStack(spacing: 12) {
-                Text("\u{25C6}").foregroundStyle(Academy.read[d.key] != nil ? PLOS.gold : PLOS.line(scheme)).font(.footnote)
-                Text(d.name).font(.system(.body, design: .serif)).foregroundStyle(PLOS.text(scheme)).multilineTextAlignment(.leading)
+                Text("\u{25C6}").foregroundStyle(Academy.read[d.key] != nil ? PLOS.gold : PLOS.line(scheme)).font(Font.pl(.footnote))
+                Text(d.name).font(Font.pl(.body, design: .serif)).foregroundStyle(PLOS.text(scheme)).multilineTextAlignment(.leading)
                 Spacer(minLength: 0)
             }
             .frame(minHeight: 44).contentShape(Rectangle())
@@ -276,7 +276,7 @@ struct ClaimRow: View {
                 } label: { Text(claimed || Academy.claimed[section.id] == true ? "Absorbed \u{25C6}" : busy ? "…" : "\u{25C6} Claim 200 pts") }
                     .buttonStyle(OSPill())
                     .disabled(busy || claimed || Academy.claimed[section.id] == true)
-                Text(Academy.claimed[section.id] == true && note.isEmpty ? "200 pts earned" : note).font(.footnote).foregroundStyle(PLOS.dim(scheme))
+                Text(Academy.claimed[section.id] == true && note.isEmpty ? "200 pts earned" : note).font(Font.pl(.footnote)).foregroundStyle(PLOS.dim(scheme))
             }
             .sensoryFeedback(PLHaptic.success, trigger: claimed)
         }
@@ -324,7 +324,7 @@ struct AcademyReaderView: View {
                     if absorbed { Text("Absorbed \u{25C6}").osEyebrow(10).foregroundStyle(PLOS.gold) }
                 }
                 .sensoryFeedback(PLHaptic.success, trigger: absorbed)
-                Text(doc.name).font(.system(.title, design: .serif)).foregroundStyle(PLOS.text(scheme))
+                Text(doc.name).font(Font.pl(.title, design: .serif)).foregroundStyle(PLOS.text(scheme))
                 if let blocks {
                     ForEach(Array(blocks.enumerated()), id: \.offset) { _, b in block(b) }
                     Button(absorbed ? "Absorbed \u{25C6}" : "Mark absorbed") { Academy.toggleRead(doc.key); absorbed.toggle() }
@@ -353,20 +353,20 @@ struct AcademyReaderView: View {
     @ViewBuilder private func block(_ b: AcademyBlock) -> some View {
         switch b {
         case .heading(let level, let t):
-            let ruled = Text(md(t)).font(.system(level <= 1 ? .title2 : level == 2 ? .title3 : .headline, design: .serif))
+            let ruled = Text(md(t)).font(Font.pl(level <= 1 ? .title2 : level == 2 ? .title3 : .headline, design: .serif))
             ruled.foregroundStyle(level == 2 ? PLOS.gold : PLOS.text(scheme)).padding(.top, level <= 2 ? 10 : 4)
-        case .para(let t): Text(md(t)).font(.system(.body, design: .serif)).foregroundStyle(PLOS.text(scheme)).plReading().textSelection(.enabled)
+        case .para(let t): Text(md(t)).font(Font.pl(.body, design: .serif)).foregroundStyle(PLOS.text(scheme)).plReading().textSelection(.enabled)
         case .quote(let t):
-            Text(md(t)).font(.system(.body, design: .serif).italic()).foregroundStyle(PLOS.dim(scheme)).plReading()
+            Text(md(t)).font(Font.pl(.body, design: .serif).italic()).foregroundStyle(PLOS.dim(scheme)).plReading()
                 .padding(.leading, 12).overlay(alignment: .leading) { Rectangle().fill(PLOS.goldDim(scheme)).frame(width: 2) }.textSelection(.enabled)
         case .item(let t, let depth, let mark):
             HStack(alignment: .firstTextBaseline, spacing: 8) {
-                Text(mark).font(.system(.body, design: .serif)).foregroundStyle(PLOS.goldDim(scheme)).frame(width: 22, alignment: .trailing)
-                Text(md(t)).font(.system(.body, design: .serif)).foregroundStyle(PLOS.text(scheme)).plReading().textSelection(.enabled)
+                Text(mark).font(Font.pl(.body, design: .serif)).foregroundStyle(PLOS.goldDim(scheme)).frame(width: 22, alignment: .trailing)
+                Text(md(t)).font(Font.pl(.body, design: .serif)).foregroundStyle(PLOS.text(scheme)).plReading().textSelection(.enabled)
             }.padding(.leading, CGFloat(depth) * 16)
         case .code(let t):
-            ScrollView(.horizontal) { Text(t).font(.system(size: 12, design: .monospaced)).foregroundStyle(PLOS.text(scheme)).padding(12) }
-                .background(PLOS.surface2(scheme), in: RoundedRectangle(cornerRadius: 8, style: .continuous))
+            ScrollView(.horizontal) { Text(t).font(Font.pl(size: 12, design: .monospaced)).foregroundStyle(PLOS.text(scheme)).padding(12) }
+                .background(PLOS.surface2(scheme), in: RoundedRectangle(cornerRadius: 8 * PLStyle.radius, style: .continuous))
         case .rule: Rectangle().fill(PLOS.line(scheme)).frame(height: 1).padding(.vertical, 8)
         case .table(let rows):
             ScrollView(.horizontal) {
@@ -374,7 +374,7 @@ struct AcademyReaderView: View {
                     ForEach(Array(rows.enumerated()), id: \.offset) { i, r in
                         HStack(alignment: .top, spacing: 0) {
                             ForEach(Array(r.enumerated()), id: \.offset) { _, c in
-                                Text(md(c)).font(.system(size: 14, design: .serif)).foregroundStyle(i == 0 ? PLOS.gold : PLOS.text(scheme))
+                                Text(md(c)).font(Font.pl(size: 14, design: .serif)).foregroundStyle(i == 0 ? PLOS.gold : PLOS.text(scheme))
                                     .frame(width: 150, alignment: .leading).padding(8)
                                     .overlay { Rectangle().strokeBorder(PLOS.line(scheme), lineWidth: 0.5) }
                             }
@@ -398,12 +398,12 @@ struct AcademyOracleView: View {
     var body: some View {
         ScrollView {
             VStack(alignment: .leading, spacing: 14) {
-                Text("Ask the canon anything. Answers come from the True Codex and the staged brand knowledge.").font(.system(.callout, design: .serif)).foregroundStyle(PLOS.dim(scheme))
+                Text("Ask the canon anything. Answers come from the True Codex and the staged brand knowledge.").font(Font.pl(.callout, design: .serif)).foregroundStyle(PLOS.dim(scheme))
                 ForEach(turns) { t in
                     VStack(alignment: .leading, spacing: 4) {
                         Text(t.you ? "You" : "Oracle").osEyebrow(9).foregroundStyle(t.you ? PLOS.dim(scheme) : PLOS.gold)
-                        Text(t.text).font(.system(.body, design: .serif)).foregroundStyle(PLOS.text(scheme)).plReading().textSelection(.enabled)
-                        if let s = t.sources { Text(s).font(.system(size: 11)).foregroundStyle(PLOS.dim(scheme)) }
+                        Text(t.text).font(Font.pl(.body, design: .serif)).foregroundStyle(PLOS.text(scheme)).plReading().textSelection(.enabled)
+                        if let s = t.sources { Text(s).font(Font.pl(size: 11)).foregroundStyle(PLOS.dim(scheme)) }
                     }
                 }
                 if busy { PLLoader() }
@@ -413,7 +413,7 @@ struct AcademyOracleView: View {
         .safeAreaInset(edge: .bottom) {
             HStack {
                 TextField("Ask the doctrine…", text: $q, axis: .vertical).lineLimit(1...4).textFieldStyle(.roundedBorder).submitLabel(.send).onSubmit { Task { await ask() } }
-                Button { Task { await ask() } } label: { Image(systemName: "arrow.up.circle.fill").font(.title) }
+                Button { Task { await ask() } } label: { Image(systemName: "arrow.up.circle.fill").font(Font.pl(.title)) }
                     .disabled(q.trimmingCharacters(in: .whitespaces).isEmpty || busy).accessibilityLabel("Ask")
             }
             .padding(.horizontal).padding(.vertical, 8).background(.bar)
@@ -452,12 +452,12 @@ struct AcademyForgeView: View {
     var body: some View {
         ScrollView {
             VStack(alignment: .leading, spacing: 14) {
-                Text("Prompts for research and thinking. Draw from a deck, or forge a new one from the canon.").font(.system(.callout, design: .serif).italic()).foregroundStyle(PLOS.dim(scheme))
+                Text("Prompts for research and thinking. Draw from a deck, or forge a new one from the canon.").font(Font.pl(.callout, design: .serif).italic()).foregroundStyle(PLOS.dim(scheme))
                 if !text.isEmpty {
                     VStack(alignment: .leading, spacing: 12) {
                         Text(label).osEyebrow(10).foregroundStyle(PLOS.dim(scheme))
-                        Text(text).font(.system(.title3, design: .serif)).foregroundStyle(PLOS.text(scheme)).plReading().textSelection(.enabled)
-                        ShareLink(item: text) { Label("Share this prompt", systemImage: "square.and.arrow.up").font(.footnote) }
+                        Text(text).font(Font.pl(.title3, design: .serif)).foregroundStyle(PLOS.text(scheme)).plReading().textSelection(.enabled)
+                        ShareLink(item: text) { Label("Share this prompt", systemImage: "square.and.arrow.up").font(Font.pl(.footnote)) }
                     }
                     .frame(maxWidth: .infinity, alignment: .leading).osCard(padding: 18)
                 }
@@ -465,7 +465,7 @@ struct AcademyForgeView: View {
                     Button { text = d.prompts.randomElement() ?? ""; label = "\(d.title) deck" } label: {
                         VStack(alignment: .leading, spacing: 4) {
                             Text(d.title).osEyebrow(12).foregroundStyle(PLOS.gold)
-                            Text("\(d.prompts.count) prompts: draw one").font(.footnote).foregroundStyle(PLOS.dim(scheme))
+                            Text("\(d.prompts.count) prompts: draw one").font(Font.pl(.footnote)).foregroundStyle(PLOS.dim(scheme))
                         }
                         .frame(maxWidth: .infinity, alignment: .leading).osCard(padding: 16)
                     }
@@ -474,7 +474,7 @@ struct AcademyForgeView: View {
                 VStack(alignment: .leading, spacing: 8) {
                     TextField("Optional focus: a theme, a decision, a doubt…", text: $seed).textFieldStyle(.roundedBorder).submitLabel(.go).onSubmit { Task { await forge() } }
                     Button(busy ? "Forging…" : "Forge new") { Task { await forge() } }.buttonStyle(OSPill()).disabled(busy)
-                    Text("Forged prompts are generated live against the brand canon. Decks are fixed and cost nothing.").font(.footnote).foregroundStyle(PLOS.dim(scheme))
+                    Text("Forged prompts are generated live against the brand canon. Decks are fixed and cost nothing.").font(Font.pl(.footnote)).foregroundStyle(PLOS.dim(scheme))
                 }
             }
             .padding(.horizontal, 18).padding(.bottom, 24)
@@ -503,7 +503,7 @@ struct AcademyDrillsView: View {
     var body: some View {
         ScrollView {
             VStack(alignment: .leading, spacing: 14) {
-                Text("Reading the canon is knowing. Drilling it is becoming. Three instruments: run them until the voice is reflex.").font(.system(.callout, design: .serif).italic()).foregroundStyle(PLOS.dim(scheme))
+                Text("Reading the canon is knowing. Drilling it is becoming. Three instruments: run them until the voice is reflex.").font(Font.pl(.callout, design: .serif).italic()).foregroundStyle(PLOS.dim(scheme))
                 let parts = ["purge", "laws", "rewrite"].compactMap { d in score[d].flatMap { $0["done"] ?? 0 > 0 ? "\(d): \($0["correct"] ?? 0)/\($0["done"] ?? 0)" : nil } }
                 Text(parts.isEmpty ? "No reps yet. Begin." : parts.joined(separator: "  ·  ")).osEyebrow(10).foregroundStyle(PLOS.goldDim(scheme))
                 if let drill {
@@ -532,7 +532,7 @@ struct AcademyDrillsView: View {
         Button { drill = id } label: {
             VStack(alignment: .leading, spacing: 4) {
                 Text(title).osEyebrow(12).foregroundStyle(PLOS.gold)
-                Text(blurb).font(.footnote).foregroundStyle(PLOS.dim(scheme)).multilineTextAlignment(.leading)
+                Text(blurb).font(Font.pl(.footnote)).foregroundStyle(PLOS.dim(scheme)).multilineTextAlignment(.leading)
             }
             .frame(maxWidth: .infinity, alignment: .leading).osCard(padding: 16)
         }
@@ -578,14 +578,14 @@ private struct PurgeDrill: View {
         let words = item.text.split(separator: " ").map(String.init)
         let violationParts = Set(item.violations.flatMap { $0.lowercased().split(separator: " ").map(String.init) })
         VStack(alignment: .leading, spacing: 14) {
-            Text("Tap every word that violates the voice. If the passage is clean, accuse nothing.").font(.system(.callout, design: .serif).italic()).foregroundStyle(PLOS.dim(scheme))
+            Text("Tap every word that violates the voice. If the passage is clean, accuse nothing.").font(Font.pl(.callout, design: .serif).italic()).foregroundStyle(PLOS.dim(scheme))
             AcademyWrapLayout {
                 ForEach(Array(words.enumerated()), id: \.offset) { i, w in
                     let isViolation = verdict != nil && violationParts.contains(norm(w))
-                    Text(w).font(.system(.title3, design: .serif))
+                    Text(w).font(Font.pl(.title3, design: .serif))
                         .foregroundStyle(picked.contains(i) ? PLOS.bg(scheme) : PLOS.text(scheme))
                         .padding(.horizontal, 3).padding(.vertical, 2)
-                        .background(picked.contains(i) ? PLOS.goldDim(scheme) : .clear, in: RoundedRectangle(cornerRadius: 4))
+                        .background(picked.contains(i) ? PLOS.goldDim(scheme) : .clear, in: RoundedRectangle(cornerRadius: 4 * PLStyle.radius))
                         .overlay(alignment: .bottom) { if isViolation { Rectangle().fill(PLOS.danger).frame(height: 2) } }
                         .onTapGesture { if verdict == nil { if picked.contains(i) { picked.remove(i) } else { picked.insert(i) } } }
                         .accessibilityAddTraits(.isButton)
@@ -593,7 +593,7 @@ private struct PurgeDrill: View {
             }
             .osCard(padding: 16)
             if let verdict {
-                Text(verdict).font(.system(.body, design: .serif)).foregroundStyle(PLOS.text(scheme)).plReading()
+                Text(verdict).font(Font.pl(.body, design: .serif)).foregroundStyle(PLOS.text(scheme)).plReading()
                 Button("Next passage") { idx = pickNext(); picked = []; self.verdict = nil }.buttonStyle(OSPill())
             } else {
                 Button("Judge") { judge(words: words, item: item, parts: violationParts) }.buttonStyle(OSPill())
@@ -627,8 +627,8 @@ private struct SequenceDrill: View {
     var body: some View {
         let item = AcademyBanks.laws[idx]
         VStack(alignment: .leading, spacing: 14) {
-            Text("Which Truth governs? The Truths are sequential: Preparation, Control, Persistence.").font(.system(.callout, design: .serif).italic()).foregroundStyle(PLOS.dim(scheme))
-            Text(item.scenario).font(.system(.title3, design: .serif)).foregroundStyle(PLOS.text(scheme)).plReading().osCard(padding: 18)
+            Text("Which Truth governs? The Truths are sequential: Preparation, Control, Persistence.").font(Font.pl(.callout, design: .serif).italic()).foregroundStyle(PLOS.dim(scheme))
+            Text(item.scenario).font(Font.pl(.title3, design: .serif)).foregroundStyle(PLOS.text(scheme)).plReading().osCard(padding: 18)
             ForEach([(1, "Truth 1: Prepared"), (2, "Truth 2: Control"), (3, "Truth 3: Persistence")], id: \.0) { n, label in
                 Button(label) {
                     answered = n
@@ -638,7 +638,7 @@ private struct SequenceDrill: View {
                 .opacity(answered != nil && answered != n ? 0.45 : 1)
             }
             if let answered {
-                Text((answered == item.answer ? "Correct. " : "No: Truth \(item.answer). ") + item.why).font(.system(.body, design: .serif)).foregroundStyle(PLOS.text(scheme)).plReading()
+                Text((answered == item.answer ? "Correct. " : "No: Truth \(item.answer). ") + item.why).font(Font.pl(.body, design: .serif)).foregroundStyle(PLOS.text(scheme)).plReading()
                     .sensoryFeedback(answered == item.answer ? PLHaptic.success : PLHaptic.warning, trigger: answered)
                 Button("Next scenario") {
                     var i = idx
@@ -662,23 +662,23 @@ private struct RewriteDrill: View {
     var body: some View {
         let original = AcademyBanks.rewrite[idx]
         VStack(alignment: .leading, spacing: 14) {
-            Text("Rewrite this in the sovereign voice. The examiner crowns or crucifies.").font(.system(.callout, design: .serif).italic()).foregroundStyle(PLOS.dim(scheme))
-            Text(original).font(.system(.title3, design: .serif).italic()).foregroundStyle(PLOS.dim(scheme)).osCard(padding: 18)
+            Text("Rewrite this in the sovereign voice. The examiner crowns or crucifies.").font(Font.pl(.callout, design: .serif).italic()).foregroundStyle(PLOS.dim(scheme))
+            Text(original).font(Font.pl(.title3, design: .serif).italic()).foregroundStyle(PLOS.dim(scheme)).osCard(padding: 18)
             if result == nil {
                 TextField("The rewrite. Declarative. Spare. No reaching.", text: $text, axis: .vertical).lineLimit(3...8).textFieldStyle(.roundedBorder)
                 Button(busy ? "The examiner is reading…" : "Face the examiner") { Task { await grade(original) } }
                     .buttonStyle(OSPill()).disabled(busy || text.trimmingCharacters(in: .whitespaces).isEmpty)
-                if let failure { Text(failure).font(.footnote).foregroundStyle(PLOS.danger) }
+                if let failure { Text(failure).font(Font.pl(.footnote)).foregroundStyle(PLOS.danger) }
             } else if let r = result {
                 let crown = (r["verdict"] as? String) == "crown"
                 (Text(crown ? "CROWNED. " : "CRUCIFIED. ").bold().foregroundStyle(crown ? PLOS.gold : PLOS.danger) + Text((r["critique"] as? String) ?? ""))
-                    .font(.system(.body, design: .serif)).plReading()
+                    .font(Font.pl(.body, design: .serif)).plReading()
                     .sensoryFeedback(crown ? PLHaptic.success : PLHaptic.warning, trigger: crown)
-                if let v = r["violations"] as? [String], !v.isEmpty { Text("Violations: " + v.joined(separator: ", ")).font(.footnote).foregroundStyle(PLOS.dim(scheme)) }
+                if let v = r["violations"] as? [String], !v.isEmpty { Text("Violations: " + v.joined(separator: ", ")).font(Font.pl(.footnote)).foregroundStyle(PLOS.dim(scheme)) }
                 if let m = r["model"] as? String, !m.isEmpty {
                     VStack(alignment: .leading, spacing: 4) {
                         Text("The examiner's rewrite").osEyebrow(9).foregroundStyle(PLOS.dim(scheme))
-                        Text(m).font(.system(.body, design: .serif)).foregroundStyle(PLOS.text(scheme)).plReading().textSelection(.enabled)
+                        Text(m).font(Font.pl(.body, design: .serif)).foregroundStyle(PLOS.text(scheme)).plReading().textSelection(.enabled)
                     }.osCard(padding: 16)
                 }
                 Button("Next original") {

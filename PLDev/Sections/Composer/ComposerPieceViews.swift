@@ -62,8 +62,8 @@ struct TransitionControl: View {
             } label: {
                 HStack(spacing: 6) {
                     Text(label).cmpLabel(9)
-                    Text(word.isEmpty ? inherit : word).font(.system(size: 13)).foregroundStyle(CMP.text)
-                    Image(systemName: "chevron.up.chevron.down").font(.system(size: 9)).foregroundStyle(CMP.goldDim)
+                    Text(word.isEmpty ? inherit : word).font(Font.pl(size: 13)).foregroundStyle(CMP.text)
+                    Image(systemName: "chevron.up.chevron.down").font(Font.pl(size: 9)).foregroundStyle(CMP.goldDim)
                 }
                 .padding(.horizontal, 12).frame(minHeight: 36)
                 .overlay { Capsule().strokeBorder(CMP.line, lineWidth: 0.8) }
@@ -75,7 +75,7 @@ struct TransitionControl: View {
                 }
                 .fixedSize()
             }
-            if disabled { Text(disabledWhy).font(.caption2).foregroundStyle(CMP.muted).lineLimit(2) }
+            if disabled { Text(disabledWhy).font(Font.pl(.caption2)).foregroundStyle(CMP.muted).lineLimit(2) }
         }
         .accessibilityElement(children: .contain)
     }
@@ -228,7 +228,7 @@ struct PieceRoom: View {
     private func field(_ label: String, _ value: String, menu: Bool = false) -> some View {
         VStack(alignment: .leading, spacing: 2) {
             Text(label).cmpLabel(9)
-            HStack(spacing: 3) { Text(value).cmpNum(13).foregroundStyle(CMP.text); if menu { Image(systemName: "chevron.down").font(.system(size: 8)).foregroundStyle(CMP.goldDim) } }
+            HStack(spacing: 3) { Text(value).cmpNum(13).foregroundStyle(CMP.text); if menu { Image(systemName: "chevron.down").font(Font.pl(size: 8)).foregroundStyle(CMP.goldDim) } }
         }
         .frame(minHeight: 36, alignment: .leading).contentShape(Rectangle())
     }
@@ -250,7 +250,7 @@ struct PieceRoom: View {
                 Button(role: .destructive) { askDeletePiece = true } label: { Label("Delete this piece", systemImage: "trash") }
             }
         } label: {
-            HStack(spacing: 4) { Text("pieces").cmpLabel(9); Text("\(store.entries.count)").cmpNum(12).foregroundStyle(CMP.text); Image(systemName: "chevron.down").font(.system(size: 8)).foregroundStyle(CMP.goldDim) }
+            HStack(spacing: 4) { Text("pieces").cmpLabel(9); Text("\(store.entries.count)").cmpNum(12).foregroundStyle(CMP.text); Image(systemName: "chevron.down").font(Font.pl(size: 8)).foregroundStyle(CMP.goldDim) }
                 .padding(.horizontal, 12).frame(minHeight: 36).overlay { Capsule().strokeBorder(CMP.line, lineWidth: 0.8) }
         }
         .confirmationDialog("Delete \"\(piece.piece)\"?", isPresented: $askDeletePiece, titleVisibility: .visible) {
@@ -324,24 +324,24 @@ struct ShotCard: View {
                 Text(String(format: "%02d", index + 1)).cmpNum(13).foregroundStyle(CMP.muted)
                 Spacer()
                 Button(action: onGraph) {
-                    Label("Graph", systemImage: "point.3.connected.trianglepath.dotted").labelStyle(.titleAndIcon).font(.system(size: 12, weight: .medium)).foregroundStyle(shot.nodes?.isEmpty == false ? CMP.gold : CMP.dim)
+                    Label("Graph", systemImage: "point.3.connected.trianglepath.dotted").labelStyle(.titleAndIcon).font(Font.pl(size: 12, weight: .medium)).foregroundStyle(shot.nodes?.isEmpty == false ? CMP.gold : CMP.dim)
                         .padding(.horizontal, 12).frame(minHeight: 36).overlay { Capsule().strokeBorder(CMP.line, lineWidth: 0.8) }
                 }
                 .buttonStyle(.plain).accessibilityIdentifier("composer.shot.graph")
-                Menu { actions } label: { Image(systemName: "ellipsis.circle").font(.system(size: 20)).foregroundStyle(CMP.dim).frame(width: 40, height: 40).contentShape(Rectangle()) }
+                Menu { actions } label: { Image(systemName: "ellipsis.circle").font(Font.pl(size: 20)).foregroundStyle(CMP.dim).frame(width: 40, height: 40).contentShape(Rectangle()) }
                     .accessibilityLabel("Shot actions")
             }
             thumb
             TextField("Title of shot \(index + 1)", text: Binding(get: { shot.title }, set: { v in store.patch(shot.id) { $0.title = v } }))
-                .font(.system(size: 16, weight: .medium)).foregroundStyle(CMP.text).textInputAutocapitalization(.never)
+                .font(Font.pl(size: 16, weight: .medium)).foregroundStyle(CMP.text).textInputAutocapitalization(.never)
             HStack(spacing: 10) {
                 Text("dur").cmpLabel(9)
                 TextField("", value: Binding(get: { shot.duration }, set: { v in store.patch(shot.id) { $0.duration = max(0.1, v) } }), format: .number.precision(.fractionLength(0...1)))
                     .keyboardType(.decimalPad).multilineTextAlignment(.trailing).cmpNum(14).frame(width: 56).padding(.vertical, 6).padding(.horizontal, 8)
-                    .background(CMP.bg.opacity(0.6), in: RoundedRectangle(cornerRadius: 8, style: .continuous)).overlay { RoundedRectangle(cornerRadius: 8, style: .continuous).strokeBorder(CMP.line, lineWidth: 0.6) }
+                    .background(CMP.bg.opacity(0.6), in: RoundedRectangle(cornerRadius: 8 * PLStyle.radius, style: .continuous)).overlay { RoundedRectangle(cornerRadius: 8 * PLStyle.radius, style: .continuous).strokeBorder(CMP.line, lineWidth: 0.6) }
                 HStack(spacing: 0) {
                     ForEach([("minus", -0.5, "composer.dur.down", "Shorter"), ("plus", 0.5, "composer.dur.up", "Longer")], id: \.2) { icon, step, ident, label in
-                        Button { store.patch(shot.id) { $0.duration = min(600, max(0.1, $0.duration + step)) } } label: { Image(systemName: icon).font(.system(size: 15, weight: .semibold)).frame(width: 44, height: 34) }
+                        Button { store.patch(shot.id) { $0.duration = min(600, max(0.1, $0.duration + step)) } } label: { Image(systemName: icon).font(Font.pl(size: 15, weight: .semibold)).frame(width: 44, height: 34) }
                             .accessibilityIdentifier(ident).accessibilityLabel(label)
                     }
                 }.background(CMP.bg.opacity(0.6), in: Capsule()).overlay { Capsule().strokeBorder(CMP.line, lineWidth: 0.6) }
@@ -354,7 +354,7 @@ struct ShotCard: View {
             if !short.isEmpty {
                 Text(short.count == 1 ? "\(short[0].name) is \(String(format: "%.1f", short[0].duration ?? 0))s: the last frame holds for \(String(format: "%.1f", shot.duration - (short[0].duration ?? 0)))s"
                                       : "\(short.count) sources are shorter than this shot: their last frames hold")
-                    .font(.system(size: 11)).foregroundStyle(CMP.warn)
+                    .font(Font.pl(size: 11)).foregroundStyle(CMP.warn)
             }
             sources
             if selected { Divider().overlay(CMP.line); graphSummary }
@@ -396,11 +396,11 @@ struct ShotCard: View {
             if let id = firstVisual, let img = lib.image(id) {
                 Image(uiImage: img).resizable().scaledToFill()
             } else {
-                Text(shot.sourceIds.isEmpty ? "no sources" : "no preview").font(.system(size: 11)).foregroundStyle(CMP.muted).frame(maxWidth: .infinity, maxHeight: .infinity).background(CMP.surface2.opacity(0.6))
+                Text(shot.sourceIds.isEmpty ? "no sources" : "no preview").font(Font.pl(size: 11)).foregroundStyle(CMP.muted).frame(maxWidth: .infinity, maxHeight: .infinity).background(CMP.surface2.opacity(0.6))
             }
         }
-        .frame(maxWidth: .infinity).aspectRatio(16.0 / 9.0, contentMode: .fit).background(CMP.well).clipShape(RoundedRectangle(cornerRadius: 10, style: .continuous))
-        .overlay { RoundedRectangle(cornerRadius: 10, style: .continuous).strokeBorder(CMP.line, lineWidth: 0.6) }
+        .frame(maxWidth: .infinity).aspectRatio(16.0 / 9.0, contentMode: .fit).background(CMP.well).clipShape(RoundedRectangle(cornerRadius: 10 * PLStyle.radius, style: .continuous))
+        .overlay { RoundedRectangle(cornerRadius: 10 * PLStyle.radius, style: .continuous).strokeBorder(CMP.line, lineWidth: 0.6) }
         .accessibilityHidden(true)
     }
 
@@ -413,15 +413,15 @@ struct ShotCard: View {
                     HStack(spacing: 8) {
                         CMPDot(color: a?.socket.color ?? CMP.danger)
                         VStack(alignment: .leading, spacing: 0) {
-                            Text(a?.name ?? "\(aid): missing").font(.system(size: 13)).foregroundStyle(a == nil ? CMP.danger : CMP.text).lineLimit(1)
+                            Text(a?.name ?? "\(aid): missing").font(Font.pl(size: 13)).foregroundStyle(a == nil ? CMP.danger : CMP.text).lineLimit(1)
                             if n == 0, a != nil, a?.kind != "audio" { Text("base").cmpLabel(8) }
                         }
                         Spacer()
                         if let x = ComposerExtras.shared.extra(aid), x.video, x.catalog == "Photos" {
-                            Button { trimming = x } label: { Image(systemName: "scissors").font(.system(size: 12)).foregroundStyle(x.trimmed ? CMP.gold : CMP.muted).frame(width: 44, height: 44).contentShape(Rectangle()) }
+                            Button { trimming = x } label: { Image(systemName: "scissors").font(Font.pl(size: 12)).foregroundStyle(x.trimmed ? CMP.gold : CMP.muted).frame(width: 44, height: 44).contentShape(Rectangle()) }
                                 .buttonStyle(.plain).accessibilityLabel("Trim \(x.name)")
                         }
-                        Button { store.patch(shot.id) { $0.sourceIds.removeAll { $0 == aid } } } label: { Image(systemName: "xmark").font(.system(size: 11, weight: .semibold)).foregroundStyle(CMP.muted).frame(width: 44, height: 44).contentShape(Rectangle()) }
+                        Button { store.patch(shot.id) { $0.sourceIds.removeAll { $0 == aid } } } label: { Image(systemName: "xmark").font(Font.pl(size: 11, weight: .semibold)).foregroundStyle(CMP.muted).frame(width: 44, height: 44).contentShape(Rectangle()) }
                             .buttonStyle(.plain).accessibilityLabel("Remove source")
                     }
                     .contextMenu {
@@ -433,24 +433,24 @@ struct ShotCard: View {
             .padding(.top, 2)
         }
         HStack(spacing: 18) {
-            Button(action: onAttach) { Label("Attach from the library", systemImage: "plus").font(.system(size: 13)).foregroundStyle(CMP.gold).frame(minHeight: 36) }.buttonStyle(.plain)
+            Button(action: onAttach) { Label("Attach from the library", systemImage: "plus").font(Font.pl(size: 13)).foregroundStyle(CMP.gold).frame(minHeight: 36) }.buttonStyle(.plain)
             PhotosPicker(selection: $picks, maxSelectionCount: 8, matching: .any(of: [.images, .videos])) {
-                Label(importing ? "Copying…" : "Add from Photos", systemImage: "photo.on.rectangle").font(.system(size: 13)).foregroundStyle(CMP.gold).frame(minHeight: 36)
+                Label(importing ? "Copying…" : "Add from Photos", systemImage: "photo.on.rectangle").font(Font.pl(size: 13)).foregroundStyle(CMP.gold).frame(minHeight: 36)
             }
             .buttonStyle(.plain).disabled(importing).accessibilityIdentifier("composer.shot.photos")
         }
-        if let n = photoNote { Text(n).font(.system(size: 11)).foregroundStyle(CMP.dim) }
+        if let n = photoNote { Text(n).font(Font.pl(size: 11)).foregroundStyle(CMP.dim) }
     }
 
     /// The graph as a numbered list, in the order the operations are written, with each out name.
     private var graphSummary: some View {
         VStack(alignment: .leading, spacing: 6) {
             Text("graph").cmpLabel(9)
-            if shot.nodes?.isEmpty != false { Text(effective.isEmpty ? "Nothing wired yet. Attach sources, or open the graph." : "Default wiring, derived from the sources. Open the graph to score it by hand.").font(.system(size: 12)).foregroundStyle(CMP.dim) }
+            if shot.nodes?.isEmpty != false { Text(effective.isEmpty ? "Nothing wired yet. Attach sources, or open the graph." : "Default wiring, derived from the sources. Open the graph to score it by hand.").font(Font.pl(size: 12)).foregroundStyle(CMP.dim) }
             ForEach(Array(effective.enumerated()), id: \.offset) { i, n in
                 HStack(spacing: 8) {
                     Text(String(format: "%02d", i + 1)).cmpNum(10).foregroundStyle(CMP.muted)
-                    Text(n.op.replacingOccurrences(of: "_", with: " ")).font(.system(size: 12))
+                    Text(n.op.replacingOccurrences(of: "_", with: " ")).font(Font.pl(size: 12))
                     if let o = n.out { Text("→ \(o)").cmpNum(10).foregroundStyle(CMP.dim) }
                 }
             }
@@ -476,12 +476,12 @@ struct ComposerSpecSheet: View {
         NavigationStack {
             ScrollView {
                 VStack(alignment: .leading, spacing: 14) {
-                    Text(text).font(.system(size: 12, design: .monospaced)).foregroundStyle(CMP.text).textSelection(.enabled).lineSpacing(4)
+                    Text(text).font(Font.pl(size: 12, design: .monospaced)).foregroundStyle(CMP.text).textSelection(.enabled).lineSpacing(4)
                         .frame(maxWidth: .infinity, alignment: .leading).cmpCard(padding: 12)
                     VStack(alignment: .leading, spacing: 4) {
                         Text("Then render it").cmpLabel(10)
                         Text("python compose_render.py \(file)").cmpNum(12).foregroundStyle(CMP.dim).textSelection(.enabled)
-                        Text("In OpenMontage/projects/pl-curves. The board emits; the CLI renders.").font(.footnote).foregroundStyle(CMP.muted)
+                        Text("In OpenMontage/projects/pl-curves. The board emits; the CLI renders.").font(Font.pl(.footnote)).foregroundStyle(CMP.muted)
                     }
                     .padding(.horizontal, 4)
                 }

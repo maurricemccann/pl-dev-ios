@@ -28,10 +28,10 @@ struct PLStageBar: View {
             HStack(alignment: .top, spacing: 12) {
                 ForEach(stages) { s in
                     VStack(alignment: .leading, spacing: 1) {
-                        Text("\(s.count)").font(.system(.title2, design: .monospaced)).monospacedDigit().foregroundStyle(text).contentTransition(.numericText())
+                        Text("\(s.count)").font(Font.pl(.title2, design: .monospaced)).monospacedDigit().foregroundStyle(text).contentTransition(.numericText())
                         HStack(spacing: 4) {
                             Circle().fill(s.tint).frame(width: 7, height: 7)
-                            Text(s.name).font(.system(size: 10, weight: .medium, design: .monospaced)).textCase(.uppercase).foregroundStyle(dim).lineLimit(1).minimumScaleFactor(0.7)
+                            Text(s.name).font(Font.pl(size: 10, weight: .medium, design: .monospaced)).textCase(.uppercase).foregroundStyle(dim).lineLimit(1).minimumScaleFactor(0.7)
                         }
                     }
                     .frame(maxWidth: .infinity, alignment: .leading)
@@ -60,11 +60,11 @@ struct PLRing: View {
                 Circle().stroke(dim.opacity(0.18), lineWidth: size * 0.1)
                 Circle().trim(from: 0, to: v).stroke(tint.gradient, style: StrokeStyle(lineWidth: size * 0.1, lineCap: .round)).rotationEffect(.degrees(-90))
                     .animation(.smooth(duration: 0.6), value: v)
-                Text(center).font(.system(size: size * 0.24, weight: .regular, design: .monospaced)).monospacedDigit().foregroundStyle(text).minimumScaleFactor(0.5).lineLimit(1)
+                Text(center).font(Font.pl(size: size * 0.24, weight: .regular, design: .monospaced)).monospacedDigit().foregroundStyle(text).minimumScaleFactor(0.5).lineLimit(1)
                     .padding(.horizontal, size * 0.16)
             }
             .frame(width: size, height: size)
-            if let label { Text(label).font(.system(size: 10, weight: .medium, design: .monospaced)).textCase(.uppercase).foregroundStyle(dim).lineLimit(1).minimumScaleFactor(0.7) }
+            if let label { Text(label).font(Font.pl(size: 10, weight: .medium, design: .monospaced)).textCase(.uppercase).foregroundStyle(dim).lineLimit(1).minimumScaleFactor(0.7) }
         }
         .accessibilityElement(children: .ignore)
         .accessibilityLabel("\(label ?? "") \(center)")
@@ -85,7 +85,7 @@ struct PLStateDot: View {
             Circle().fill(tint).frame(width: 10, height: 10)
                 .overlay { if live && !reduce { Circle().stroke(tint.opacity(0.6), lineWidth: 2).scaleEffect(on ? 2.2 : 1).opacity(on ? 0 : 0.9) } }
                 .onAppear { if live && !reduce { withAnimation(.easeOut(duration: 1.6).repeatForever(autoreverses: false)) { on = true } } }
-            Text(word).font(.callout.weight(.semibold)).foregroundStyle(text)
+            Text(word).font(Font.pl(.callout).weight(.semibold)).foregroundStyle(text)
         }
         .accessibilityElement(children: .combine)
     }
@@ -98,7 +98,7 @@ struct PLBarBehind: ViewModifier {
     func body(content: Content) -> some View {
         content.background(alignment: .leading) {
             GeometryReader { geo in
-                RoundedRectangle(cornerRadius: 6, style: .continuous).fill(tint.opacity(0.22))
+                RoundedRectangle(cornerRadius: 6 * PLStyle.radius, style: .continuous).fill(tint.opacity(0.22))
                     .frame(width: geo.size.width * CGFloat(min(max(fraction, 0), 1)))
             }
         }
@@ -121,7 +121,7 @@ struct PLSpark: View {
         let top = max(values.max() ?? 0, 0.0001)
         HStack(alignment: .bottom, spacing: 2) {
             ForEach(values.indices, id: \.self) { i in
-                RoundedRectangle(cornerRadius: 1.5, style: .continuous)
+                RoundedRectangle(cornerRadius: 1.5 * PLStyle.radius, style: .continuous)
                     .fill(i == values.count - 1 ? tint : dim.opacity(0.45))
                     .frame(height: max(2, height * CGFloat(values[i] / top)))
             }
@@ -145,12 +145,12 @@ struct PLHeatGrid: View {
         LazyVGrid(columns: Array(repeating: GridItem(.flexible(), spacing: 4), count: columns), spacing: 4) {
             ForEach(cells) { c in
                 VStack(spacing: 2) {
-                    RoundedRectangle(cornerRadius: 5, style: .continuous)
+                    RoundedRectangle(cornerRadius: 5 * PLStyle.radius, style: .continuous)
                         .fill(c.amount > 0 ? tint.opacity(0.25 + 0.75 * c.amount / top) : dim.opacity(0.12))
                         .frame(height: 26)
-                        .overlay { if let m = c.mark { RoundedRectangle(cornerRadius: 5, style: .continuous).strokeBorder(m, lineWidth: 1.5) } }
-                        .overlay { Text(c.amount > 0 ? "\(Int(c.amount))" : "").font(.system(size: 10, design: .monospaced)).foregroundStyle(text) }
-                    Text(c.label).font(.system(size: 8, design: .monospaced)).foregroundStyle(dim).lineLimit(1)
+                        .overlay { if let m = c.mark { RoundedRectangle(cornerRadius: 5 * PLStyle.radius, style: .continuous).strokeBorder(m, lineWidth: 1.5) } }
+                        .overlay { Text(c.amount > 0 ? "\(Int(c.amount))" : "").font(Font.pl(size: 10, design: .monospaced)).foregroundStyle(text) }
+                    Text(c.label).font(Font.pl(size: 8, design: .monospaced)).foregroundStyle(dim).lineLimit(1)
                 }
                 .accessibilityElement(children: .ignore)
                 .accessibilityLabel("\(c.label): \(Int(c.amount))")
@@ -171,8 +171,8 @@ struct PLBigTile<Micro: View>: View {
     var body: some View {
         HStack(alignment: .bottom, spacing: 10) {
             VStack(alignment: .leading, spacing: 2) {
-                Text(number).font(.system(size: 34, weight: .regular, design: .monospaced)).monospacedDigit().foregroundStyle(text).lineLimit(1).minimumScaleFactor(0.5).contentTransition(.numericText())
-                Text(label).font(.system(size: 10, weight: .medium, design: .monospaced)).textCase(.uppercase).foregroundStyle(dim).lineLimit(1).minimumScaleFactor(0.7)
+                Text(number).font(Font.pl(size: 34, weight: .regular, design: .monospaced)).monospacedDigit().foregroundStyle(text).lineLimit(1).minimumScaleFactor(0.5).contentTransition(.numericText())
+                Text(label).font(Font.pl(size: 10, weight: .medium, design: .monospaced)).textCase(.uppercase).foregroundStyle(dim).lineLimit(1).minimumScaleFactor(0.7)
             }
             Spacer(minLength: 0)
             micro()
@@ -194,7 +194,7 @@ struct PLChip: View {
     let word: String
     var tint: Color = .secondary
     var body: some View {
-        Text(word).font(.system(size: 10, weight: .semibold, design: .monospaced)).textCase(.uppercase).foregroundStyle(tint)
+        Text(word).font(Font.pl(size: 10, weight: .semibold, design: .monospaced)).textCase(.uppercase).foregroundStyle(tint)
             .padding(.horizontal, 7).padding(.vertical, 3)
             .background(tint.opacity(0.14), in: Capsule())
             .lineLimit(1)

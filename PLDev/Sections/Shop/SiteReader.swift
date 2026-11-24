@@ -35,7 +35,7 @@ struct SiteReaderView: View {
                     case .quote(let t): Text(t).font(SiteFont.display(22, italic: true)).foregroundStyle(Bone.ink(scheme)).padding(.leading, 12).overlay(alignment: .leading) { Rectangle().fill(Bone.gold).frame(width: 2) }
                     }
                 }
-                if loaded, let u = Site.page(path) { Link("Open this page on the site", destination: u).font(.footnote).padding(.top, 12) }
+                if loaded, let u = Site.page(path) { Link("Open this page on the site", destination: u).font(Font.pl(.footnote)).padding(.top, 12) }
             }
             .padding(24)
             .textSelection(.enabled)

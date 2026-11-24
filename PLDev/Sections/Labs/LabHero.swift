@@ -256,7 +256,7 @@ struct LabHeroView: View {
                 Text("Curve Library · lab · Phase 1 of the trained hero").gEyebrow(10).foregroundStyle(PLG.dim(.dark))
                 Text("Trained hero, both sides of the system").gTitle(26, relativeTo: .title).foregroundStyle(PLG.ink(.dark))
                 Text("Top: the public render. Below it: the settings panel as it will sit in pl-os, and the JSON it will write. Still random, trained on the painting's shapes.")
-                    .font(.footnote).foregroundStyle(PLG.dim(.dark))
+                    .font(Font.pl(.footnote)).foregroundStyle(PLG.dim(.dark))
                 Text("Outer · what the world sees · \(night ? (cfg.polarity == "field" ? "nightOS, field lit" : "nightOS, lines lit") : "lightOS")").gEyebrow(10).foregroundStyle(PLG.dim(.dark))
                 GeometryReader { geo in
                     TimelineView(.animation(paused: frozen || reduceMotion || cfg.drift == 0)) { tl in
@@ -266,17 +266,17 @@ struct LabHeroView: View {
                     .onChange(of: geo.size.width) { _, w in width = max(320, Double(w)) }
                 }
                 .frame(height: height)
-                .clipShape(RoundedRectangle(cornerRadius: 4)).overlay { RoundedRectangle(cornerRadius: 4).strokeBorder(Color(hex: 0x2a2a30), lineWidth: 1) }
+                .clipShape(RoundedRectangle(cornerRadius: 4 * PLStyle.radius)).overlay { RoundedRectangle(cornerRadius: 4 * PLStyle.radius).strokeBorder(Color(hex: 0x2a2a30), lineWidth: 1) }
                 .accessibilityLabel("Hero curves preview")
                 Text(readout.isEmpty ? "Press \"Run checks\" for the stroke counts, the crossing-gap probe and the seed repeat test." : readout)
-                    .font(.system(size: 11.5, design: .monospaced)).foregroundStyle(PLG.dim(.dark)).textSelection(.enabled).frame(minHeight: 60, alignment: .topLeading)
+                    .font(Font.pl(size: 11.5, design: .monospaced)).foregroundStyle(PLG.dim(.dark)).textSelection(.enabled).frame(minHeight: 60, alignment: .topLeading)
                 panel(counts)
                 Text("The painting, for the eye · day · digital · night").gEyebrow(10).foregroundStyle(PLG.dim(.dark)).padding(.top, 8)
                 ForEach([("Day", "painting-day.jpg"), ("Digital", "painting-digital.jpg"), ("Night", "painting-night.jpg")], id: \.1) { n, f in
                     VStack(alignment: .leading, spacing: 4) {
                         AsyncImage(url: URL(string: LibraryData.shared.base(AppModel.shared) + "/lab/trained-hero/" + f)) { $0.resizable().scaledToFit() } placeholder: { Color(hex: 0x1a1610).frame(height: 160) }
-                            .clipShape(RoundedRectangle(cornerRadius: 3))
-                        Text(n).font(.caption).foregroundStyle(PLG.dim(.dark))
+                            .clipShape(RoundedRectangle(cornerRadius: 3 * PLStyle.radius))
+                        Text(n).font(Font.pl(.caption)).foregroundStyle(PLG.dim(.dark))
                     }
                 }
             }
@@ -298,15 +298,15 @@ struct LabHeroView: View {
     private func panel(_ counts: (types: [HeroType: Int], layers: [Int])) -> some View {
         VStack(alignment: .leading, spacing: 12) {
             HStack {
-                Text("The Hero Curves").font(.system(size: 17, design: .serif).italic()).foregroundStyle(gold)
+                Text("The Hero Curves").font(Font.pl(size: 17, design: .serif).italic()).foregroundStyle(gold)
                 Spacer()
-                Text("inner · pl-os").font(.system(size: 10, design: .monospaced)).foregroundStyle(dim)
+                Text("inner · pl-os").font(Font.pl(size: 10, design: .monospaced)).foregroundStyle(dim)
             }
-            Text("One config the whole site reads. It sits beside The Creator Signal; the switch below mirrors it so you can see both modes.").font(.system(size: 12.5)).foregroundStyle(dim)
+            Text("One config the whole site reads. It sits beside The Creator Signal; the switch below mirrors it so you can see both modes.").font(Font.pl(size: 12.5)).foregroundStyle(dim)
             Toggle(isOn: $night) {
                 VStack(alignment: .leading, spacing: 2) {
-                    Text(night ? "Sleep · nightOS" : "Awake · lightOS").font(.system(size: 13.5)).foregroundStyle(ink)
-                    Text("preview of the Creator Signal").font(.system(size: 10.5, design: .monospaced)).foregroundStyle(dim)
+                    Text(night ? "Sleep · nightOS" : "Awake · lightOS").font(Font.pl(size: 13.5)).foregroundStyle(ink)
+                    Text("preview of the Creator Signal").font(Font.pl(size: 10.5, design: .monospaced)).foregroundStyle(dim)
                 }
             }.tint(gold)
             LabWrap(spacing: 6) {
@@ -316,8 +316,8 @@ struct LabHeroView: View {
                 chip("nightOS · field lit", cfg.polarity == "field") { cfg.polarity = "field" }
             }
             HStack(spacing: 8) {
-                Text("Seed").font(.system(size: 12)).foregroundStyle(dim)
-                TextField("seed", value: $seed, format: .number.grouping(.never)).keyboardType(.numberPad).textFieldStyle(.roundedBorder).frame(width: 120).font(.system(size: 12, design: .monospaced))
+                Text("Seed").font(Font.pl(size: 12)).foregroundStyle(dim)
+                TextField("seed", value: $seed, format: .number.grouping(.never)).keyboardType(.numberPad).textFieldStyle(.roundedBorder).frame(width: 120).font(Font.pl(size: 12, design: .monospaced))
             }
             LabWrap(spacing: 6) {
                 chip("New draw", false) { seed = Int.random(in: 0..<1_000_000_000) }
@@ -326,30 +326,30 @@ struct LabHeroView: View {
             }
             ForEach(groups, id: \.0) { title, keys in
                 VStack(alignment: .leading, spacing: 4) {
-                    Text(title).font(.system(size: 10, design: .monospaced)).tracking(0.8).textCase(.uppercase).foregroundStyle(dim)
+                    Text(title).font(Font.pl(size: 10, design: .monospaced)).tracking(0.8).textCase(.uppercase).foregroundStyle(dim)
                     ForEach(keys, id: \.self) { k in if let s = sliders.first(where: { $0.key == k }) { slider(s) } }
                 }
                 .padding(.horizontal, 10).padding(.vertical, 8)
-                .overlay { RoundedRectangle(cornerRadius: 4).strokeBorder(Color(red: 160 / 255, green: 140 / 255, blue: 110 / 255).opacity(0.22), lineWidth: 1) }
+                .overlay { RoundedRectangle(cornerRadius: 4 * PLStyle.radius).strokeBorder(Color(red: 160 / 255, green: 140 / 255, blue: 110 / 255).opacity(0.22), lineWidth: 1) }
             }
             HStack {
-                Text("What pl-os writes · app_meta").font(.system(size: 10, design: .monospaced)).tracking(0.8).textCase(.uppercase).foregroundStyle(dim)
+                Text("What pl-os writes · app_meta").font(Font.pl(size: 10, design: .monospaced)).tracking(0.8).textCase(.uppercase).foregroundStyle(dim)
                 Spacer()
                 chip("Copy JSON", false) { UIPasteboard.general.string = json }
             }
-            ScrollView { Text(json).font(.system(size: 10.5, design: .monospaced)).foregroundStyle(dim).frame(maxWidth: .infinity, alignment: .leading).textSelection(.enabled) }
-                .frame(maxHeight: 180).padding(8).background(Color(hex: 0xfaf7f0)).clipShape(RoundedRectangle(cornerRadius: 3))
+            ScrollView { Text(json).font(Font.pl(size: 10.5, design: .monospaced)).foregroundStyle(dim).frame(maxWidth: .infinity, alignment: .leading).textSelection(.enabled) }
+                .frame(maxHeight: 180).padding(8).background(Color(hex: 0xfaf7f0)).clipShape(RoundedRectangle(cornerRadius: 3 * PLStyle.radius))
         }
         .padding(14)
-        .background(RoundedRectangle(cornerRadius: 6).fill(surface))
+        .background(RoundedRectangle(cornerRadius: 6 * PLStyle.radius).fill(surface))
         .environment(\.colorScheme, .light)
     }
 
     private func chip(_ t: String, _ on: Bool, _ a: @escaping () -> Void) -> some View {
         Button(action: a) {
-            Text(t).font(.system(size: 11.5)).foregroundStyle(on ? .white : ink).padding(.horizontal, 12).frame(minHeight: 44)
-                .background(RoundedRectangle(cornerRadius: 3).fill(on ? gold : Color(hex: 0xf5efe2)))
-                .overlay(RoundedRectangle(cornerRadius: 3).strokeBorder(on ? gold : Color(red: 160 / 255, green: 140 / 255, blue: 110 / 255).opacity(0.35), lineWidth: 1))
+            Text(t).font(Font.pl(size: 11.5)).foregroundStyle(on ? .white : ink).padding(.horizontal, 12).frame(minHeight: 44)
+                .background(RoundedRectangle(cornerRadius: 3 * PLStyle.radius).fill(on ? gold : Color(hex: 0xf5efe2)))
+                .overlay(RoundedRectangle(cornerRadius: 3 * PLStyle.radius).strokeBorder(on ? gold : Color(red: 160 / 255, green: 140 / 255, blue: 110 / 255).opacity(0.35), lineWidth: 1))
         }
         .buttonStyle(.plain)
     }
@@ -382,9 +382,9 @@ struct LabHeroView: View {
     }
     private func slider(_ s: Sl) -> some View {
         HStack(spacing: 8) {
-            Text(s.label).font(.system(size: 12)).foregroundStyle(ink).frame(width: 120, alignment: .leading).lineLimit(2)
+            Text(s.label).font(Font.pl(size: 12)).foregroundStyle(ink).frame(width: 120, alignment: .leading).lineLimit(2)
             Slider(value: Binding(get: { s.get(cfg) }, set: { v in var c = cfg; s.set(&c, v); cfg = c }), in: s.lo...s.hi, step: s.step).tint(gold)
-            Text(String(format: s.step < 1 ? "%.2f" : "%.0f", s.get(cfg))).font(.system(size: 11, design: .monospaced)).foregroundStyle(dim).frame(width: 40, alignment: .trailing).monospacedDigit()
+            Text(String(format: s.step < 1 ? "%.2f" : "%.0f", s.get(cfg))).font(Font.pl(size: 11, design: .monospaced)).foregroundStyle(dim).frame(width: 40, alignment: .trailing).monospacedDigit()
         }
     }
 

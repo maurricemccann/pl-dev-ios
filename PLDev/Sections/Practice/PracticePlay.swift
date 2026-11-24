@@ -56,10 +56,10 @@ struct PracticePlayView: View {
             CandleGround()
             VStack(spacing: 16) {
                 HStack {
-                    Button { close() } label: { Image(systemName: "xmark").font(.system(size: 15, weight: .medium)).foregroundStyle(Candle.ink).frame(width: 44, height: 44) }
+                    Button { close() } label: { Image(systemName: "xmark").font(Font.pl(size: 15, weight: .medium)).foregroundStyle(Candle.ink).frame(width: 44, height: 44) }
                         .accessibilityLabel("Close")
                     Spacer()
-                    Text(run.kind == .pairs ? "Match pairs" : "Sort cards").font(.system(size: 13)).textCase(.uppercase).tracking(1).foregroundStyle(Candle.gold)
+                    Text(run.kind == .pairs ? "Match pairs" : "Sort cards").font(Font.pl(size: 13)).textCase(.uppercase).tracking(1).foregroundStyle(Candle.gold)
                     Spacer()
                     Color.clear.frame(width: 44, height: 44)
                 }
@@ -94,7 +94,7 @@ struct MatchPairsBoard: View {
                 }
                 if matched.count == exercises.count {
                     VStack(alignment: .leading, spacing: 10) {
-                        Text("Every pair is home.").font(.system(size: 15, weight: .medium)).foregroundStyle(Candle.goldHi)
+                        Text("Every pair is home.").font(Font.pl(size: 15, weight: .medium)).foregroundStyle(Candle.goldHi)
                         Button("Done") { close() }.buttonStyle(CandleButton())
                     }.candleCard()
                 }
@@ -121,10 +121,10 @@ struct MatchPairsBoard: View {
             else { missed.insert(l); CourseRecord.shared.miss(exercises[l].item) }
             left = nil
         } label: {
-            Text(text).font(.system(size: 15, weight: done ? .semibold : .regular)).foregroundStyle(done ? Candle.bg : Candle.ink).multilineTextAlignment(.leading)
+            Text(text).font(Font.pl(size: 15, weight: done ? .semibold : .regular)).foregroundStyle(done ? Candle.bg : Candle.ink).multilineTextAlignment(.leading)
                 .frame(maxWidth: .infinity, minHeight: 56, alignment: .leading).padding(.horizontal, 12).padding(.vertical, 6)
-                .background { RoundedRectangle(cornerRadius: 14, style: .continuous).fill(done ? Candle.gold : Candle.ink.opacity(picked ? 0.12 : 0.03)) }
-                .overlay { RoundedRectangle(cornerRadius: 14, style: .continuous).strokeBorder(picked ? Candle.gold : Candle.pillLine, lineWidth: picked ? 2 : 1) }
+                .background { RoundedRectangle(cornerRadius: 14 * PLStyle.radius, style: .continuous).fill(done ? Candle.gold : Candle.ink.opacity(picked ? 0.12 : 0.03)) }
+                .overlay { RoundedRectangle(cornerRadius: 14 * PLStyle.radius, style: .continuous).strokeBorder(picked ? Candle.gold : Candle.pillLine, lineWidth: picked ? 2 : 1) }
                 .contentShape(Rectangle())
         }
         .buttonStyle(.plain).disabled(done)
@@ -147,30 +147,30 @@ struct SortCardsBoard: View {
             VStack(alignment: .leading, spacing: 14) {
                 if finished {
                     VStack(alignment: .leading, spacing: 10) {
-                        Text("Every card is placed.").font(.system(size: 15, weight: .medium)).foregroundStyle(Candle.goldHi)
+                        Text("Every card is placed.").font(Font.pl(size: 15, weight: .medium)).foregroundStyle(Candle.goldHi)
                         Button("Done") { close() }.buttonStyle(CandleButton())
                     }.candleCard()
                 } else {
                     let e = exercises[index], correct = (Int(e.answer?.string ?? "") ?? 1) - 1
                     Text("Card \(index + 1) of \(exercises.count). Which Truth does it belong to?").candleHint()
-                    Text(e.text ?? "").font(.system(size: 19)).foregroundStyle(Candle.ink).lineSpacing(4).fixedSize(horizontal: false, vertical: true)
+                    Text(e.text ?? "").font(Font.pl(size: 19)).foregroundStyle(Candle.ink).lineSpacing(4).fixedSize(horizontal: false, vertical: true)
                         .frame(maxWidth: .infinity, alignment: .leading).candleCard(padding: 18)
                     ForEach(Self.truths.indices, id: \.self) { i in
                         let shown = picked != nil && i == correct
                         Button { place(i, correct: correct, e) } label: {
-                            Text("\(i + 1) \u{00b7} \(Self.truths[i])").font(.system(size: 16, weight: shown ? .semibold : .regular))
+                            Text("\(i + 1) \u{00b7} \(Self.truths[i])").font(Font.pl(size: 16, weight: shown ? .semibold : .regular))
                                 .foregroundStyle(shown ? Candle.bg : Candle.ink).multilineTextAlignment(.leading)
                                 .frame(maxWidth: .infinity, minHeight: 52, alignment: .leading).padding(.horizontal, 16).padding(.vertical, 6)
-                                .background { RoundedRectangle(cornerRadius: 14, style: .continuous).fill(shown ? Candle.gold : Candle.ink.opacity(i == picked ? 0.1 : 0.03)) }
-                                .overlay { RoundedRectangle(cornerRadius: 14, style: .continuous).strokeBorder(shown ? Candle.gold : Candle.pillLine, lineWidth: 1) }
+                                .background { RoundedRectangle(cornerRadius: 14 * PLStyle.radius, style: .continuous).fill(shown ? Candle.gold : Candle.ink.opacity(i == picked ? 0.1 : 0.03)) }
+                                .overlay { RoundedRectangle(cornerRadius: 14 * PLStyle.radius, style: .continuous).strokeBorder(shown ? Candle.gold : Candle.pillLine, lineWidth: 1) }
                                 .contentShape(Rectangle())
                         }
                         .buttonStyle(.plain).disabled(picked != nil)
                     }
                     if let picked {
                         VStack(alignment: .leading, spacing: 8) {
-                            Text(picked == correct ? "Right." : "Not this one. It comes back later.").font(.system(size: 15, weight: .medium)).foregroundStyle(picked == correct ? Candle.goldHi : Candle.ink)
-                            if let why = e.why { Text(why).font(.system(size: 14, design: .serif).italic()).foregroundStyle(Candle.goldHi).lineSpacing(3) }
+                            Text(picked == correct ? "Right." : "Not this one. It comes back later.").font(Font.pl(size: 15, weight: .medium)).foregroundStyle(picked == correct ? Candle.goldHi : Candle.ink)
+                            if let why = e.why { Text(why).font(Font.pl(size: 14, design: .serif).italic()).foregroundStyle(Candle.goldHi).lineSpacing(3) }
                             Button(index + 1 < exercises.count ? "Next card" : "Finish") { next() }.buttonStyle(CandleButton())
                         }.candleCard()
                     }

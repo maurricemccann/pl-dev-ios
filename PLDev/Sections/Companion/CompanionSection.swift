@@ -166,7 +166,7 @@ struct CompanionMeter: View {
     @Environment(\.colorScheme) private var scheme
     var body: some View {
         HStack(spacing: 6) {
-            Text(name).font(.footnote).foregroundStyle(PLG.dim(scheme)).lineLimit(1).fixedSize().frame(minWidth: 44, alignment: .leading)   // his 8:07 AM screenshot: "Glow" wrapped at a large text size
+            Text(name).font(Font.pl(.footnote)).foregroundStyle(PLG.dim(scheme)).lineLimit(1).fixedSize().frame(minWidth: 44, alignment: .leading)   // his 8:07 AM screenshot: "Glow" wrapped at a large text size
             ForEach(0..<4, id: \.self) { i in
                 Capsule().fill(i < value ? tint : PLG.line(scheme)).frame(height: 6)
             }
@@ -218,10 +218,10 @@ struct CompanionView: View {
                 VStack(alignment: .leading, spacing: 8) {
                     TextField("One thing you are grateful for", text: $line, axis: .vertical)
                         .lineLimit(1...4).focused($typing)
-                        .padding(12).background(PLG.surface(scheme), in: RoundedRectangle(cornerRadius: 12))
+                        .padding(12).background(PLG.surface(scheme), in: RoundedRectangle(cornerRadius: 12 * PLStyle.radius))
                         .onChange(of: line) { _, v in if v.count > 240 { line = String(v.prefix(240)) } }
                     HStack {
-                        Text("\(line.count)/240").font(.caption).monospacedDigit().foregroundStyle(PLG.dim(scheme))
+                        Text("\(line.count)/240").font(Font.pl(.caption)).monospacedDigit().foregroundStyle(PLG.dim(scheme))
                         Spacer()
                         Button("Keep it") {
                             if store.gratitude(line) { line = ""; typing = false; UIImpactFeedbackGenerator(style: .soft).impactOccurred() }
@@ -229,14 +229,14 @@ struct CompanionView: View {
                         .buttonStyle(.borderedProminent).tint(PLG.gold).frame(minHeight: 44)
                         .disabled(line.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty)
                     }
-                    if !store.error.isEmpty { Text(store.error).font(.footnote).foregroundStyle(PLG.red) }
+                    if !store.error.isEmpty { Text(store.error).font(Font.pl(.footnote)).foregroundStyle(PLG.red) }
                 }
                 VStack(spacing: 0) {
                     NavigationLink { CompanionDesiresView(store: store) } label: { row("Desires", "\(store.activeDesires) of 12") }
                     Divider().overlay(PLG.line(scheme))
                     NavigationLink { CompanionArchiveView(store: store) } label: { row("Archive", "") }
                 }
-                .background(PLG.surface(scheme), in: RoundedRectangle(cornerRadius: 12))
+                .background(PLG.surface(scheme), in: RoundedRectangle(cornerRadius: 12 * PLStyle.radius))
                 if !todays.isEmpty {
                     VStack(alignment: .leading, spacing: 6) {
                         ForEach(todays.reversed()) { g in
@@ -255,8 +255,8 @@ struct CompanionView: View {
         HStack {
             Text(title).foregroundStyle(PLG.ink(scheme))
             Spacer()
-            Text(detail).font(.footnote).monospacedDigit().foregroundStyle(PLG.dim(scheme))
-            Image(systemName: "chevron.right").font(.footnote).foregroundStyle(PLG.dim(scheme))
+            Text(detail).font(Font.pl(.footnote)).monospacedDigit().foregroundStyle(PLG.dim(scheme))
+            Image(systemName: "chevron.right").font(Font.pl(.footnote)).foregroundStyle(PLG.dim(scheme))
         }
         .padding(.horizontal, 14).frame(minHeight: 48).contentShape(Rectangle())
     }
@@ -278,19 +278,19 @@ struct CompanionDesiresView: View {
                 CompanionScene(store: store).frame(height: 180).clipShape(RoundedRectangle(cornerRadius: PLG.radius))
                 if store.activeDesires < 12 {
                     TextField("Name a desire", text: $draft)
-                        .padding(12).background(PLG.surface(scheme), in: RoundedRectangle(cornerRadius: 12))
+                        .padding(12).background(PLG.surface(scheme), in: RoundedRectangle(cornerRadius: 12 * PLStyle.radius))
                         .onChange(of: draft) { _, v in if v.count > 80 { draft = String(v.prefix(80)) } }
                         .submitLabel(.done).onSubmit(keep)
                     HStack {
-                        Text("\(draft.count)/80").font(.caption).monospacedDigit().foregroundStyle(PLG.dim(scheme))
+                        Text("\(draft.count)/80").font(Font.pl(.caption)).monospacedDigit().foregroundStyle(PLG.dim(scheme))
                         Spacer()
                         Button("Keep desire", action: keep).buttonStyle(.borderedProminent).tint(PLG.gold).frame(minHeight: 44)
                             .disabled(draft.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty)
                     }
                 } else {
-                    Text("Twelve desires held.").font(.footnote).foregroundStyle(PLG.dim(scheme))
+                    Text("Twelve desires held.").font(Font.pl(.footnote)).foregroundStyle(PLG.dim(scheme))
                 }
-                if !store.error.isEmpty { Text(store.error).font(.footnote).foregroundStyle(PLG.red) }
+                if !store.error.isEmpty { Text(store.error).font(Font.pl(.footnote)).foregroundStyle(PLG.red) }
                 ForEach(active, id: \.self) { i in
                     let d = ds[i], level = store.desireLevel(ds[i])
                     VStack(alignment: .leading, spacing: 8) {
@@ -304,7 +304,7 @@ struct CompanionDesiresView: View {
                         }
                         .frame(minHeight: 44)
                     }
-                    .padding(12).background(PLG.surface(scheme), in: RoundedRectangle(cornerRadius: 12))
+                    .padding(12).background(PLG.surface(scheme), in: RoundedRectangle(cornerRadius: 12 * PLStyle.radius))
                 }
             }
             .padding(16)
@@ -342,16 +342,16 @@ struct CompanionArchiveView: View {
                     HStack(alignment: .firstTextBaseline) {
                         VStack(alignment: .leading, spacing: 2) {
                             Text(ds[i].name).plHand(20, relativeTo: .body).foregroundStyle(PLG.ink(scheme))
-                            Text(ds[i].status == "real" ? "Came true" : "Archived").font(.caption).foregroundStyle(ds[i].status == "real" ? PLG.gold : PLG.dim(scheme))
+                            Text(ds[i].status == "real" ? "Came true" : "Archived").font(Font.pl(.caption)).foregroundStyle(ds[i].status == "real" ? PLG.gold : PLG.dim(scheme))
                         }
                         Spacer()
                         if ds[i].status == "real" { Button("Undo") { store.real(i, false) }.buttonStyle(.bordered).frame(minHeight: 44) }
                     }
                 }
-                if !store.error.isEmpty { Text(store.error).font(.footnote).foregroundStyle(PLG.red) }
+                if !store.error.isEmpty { Text(store.error).font(Font.pl(.footnote)).foregroundStyle(PLG.red) }
                 ForEach(gs.reversed()) { g in
                     VStack(alignment: .leading, spacing: 2) {
-                        Text(g.day).font(.caption).monospacedDigit().foregroundStyle(PLG.dim(scheme))
+                        Text(g.day).font(Font.pl(.caption)).monospacedDigit().foregroundStyle(PLG.dim(scheme))
                         Text(g.text).plHand(20, relativeTo: .body).foregroundStyle(PLG.ink(scheme))
                     }
                 }
@@ -404,9 +404,9 @@ struct CompanionOpening: View {
                     Button { choice = id; UISelectionFeedbackGenerator().selectionChanged() } label: {
                         Text(label(id)).plHand(28, relativeTo: .title2).foregroundStyle(choice == id ? PLG.gold : Color(hex: 0xefe6d2))
                             .frame(maxWidth: .infinity, minHeight: 64)
-                            .background(Color(hex: 0x1a1a1a), in: RoundedRectangle(cornerRadius: 24))
-                            .overlay(RoundedRectangle(cornerRadius: 24).stroke(choice == id ? PLG.gold : .clear, lineWidth: 2))
-                            .contentShape(RoundedRectangle(cornerRadius: 24))
+                            .background(Color(hex: 0x1a1a1a), in: RoundedRectangle(cornerRadius: 24 * PLStyle.radius))
+                            .overlay(RoundedRectangle(cornerRadius: 24 * PLStyle.radius).stroke(choice == id ? PLG.gold : .clear, lineWidth: 2))
+                            .contentShape(RoundedRectangle(cornerRadius: 24 * PLStyle.radius))
                     }
                     .buttonStyle(.plain)
                     .accessibilityAddTraits(choice == id ? .isSelected : [])
@@ -414,10 +414,10 @@ struct CompanionOpening: View {
                 Button {
                     if store.born(who: choice, colours: ["bone-blue"]) { UINotificationFeedbackGenerator().notificationOccurred(.success) }
                 } label: {
-                    Text("Confirm").font(.headline).frame(maxWidth: .infinity, minHeight: 50)
+                    Text("Confirm").font(Font.pl(.headline)).frame(maxWidth: .infinity, minHeight: 50)
                 }
                 .buttonStyle(.borderedProminent).tint(PLG.gold)
-                if !store.error.isEmpty { Text(store.error).font(.footnote).foregroundStyle(PLG.red) }
+                if !store.error.isEmpty { Text(store.error).font(Font.pl(.footnote)).foregroundStyle(PLG.red) }
             }
             .padding(16)
         }

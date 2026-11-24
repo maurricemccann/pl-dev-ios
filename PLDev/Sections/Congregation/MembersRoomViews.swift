@@ -414,7 +414,7 @@ struct RoomPostCard: View {
                     if signedIn { Task { await room.react(post.id) } } else { onAuth() }
                 }) { GlyphMark(glyph: myGlyph, color: post.reacted ? accent : Bone.inkFaint(scheme), size: 15) }
                     .accessibilityLabel(post.reacted ? "Reacted, \(post.reactions)" : "React, \(post.reactions)")
-                SocialPill(label: "Repost", action: { if signedIn { askRepost(post) } else { onAuth() } }) { Image(systemName: "arrow.2.squarepath").font(.system(size: 12)) }
+                SocialPill(label: "Repost", action: { if signedIn { askRepost(post) } else { onAuth() } }) { Image(systemName: "arrow.2.squarepath").font(Font.pl(size: 12)) }
                     .disabled(post.waiting)
                 Spacer(minLength: 0)
                 SaveButton(refType: "post", refId: post.id, mediaURL: post.mediaUrl)
@@ -424,7 +424,7 @@ struct RoomPostCard: View {
                         guard !reported else { return }
                         reported = true
                         Task { await room.report("post", post.id) }
-                    }) { Image(systemName: "flag").font(.system(size: 12)) }.disabled(reported)
+                    }) { Image(systemName: "flag").font(Font.pl(size: 12)) }.disabled(reported)
                 }
             }
         }

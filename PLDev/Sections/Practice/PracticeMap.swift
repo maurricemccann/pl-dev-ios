@@ -308,7 +308,7 @@ struct PracticeField: View {
             let g = PracticeMapArt.glyphs[j % PracticeMapArt.glyphs.count]
             ctx.fill(PracticeMapGeometry.glyph(g, side: 11, centre: p), with: .color(Candle.goldHi.opacity(0.45)), style: FillStyle(eoFill: true))
         }
-        ctx.draw(Text("\(keys.count) lit").font(.system(size: 11).monospacedDigit()).foregroundStyle(Candle.goldHi.opacity(0.6)),
+        ctx.draw(Text("\(keys.count) lit").font(Font.pl(size: 11).monospacedDigit()).foregroundStyle(Candle.goldHi.opacity(0.6)),
                  at: CGPoint(x: size.width - 10, y: size.height - 10), anchor: .bottomTrailing)
     }
 }

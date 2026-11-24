@@ -91,7 +91,7 @@ struct VisionPreviewView: View {
                     let on = tab == t
                     Button { withAnimation(.snappy) { tab = t } } label: {
                         VStack(spacing: 3) {
-                            Image(systemName: t.symbol).font(.system(size: 17, weight: .medium))
+                            Image(systemName: t.symbol).font(Font.pl(size: 17, weight: .medium))
                             Text(t.title).osEyebrow(8)
                         }
                         .foregroundStyle(on ? Color.black : PLOS.dim(scheme))
@@ -118,10 +118,10 @@ private struct VisionHome: View {
         VStack(spacing: 14) {
             // milestone banner
             HStack(spacing: 14) {
-                CountText(target: VisionFigures.revenueLifetime, prefix: "$").font(.system(size: 40, design: .serif)).foregroundStyle(PLOS.gold)
+                CountText(target: VisionFigures.revenueLifetime, prefix: "$").font(Font.pl(size: 40, design: .serif)).foregroundStyle(PLOS.gold)
                 VStack(alignment: .leading, spacing: 2) {
                     Text("Six figures crossed").plHand(20, relativeTo: .headline).foregroundStyle(PLOS.dim(scheme))
-                    Text("Lifetime revenue passed $100,000 \u{00B7} record week +$\(VisionFigures.revenueWeek.formatted())").font(.footnote).foregroundStyle(PLOS.text(scheme))
+                    Text("Lifetime revenue passed $100,000 \u{00B7} record week +$\(VisionFigures.revenueWeek.formatted())").font(Font.pl(.footnote)).foregroundStyle(PLOS.text(scheme))
                 }
             }
             .osCard(padding: 16)
@@ -130,12 +130,12 @@ private struct VisionHome: View {
             VStack(spacing: 0) {
                 HStack(spacing: 16) {
                     HStack(alignment: .firstTextBaseline, spacing: 2) {
-                        Text("94").font(.system(size: 54, design: .serif)).foregroundStyle(PLOS.ok)
+                        Text("94").font(Font.pl(size: 54, design: .serif)).foregroundStyle(PLOS.ok)
                         Text("/100").osValue(13).foregroundStyle(PLOS.dim(scheme))
                     }
                     VStack(alignment: .leading, spacing: 2) {
                         Text("The Standing").plHand(20, relativeTo: .headline).foregroundStyle(PLOS.dim(scheme))
-                        Text("Ascending. Every quarter strong.").font(.footnote).foregroundStyle(PLOS.text(scheme))
+                        Text("Ascending. Every quarter strong.").font(Font.pl(.footnote)).foregroundStyle(PLOS.text(scheme))
                     }
                     Spacer(minLength: 0)
                 }
@@ -153,7 +153,7 @@ private struct VisionHome: View {
                             GeometryReader { g in
                                 Capsule().fill(PLOS.line(scheme)).overlay(alignment: .leading) { Capsule().fill(PLOS.ok).frame(width: g.size.width * CGFloat(q.1) / 25) }
                             }.frame(height: 4)
-                            Text(q.2).font(.caption2).foregroundStyle(PLOS.dim(scheme)).fixedSize(horizontal: false, vertical: true)
+                            Text(q.2).font(Font.pl(.caption2)).foregroundStyle(PLOS.dim(scheme)).fixedSize(horizontal: false, vertical: true)
                         }
                     }
                 }
@@ -181,12 +181,12 @@ private struct VisionTile: View {
                 Spacer()
                 Circle().fill(PLOS.gold).frame(width: 6, height: 6)
             }
-            if let t = tile.text { Text(t).font(.system(size: 21, design: .serif)).tracking(2).foregroundStyle(PLOS.gold) }
-            else if let v = tile.value { CountText(target: v, prefix: tile.money ? "$" : "").font(.system(size: 24, design: .serif)).foregroundStyle(PLOS.text(scheme)) }
+            if let t = tile.text { Text(t).font(Font.pl(size: 21, design: .serif)).tracking(2).foregroundStyle(PLOS.gold) }
+            else if let v = tile.value { CountText(target: v, prefix: tile.money ? "$" : "").font(Font.pl(size: 24, design: .serif)).foregroundStyle(PLOS.text(scheme)) }
             HStack {
-                Text(tile.sub).font(.system(size: 10, design: .monospaced)).foregroundStyle(PLOS.dim(scheme)).lineLimit(1).minimumScaleFactor(0.7)
+                Text(tile.sub).font(Font.pl(size: 10, design: .monospaced)).foregroundStyle(PLOS.dim(scheme)).lineLimit(1).minimumScaleFactor(0.7)
                 Spacer(minLength: 2)
-                if let d = tile.delta { Text(d).font(.system(size: 10, design: .monospaced)).foregroundStyle(PLOS.ok).lineLimit(1) }
+                if let d = tile.delta { Text(d).font(Font.pl(size: 10, design: .monospaced)).foregroundStyle(PLOS.ok).lineLimit(1) }
             }
         }
         .osCard(padding: 12)
@@ -210,8 +210,8 @@ private struct VisionPipeline: View {
                          ("This month", "$\(VisionFigures.revenueMonth.formatted())", "\(VisionFigures.ordersMonth) orders")], id: \.0) { x in
                     VStack(spacing: 4) {
                         Text(x.0).osEyebrow(8).foregroundStyle(PLOS.dim(scheme)).lineLimit(1).minimumScaleFactor(0.7)
-                        Text(x.1).font(.system(size: 22, design: .serif)).foregroundStyle(PLOS.ok).lineLimit(1).minimumScaleFactor(0.6)
-                        Text(x.2).font(.caption2).foregroundStyle(PLOS.dim(scheme)).multilineTextAlignment(.center)
+                        Text(x.1).font(Font.pl(size: 22, design: .serif)).foregroundStyle(PLOS.ok).lineLimit(1).minimumScaleFactor(0.6)
+                        Text(x.2).font(Font.pl(.caption2)).foregroundStyle(PLOS.dim(scheme)).multilineTextAlignment(.center)
                     }
                     .frame(maxWidth: .infinity)
                 }
@@ -242,9 +242,9 @@ private struct VisionMore: View {
                 ForEach(VisionFigures.doors.indices, id: \.self) { i in
                     let d = VisionFigures.doors[i]
                     VStack(alignment: .leading, spacing: 4) {
-                        Text(String(format: "%02d", i + 1)).font(.system(size: 11, design: .monospaced)).foregroundStyle(PLOS.gold.opacity(0.55))
-                        Text(d.0).font(.subheadline).foregroundStyle(PLOS.text(scheme))
-                        Text(d.1).font(.system(size: 10, design: .monospaced)).foregroundStyle(PLOS.dim(scheme)).lineLimit(1).minimumScaleFactor(0.7)
+                        Text(String(format: "%02d", i + 1)).font(Font.pl(size: 11, design: .monospaced)).foregroundStyle(PLOS.gold.opacity(0.55))
+                        Text(d.0).font(Font.pl(.subheadline)).foregroundStyle(PLOS.text(scheme))
+                        Text(d.1).font(Font.pl(size: 10, design: .monospaced)).foregroundStyle(PLOS.dim(scheme)).lineLimit(1).minimumScaleFactor(0.7)
                     }
                     .osCard(padding: 12)
                     .accessibilityElement(children: .combine)
@@ -307,8 +307,8 @@ private struct VisionChart: View {
         VStack(alignment: .leading, spacing: 10) {
             Text(title).osEyebrow(10).foregroundStyle(PLOS.dim(scheme))
             HStack(alignment: .firstTextBaseline, spacing: 8) {
-                Text("\(prefix)\(Int(last).formatted())").font(.system(size: 24, design: .serif)).foregroundStyle(PLOS.text(scheme))
-                Text("+\(Int(last - first).formatted()) trend \u{25B2}").font(.system(size: 11, design: .monospaced)).foregroundStyle(PLOS.ok)
+                Text("\(prefix)\(Int(last).formatted())").font(Font.pl(size: 24, design: .serif)).foregroundStyle(PLOS.text(scheme))
+                Text("+\(Int(last - first).formatted()) trend \u{25B2}").font(Font.pl(size: 11, design: .monospaced)).foregroundStyle(PLOS.ok)
             }
             Canvas { ctx, size in
                 let pad = 4.0, mn = series.min() ?? 0, span = max(1, (series.max() ?? 1) - mn)

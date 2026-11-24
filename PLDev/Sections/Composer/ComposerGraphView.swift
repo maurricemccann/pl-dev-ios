@@ -97,10 +97,10 @@ struct ComposerGraphView: View {
     private var strip: some View {
         HStack(spacing: 10) {
             Text("graph").cmpLabel(9)
-            Text(shot?.title ?? "").font(.system(size: 15, design: .serif)).foregroundStyle(CMP.text).lineLimit(1)
+            Text(shot?.title ?? "").font(Font.pl(size: 15, design: .serif)).foregroundStyle(CMP.text).lineLimit(1)
             Text("\(ops.count) op\(ops.count == 1 ? "" : "s")").cmpNum(11).foregroundStyle(CMP.muted)
             Spacer()
-            if let h = hint { Text(h).font(.system(size: 11)).foregroundStyle(CMP.danger).lineLimit(2).multilineTextAlignment(.trailing).transition(.opacity) }
+            if let h = hint { Text(h).font(Font.pl(size: 11)).foregroundStyle(CMP.danger).lineLimit(2).multilineTextAlignment(.trailing).transition(.opacity) }
         }
         .padding(.horizontal, 16).padding(.vertical, 8).frame(minHeight: 40)
         .background(CMP.surface.opacity(0.9))
@@ -169,7 +169,7 @@ struct ComposerGraphView: View {
     }
 
     private func zoomButton(_ symbol: String, _ label: String, _ action: @escaping () -> Void) -> some View {
-        Button(action: action) { Image(systemName: symbol).font(.system(size: 13, weight: .semibold)).foregroundStyle(CMP.dim).frame(width: 44, height: 44).plGlass(interactive: true, in: Circle()) }
+        Button(action: action) { Image(systemName: symbol).font(Font.pl(size: 13, weight: .semibold)).foregroundStyle(CMP.dim).frame(width: 44, height: 44).plGlass(interactive: true, in: Circle()) }
             .buttonStyle(.plain).accessibilityLabel(label)
     }
 
@@ -320,12 +320,12 @@ struct ComposerGraphView: View {
             VStack(alignment: .leading, spacing: 10) {
                 if let eid = selEdge, let e = edges.first(where: { $0.id == eid }), let a = nodeFor(e.source), let b = nodeFor(e.target) {
                     Text("Wire").cmpLabel(10)
-                    Text("\(nodeTitle(a)) → \(nodeTitle(b)) (\(e.port))").font(.system(size: 14)).foregroundStyle(CMP.text)
+                    Text("\(nodeTitle(a)) → \(nodeTitle(b)) (\(e.port))").font(Font.pl(size: 14)).foregroundStyle(CMP.text)
                     Button(role: .destructive) { edges.removeAll { $0.id == eid }; selEdge = nil; tick += 1 } label: { Label("Remove wire", systemImage: "scissors").frame(maxWidth: .infinity) }.buttonStyle(CMPPill())
                 } else if let id = selNode, let n = nodeFor(id) {
                     nodePanel(n)
                 } else {
-                    Text("Select a node to edit its parameters. Drag from a socket to wire it; only matching types connect. Tap a wire to remove it.").font(.system(size: 12)).foregroundStyle(CMP.dim)
+                    Text("Select a node to edit its parameters. Drag from a socket to wire it; only matching types connect. Tap a wire to remove it.").font(Font.pl(size: 12)).foregroundStyle(CMP.dim)
                     FlowLegend()
                 }
             }
@@ -336,8 +336,8 @@ struct ComposerGraphView: View {
 
     @ViewBuilder private func nodePanel(_ n: GNode) -> some View {
         let spec = n.kind.spec
-        Text(nodeTitle(n)).font(.system(size: 18, design: .serif)).foregroundStyle(CMP.text)
-        Text(n.kind == .source ? (n.assetId.flatMap { byId[$0] }?.path ?? "") : spec.why).font(.system(size: 11)).foregroundStyle(CMP.muted).textSelection(.enabled)
+        Text(nodeTitle(n)).font(Font.pl(size: 18, design: .serif)).foregroundStyle(CMP.text)
+        Text(n.kind == .source ? (n.assetId.flatMap { byId[$0] }?.path ?? "") : spec.why).font(Font.pl(size: 11)).foregroundStyle(CMP.muted).textSelection(.enabled)
         if let o = n.out { Text("out: \(o)").cmpNum(11).foregroundStyle(CMP.dim) }
         ForEach(spec.params, id: \.key) { p in
             ParamRow(spec: p, value: n.args[p.key]) { v in
@@ -350,7 +350,7 @@ struct ComposerGraphView: View {
                 let wired = edges.first { $0.target == n.id && $0.port == port.id }
                 HStack(spacing: 8) {
                     CMPDot(color: port.accepts.first?.color ?? CMP.muted, size: 7)
-                    Text(port.label).font(.system(size: 13)).foregroundStyle(CMP.text)
+                    Text(port.label).font(Font.pl(size: 13)).foregroundStyle(CMP.text)
                     Text(port.accepts.map(\.rawValue).joined(separator: " / ")).cmpNum(9).foregroundStyle(CMP.muted)
                     Spacer()
                     Menu {
@@ -359,7 +359,7 @@ struct ComposerGraphView: View {
                             Button { connect(c.id, n.id, port.id) } label: { Text(nodeTitle(c)) }
                         }
                     } label: {
-                        Text(wired.flatMap { nodeFor($0.source) }.map(nodeTitle) ?? (port.multi ? "Add a wire" : "Not wired")).font(.system(size: 12)).foregroundStyle(wired == nil ? CMP.warn : CMP.gold).lineLimit(1)
+                        Text(wired.flatMap { nodeFor($0.source) }.map(nodeTitle) ?? (port.multi ? "Add a wire" : "Not wired")).font(Font.pl(size: 12)).foregroundStyle(wired == nil ? CMP.warn : CMP.gold).lineLimit(1)
                             .padding(.horizontal, 10).frame(minHeight: 34).overlay { Capsule().strokeBorder(CMP.line, lineWidth: 0.8) }
                     }
                 }
@@ -401,16 +401,16 @@ struct GraphNodeBody: View {
         VStack(alignment: .leading, spacing: 0) {
             HStack(spacing: 6) {
                 CMPDot(color: accent, size: 6)
-                Text(title).font(.system(size: 11)).foregroundStyle(CMP.text).lineLimit(1)
+                Text(title).font(Font.pl(size: 11)).foregroundStyle(CMP.text).lineLimit(1)
                 Spacer(minLength: 2)
-                if let t = outType { Text(t.rawValue).font(.system(size: 9, design: .monospaced)).textCase(.uppercase).foregroundStyle(accent) }
+                if let t = outType { Text(t.rawValue).font(Font.pl(size: 9, design: .monospaced)).textCase(.uppercase).foregroundStyle(accent) }
             }
             .padding(.horizontal, 8).frame(height: ComposerGraph.head)
             .overlay(alignment: .bottom) { Rectangle().fill(CMP.nodeLine).frame(height: 1) }
             ForEach(spec.inputs, id: \.id) { p in
                 HStack(spacing: 5) {
-                    Text(p.label).font(.system(size: 10)).foregroundStyle(Color(hex: 0x9a8d78))
-                    if connected.contains(p.id) { Image(systemName: "link").font(.system(size: 7)).foregroundStyle(accent.opacity(0.7)) }
+                    Text(p.label).font(Font.pl(size: 10)).foregroundStyle(Color(hex: 0x9a8d78))
+                    if connected.contains(p.id) { Image(systemName: "link").font(Font.pl(size: 7)).foregroundStyle(accent.opacity(0.7)) }
                     Spacer()
                 }
                 .padding(.leading, 12).padding(.trailing, 8).frame(height: ComposerGraph.row)
@@ -421,17 +421,17 @@ struct GraphNodeBody: View {
             if node.kind != .shot {
                 HStack {
                     Spacer()
-                    Text(sub).font(.system(size: 10, design: .monospaced)).foregroundStyle(Color(hex: 0x9a8d78)).lineLimit(1)
+                    Text(sub).font(Font.pl(size: 10, design: .monospaced)).foregroundStyle(Color(hex: 0x9a8d78)).lineLimit(1)
                 }
                 .padding(.horizontal, 8).frame(height: ComposerGraph.row)
                 .overlay(alignment: .trailing) { Circle().fill(accent).frame(width: 9, height: 9).overlay { Circle().strokeBorder(CMP.node, lineWidth: 2) }.offset(x: 4.5) }
             } else {
-                Text("composites in wired order").font(.system(size: 10)).foregroundStyle(Color(hex: 0x9a8d78)).padding(.horizontal, 8).frame(height: ComposerGraph.row, alignment: .leading)
+                Text("composites in wired order").font(Font.pl(size: 10)).foregroundStyle(Color(hex: 0x9a8d78)).padding(.horizontal, 8).frame(height: ComposerGraph.row, alignment: .leading)
             }
             Spacer(minLength: 0)
         }
-        .background(CMP.node, in: RoundedRectangle(cornerRadius: 4, style: .continuous))
-        .overlay { RoundedRectangle(cornerRadius: 4, style: .continuous).strokeBorder(selected ? accent : CMP.nodeLine, lineWidth: 1) }
+        .background(CMP.node, in: RoundedRectangle(cornerRadius: 4 * PLStyle.radius, style: .continuous))
+        .overlay { RoundedRectangle(cornerRadius: 4 * PLStyle.radius, style: .continuous).strokeBorder(selected ? accent : CMP.nodeLine, lineWidth: 1) }
         .shadow(color: selected ? accent.opacity(0.35) : .clear, radius: 5)
     }
 }
@@ -443,7 +443,7 @@ struct FlowLegend: View {
             ForEach([ComposerSocket.media, .curve, .audio, .value, .model, .path, .shot], id: \.self) { s in
                 HStack(alignment: .top, spacing: 6) {
                     CMPDot(color: s.color, size: 8).padding(.top, 3)
-                    VStack(alignment: .leading, spacing: 0) { Text(s.rawValue).font(.system(size: 12, weight: .medium)).foregroundStyle(CMP.text); Text(s.carries).font(.system(size: 10)).foregroundStyle(CMP.muted) }
+                    VStack(alignment: .leading, spacing: 0) { Text(s.rawValue).font(Font.pl(size: 12, weight: .medium)).foregroundStyle(CMP.text); Text(s.carries).font(Font.pl(size: 10)).foregroundStyle(CMP.muted) }
                 }
             }
         }
@@ -472,7 +472,7 @@ struct ParamRow: View {
                     Spacer()
                     TextField("", value: Binding(get: { value?.number ?? 0 }, set: { set(.num($0)) }), format: .number.precision(.fractionLength(0...2)))
                         .keyboardType(.numbersAndPunctuation).multilineTextAlignment(.trailing).cmpNum(13).frame(width: 80).padding(.vertical, 5).padding(.horizontal, 8)
-                        .background(CMP.bg.opacity(0.6), in: RoundedRectangle(cornerRadius: 8, style: .continuous)).overlay { RoundedRectangle(cornerRadius: 8, style: .continuous).strokeBorder(CMP.line, lineWidth: 0.6) }
+                        .background(CMP.bg.opacity(0.6), in: RoundedRectangle(cornerRadius: 8 * PLStyle.radius, style: .continuous)).overlay { RoundedRectangle(cornerRadius: 8 * PLStyle.radius, style: .continuous).strokeBorder(CMP.line, lineWidth: 0.6) }
                 }
                 if let lo = spec.min, let hi = spec.max {
                     Slider(value: Binding(get: { min(hi, max(lo, value?.number ?? lo)) }, set: { set(.num(snap($0))) }), in: lo...hi).accessibilityLabel(spec.label)
@@ -487,7 +487,7 @@ struct ParamRow: View {
                         var r = value?.range ?? [0, 1]; while r.count < 2 { r.append(Double(r.count)) }; r[i] = v; set(.arr(r.map { .num($0) }))
                     }), format: .number.precision(.fractionLength(0...2)))
                         .keyboardType(.numbersAndPunctuation).multilineTextAlignment(.trailing).cmpNum(13).frame(width: 64).padding(.vertical, 5).padding(.horizontal, 8)
-                        .background(CMP.bg.opacity(0.6), in: RoundedRectangle(cornerRadius: 8, style: .continuous)).overlay { RoundedRectangle(cornerRadius: 8, style: .continuous).strokeBorder(CMP.line, lineWidth: 0.6) }
+                        .background(CMP.bg.opacity(0.6), in: RoundedRectangle(cornerRadius: 8 * PLStyle.radius, style: .continuous)).overlay { RoundedRectangle(cornerRadius: 8 * PLStyle.radius, style: .continuous).strokeBorder(CMP.line, lineWidth: 0.6) }
                 }
             }
         }

@@ -156,17 +156,17 @@ struct NativeStudyBar: View {
                 HStack(spacing: 8) {
                     Circle().fill(.red).frame(width: 8, height: 8)
                     VStack(alignment: .leading, spacing: 0) {
-                        Text(study.current.map { "\($0.name): \($0.prompt)" } ?? "Free study: draw as you normally do.").font(.caption).lineLimit(2)
-                        Text(study.current.map { "\(min(study.counts[$0.id] ?? 0, $0.target)) of \($0.target)" } ?? "\(study.strokes) strokes").font(.caption2).foregroundStyle(.secondary).monospacedDigit()
+                        Text(study.current.map { "\($0.name): \($0.prompt)" } ?? "Free study: draw as you normally do.").font(Font.pl(.caption)).lineLimit(2)
+                        Text(study.current.map { "\(min(study.counts[$0.id] ?? 0, $0.target)) of \($0.target)" } ?? "\(study.strokes) strokes").font(Font.pl(.caption2)).foregroundStyle(.secondary).monospacedDigit()
                     }
                     Spacer(minLength: 0)
                     Button { marking = true } label: { Image(systemName: "flag") }.accessibilityLabel("Mark this moment")
                     Button { study.next() } label: { Image(systemName: "forward.end") }.accessibilityLabel("Next exercise")
                     Button { study.stop() } label: { Image(systemName: "stop.circle") }.accessibilityLabel("Stop the study")
                 }
-                if let t = study.toast { Text(t).font(.caption2).foregroundStyle(.secondary).onTapGesture { study.toast = nil } }
+                if let t = study.toast { Text(t).font(Font.pl(.caption2)).foregroundStyle(.secondary).onTapGesture { study.toast = nil } }
             }
-            .padding(8).glassControl(in: RoundedRectangle(cornerRadius: 14, style: .continuous))
+            .padding(8).glassControl(in: RoundedRectangle(cornerRadius: 14 * PLStyle.radius, style: .continuous))
             .alert("What did you just do?", isPresented: $marking) {
                 TextField("A few words", text: $note)
                 Button("Mark it") { study.mark(note); note = "" }
@@ -201,7 +201,7 @@ struct NativeStudySheet: View {
                             study.setExercise(e.id); dismiss()
                         } label: {
                             HStack {
-                                VStack(alignment: .leading, spacing: 2) { Text(e.name); Text("Teaches: \(e.learn)").font(.caption).foregroundStyle(.secondary) }
+                                VStack(alignment: .leading, spacing: 2) { Text(e.name); Text("Teaches: \(e.learn)").font(Font.pl(.caption)).foregroundStyle(.secondary) }
                                 Spacer()
                                 Text(study.on ? "\(min(study.counts[e.id] ?? 0, e.target)) / \(e.target)" : "\(e.target)").foregroundStyle(.secondary).monospacedDigit()
                             }
@@ -213,7 +213,7 @@ struct NativeStudySheet: View {
                     Section("Past sessions") {
                         ForEach(sessions) { s in
                             HStack {
-                                VStack(alignment: .leading, spacing: 2) { Text(s.label.isEmpty ? "Session" : s.label); Text("\(s.strokes) strokes\(s.ended ? "" : " · not closed")").font(.caption).foregroundStyle(.secondary) }
+                                VStack(alignment: .leading, spacing: 2) { Text(s.label.isEmpty ? "Session" : s.label); Text("\(s.strokes) strokes\(s.ended ? "" : " · not closed")").font(Font.pl(.caption)).foregroundStyle(.secondary) }
                                 Spacer()
                                 Button { share = study.bundle(s.id) } label: { Image(systemName: "square.and.arrow.up") }.buttonStyle(.plain)
                             }

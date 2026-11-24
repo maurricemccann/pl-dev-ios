@@ -7,8 +7,8 @@ import UniformTypeIdentifiers
 private struct PaintPanel: ViewModifier {
     func body(content: Content) -> some View {
         content.padding(14).frame(maxWidth: .infinity, alignment: .leading)
-            .background(.ultraThinMaterial.opacity(0.55), in: RoundedRectangle(cornerRadius: 18, style: .continuous))
-            .overlay(RoundedRectangle(cornerRadius: 18, style: .continuous).strokeBorder(.white.opacity(0.07), lineWidth: 1))
+            .background(.ultraThinMaterial.opacity(0.55), in: RoundedRectangle(cornerRadius: 18 * PLStyle.radius, style: .continuous))
+            .overlay(RoundedRectangle(cornerRadius: 18 * PLStyle.radius, style: .continuous).strokeBorder(.white.opacity(0.07), lineWidth: 1))
     }
 }
 extension View {
@@ -85,13 +85,13 @@ struct PaintHome: View {
             VStack(spacing: 14) {
                 dailyMark
                 grid
-                if let line { Text(line).font(.footnote).foregroundStyle(PaintSkin.text.opacity(0.7)).frame(maxWidth: .infinity, alignment: .leading).accessibilityIdentifier("gallery.line") }
+                if let line { Text(line).font(Font.pl(.footnote)).foregroundStyle(PaintSkin.text.opacity(0.7)).frame(maxWidth: .infinity, alignment: .leading).accessibilityIdentifier("gallery.line") }
                 if !state.outbox.isEmpty { waiting }
                 syncPanel
                 Button { handbook = true } label: {
                     HStack { Label("The handbook", systemImage: "book"); Spacer(); Image(systemName: "chevron.right").foregroundStyle(PaintSkin.text.opacity(0.4)) }.paintPanel()
                 }.buttonStyle(.plain)
-                if let f = state.failed { Text(f).font(.footnote).foregroundStyle(PaintSkin.text.opacity(0.6)).frame(maxWidth: .infinity, alignment: .leading) }
+                if let f = state.failed { Text(f).font(Font.pl(.footnote)).foregroundStyle(PaintSkin.text.opacity(0.6)).frame(maxWidth: .infinity, alignment: .leading) }
             }
             .padding(.horizontal, 16).padding(.vertical, 12)
         }
@@ -155,7 +155,7 @@ struct PaintHome: View {
 
     private var dailyMark: some View {
         VStack(alignment: .leading, spacing: 10) {
-            HStack { Text("The Daily Mark").paintLabel(); Spacer(); Text("\(state.streak) day\(state.streak == 1 ? "" : "s")").font(.footnote.monospacedDigit()).foregroundStyle(PaintSkin.gold2).contentTransition(.numericText()) }
+            HStack { Text("The Daily Mark").paintLabel(); Spacer(); Text("\(state.streak) day\(state.streak == 1 ? "" : "s")").font(Font.pl(.footnote).monospacedDigit()).foregroundStyle(PaintSkin.gold2).contentTransition(.numericText()) }
             DailyMarkStrip(days: state.days)
         }
         .paintPanel()
@@ -164,13 +164,13 @@ struct PaintHome: View {
     private var grid: some View {
         LazyVGrid(columns: [GridItem(.adaptive(minimum: 150), spacing: 12)], spacing: 12) {
             Button { newSheet = true } label: {
-                VStack(spacing: 8) { Image(systemName: "plus").font(.largeTitle); Text("New canvas").font(.footnote.weight(.semibold)) }
+                VStack(spacing: 8) { Image(systemName: "plus").font(Font.pl(.largeTitle)); Text("New canvas").font(Font.pl(.footnote).weight(.semibold)) }
                     .frame(maxWidth: .infinity).frame(height: 150)
-                    .overlay(RoundedRectangle(cornerRadius: 14, style: .continuous).strokeBorder(PaintSkin.gold.opacity(0.6), style: StrokeStyle(lineWidth: 1.5, dash: [6, 5])))
+                    .overlay(RoundedRectangle(cornerRadius: 14 * PLStyle.radius, style: .continuous).strokeBorder(PaintSkin.gold.opacity(0.6), style: StrokeStyle(lineWidth: 1.5, dash: [6, 5])))
             }.buttonStyle(.plain).accessibilityIdentifier("gallery.newcard")
             if let open = openStack {
                 Button { openStack = nil } label: {
-                    VStack(spacing: 8) { Image(systemName: "chevron.backward").font(.title); Text(open).font(.footnote.weight(.semibold)) }
+                    VStack(spacing: 8) { Image(systemName: "chevron.backward").font(Font.pl(.title)); Text(open).font(Font.pl(.footnote).weight(.semibold)) }
                         .frame(maxWidth: .infinity).frame(height: 150).paintPanel()
                 }.buttonStyle(.plain).accessibilityLabel("Back from the stack \(open)").accessibilityIdentifier("gallery.stackback")
             } else {
@@ -182,16 +182,16 @@ struct PaintHome: View {
                                 if let t = s.works.first?.thumb { Image(uiImage: t).resizable().scaledToFit().background(NativeChecker().opacity(0.35)).padding(10) }
                                 Image(systemName: "square.stack.3d.up.fill").padding(6).background(.ultraThinMaterial, in: Circle()).frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .topTrailing).padding(6)
                             }
-                            .frame(height: 112).clipShape(RoundedRectangle(cornerRadius: 12, style: .continuous))
-                            Text(s.name).font(.footnote.weight(.semibold)).lineLimit(1)
-                            Text("\(s.works.count) work\(s.works.count == 1 ? "" : "s")").font(.caption2).foregroundStyle(PaintSkin.text.opacity(0.55))
-                        }.padding(8).background(.ultraThinMaterial.opacity(0.5), in: RoundedRectangle(cornerRadius: 14, style: .continuous))
+                            .frame(height: 112).clipShape(RoundedRectangle(cornerRadius: 12 * PLStyle.radius, style: .continuous))
+                            Text(s.name).font(Font.pl(.footnote).weight(.semibold)).lineLimit(1)
+                            Text("\(s.works.count) work\(s.works.count == 1 ? "" : "s")").font(Font.pl(.caption2)).foregroundStyle(PaintSkin.text.opacity(0.55))
+                        }.padding(8).background(.ultraThinMaterial.opacity(0.5), in: RoundedRectangle(cornerRadius: 14 * PLStyle.radius, style: .continuous))
                     }.buttonStyle(.plain).accessibilityLabel("Stack \(s.name), \(s.works.count) works").accessibilityIdentifier("gallery.stack.\(s.name)")
                 }
             }
             ForEach(shown) { w in card(w) }
         }
-        .overlay { if busy != nil { PLLoader().padding(20).background(.regularMaterial, in: RoundedRectangle(cornerRadius: 14, style: .continuous)) } }
+        .overlay { if busy != nil { PLLoader().padding(20).background(.regularMaterial, in: RoundedRectangle(cornerRadius: 14 * PLStyle.radius, style: .continuous)) } }
     }
 
     private func card(_ w: PaintModel.Work) -> some View {
@@ -202,11 +202,11 @@ struct PaintHome: View {
                     if let t = w.thumb { Image(uiImage: t).resizable().scaledToFit().background(NativeChecker().opacity(0.35)) }
                     if !w.here { Image(systemName: "icloud.and.arrow.down").padding(6).background(.ultraThinMaterial, in: Circle()).frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .bottomTrailing).padding(6) }
                 }
-                .frame(height: 112).clipShape(RoundedRectangle(cornerRadius: 12, style: .continuous))
-                Text(w.name).font(.footnote.weight(.semibold)).lineLimit(1)
-                HStack { Text("\(w.w) × \(w.h)"); Spacer(); Text(w.updated, format: .relative(presentation: .named)) }.font(.caption2).foregroundStyle(PaintSkin.text.opacity(0.55)).lineLimit(1)
+                .frame(height: 112).clipShape(RoundedRectangle(cornerRadius: 12 * PLStyle.radius, style: .continuous))
+                Text(w.name).font(Font.pl(.footnote).weight(.semibold)).lineLimit(1)
+                HStack { Text("\(w.w) × \(w.h)"); Spacer(); Text(w.updated, format: .relative(presentation: .named)) }.font(Font.pl(.caption2)).foregroundStyle(PaintSkin.text.opacity(0.55)).lineLimit(1)
             }
-            .padding(8).background(.ultraThinMaterial.opacity(0.5), in: RoundedRectangle(cornerRadius: 14, style: .continuous))
+            .padding(8).background(.ultraThinMaterial.opacity(0.5), in: RoundedRectangle(cornerRadius: 14 * PLStyle.radius, style: .continuous))
         }
         .buttonStyle(.plain)
         .accessibilityLabel("Work, \(w.name)").accessibilityIdentifier("gallery.work")
@@ -271,16 +271,16 @@ struct PaintHome: View {
     private var waiting: some View {
         VStack(alignment: .leading, spacing: 8) {
             Text("Waiting to be filed").paintLabel()
-            ForEach(state.outbox) { i in HStack { Text(i.title ?? i.id); Spacer(); Text((i.dest ?? "").capitalized).foregroundStyle(PaintSkin.text.opacity(0.6)) }.font(.footnote) }
-            Text("Sent to Curate or the Archive; the PC files them.").font(.caption2).foregroundStyle(PaintSkin.text.opacity(0.5))
+            ForEach(state.outbox) { i in HStack { Text(i.title ?? i.id); Spacer(); Text((i.dest ?? "").capitalized).foregroundStyle(PaintSkin.text.opacity(0.6)) }.font(Font.pl(.footnote)) }
+            Text("Sent to Curate or the Archive; the PC files them.").font(Font.pl(.caption2)).foregroundStyle(PaintSkin.text.opacity(0.5))
         }
         .paintPanel()
     }
 
     private var syncPanel: some View {
         VStack(alignment: .leading, spacing: 8) {
-            HStack { Text("Sync with the laptop").paintLabel(); Spacer(); Text(sync.state).font(.footnote).foregroundStyle(sync.failed ? .red : PaintSkin.gold2) }
-            if !sync.detail.isEmpty { Text(sync.detail).font(.caption).foregroundStyle(PaintSkin.text.opacity(0.6)) }
+            HStack { Text("Sync with the laptop").paintLabel(); Spacer(); Text(sync.state).font(Font.pl(.footnote)).foregroundStyle(sync.failed ? .red : PaintSkin.gold2) }
+            if !sync.detail.isEmpty { Text(sync.detail).font(Font.pl(.caption)).foregroundStyle(PaintSkin.text.opacity(0.6)) }
             Button { Task { syncing = true; await sync.run(model: model, canvas: nil); await state.load(model: model); syncing = false } } label: {
                 Label(syncing || sync.running ? "Syncing…" : "Sync now", systemImage: "arrow.triangle.2.circlepath")
             }.buttonStyle(.bordered).disabled(syncing || sync.running)

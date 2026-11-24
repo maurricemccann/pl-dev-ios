@@ -479,7 +479,7 @@ struct NativeExportSheet: View {
             .navigationBarTitleDisplayMode(.inline)
             .toolbar { ToolbarItem(placement: .confirmationAction) { Button("Done") { dismiss() } } }
             .sheet(item: Binding(get: { share.map { ExportURL(url: $0) } }, set: { if $0 == nil { share = nil } })) { ShareSheet(items: [$0.url]) }
-            .overlay { if let busy { ProgressView(busy).padding(20).background(.regularMaterial, in: RoundedRectangle(cornerRadius: 14, style: .continuous)) } }
+            .overlay { if let busy { ProgressView(busy).padding(20).background(.regularMaterial, in: RoundedRectangle(cornerRadius: 14 * PLStyle.radius, style: .continuous)) } }
         }
     }
 
@@ -500,7 +500,7 @@ struct NativeExportSheet: View {
                 do { try data.write(to: url, options: .atomic); share = url } catch { line = "Not saved. The phone refused the file." }
             }
         } label: {
-            Label { VStack(alignment: .leading, spacing: 2) { Text(title); Text(note).font(.caption).foregroundStyle(.secondary) } } icon: { Image(systemName: symbol) }
+            Label { VStack(alignment: .leading, spacing: 2) { Text(title); Text(note).font(Font.pl(.caption)).foregroundStyle(.secondary) } } icon: { Image(systemName: symbol) }
         }
         .disabled(busy != nil)
     }

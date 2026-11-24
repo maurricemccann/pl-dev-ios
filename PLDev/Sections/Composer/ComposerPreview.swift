@@ -65,17 +65,17 @@ struct ComposerPreviewSheet: View {
                     ContentUnavailableView("No shots to play", systemImage: "play.slash", description: Text("Add a shot and attach something to it, then preview the piece here."))
                 } else {
                     let w = locate(t)
-                    stage(w).aspectRatio(ratio, contentMode: .fit).frame(maxHeight: 520).clipShape(RoundedRectangle(cornerRadius: 14, style: .continuous))
-                        .overlay { RoundedRectangle(cornerRadius: 14, style: .continuous).strokeBorder(CMP.line, lineWidth: 0.8) }
+                    stage(w).aspectRatio(ratio, contentMode: .fit).frame(maxHeight: 520).clipShape(RoundedRectangle(cornerRadius: 14 * PLStyle.radius, style: .continuous))
+                        .overlay { RoundedRectangle(cornerRadius: 14 * PLStyle.radius, style: .continuous).strokeBorder(CMP.line, lineWidth: 0.8) }
                         .accessibilityIdentifier("composer.preview.stage")
                     VStack(alignment: .leading, spacing: 4) {
-                        Text("Shot \(String(format: "%02d", w.index + 1)) of \(piece.shots.count): \(piece.shots[w.index].title)").font(.system(size: 14, design: .serif)).foregroundStyle(CMP.text).lineLimit(1)
+                        Text("Shot \(String(format: "%02d", w.index + 1)) of \(piece.shots.count): \(piece.shots[w.index].title)").font(Font.pl(size: 14, design: .serif)).foregroundStyle(CMP.text).lineLimit(1)
                             .accessibilityIdentifier("composer.preview.shot")
                         Text(w.index == 0 ? "opens the piece" : "enters with " + (w.word == "cut" ? "a cut" : "\(w.word) \(GVal.js(w.secs))s")).cmpNum(11).foregroundStyle(CMP.dim)
                     }.frame(maxWidth: .infinity, alignment: .leading)
                     HStack(spacing: 12) {
                         Button { jump(w.index - 1, w) } label: { Image(systemName: "backward.end.fill").frame(width: 44, height: 44) }.accessibilityLabel("Previous shot")
-                        Button { toggle() } label: { Image(systemName: playing ? "pause.fill" : "play.fill").font(.system(size: 20)).frame(width: 52, height: 44) }
+                        Button { toggle() } label: { Image(systemName: playing ? "pause.fill" : "play.fill").font(Font.pl(size: 20)).frame(width: 52, height: 44) }
                             .buttonStyle(CMPPill(primary: true)).accessibilityLabel(playing ? "Pause" : "Play").accessibilityIdentifier("composer.preview.play")
                         Button { jump(w.index + 1, w) } label: { Image(systemName: "forward.end.fill").frame(width: 44, height: 44) }.accessibilityLabel("Next shot")
                         Slider(value: Binding(get: { t }, set: { t = $0; playing = false }), in: 0...total).tint(CMP.gold)
@@ -87,7 +87,7 @@ struct ComposerPreviewSheet: View {
                         Spacer()
                         Text(String(format: "%.1f s", total) + " · \(piece.resolution) · \(piece.fps) fps").cmpNum(11).foregroundStyle(CMP.muted)
                     }
-                    Text("A library asset shows its thumbnail; a clip from Photos plays. The bed is not mixed here: the renderer does that.").font(.system(size: 11)).foregroundStyle(CMP.muted).frame(maxWidth: .infinity, alignment: .leading)
+                    Text("A library asset shows its thumbnail; a clip from Photos plays. The bed is not mixed here: the renderer does that.").font(Font.pl(size: 11)).foregroundStyle(CMP.muted).frame(maxWidth: .infinity, alignment: .leading)
                 }
                 Spacer(minLength: 0)
             }
@@ -117,7 +117,7 @@ struct ComposerPreviewSheet: View {
         ZStack {
             Color.black
             if let img = picture(s) { Image(uiImage: img).resizable().scaledToFill() }
-            else { Text(s.sourceIds.isEmpty ? "no sources: this shot renders black" : "no picture for this shot").font(.system(size: 11)).foregroundStyle(CMP.muted) }
+            else { Text(s.sourceIds.isEmpty ? "no sources: this shot renders black" : "no picture for this shot").font(Font.pl(size: 11)).foregroundStyle(CMP.muted) }
         }
         .clipped()
     }

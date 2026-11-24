@@ -68,19 +68,19 @@ struct CaptureTrailLine: View {
         HStack(alignment: .top, spacing: 12) {
             CaptureBadge(label: badge, tone: tone, saving: saving)
             VStack(alignment: .leading, spacing: 3) {
-                Text(label).font(.subheadline).foregroundStyle(PLOS.text(scheme)).lineLimit(2).multilineTextAlignment(.leading)
+                Text(label).font(Font.pl(.subheadline)).foregroundStyle(PLOS.text(scheme)).lineLimit(2).multilineTextAlignment(.leading)
                 HStack(spacing: 4) {
                     Text(detail).lineLimit(2)
                     if let ago { Text("·"); Ago(text: ago) }
                 }
-                .font(.system(size: 11, design: .monospaced)).foregroundStyle(PLOS.dim(scheme))
+                .font(Font.pl(size: 11, design: .monospaced)).foregroundStyle(PLOS.dim(scheme))
             }
             Spacer(minLength: 0)
             if let thumb, let ui = UIImage(data: thumb) {
-                Image(uiImage: ui).resizable().scaledToFill().frame(width: 44, height: 44).clipShape(RoundedRectangle(cornerRadius: 8, style: .continuous))
+                Image(uiImage: ui).resizable().scaledToFill().frame(width: 44, height: 44).clipShape(RoundedRectangle(cornerRadius: 8 * PLStyle.radius, style: .continuous))
             } else if let image {
                 AsyncImage(url: image) { i in i.resizable().scaledToFill() } placeholder: { PLOS.surface2(scheme) }
-                    .frame(width: 44, height: 44).clipShape(RoundedRectangle(cornerRadius: 8, style: .continuous))
+                    .frame(width: 44, height: 44).clipShape(RoundedRectangle(cornerRadius: 8 * PLStyle.radius, style: .continuous))
             }
         }
         .contentShape(Rectangle())
@@ -99,7 +99,7 @@ struct CaptureTrailRoom: View {
         HStack(alignment: .firstTextBaseline) {
             Text("Where it went").plHand(22, relativeTo: .title3).foregroundStyle(PLOS.gold)
             Spacer()
-            Text("Link sweeps \(CaptureSweeps.text)").font(.system(size: 10, design: .monospaced)).foregroundStyle(PLOS.dim(scheme)).lineLimit(1).minimumScaleFactor(0.7)
+            Text("Link sweeps \(CaptureSweeps.text)").font(Font.pl(size: 10, design: .monospaced)).foregroundStyle(PLOS.dim(scheme)).lineLimit(1).minimumScaleFactor(0.7)
         }
         .captureRow()
         if let n = state.trailNote { ResultLine(text: n).captureRow() }
@@ -210,9 +210,9 @@ struct CaptureWaitingRoom: View {
         OSPanel(title: "To send from this phone", badge: "\(model.inboxCount)", owed: model.inboxCount > 0, startOpen: true) {
             Text(model.inboxCount == 0 ? "Nothing is waiting on this phone. Everything you captured has gone in." :
                     "\(model.inboxCount) \(model.inboxCount == 1 ? "capture is" : "captures are") on this phone, not sent yet. They go in by themselves when the house answers.")
-                .font(.subheadline).foregroundStyle(PLOS.dim(scheme))
+                .font(Font.pl(.subheadline)).foregroundStyle(PLOS.dim(scheme))
             if let used = state.usedToday, let cap = state.cap {
-                Text("\(used) of \(cap) sent today through the phone door.").font(.system(size: 12, design: .monospaced)).foregroundStyle(PLOS.dim(scheme))
+                Text("\(used) of \(cap) sent today through the phone door.").font(Font.pl(size: 12, design: .monospaced)).foregroundStyle(PLOS.dim(scheme))
             }
             Button { Task { await sendNow() } } label: { Text(sending ? "Sending…" : "Send now") }
                 .buttonStyle(OSPill()).disabled(model.inboxCount == 0 || sending)
@@ -235,9 +235,9 @@ struct CaptureWaitingRoom: View {
         .captureRow()
 
         OSPanel(title: "Where captures go") {
-            Text("Text, quotes and artwork go to the Notion inbox and your moderation deck.").font(.subheadline).foregroundStyle(PLOS.text(scheme))
-            Text("Links go to the research pool at \(CaptureSweeps.text).").font(.subheadline).foregroundStyle(PLOS.text(scheme))
-            Text("Nothing is posted anywhere from here.").font(.subheadline).foregroundStyle(PLOS.dim(scheme))
+            Text("Text, quotes and artwork go to the Notion inbox and your moderation deck.").font(Font.pl(.subheadline)).foregroundStyle(PLOS.text(scheme))
+            Text("Links go to the research pool at \(CaptureSweeps.text).").font(Font.pl(.subheadline)).foregroundStyle(PLOS.text(scheme))
+            Text("Nothing is posted anywhere from here.").font(Font.pl(.subheadline)).foregroundStyle(PLOS.dim(scheme))
         }
         .captureRow()
     }
@@ -258,7 +258,7 @@ struct CaptureWaitingRoom: View {
                 OSRow(title: title, meta: meta) {
                     HStack(spacing: 8) {
                         Text("\(n)").osValue(18).foregroundStyle(PLOS.gold).contentTransition(.numericText())
-                        Image(systemName: "chevron.right").font(.caption2.weight(.bold)).foregroundStyle(PLOS.goldDim(scheme))
+                        Image(systemName: "chevron.right").font(Font.pl(.caption2).weight(.bold)).foregroundStyle(PLOS.goldDim(scheme))
                     }
                 }
             }
@@ -301,10 +301,10 @@ private struct CaptureDetailBody: View {
                 HStack {
                     CaptureBadge(label: detail.stateLabel, tone: detail.tone)
                     Spacer()
-                    if let c = detail.created { Ago(text: c).font(.system(size: 12, design: .monospaced)).foregroundStyle(PLOS.dim(scheme)) }
+                    if let c = detail.created { Ago(text: c).font(Font.pl(size: 12, design: .monospaced)).foregroundStyle(PLOS.dim(scheme)) }
                 }
-                Text(detail.label).font(.body).foregroundStyle(PLOS.text(scheme)).textSelection(.enabled)
-                Text(detail.stateDetail).font(.subheadline).foregroundStyle(PLOS.dim(scheme))
+                Text(detail.label).font(Font.pl(.body)).foregroundStyle(PLOS.text(scheme)).textSelection(.enabled)
+                Text(detail.stateDetail).font(Font.pl(.subheadline)).foregroundStyle(PLOS.dim(scheme))
                 CaptureFlow(detail: detail)   // the flow of this intake, as a diagram
                 if !detail.meta.isEmpty { Text(detail.meta).osEyebrow(10).foregroundStyle(PLOS.dim(scheme)) }
                 HStack(spacing: 8) {

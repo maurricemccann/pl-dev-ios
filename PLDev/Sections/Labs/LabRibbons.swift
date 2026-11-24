@@ -346,11 +346,11 @@ struct LabRibbonView: View {
         ZStack(alignment: .bottomTrailing) {
             if let scene { LabMetalView(scene: scene) } else { LabGPUMissing() }
             if failed {
-                Text("This comp did not load. Pull back and try again.").font(.footnote).foregroundStyle(PLG.gold.opacity(0.7)).padding(.bottom, 80).frame(maxWidth: .infinity)
+                Text("This comp did not load. Pull back and try again.").font(Font.pl(.footnote)).foregroundStyle(PLG.gold.opacity(0.7)).padding(.bottom, 80).frame(maxWidth: .infinity)
             }
             HStack(spacing: 10) {
                 stepButton("‹", "Previous composition") { comp = (comp - 2 + count) % count + 1 }
-                Text("\(String(format: "%02d", comp)) / 12").font(.system(size: 13, design: .serif)).labCaps().tracking(1.8).foregroundStyle(PLG.gold.opacity(0.7)).frame(minWidth: 56).monospacedDigit()
+                Text("\(String(format: "%02d", comp)) / 12").font(Font.pl(size: 13, design: .serif)).labCaps().tracking(1.8).foregroundStyle(PLG.gold.opacity(0.7)).frame(minWidth: 56).monospacedDigit()
                 stepButton("›", "Next composition") { comp = comp % count + 1 }
             }
             .padding(.trailing, 20).padding(.bottom, 26)
@@ -364,7 +364,7 @@ struct LabRibbonView: View {
 
     private func stepButton(_ s: String, _ label: String, _ action: @escaping () -> Void) -> some View {
         Button(action: action) {
-            Text(s).font(.system(size: 20)).foregroundStyle(PLG.gold.opacity(0.85)).frame(width: 44, height: 44)
+            Text(s).font(Font.pl(size: 20)).foregroundStyle(PLG.gold.opacity(0.85)).frame(width: 44, height: 44)
                 .background { Circle().fill(Color(hex: 0x0a0a0a).opacity(0.6)) }
                 .overlay { Circle().strokeBorder(PLG.gold.opacity(0.35), lineWidth: 1) }
         }

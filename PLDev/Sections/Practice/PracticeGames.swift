@@ -69,7 +69,7 @@ struct GamesScreen: View {
                 rowBody(title: "The three drills", line: "The Purge, the Sequence and the Rewrite, from the Academy.", symbol: "checklist", score: nil)
             }
             .buttonStyle(.plain)
-            Text("The arcade").font(.system(size: 11)).textCase(.uppercase).tracking(1).foregroundStyle(Candle.gold).frame(maxWidth: .infinity, alignment: .leading).padding(.top, 8)
+            Text("The arcade").font(Font.pl(size: 11)).textCase(.uppercase).tracking(1).foregroundStyle(Candle.gold).frame(maxWidth: .infinity, alignment: .leading).padding(.top, 8)
             ForEach(ArcadeID.allCases) { g in
                 let open = unlocked.contains(g.rawValue)
                 Button { if open { playingArcade = g } } label: {
@@ -113,14 +113,14 @@ struct GamesScreen: View {
 
     private func rowBody(title: String, line: String, symbol: String, score: String?) -> some View {
         HStack(spacing: 14) {
-            Image(systemName: symbol).font(.system(size: 20)).foregroundStyle(Candle.gold).frame(width: 32)
+            Image(systemName: symbol).font(Font.pl(size: 20)).foregroundStyle(Candle.gold).frame(width: 32)
             VStack(alignment: .leading, spacing: 3) {
                 Text(title).candleH2()
-                Text(line).font(.system(size: 13)).foregroundStyle(Candle.ink.opacity(0.7)).fixedSize(horizontal: false, vertical: true)
+                Text(line).font(Font.pl(size: 13)).foregroundStyle(Candle.ink.opacity(0.7)).fixedSize(horizontal: false, vertical: true)
             }
             Spacer(minLength: 8)
-            if let score { Text(score).font(.system(size: 12).monospacedDigit()).foregroundStyle(Candle.goldHi) }
-            Image(systemName: "chevron.right").font(.system(size: 12)).foregroundStyle(Candle.ink.opacity(0.4))
+            if let score { Text(score).font(Font.pl(size: 12).monospacedDigit()).foregroundStyle(Candle.goldHi) }
+            Image(systemName: "chevron.right").font(Font.pl(size: 12)).foregroundStyle(Candle.ink.opacity(0.4))
         }
         .frame(minHeight: 44)
         .candleCard(padding: 14)
@@ -148,7 +148,7 @@ struct GameShell<Content: View>: View {
             GlyphField(strength: 0.07).ignoresSafeArea().blendMode(.screen)
             VStack(spacing: 16) {
                 HStack {
-                    Button { close() } label: { Image(systemName: "xmark").font(.system(size: 15, weight: .medium)).foregroundStyle(Candle.ink).frame(width: 44, height: 44) }
+                    Button { close() } label: { Image(systemName: "xmark").font(Font.pl(size: 15, weight: .medium)).foregroundStyle(Candle.ink).frame(width: 44, height: 44) }
                         .accessibilityLabel("Close the game")
                     Text(title).plHand(22, relativeTo: .title2).foregroundStyle(Candle.goldHi)
                     Spacer()
@@ -177,13 +177,13 @@ struct DailySeedGame: View {
     var body: some View {
         VStack(alignment: .leading, spacing: 18) {
             if let seed {
-                Text("Today's seed").font(.system(size: 12)).textCase(.uppercase).tracking(1).foregroundStyle(Candle.gold)
-                Text(seed).font(.system(size: 22)).foregroundStyle(Candle.goldHi).lineSpacing(5).fixedSize(horizontal: false, vertical: true)
+                Text("Today's seed").font(Font.pl(size: 12)).textCase(.uppercase).tracking(1).foregroundStyle(Candle.gold)
+                Text(seed).font(Font.pl(size: 22)).foregroundStyle(Candle.goldHi).lineSpacing(5).fixedSize(horizontal: false, vertical: true)
             } else {
                 Text("No seeds yet: star seed phrases in Curate and they arrive here.").candleHint()
             }
             if days.contains(today) {
-                Text("Held today. \(days.count) \(days.count == 1 ? "day" : "days") in all.").font(.system(size: 15, weight: .medium)).foregroundStyle(Candle.ink)
+                Text("Held today. \(days.count) \(days.count == 1 ? "day" : "days") in all.").font(Font.pl(size: 15, weight: .medium)).foregroundStyle(Candle.ink)
             } else {
                 Button("I held it today") { days.insert(today); GameScores.dailyDays = days }.buttonStyle(CandleButton()).disabled(seed == nil)
             }
@@ -200,7 +200,7 @@ struct DailySeedGame: View {
         return LazyVGrid(columns: cols, spacing: 2) {
             ForEach(0..<364, id: \.self) { i in
                 let d = cal.date(byAdding: .day, value: i, to: start) ?? .now
-                RoundedRectangle(cornerRadius: 2).fill(days.contains(GameScores.today(d)) ? Candle.gold : Candle.pillLine.opacity(0.6)).aspectRatio(1, contentMode: .fit)
+                RoundedRectangle(cornerRadius: 2 * PLStyle.radius).fill(days.contains(GameScores.today(d)) ? Candle.gold : Candle.pillLine.opacity(0.6)).aspectRatio(1, contentMode: .fit)
             }
         }
         .accessibilityLabel("\(days.count) days held in the last year")
@@ -222,15 +222,15 @@ struct WhatPersistsGame: View {
             if deck.isEmpty {
                 Text("No lines to hold yet.").candleHint()
             } else if round < min(rounds, deck.count) {
-                Text("Round \(round + 1) of \(min(rounds, deck.count)) · \(right) right").font(.system(size: 12).monospacedDigit()).foregroundStyle(Candle.ink.opacity(0.6))
+                Text("Round \(round + 1) of \(min(rounds, deck.count)) · \(right) right").font(Font.pl(size: 12).monospacedDigit()).foregroundStyle(Candle.ink.opacity(0.6))
                 let line = deck[round]
                 TileExercise(shownFirst: line, target: line.split(separator: " ").map(String.init), separator: " ", locked: result != nil) { ok in
                     result = ok; if ok { right += 1 }
                 }
                 .id(round)
                 if let result {
-                    Text(result ? "Held." : "Not this time:").font(.system(size: 15, weight: .medium)).foregroundStyle(result ? Candle.goldHi : Candle.ink)
-                    if !result { Text(line).font(.system(size: 15)).foregroundStyle(Candle.ink) }
+                    Text(result ? "Held." : "Not this time:").font(Font.pl(size: 15, weight: .medium)).foregroundStyle(result ? Candle.goldHi : Candle.ink)
+                    if !result { Text(line).font(Font.pl(size: 15)).foregroundStyle(Candle.ink) }
                     Button("Next") { self.result = nil; round += 1; if round >= min(rounds, deck.count) { GameScores.offer(.persists, right) } }.buttonStyle(CandleButton())
                 }
             } else {
@@ -272,22 +272,22 @@ struct TransmissionGame: View {
                 PField(prompt: "What are you bringing in?", text: $intention, lines: 2)
                 Button("Begin") { stage = 0 }.buttonStyle(CandleButton()).disabled(intention.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty)
             } else if stage < 3 {
-                Text(["The First Truth", "The Second Truth", "The Third Truth"][stage]).font(.system(size: 12)).textCase(.uppercase).tracking(1).foregroundStyle(Candle.gold)
-                Text(Self.stages[stage].truth).font(.system(size: 22)).foregroundStyle(Candle.goldHi)
-                Text(Self.stages[stage].ask).font(.system(size: 15)).foregroundStyle(Candle.ink).fixedSize(horizontal: false, vertical: true)
+                Text(["The First Truth", "The Second Truth", "The Third Truth"][stage]).font(Font.pl(size: 12)).textCase(.uppercase).tracking(1).foregroundStyle(Candle.gold)
+                Text(Self.stages[stage].truth).font(Font.pl(size: 22)).foregroundStyle(Candle.goldHi)
+                Text(Self.stages[stage].ask).font(Font.pl(size: 15)).foregroundStyle(Candle.ink).fixedSize(horizontal: false, vertical: true)
                 PField(prompt: "One line.", text: $answers[stage], lines: 3)
-                Text("From the Doctrine deck").font(.system(size: 11)).textCase(.uppercase).tracking(1).foregroundStyle(Candle.gold).padding(.top, 6)
-                Text(Self.stages[stage].doctrine).font(.system(size: 15, design: .serif).italic()).foregroundStyle(Candle.goldHi).fixedSize(horizontal: false, vertical: true)
+                Text("From the Doctrine deck").font(Font.pl(size: 11)).textCase(.uppercase).tracking(1).foregroundStyle(Candle.gold).padding(.top, 6)
+                Text(Self.stages[stage].doctrine).font(Font.pl(size: 15, design: .serif).italic()).foregroundStyle(Candle.goldHi).fixedSize(horizontal: false, vertical: true)
                 PField(prompt: "One line (optional).", text: $doctrine[stage], lines: 3)
                 Button(stage < 2 ? "Next Truth" : "Complete") { stage += 1; if stage == 3 { done += 1; GameScores.offer(.transmission, done) } }
                     .buttonStyle(CandleButton()).disabled(answers[stage].trimmingCharacters(in: .whitespacesAndNewlines).isEmpty)
             } else {
-                Text(intention).font(.system(size: 20, weight: .medium)).foregroundStyle(Candle.goldHi)
+                Text(intention).font(Font.pl(size: 20, weight: .medium)).foregroundStyle(Candle.goldHi)
                 ForEach(0..<3, id: \.self) { i in
                     VStack(alignment: .leading, spacing: 4) {
-                        Text(Self.stages[i].truth).font(.system(size: 12)).textCase(.uppercase).tracking(1).foregroundStyle(Candle.gold)
-                        Text(answers[i]).font(.system(size: 15)).foregroundStyle(Candle.ink)
-                        if !doctrine[i].isEmpty { Text(doctrine[i]).font(.system(size: 14, design: .serif).italic()).foregroundStyle(Candle.goldHi) }
+                        Text(Self.stages[i].truth).font(Font.pl(size: 12)).textCase(.uppercase).tracking(1).foregroundStyle(Candle.gold)
+                        Text(answers[i]).font(Font.pl(size: 15)).foregroundStyle(Candle.ink)
+                        if !doctrine[i].isEmpty { Text(doctrine[i]).font(Font.pl(size: 14, design: .serif).italic()).foregroundStyle(Candle.goldHi) }
                     }
                     .candleCard(padding: 12)
                 }

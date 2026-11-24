@@ -159,7 +159,7 @@ struct NativeTimelapseSheet: View {
                         Group {
                             if let img = UIImage(contentsOfFile: frames[min(frames.count - 1, Int(at))].path) { Image(uiImage: img).resizable().scaledToFit() } else { Color.clear }
                         }
-                        .frame(maxWidth: .infinity).frame(height: 230).background(Color.secondary.opacity(0.08)).clipShape(RoundedRectangle(cornerRadius: 12, style: .continuous))
+                        .frame(maxWidth: .infinity).frame(height: 230).background(Color.secondary.opacity(0.08)).clipShape(RoundedRectangle(cornerRadius: 12 * PLStyle.radius, style: .continuous))
                         HStack {
                             Button { playing ? stop() : play() } label: { Image(systemName: playing ? "pause.fill" : "play.fill").frame(width: 44, height: 44) }.buttonStyle(.bordered)
                             Slider(value: $at, in: 0...Double(frames.count - 1))

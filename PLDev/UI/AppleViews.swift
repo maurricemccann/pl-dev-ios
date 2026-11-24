@@ -59,12 +59,12 @@ struct AppleCard: View {
     let rows: [(String, String)]
     var body: some View {
         VStack(alignment: .leading, spacing: 8) {
-            Text(title).font(.headline)
+            Text(title).font(Font.pl(.headline))
             ForEach(Array(rows.enumerated()), id: \.offset) { _, row in
                 HStack {
-                    Text(row.0).font(.subheadline).foregroundStyle(.secondary)
+                    Text(row.0).font(Font.pl(.subheadline)).foregroundStyle(.secondary)
                     Spacer()
-                    Text(row.1).font(.subheadline.monospacedDigit().weight(.semibold))
+                    Text(row.1).font(Font.pl(.subheadline).monospacedDigit().weight(.semibold))
                 }
             }
         }

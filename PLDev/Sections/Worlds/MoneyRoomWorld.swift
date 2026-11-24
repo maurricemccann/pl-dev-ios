@@ -215,8 +215,8 @@ struct MoneyRoomWorld: View {
                 Spacer()
                 HStack {
                     VStack(alignment: .leading, spacing: 4) {
-                        Text("The Take").font(.system(.title, design: .serif).italic()).foregroundStyle(PLG.gold.opacity(0.8))
-                        Text("gold body \u{00B7} flowing cash").font(.system(size: 10)).tracking(2.2).textCase(.uppercase).foregroundStyle(PLG.gold.opacity(0.38))
+                        Text("The Take").font(Font.pl(.title, design: .serif).italic()).foregroundStyle(PLG.gold.opacity(0.8))
+                        Text("gold body \u{00B7} flowing cash").font(Font.pl(size: 10)).tracking(2.2).textCase(.uppercase).foregroundStyle(PLG.gold.opacity(0.38))
                     }
                     Spacer()
                 }

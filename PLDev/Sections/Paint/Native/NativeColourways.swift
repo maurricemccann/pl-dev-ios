@@ -108,14 +108,14 @@ struct NativeBrushColourCard: View {
         let B = canvas.brush, slots = NativeBrushColours.slots(B)
         if slots.count >= 2 {
             VStack(alignment: .leading, spacing: 10) {
-                Text("This brush: \(B.name)").font(.subheadline.weight(.semibold))
+                Text("This brush: \(B.name)").font(Font.pl(.subheadline).weight(.semibold))
                 HStack(spacing: 8) {
                     ForEach(slots) { s in
                         let hex = NativeBrushColours.value(B, s.key, canvas: canvas)
                         Button { slot = s.id } label: {
                             VStack(spacing: 3) {
                                 Circle().fill(Color(plHex: hex)).frame(width: 34, height: 34).overlay(Circle().stroke(slot == s.id ? Color.accentColor : Color.secondary.opacity(0.4), lineWidth: slot == s.id ? 3 : 1))
-                                Text(s.label).font(.caption2).foregroundStyle(.secondary)
+                                Text(s.label).font(Font.pl(.caption2)).foregroundStyle(.secondary)
                             }
                         }.buttonStyle(.plain)
                     }
@@ -127,21 +127,21 @@ struct NativeBrushColourCard: View {
                 }
                 let ways = NativeBrushColours.ways(slots.count)
                 if !ways.isEmpty {
-                    Text("Colourways").font(.caption).foregroundStyle(.secondary)
+                    Text("Colourways").font(Font.pl(.caption)).foregroundStyle(.secondary)
                     ScrollView(.horizontal, showsIndicators: false) {
                         HStack(spacing: 8) {
                             ForEach(ways) { w in
                                 Button { canvas.applyColourway(w.cols) } label: {
                                     HStack(spacing: 0) { ForEach(Array(w.cols.enumerated()), id: \.offset) { _, c in Rectangle().fill(Color(plHex: c)).frame(width: 22, height: 30) } }
-                                        .clipShape(RoundedRectangle(cornerRadius: 8, style: .continuous))
-                                        .overlay(RoundedRectangle(cornerRadius: 8, style: .continuous).stroke(Color.secondary.opacity(0.4), lineWidth: 1))
+                                        .clipShape(RoundedRectangle(cornerRadius: 8 * PLStyle.radius, style: .continuous))
+                                        .overlay(RoundedRectangle(cornerRadius: 8 * PLStyle.radius, style: .continuous).stroke(Color.secondary.opacity(0.4), lineWidth: 1))
                                 }.buttonStyle(.plain).accessibilityLabel("Colourway \(w.name)")
                             }
                         }
                     }
                 }
             }
-            .padding(10).background(Color.secondary.opacity(0.08), in: RoundedRectangle(cornerRadius: 12, style: .continuous))
+            .padding(10).background(Color.secondary.opacity(0.08), in: RoundedRectangle(cornerRadius: 12 * PLStyle.radius, style: .continuous))
         }
     }
 }

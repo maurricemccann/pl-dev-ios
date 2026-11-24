@@ -129,7 +129,7 @@ struct LabsRoom: View {
                     VStack(alignment: .leading, spacing: 2) {
                         Text("● Live").gEyebrow(10).foregroundStyle(PLG.red)
                         Text("The VJ").gTitle(22)
-                        Text("The living set as a controller: tracks, tap tempo, rack.").font(.caption).foregroundStyle(.secondary)
+                        Text("The living set as a controller: tracks, tap tempo, rack.").font(Font.pl(.caption)).foregroundStyle(.secondary)
                     }
                 }
                 NavigationLink { LabHost(page: .ribbon, model: model) } label: {
@@ -156,7 +156,7 @@ struct LabsRoom: View {
                         if let m = p.mirror { Text(m.numeral).gEyebrow(10).foregroundStyle(PLG.goldDim(.dark)) }
                         Text(p.mirror?.name ?? p.title)
                     }
-                    Text(p.line).font(.caption).foregroundStyle(.secondary)
+                    Text(p.line).font(Font.pl(.caption)).foregroundStyle(.secondary)
                 }
             } icon: { Image(systemName: p.symbol) }
         }
@@ -194,20 +194,20 @@ struct LabHost: View {
         let gold = PLG.gold
         return ZStack {
             HStack {
-                Button { current = order[(i - 1 + order.count) % order.count] } label: { Text("‹").font(.system(size: 30, design: .serif)).foregroundStyle(gold.opacity(0.4)).frame(width: 44, height: 88) }
+                Button { current = order[(i - 1 + order.count) % order.count] } label: { Text("‹").font(Font.pl(size: 30, design: .serif)).foregroundStyle(gold.opacity(0.4)).frame(width: 44, height: 88) }
                     .accessibilityLabel("Previous: \(order[(i - 1 + order.count) % order.count].mirror?.name ?? "")")
                 Spacer()
-                Button { current = order[(i + 1) % order.count] } label: { Text("›").font(.system(size: 30, design: .serif)).foregroundStyle(gold.opacity(0.4)).frame(width: 44, height: 88) }
+                Button { current = order[(i + 1) % order.count] } label: { Text("›").font(Font.pl(size: 30, design: .serif)).foregroundStyle(gold.opacity(0.4)).frame(width: 44, height: 88) }
                     .accessibilityLabel("Next: \(order[(i + 1) % order.count].mirror?.name ?? "")")
             }
             .padding(.horizontal, 6)
             VStack(alignment: .leading, spacing: 0) {
                 Spacer()
                 VStack(alignment: .leading, spacing: 0) {
-                    Text("\(m.numeral) · The Mirror").font(.system(size: 11, design: .serif)).labCaps().tracking(2.4).foregroundStyle(gold.opacity(0.55))
-                    Text(m.name).font(.system(size: 21, design: .serif)).foregroundStyle(gold.opacity(0.95)).padding(.top, 6)
-                    Text(m.carries).font(.system(size: 12, design: .serif)).foregroundStyle(gold.opacity(0.62)).lineSpacing(3).padding(.top, 8)
-                    Text(m.technique).font(.system(size: 10, design: .serif)).labCaps().tracking(1.4).foregroundStyle(gold.opacity(0.38)).padding(.top, 8)
+                    Text("\(m.numeral) · The Mirror").font(Font.pl(size: 11, design: .serif)).labCaps().tracking(2.4).foregroundStyle(gold.opacity(0.55))
+                    Text(m.name).font(Font.pl(size: 21, design: .serif)).foregroundStyle(gold.opacity(0.95)).padding(.top, 6)
+                    Text(m.carries).font(Font.pl(size: 12, design: .serif)).foregroundStyle(gold.opacity(0.62)).lineSpacing(3).padding(.top, 8)
+                    Text(m.technique).font(Font.pl(size: 10, design: .serif)).labCaps().tracking(1.4).foregroundStyle(gold.opacity(0.38)).padding(.top, 8)
                 }
                 .padding(.horizontal, 20).padding(.bottom, 26).frame(maxWidth: 330, alignment: .leading)
                 .shadow(color: .black.opacity(0.8), radius: 6)
@@ -226,8 +226,8 @@ struct LabCaption: View {
     var tint: Color = PLG.gold
     var body: some View {
         VStack(alignment: .leading, spacing: 4) {
-            Text(title).font(.system(size: 26, design: .serif).italic()).foregroundStyle(tint.opacity(0.85))
-            Text(line.uppercased()).font(.system(size: 10)).tracking(2.2).foregroundStyle(tint.opacity(0.5))
+            Text(title).font(Font.pl(size: 26, design: .serif).italic()).foregroundStyle(tint.opacity(0.85))
+            Text(line.uppercased()).font(Font.pl(size: 10)).tracking(2.2).foregroundStyle(tint.opacity(0.5))
         }
         .padding(.leading, 20).padding(.bottom, 26)
         .shadow(color: tint == PLG.gold ? .black.opacity(0.8) : .clear, radius: 6)

@@ -20,7 +20,7 @@ struct PracticeEntry: View {
             VStack(spacing: 32) {
                 Text(line).plHand(26, relativeTo: .title).foregroundStyle(Candle.goldHi).multilineTextAlignment(.center)
                     .frame(maxWidth: 320).fixedSize(horizontal: false, vertical: true).animation(.easeIn(duration: 0.4), value: line)
-                Text(hint).font(.system(size: 13.6)).tracking(0.8).foregroundStyle(Candle.ink.opacity(0.45))
+                Text(hint).font(Font.pl(size: 13.6)).tracking(0.8).foregroundStyle(Candle.ink.opacity(0.45))
             }
             .padding(32)
         }
@@ -28,7 +28,7 @@ struct PracticeEntry: View {
         .onTapGesture { Task { await speak() } }
         // a visible way in past the line (every screen has a way out): the nav bar is hidden while this covers the practice
         .overlay(alignment: .topTrailing) {
-            Button { close() } label: { Text("Skip").font(.system(size: 15)).foregroundStyle(Candle.ink.opacity(0.7)).frame(minWidth: 44, minHeight: 44) }
+            Button { close() } label: { Text("Skip").font(Font.pl(size: 15)).foregroundStyle(Candle.ink.opacity(0.7)).frame(minWidth: 44, minHeight: 44) }
                 .padding(.trailing, 12).padding(.top, 8).accessibilityLabel("Skip the line and open the practice")
         }
         .accessibilityElement(children: .ignore)

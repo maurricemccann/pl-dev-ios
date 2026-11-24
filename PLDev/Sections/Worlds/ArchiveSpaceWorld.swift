@@ -248,7 +248,7 @@ struct ArchiveSpaceWorld: View {
     }
 
     private func caps(_ s: String, _ alpha: Double, size: CGFloat = 9, tracking: CGFloat = 2.9) -> some View {
-        Text(s).font(.system(size: size)).tracking(tracking).textCase(.uppercase).foregroundStyle(gold.opacity(alpha))
+        Text(s).font(Font.pl(size: size)).tracking(tracking).textCase(.uppercase).foregroundStyle(gold.opacity(alpha))
     }
 
     private var hud: some View {
@@ -270,7 +270,7 @@ struct ArchiveSpaceWorld: View {
                     HStack(spacing: 8) {
                         ForEach(["2019", "2020", "2021", "2022", "2023", "2024", "2025"], id: \.self) { y in
                             Button { withAnimation(.smooth) { scene.target.z = SpaceScene.z(forYear: y) } } label: {
-                                Text(y).font(.system(size: 11, weight: .medium)).tracking(1.4)
+                                Text(y).font(Font.pl(size: 11, weight: .medium)).tracking(1.4)
                                     .padding(.horizontal, 12).padding(.vertical, 6)
                                     .foregroundStyle(zone == y ? Color.black : gold.opacity(0.85))
                                     .background(zone == y ? gold : gold.opacity(0.1), in: Capsule())
@@ -295,19 +295,19 @@ struct ArchiveSpaceWorld: View {
                 AsyncImage(url: w.fullURL ?? w.thumbURL) { img in img.resizable().scaledToFit() } placeholder: { PLLoader().tint(gold).frame(maxWidth: .infinity, minHeight: 240) }
                     .frame(maxHeight: 520)
                 VStack(alignment: .leading, spacing: 4) {
-                    Text(w.title ?? w.cr).font(.system(size: 11)).tracking(2.4).foregroundStyle(gold.opacity(0.88))
+                    Text(w.title ?? w.cr).font(Font.pl(size: 11)).tracking(2.4).foregroundStyle(gold.opacity(0.88))
                     Text([w.cr, w.cat?.replacingOccurrences(of: "_", with: " "), w.med].compactMap { $0 }.joined(separator: " \u{00B7} "))
-                        .font(.system(size: 9)).tracking(1.6).foregroundStyle(gold.opacity(0.52))
+                        .font(Font.pl(size: 9)).tracking(1.6).foregroundStyle(gold.opacity(0.52))
                 }
                 HStack(spacing: 18) {
-                    Button { archiveQuery = w.cr; lightbox = nil; openArchive = true } label: { Text("View in archive \u{2192}").font(.system(size: 10, weight: .medium)).tracking(2.2) }
+                    Button { archiveQuery = w.cr; lightbox = nil; openArchive = true } label: { Text("View in archive \u{2192}").font(Font.pl(size: 10, weight: .medium)).tracking(2.2) }
                     if let u = w.fullURL { ShareLink(item: u) { Image(systemName: "square.and.arrow.up") }.accessibilityLabel("Share") }
                 }
                 .foregroundStyle(gold)
             }
             .padding(24)
             .overlay(alignment: .topTrailing) {
-                Button { lightbox = nil } label: { Image(systemName: "xmark").font(.system(size: 15, weight: .medium)).foregroundStyle(gold.opacity(0.7)).padding(14) }
+                Button { lightbox = nil } label: { Image(systemName: "xmark").font(Font.pl(size: 15, weight: .medium)).foregroundStyle(gold.opacity(0.7)).padding(14) }
                     .accessibilityLabel("Close")
             }
         }

@@ -84,7 +84,7 @@ struct OfflineLine: View {
                 if let s = state.servedSince { Text("Offline · showing what was saved ") + Text(s, format: .relative(presentation: .named)) }
                 else { Text("Offline · showing saved copies") }
             }
-            .font(.caption.weight(.semibold))
+            .font(Font.pl(.caption).weight(.semibold))
             .padding(.horizontal, 12).padding(.vertical, 6)
             .plGlass(in: Capsule())
             .padding(.top, 4)

@@ -116,22 +116,22 @@ struct BackendWebScreen: View {
     var body: some View {
         VStack(spacing: 0) {
             HStack(spacing: 14) {
-                Button { dismiss() } label: { Image(systemName: "house").font(.title3) }
+                Button { dismiss() } label: { Image(systemName: "house").font(Font.pl(.title3)) }
                     .accessibilityLabel("Home")
-                Button { web.goBack() } label: { Image(systemName: "chevron.backward").font(.title3) }
+                Button { web.goBack() } label: { Image(systemName: "chevron.backward").font(Font.pl(.title3)) }
                     .disabled(!web.canGoBack)
                     .accessibilityLabel("Back")
                 Text(web.title.isEmpty ? template.name : web.title)
-                    .font(.subheadline.weight(.semibold)).lineLimit(1).frame(maxWidth: .infinity)
+                    .font(Font.pl(.subheadline).weight(.semibold)).lineLimit(1).frame(maxWidth: .infinity)
                 if web.isLoading { ProgressView().controlSize(.small) }
-                Button { web.reload() } label: { Image(systemName: "arrow.clockwise").font(.title3) }
+                Button { web.reload() } label: { Image(systemName: "arrow.clockwise").font(Font.pl(.title3)) }
                     .accessibilityLabel("Reload")
             }
             .padding(.horizontal, 16).padding(.vertical, 10)
             .background(.bar)
             if let url = web.blocked {
                 HStack(spacing: 10) {
-                    Text("Blocked a redirect to \(url.host ?? "another site").").font(.footnote).lineLimit(2).frame(maxWidth: .infinity, alignment: .leading)
+                    Text("Blocked a redirect to \(url.host ?? "another site").").font(Font.pl(.footnote)).lineLimit(2).frame(maxWidth: .infinity, alignment: .leading)
                     Button("Allow here") { web.allowBlocked() }.buttonStyle(.borderedProminent)
                     Button("Safari") { web.openBlockedInSafari() }.buttonStyle(.bordered)
                     Button { web.blocked = nil } label: { Image(systemName: "xmark") }.accessibilityLabel("Dismiss")

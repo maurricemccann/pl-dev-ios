@@ -17,6 +17,9 @@ struct HomeView: View {
     @Environment(\.accessibilityReduceMotion) private var systemReduce
     @Environment(\.dynamicTypeSize) private var typeSize
     @AppStorage("pldev.motion") private var motion = "full"
+    @AppStorage("pldev.theme") private var theme = "system"
+    @AppStorage("pldev.themeId") private var themeId = ""
+    @AppStorage("pldev.styleMark") private var mark = ""
 
     // explicit: a view with private state must not depend on the synthesized initializer staying internal
     init(model: AppModel) { self.model = model }
@@ -78,7 +81,7 @@ struct HomeView: View {
     private var todayPage: some View {
         VStack(alignment: .leading, spacing: PLSpace.roomy) {
             VStack(alignment: .leading, spacing: 2) {
-                Text(Date.now, format: .dateTime.weekday(.wide)).plFont(.subhead, emphasized: true).foregroundStyle(.white.opacity(0.85))
+                Text(Date.now, format: .dateTime.weekday(.wide)).plFont(.subhead, emphasized: true).foregroundStyle(Color.primary.opacity(0.85))
                     .shadow(color: .black.opacity(0.55), radius: 3, y: 1)
                 Text(Date.now, format: .dateTime.month(.wide).day()).plTitle(.largeTitle).accessibilityAddTraits(.isHeader)
             }
@@ -90,7 +93,7 @@ struct HomeView: View {
                 HStack {
                     Label("Add PL DEV widgets", systemImage: "rectangle.3.group").plFont(.callout, emphasized: true)
                     Spacer()
-                    Image(systemName: "chevron.right").font(.caption.weight(.bold)).foregroundStyle(.secondary)
+                    Image(systemName: "chevron.right").font(Font.pl(.caption).weight(.bold)).foregroundStyle(.secondary)
                 }
                 .padding(14)
                 .plGlass(in: RoundedRectangle(cornerRadius: PLRadius.card, style: .continuous))
@@ -105,8 +108,8 @@ struct HomeView: View {
     private var pageDots: some View {
         HStack(spacing: 8) {
             ForEach(0..<3, id: \.self) { i in   // named, not dots (Codex 11-14, his pick N6)
-                Text(["Today", "Apps", "Pulse"][i]).font(.footnote.weight(page == i ? .bold : .regular))
-                    .foregroundStyle(.white.opacity(page == i ? 0.95 : 0.5))
+                Text(["Today", "Apps", "Pulse"][i]).font(Font.pl(.footnote).weight(page == i ? .bold : .regular))
+                    .foregroundStyle(Color.primary.opacity(page == i ? 0.95 : 0.5))
                     .frame(minHeight: 32).contentShape(Rectangle())
                     .onTapGesture { withAnimation(.snappy) { page = i } }
             }
@@ -129,7 +132,7 @@ struct HomeView: View {
             }
             .tabViewStyle(.page(indexDisplayMode: .never))
             .onAppear { if page > 2 { page = 2 } }   // a page remembered from the four-page Home (before 11-14) lands on Pulse
-            .environment(\.colorScheme, .dark)   // light text on the wallpaper, as on the Home Screen; pushed screens keep his setting
+            .environment(\.colorScheme, themeId.isEmpty || theme != "light" ? .dark : .light)   // a light theme's Home is light too
             .background {
                 ZStack {
                     Wallpaper(model: model)
@@ -176,12 +179,15 @@ struct HomeView: View {
 
     private var header: some View {
         VStack(alignment: .leading, spacing: PLSpace.tight) {
-            Text(appName)
-                .plTitle(.largeTitle)
-                .accessibilityAddTraits(.isHeader)
+            HStack(spacing: PLSpace.gap) {
+                Text(appName)
+                    .plTitle(.largeTitle)
+                    .accessibilityAddTraits(.isHeader)
+                if !mark.isEmpty { PLIcon.symbol(mark).resizable().scaledToFit().frame(width: 30, height: 30).foregroundStyle(PLTone.accent).accessibilityHidden(true) }
+            }
             Text(summary)
                 .plFont(.subhead, emphasized: true)
-                .foregroundStyle(.white.opacity(0.88))
+                .foregroundStyle(Color.primary.opacity(0.88))
                 .shadow(color: .black.opacity(0.55), radius: 3, y: 1)   // reads over the wallpaper's lines (Gemini review, checked 11-13)
         }
         .frame(maxWidth: .infinity, alignment: .leading)
@@ -245,7 +251,7 @@ struct HomeView: View {
             }
             .padding(.horizontal, 14)
             .frame(height: 60)
-            .plGlass(tint: IOS27.Glass.dock.tint, in: RoundedRectangle(cornerRadius: 30, style: .continuous))
+            .plGlass(tint: IOS27.Glass.dock.tint, in: RoundedRectangle(cornerRadius: 30 * PLStyle.radius, style: .continuous))
         }
         .padding(.horizontal, 10)
         .padding(.bottom, -14)   // nearer the home indicator, as the dock sits
@@ -333,7 +339,7 @@ struct InboxSheet: View {
     var body: some View {
         VStack(spacing: PLSpace.margin) {
             Image(systemName: "tray.full")
-                .font(.largeTitle)
+                .font(Font.pl(.largeTitle))
                 .symbolRenderingMode(.hierarchical)
                 .foregroundStyle(PLTone.accent)
                 .accessibilityHidden(true)
@@ -384,7 +390,7 @@ private struct WidgetHowTo: View {
                     .listRowBackground(Color.clear)
                 ForEach(Array((where_ == 0 ? home : lock).enumerated()), id: \.offset) { i, step in
                     HStack(alignment: .top, spacing: 12) {
-                        Text("\(i + 1)").font(.headline.monospacedDigit()).foregroundStyle(PLTone.accent).frame(width: 22)
+                        Text("\(i + 1)").font(Font.pl(.headline).monospacedDigit()).foregroundStyle(PLTone.accent).frame(width: 22)
                         Text(step)
                     }
                 }

@@ -106,7 +106,7 @@ struct VJInstrument: View {
         HStack {
             Text(title).frame(width: 78, alignment: .leading)
             Slider(value: value, in: range)
-            Text(String(format: fmt, value.wrappedValue)).monospacedDigit().font(.caption).frame(width: 44, alignment: .trailing)
+            Text(String(format: fmt, value.wrappedValue)).monospacedDigit().font(Font.pl(.caption)).frame(width: 44, alignment: .trailing)
         }
     }
 
@@ -119,8 +119,8 @@ struct VJInstrument: View {
             LazyVGrid(columns: Array(repeating: GridItem(.flexible(), spacing: 6), count: 3), spacing: 6) {
                 ForEach(0..<6, id: \.self) { i in
                     let id = vj.p.slots[i]
-                    Text(id.isEmpty ? "Pad \(i + 1)" : vj.name(id)).font(.caption2).lineLimit(1).frame(maxWidth: .infinity, minHeight: 34)
-                        .background(id == vj.p.pieceA ? Color.accentColor.opacity(0.25) : Color.secondary.opacity(0.15), in: RoundedRectangle(cornerRadius: 8, style: .continuous))
+                    Text(id.isEmpty ? "Pad \(i + 1)" : vj.name(id)).font(Font.pl(.caption2)).lineLimit(1).frame(maxWidth: .infinity, minHeight: 34)
+                        .background(id == vj.p.pieceA ? Color.accentColor.opacity(0.25) : Color.secondary.opacity(0.15), in: RoundedRectangle(cornerRadius: 8 * PLStyle.radius, style: .continuous))
                         .onTapGesture { if id.isEmpty { browsing = .slot(i) } else { vj.p.pieceA = id } }
                         .contextMenu {
                             Button("Put the current piece here", systemImage: "square.and.arrow.down") { vj.p.slots[i] = vj.p.pieceA }
@@ -188,7 +188,7 @@ struct VJInstrument: View {
 
     @ViewBuilder private var mod: some View {
         Section {
-            Text("Send the bass, mid, high, beat or a tempo-synced wave into any knob. It adds to where the knob sits.").font(.footnote).foregroundStyle(.secondary)
+            Text("Send the bass, mid, high, beat or a tempo-synced wave into any knob. It adds to where the knob sits.").font(Font.pl(.footnote)).foregroundStyle(.secondary)
         }
         ForEach(0..<5, id: \.self) { k in
             Section(VJParams.modParams[k].capitalized) {
@@ -206,8 +206,8 @@ struct VJInstrument: View {
             LazyVGrid(columns: Array(repeating: GridItem(.flexible(), spacing: 6), count: 4), spacing: 6) {
                 ForEach(0..<8, id: \.self) { i in
                     let id = vj.p.seq[i]
-                    Text(id.isEmpty ? "\(i + 1)" : vj.name(id)).font(.caption2).lineLimit(2).frame(maxWidth: .infinity, minHeight: 44)
-                        .background(vj.p.seqOn && vj.seqStep == i ? Color.accentColor.opacity(0.45) : Color.secondary.opacity(0.15), in: RoundedRectangle(cornerRadius: 8, style: .continuous))
+                    Text(id.isEmpty ? "\(i + 1)" : vj.name(id)).font(Font.pl(.caption2)).lineLimit(2).frame(maxWidth: .infinity, minHeight: 44)
+                        .background(vj.p.seqOn && vj.seqStep == i ? Color.accentColor.opacity(0.45) : Color.secondary.opacity(0.15), in: RoundedRectangle(cornerRadius: 8 * PLStyle.radius, style: .continuous))
                         .onTapGesture { browsing = .step(i) }
                         .contextMenu { if !id.isEmpty { Button("Clear step", systemImage: "xmark", role: .destructive) { vj.p.seq[i] = "" } } }
                 }
@@ -222,7 +222,7 @@ struct VJInstrument: View {
             ForEach(0..<8, id: \.self) { i in
                 HStack {
                     if let s = vj.presets[i] {
-                        Button { vj.recall(i) } label: { VStack(alignment: .leading) { Text("Set \(i + 1)").font(.footnote).foregroundStyle(.secondary); Text(vj.name(s.pieceA)) } }
+                        Button { vj.recall(i) } label: { VStack(alignment: .leading) { Text("Set \(i + 1)").font(Font.pl(.footnote)).foregroundStyle(.secondary); Text(vj.name(s.pieceA)) } }
                         Spacer()
                         Button("Replace") { vj.savePreset(i) }.buttonStyle(.bordered)
                     } else {
@@ -248,13 +248,13 @@ private struct HUD: View {
             Circle().fill(.white).frame(width: 8, height: 8).opacity(vj.beat ? 1 : 0.15).padding(.leading, 3)
         }
         .padding(10)
-        .background(.black.opacity(0.35), in: RoundedRectangle(cornerRadius: 10, style: .continuous))
+        .background(.black.opacity(0.35), in: RoundedRectangle(cornerRadius: 10 * PLStyle.radius, style: .continuous))
         .padding(.top, 8).padding(.trailing, 10)
         .allowsHitTesting(false)
         .accessibilityHidden(true)
     }
     private func bar(_ v: Double) -> some View {
-        RoundedRectangle(cornerRadius: 2).fill(.white).frame(width: 5, height: max(3, 28 * v))
+        RoundedRectangle(cornerRadius: 2 * PLStyle.radius).fill(.white).frame(width: 5, height: max(3, 28 * v))
     }
 }
 
@@ -328,10 +328,10 @@ struct VJBrowser: View {
             List(list) { p in
                 Button { pick(p.id) } label: {
                     HStack(spacing: 12) {
-                        RoundedRectangle(cornerRadius: 6, style: .continuous).fill(Color(hex: p.ground) ?? .gray)
+                        RoundedRectangle(cornerRadius: 6 * PLStyle.radius, style: .continuous).fill(Color(hex: p.ground) ?? .gray)
                             .overlay(Circle().fill(Color(hex: p.body) ?? .orange).frame(width: 10, height: 10))
                             .frame(width: 34, height: 34)
-                        VStack(alignment: .leading) { Text(p.name); if !p.sub.isEmpty { Text(p.sub).font(.caption).foregroundStyle(.secondary).lineLimit(1) } }
+                        VStack(alignment: .leading) { Text(p.name); if !p.sub.isEmpty { Text(p.sub).font(Font.pl(.caption)).foregroundStyle(.secondary).lineLimit(1) } }
                     }
                 }
                 .buttonStyle(.plain)

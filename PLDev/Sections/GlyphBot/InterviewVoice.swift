@@ -215,7 +215,7 @@ struct InterviewOrb: View {
                 .scaleEffect(listening && !reduceMotion ? 1.12 : 1).animation(listening && !reduceMotion ? .easeInOut(duration: 0.9).repeatForever(autoreverses: true) : .default, value: listening)
             Circle().fill(PLOS.gold).frame(width: 86, height: 86).opacity(talk.phase == .thinking ? 0.5 : 1)
             Image(systemName: listening ? "waveform" : talk.phase == .speaking ? "speaker.wave.2.fill" : "mic.fill")
-                .font(.system(size: 28, weight: .medium)).foregroundStyle(.black.opacity(0.75)).symbolEffect(.variableColor, isActive: listening)
+                .font(Font.pl(size: 28, weight: .medium)).foregroundStyle(.black.opacity(0.75)).symbolEffect(.variableColor, isActive: listening)
         }
         .frame(width: 124, height: 124)
         .contentShape(Circle())
@@ -246,7 +246,7 @@ struct InterviewSettingsView: View {
         Form {
             Section {
                 if voices.isEmpty {
-                    Text("This iPhone has no English voices installed. Add one in Settings, Accessibility, Spoken Content, Voices.").font(.footnote).foregroundStyle(.secondary)
+                    Text("This iPhone has no English voices installed. Add one in Settings, Accessibility, Spoken Content, Voices.").font(Font.pl(.footnote)).foregroundStyle(.secondary)
                 }
                 Button { voice = ""; InterviewPrefs.voiceID = "" } label: { row("Best installed", sub: "the highest quality Apple voice on this iPhone", chosen: voice.isEmpty) }
                 ForEach(voices) { v in
@@ -272,7 +272,7 @@ struct InterviewSettingsView: View {
                 Picker("Model", selection: $model) { Text("Auto").tag("auto"); Text("Haiku 5.5").tag("haiku"); Text("Sonnet 5.5").tag("sonnet"); Text("Opus 5.5").tag("opus") }
                     .pickerStyle(.segmented).onChange(of: model) { InterviewPrefs.model = model }
                 Toggle("Deep: Opus on rich answers", isOn: $sitting.settings.deep)
-                Text(estimate).font(.footnote).foregroundStyle(.secondary)
+                Text(estimate).font(Font.pl(.footnote)).foregroundStyle(.secondary)
             }
             Section("Follow-ups") {
                 Picker("Pressure", selection: $sitting.settings.boldness) { Text("Gentle").tag("gentle"); Text("Normal").tag("light"); Text("Probing").tag("probing") }.pickerStyle(.segmented)
@@ -301,7 +301,7 @@ struct InterviewSettingsView: View {
 
     private func row(_ title: String, sub: String, chosen: Bool) -> some View {
         HStack {
-            VStack(alignment: .leading, spacing: 2) { Text(title).foregroundStyle(.primary); Text(sub).font(.caption).foregroundStyle(.secondary) }
+            VStack(alignment: .leading, spacing: 2) { Text(title).foregroundStyle(.primary); Text(sub).font(Font.pl(.caption)).foregroundStyle(.secondary) }
             Spacer()
             if chosen { Image(systemName: "checkmark").foregroundStyle(PLOS.gold) }
         }

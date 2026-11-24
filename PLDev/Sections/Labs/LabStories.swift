@@ -56,7 +56,7 @@ struct LabStudyView: View {
                         .frame(width: dw, height: dh)
                         .overlay { Rectangle().strokeBorder(PLG.gold.opacity(0.25), lineWidth: 1) }
                         .shadow(color: .black.opacity(0.5), radius: 30).shadow(color: PLG.gold.opacity(0.06), radius: 15)
-                        Text("The door is open.").font(.system(size: 11, design: .serif)).labCaps().tracking(2.4).foregroundStyle(goldDim).opacity(whisper).offset(y: dh / 2 + 24)
+                        Text("The door is open.").font(Font.pl(size: 11, design: .serif)).labCaps().tracking(2.4).foregroundStyle(goldDim).opacity(whisper).offset(y: dh / 2 + 24)
                     }
                     .opacity(doorLayer)
                     Spacer(minLength: 0)
@@ -77,7 +77,7 @@ struct LabStudyView: View {
                             }
                         }
                         .padding(.horizontal, 24).padding(.vertical, 24)
-                        .background(RoundedRectangle(cornerRadius: 2).fill(PLG.gold.opacity(0.035)).overlay { RoundedRectangle(cornerRadius: 2).strokeBorder(PLG.gold.opacity(0.09), lineWidth: 1) })
+                        .background(RoundedRectangle(cornerRadius: 2 * PLStyle.radius).fill(PLG.gold.opacity(0.035)).overlay { RoundedRectangle(cornerRadius: 2 * PLStyle.radius).strokeBorder(PLG.gold.opacity(0.09), lineWidth: 1) })
                         .background(.ultraThinMaterial.opacity(0.4))
                         if pn.pos != 1 { Spacer(minLength: 0) }
                     }
@@ -111,7 +111,7 @@ struct LabStudyView: View {
             Circle().fill(RadialGradient(colors: [PLG.gold, Color(hex: 0x6b4d18)], center: UnitPoint(x: 0.32, y: 0.32), startRadius: 0, endRadius: 8)).frame(width: 11, height: 11)
                 .shadow(color: PLG.gold.opacity(0.35), radius: 3).position(x: w * 0.91, y: h / 2)
             ForEach([0.22, 0.74], id: \.self) { f in
-                RoundedRectangle(cornerRadius: 1).fill(goldDim).frame(width: 7, height: 15).position(x: w * 0.03 + 3, y: h * f)
+                RoundedRectangle(cornerRadius: 1 * PLStyle.radius).fill(goldDim).frame(width: 7, height: 15).position(x: w * 0.03 + 3, y: h * f)
             }
         }
         .frame(width: w, height: h)
@@ -239,10 +239,10 @@ struct LabHandView: View {
     var body: some View {
         ScrollView {
             VStack(alignment: .leading, spacing: 12) {
-                Text("Hand, live").font(.system(size: 12, weight: .semibold, design: .monospaced)).tracking(1.7).textCase(.uppercase).foregroundStyle(Color(hex: 0x8a8576)).padding(.top, 4)
+                Text("Hand, live").font(Font.pl(size: 12, weight: .semibold, design: .monospaced)).tracking(1.7).textCase(.uppercase).foregroundStyle(Color(hex: 0x8a8576)).padding(.top, 4)
                 stage
-                TextEditor(text: $text).focused($focus).scrollContentBackground(.hidden).font(.system(size: 16)).foregroundStyle(Color(hex: 0xefe9dc))
-                    .frame(minHeight: 90).padding(8).background(RoundedRectangle(cornerRadius: 8).fill(Color(hex: 0x12100b))).overlay { RoundedRectangle(cornerRadius: 8).strokeBorder(Color(hex: 0x2a2618), lineWidth: 1) }
+                TextEditor(text: $text).focused($focus).scrollContentBackground(.hidden).font(Font.pl(size: 16)).foregroundStyle(Color(hex: 0xefe9dc))
+                    .frame(minHeight: 90).padding(8).background(RoundedRectangle(cornerRadius: 8 * PLStyle.radius).fill(Color(hex: 0x12100b))).overlay { RoundedRectangle(cornerRadius: 8 * PLStyle.radius).strokeBorder(Color(hex: 0x2a2618), lineWidth: 1) }
                     .accessibilityLabel("Type here").onChange(of: text) { _, _ in shown = Int.max }
                 LabWrap(spacing: 8) {
                     pill("My hand", face == 0) { face = 0 }
@@ -253,7 +253,7 @@ struct LabHandView: View {
                 slider("Wobble", $wobble)
                 slider("Speed", $speed)
                 Text("Your original hand is the main face (capitals only). Ledger is the notebook hand cut from your pages. Ransom (the scrap-letter face) is left off: it froze the browser here, so it stays out.")
-                    .font(.caption).foregroundStyle(Color(hex: 0x8a8576)).padding(.top, 6)
+                    .font(Font.pl(.caption)).foregroundStyle(Color(hex: 0x8a8576)).padding(.top, 6)
             }
             .padding(16).padding(.top, 40)
         }
@@ -300,8 +300,8 @@ struct LabHandView: View {
             }
         }
         .frame(maxWidth: .infinity, minHeight: 260).padding(.horizontal, 18).padding(.vertical, 22)
-        .background(RoundedRectangle(cornerRadius: 10).fill(Color(hex: 0x12100b)))
-        .overlay { RoundedRectangle(cornerRadius: 10).strokeBorder(Color(hex: 0x2a2618), lineWidth: 1) }
+        .background(RoundedRectangle(cornerRadius: 10 * PLStyle.radius).fill(Color(hex: 0x12100b)))
+        .overlay { RoundedRectangle(cornerRadius: 10 * PLStyle.radius).strokeBorder(Color(hex: 0x2a2618), lineWidth: 1) }
         .accessibilityElement(children: .ignore).accessibilityLabel(text)
     }
 
@@ -322,15 +322,15 @@ struct LabHandView: View {
 
     private func pill(_ t: String, _ on: Bool, _ a: @escaping () -> Void) -> some View {
         Button(action: a) {
-            Text(t).font(.system(size: 12, weight: .semibold, design: .monospaced)).tracking(0.7).textCase(.uppercase)
+            Text(t).font(Font.pl(size: 12, weight: .semibold, design: .monospaced)).tracking(0.7).textCase(.uppercase)
                 .foregroundStyle(on ? Color(hex: 0x0e0c08) : Color(hex: 0x8a8576)).padding(.horizontal, 14).frame(minHeight: 44)
-                .background(RoundedRectangle(cornerRadius: 6).fill(on ? PLG.gold : .clear))
-                .overlay { RoundedRectangle(cornerRadius: 6).strokeBorder(on ? PLG.gold : Color(hex: 0x2a2618), lineWidth: 1) }
+                .background(RoundedRectangle(cornerRadius: 6 * PLStyle.radius).fill(on ? PLG.gold : .clear))
+                .overlay { RoundedRectangle(cornerRadius: 6 * PLStyle.radius).strokeBorder(on ? PLG.gold : Color(hex: 0x2a2618), lineWidth: 1) }
         }
         .buttonStyle(.plain)
     }
     private func slider(_ t: String, _ v: Binding<Double>) -> some View {
-        HStack { Text(t).font(.system(size: 12, design: .monospaced)).foregroundStyle(Color(hex: 0x8a8576)).frame(width: 64, alignment: .leading)
+        HStack { Text(t).font(Font.pl(size: 12, design: .monospaced)).foregroundStyle(Color(hex: 0x8a8576)).frame(width: 64, alignment: .leading)
             Slider(value: v, in: t == "Wobble" ? 0...10 : 1...10, step: 1).tint(PLG.gold) }
     }
 }
@@ -445,18 +445,18 @@ struct LabComponentsView: View {
         ScrollView {
             VStack(alignment: .leading, spacing: 0) {
                 Text("House Components").gTitle(28, relativeTo: .title).foregroundStyle(PLG.ink(scheme))
-                Text("The reusable UI pieces from the repos, each one live. Linked from the Vault's UI Components shelf.").font(.footnote).foregroundStyle(PLG.dim(scheme)).padding(.top, 6).padding(.bottom, 30)
+                Text("The reusable UI pieces from the repos, each one live. Linked from the Vault's UI Components shelf.").font(Font.pl(.footnote)).foregroundStyle(PLG.dim(scheme)).padding(.top, 6).padding(.bottom, 30)
                 section("ElectricBorder", "components/ElectricBorder.tsx · Canvas2D fractal-noise border · shipped S138, wired into 15 glass-card sites") {
-                    Text("A living border — fractal noise crawling the perimeter. No backdrop-filter dependency, safe on iOS Safari.").font(.system(size: 16, design: .serif).italic())
+                    Text("A living border — fractal noise crawling the perimeter. No backdrop-filter dependency, safe on iOS Safari.").font(Font.pl(size: 16, design: .serif).italic())
                         .foregroundStyle(PLG.ink(scheme)).gCard(padding: 28, radius: 14).overlay { LabElectricBorder(radius: 14) }
                 }
                 section("Liquid Glass — The Prism", "public/scripts/pieces.js · shaderPiece 'prism' · GLSL fbm caustics + chromatic aberration · S138") {
                     Group { if let prism { LabMetalView(scene: prism) } else { LabGPUMissing() } }
-                        .aspectRatio(2, contentMode: .fit).clipShape(RoundedRectangle(cornerRadius: 12, style: .continuous))
+                        .aspectRatio(2, contentMode: .fit).clipShape(RoundedRectangle(cornerRadius: 12 * PLStyle.radius, style: .continuous))
                     openPiece("open The Prism in the library", "prism")
                 }
                 section("Glass Card", "app/globals.css · .glass-card — the house glass surface (pl-os token language)") {
-                    Text("The standard glass surface every panel in the inner tongue sits on.").font(.system(size: 16, design: .serif).italic()).foregroundStyle(PLG.ink(scheme)).gCard(padding: 28, radius: 14)
+                    Text("The standard glass surface every panel in the inner tongue sits on.").font(Font.pl(size: 16, design: .serif).italic()).foregroundStyle(PLG.ink(scheme)).gCard(padding: 28, radius: 14)
                 }
                 section("Countdown, Ten Down", "public/scripts/pieces-s305b.js · piece s5b-motion-count · the count is the preparation and the last word is the proof") {
                     openPiece("open Ten Down in the library", "s5b-motion-count")
@@ -467,11 +467,11 @@ struct LabComponentsView: View {
                 section("Type — the founder's hands", "public/fonts · MaurriceMccannPsychedHandwrit (PLHand) + Curvedabc — both founder-drawn") {
                     VStack(alignment: .leading, spacing: 8) {
                         Text("Watch this.").font(.custom(PLFace.handV1, size: 34)).foregroundStyle(PLG.ink(scheme))
-                        Text("PLHand — the handwriting").font(.system(size: 10, design: .monospaced)).foregroundStyle(PLG.dim(scheme))
+                        Text("PLHand — the handwriting").font(Font.pl(size: 10, design: .monospaced)).foregroundStyle(PLG.dim(scheme))
                     }.gCard(padding: 28, radius: 14).padding(.bottom, 12)
                     VStack(alignment: .leading, spacing: 8) {
                         Text("Prepared for luxury").font(curvedName.map { Font.custom($0, size: 30) } ?? Font.system(size: 30, design: .serif).italic()).foregroundStyle(PLG.ink(scheme))
-                        Text("Curvedabc — the curved letterforms").font(.system(size: 10, design: .monospaced)).foregroundStyle(PLG.dim(scheme))
+                        Text("Curvedabc — the curved letterforms").font(Font.pl(size: 10, design: .monospaced)).foregroundStyle(PLG.dim(scheme))
                     }.gCard(padding: 28, radius: 14)
                 }
             }
@@ -484,7 +484,7 @@ struct LabComponentsView: View {
     private func section<C: View>(_ title: String, _ source: String, @ViewBuilder _ content: () -> C) -> some View {
         VStack(alignment: .leading, spacing: 0) {
             Text(title).gEyebrow(13).foregroundStyle(PLG.ink(scheme)).padding(.bottom, 4)
-            Text(source).font(.system(size: 10, design: .monospaced)).foregroundStyle(PLG.dim(scheme)).padding(.bottom, 14)
+            Text(source).font(Font.pl(size: 10, design: .monospaced)).foregroundStyle(PLG.dim(scheme)).padding(.bottom, 14)
             content()
         }
         .padding(.bottom, 40)
@@ -492,7 +492,7 @@ struct LabComponentsView: View {
 
     private func openPiece(_ label: String, _ id: String) -> some View {
         NavigationLink { LabPieceFull(model: model, id: id) } label: {
-            Text("\(label) →").font(.system(size: 11, design: .monospaced)).foregroundStyle(PLG.goldDim(scheme)).padding(.top, 10).frame(minHeight: 44, alignment: .leading)
+            Text("\(label) →").font(Font.pl(size: 11, design: .monospaced)).foregroundStyle(PLG.goldDim(scheme)).padding(.top, 10).frame(minHeight: 44, alignment: .leading)
         }
     }
 }
