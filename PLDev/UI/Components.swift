@@ -1,3 +1,4 @@
+import ImageIO
 import SwiftUI
 
 /// What sits behind every screen: the system's grouped background, and the theme pack's tile over it when one is loaded.
@@ -207,13 +208,16 @@ struct Wallpaper: View {
     @State private var ready = Wallpaper.stencil != nil
     @AppStorage("pldev.tileStrength") private var strength = 0.5   // Settings: how strongly the curves show; 0.5 = his reference
     @AppStorage("pldev.styleRepeat") private var repeatSize = 300.0   // the theme's curve scale (S353·7b1e)
+    @AppStorage("pldev.styleWall") private var wall = ""   // a theme's archive piece, "mode|url" (his picks 11-24)
 
     init(model: AppModel) { self.model = model }
 
     var body: some View {
         ZStack {
             kit.palette.groundColor
-            if ready, let tile = Self.stencil {
+            if !wall.isEmpty {
+                ThemeWall(spec: wall, key: kit.palette.keyColor, strength: strength)
+            } else if ready, let tile = Self.stencil {
                 Image(uiImage: tile).renderingMode(.template).resizable(resizingMode: .tile)
                     .foregroundStyle(kit.palette.keyColor).opacity(strength <= 0 ? 0 : min(1, 0.15 + strength * 1.7))   // 0 = no curves (E ink, macOS)
             }
@@ -305,5 +309,54 @@ extension View {
                         .accessibilityAddTraits(.isHeader)
                 }
             }
+    }
+}
+
+
+/// A theme's wallpaper from his archive (S353·7b1e, his picks 11-24): fetched once from the archive's public bucket, shrunk to screen
+/// size, kept on the phone. Line art is drawn as a mask in the theme's key colour; a "color" piece is shown as he made it.
+struct ThemeWall: View {
+    let spec: String, key: Color, strength: Double
+    @State private var image: UIImage?
+
+    var body: some View {
+        let parts = spec.split(separator: "|", maxSplits: 1).map(String.init)
+        let mode = parts.first ?? "mask"
+        Group {
+            if let image {
+                if mode == "color" {
+                    Image(uiImage: image).resizable().scaledToFill().opacity(min(1, 0.25 + strength))
+                } else {
+                    Rectangle().fill(key).mask {
+                        if mode == "invert" { Image(uiImage: image).resizable().scaledToFill().colorInvert().luminanceToAlpha() }
+                        else { Image(uiImage: image).resizable().scaledToFill().luminanceToAlpha() }
+                    }
+                    .opacity(min(1, 0.15 + strength * 1.2))
+                }
+            }
+        }
+        .ignoresSafeArea()
+        .task(id: spec) { image = await Self.load(parts.count == 2 ? parts[1] : "") }
+    }
+
+    @MainActor private static var cache: [String: UIImage] = [:]
+
+    /// Only https addresses on the archive's own bucket are fetched (the spec comes from code, never from a page).
+    @MainActor static func load(_ address: String) async -> UIImage? {
+        if let hit = cache[address] { return hit }
+        guard let url = URL(string: address), url.scheme == "https", url.host?.hasSuffix(".r2.dev") == true else { return nil }
+        let dir = FileManager.default.urls(for: .cachesDirectory, in: .userDomainMask)[0].appendingPathComponent("walls", isDirectory: true)
+        let file = dir.appendingPathComponent(url.lastPathComponent + ".jpg")
+        if let d = try? Data(contentsOf: file), let img = UIImage(data: d) { cache[address] = img; return img }
+        guard let (data, resp) = try? await URLSession.shared.data(from: url), (resp as? HTTPURLResponse)?.statusCode == 200,
+              let src = CGImageSourceCreateWithData(data as CFData, nil),
+              let cg = CGImageSourceCreateThumbnailAtIndex(src, 0, [kCGImageSourceCreateThumbnailFromImageAlways: true,
+                                                                     kCGImageSourceThumbnailMaxPixelSize: 1800,
+                                                                     kCGImageSourceCreateThumbnailWithTransform: true] as CFDictionary) else { return nil }
+        let img = UIImage(cgImage: cg)
+        try? FileManager.default.createDirectory(at: dir, withIntermediateDirectories: true)
+        if let jpg = img.jpegData(compressionQuality: 0.85) { try? jpg.write(to: file) }
+        cache[address] = img
+        return img
     }
 }

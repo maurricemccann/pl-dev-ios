@@ -291,6 +291,9 @@ struct PLThemePreset: Identifiable, Hashable {
     let id: String, title: String, palette: String, face: String, text: String, note: String, dark: Bool
     let card: Card, radius: Double, space: Double, tile: String, repeatSize: Double, curves: Double, calm: Bool, icon: String?
     var fun = false   // the Fun group (his ask 11-24), listed after Dark and Light
+    /// One of his archive pieces as the wallpaper, "mode|url": mask (white lines take the key colour), invert (black lines do),
+    /// color (the piece as he made it). His picks 11-24. nil = the curve tile.
+    var wall: String? = nil
 
     private static func house(_ f: String) -> String { "file:fonts/house/\(f)" }
     static let all: [PLThemePreset] = [
@@ -299,10 +302,10 @@ struct PLThemePreset: Identifiable, Hashable {
               card: .frosted, radius: 1, space: 1, tile: "squircle", repeatSize: 300, curves: 0.5, calm: false, icon: "AppIcon-HomeScreen"),
         .init(id: "studio-night", title: "Studio night", palette: "obsidian-gold", face: house("pirata-one.ttf"), text: "jost",
               note: "Blackletter titles, gold hairline cards, sharp and tight", dark: true,
-              card: .outline, radius: 0.35, space: 0.85, tile: "square", repeatSize: 240, curves: 0.65, calm: false, icon: "AppIcon-ObsidianGold"),
+              card: .outline, radius: 0.35, space: 0.85, tile: "square", repeatSize: 240, curves: 0.65, calm: false, icon: "AppIcon-ObsidianGold", wall: "mask|https://pub-4420dc4349624d6bbed7eb9555f42661.r2.dev/abstract-pattern_organic-curves_monochrome_digital_970.png"),
         .init(id: "ember", title: "Ember", palette: "void-ember", face: house("rubik-burned.ttf"), text: "jost",
               note: "Burned titles, round tiles, the curves large and bright", dark: true,
-              card: .frosted, radius: 1.35, space: 1, tile: "circle", repeatSize: 420, curves: 0.85, calm: false, icon: "AppIcon-VoidEmber"),
+              card: .frosted, radius: 1.35, space: 1, tile: "circle", repeatSize: 420, curves: 0.85, calm: false, icon: "AppIcon-VoidEmber", wall: "mask|https://pub-4420dc4349624d6bbed7eb9555f42661.r2.dev/abstract-pattern_organic-interlocking_black-white_ink-marker_1239.jpg"),
         .init(id: "totem", title: "Totem", palette: "totem-blue-gold", face: house("unifrakturcook.ttf"), text: house("texturina.ttf"),
               note: "Fraktur titles over a book face, clear glass, room to breathe", dark: true,
               card: .clear, radius: 1, space: 1.2, tile: "squircle", repeatSize: 360, curves: 0.4, calm: false, icon: nil),
@@ -320,19 +323,19 @@ struct PLThemePreset: Identifiable, Hashable {
               card: .frosted, radius: 0.35, space: 1, tile: "squircle", repeatSize: 300, curves: 0.45, calm: false, icon: nil),
         .init(id: "archive", title: "From the archive", palette: "archive-0a", face: house("rubik-dirt.ttf"), text: "jost",
               note: "Gold on black from your archive, dirt titles, outlined, the curves huge", dark: true,
-              card: .outline, radius: 1.35, space: 0.85, tile: "circle", repeatSize: 520, curves: 0.7, calm: false, icon: nil),
+              card: .outline, radius: 1.35, space: 0.85, tile: "circle", repeatSize: 520, curves: 0.7, calm: false, icon: nil, wall: "invert|https://pub-4420dc4349624d6bbed7eb9555f42661.r2.dev/glyph-abstract_organic-labyrinthine_monochrome_ink_017.jpg"),
         .init(id: "drop", title: "Drop day", palette: "bone-oxblood", face: "ransom", text: "jost",
               note: "Your Ransom titles, solid and sharp, tight like a poster", dark: false,
-              card: .solid, radius: 0.35, space: 0.85, tile: "square", repeatSize: 260, curves: 0.35, calm: false, icon: "AppIcon-BoneOxblood"),
+              card: .solid, radius: 0.35, space: 0.85, tile: "square", repeatSize: 260, curves: 0.35, calm: false, icon: "AppIcon-BoneOxblood", wall: "color|https://pub-4420dc4349624d6bbed7eb9555f42661.r2.dev/abstract-pattern_organic-interlocking_red-warm_digital_2437.png"),
         .init(id: "ledger", title: "The ledger", palette: "cream-indigo", face: "ledger", text: "courier",
               note: "Your Ledger hand, typewriter text, ruled outlines, still", dark: false,
-              card: .outline, radius: 0.35, space: 1, tile: "square", repeatSize: 200, curves: 0.1, calm: true, icon: nil),
+              card: .outline, radius: 0.35, space: 1, tile: "square", repeatSize: 200, curves: 0.1, calm: true, icon: nil, wall: "invert|https://pub-4420dc4349624d6bbed7eb9555f42661.r2.dev/abstract-pattern_organic-interlocking_monochrome_digital-ink_5373.png"),
         .init(id: "linen", title: "Linen", palette: "linen-forest", face: "v2", text: "jost",
               note: "Your second hand, clear glass, soft and airy, round tiles", dark: false,
               card: .clear, radius: 1.35, space: 1.2, tile: "circle", repeatSize: 420, curves: 0.25, calm: false, icon: nil),
         .init(id: "copper", title: "Copper", palette: "ivory-copper", face: house("saira-stencil-one.ttf"), text: "jost",
               note: "Stencil titles, solid panels, the house shape", dark: false,
-              card: .solid, radius: 1, space: 1, tile: "squircle", repeatSize: 300, curves: 0.4, calm: false, icon: nil),
+              card: .solid, radius: 1, space: 1, tile: "squircle", repeatSize: 300, curves: 0.4, calm: false, icon: nil, wall: "color|https://pub-4420dc4349624d6bbed7eb9555f42661.r2.dev/abstract-pattern_organic-flowing_warm-pink_digital_4693.png"),
         .init(id: "smoke", title: "Warm smoke", palette: "warm-smoke", face: house("pencilant.otf"), text: house("special-elite.ttf"),
               note: "Pencil titles, typed text, soft outlines, still", dark: false,
               card: .outline, radius: 1.35, space: 1.2, tile: "circle", repeatSize: 360, curves: 0.2, calm: true, icon: nil),
@@ -364,7 +367,7 @@ struct PLThemePreset: Identifiable, Hashable {
               card: .solid, radius: 0.15, space: 1, tile: "square", repeatSize: 200, curves: 0.2, calm: false, icon: nil, fun: true),
         .init(id: "fun-hyperspace", title: "Hyperspace", palette: "fun-hyperspace", face: "bundle:Audiowide-Regular", text: "jost",
               note: "Violet and cyan in deep space, frosted, the curves vast", dark: true,
-              card: .frosted, radius: 1.35, space: 1.2, tile: "circle", repeatSize: 560, curves: 0.9, calm: false, icon: nil, fun: true),
+              card: .frosted, radius: 1.35, space: 1.2, tile: "circle", repeatSize: 560, curves: 0.9, calm: false, icon: nil, fun: true, wall: "invert|https://pub-4420dc4349624d6bbed7eb9555f42661.r2.dev/abstract-pattern_organic-flowing_monochrome_digital_5457.png"),
         .init(id: "fun-vibe", title: "Vibe coded", palette: "fun-vibe", face: "bundle:JetBrainsMono-Regular", text: "bundle:JetBrainsMono-Regular",
               note: "Editor night: purple and pink, code font, outlined panes", dark: true,
               card: .outline, radius: 0.6, space: 1, tile: "squircle", repeatSize: 260, curves: 0.3, calm: false, icon: nil, fun: true),
@@ -380,6 +383,7 @@ struct PLThemePreset: Identifiable, Hashable {
         d.set(tile, forKey: "pldev.styleTile"); d.set(repeatSize, forKey: "pldev.styleRepeat")
         d.set(card == .frosted || card == .clear, forKey: "pldev.glassBlur"); d.set(card == .clear, forKey: "pldev.glassClear")
         d.set(card == .outline, forKey: "pldev.cardLine")
+        d.set(wall ?? "", forKey: "pldev.styleWall")
         d.set(curves, forKey: "pldev.tileStrength"); d.set(calm ? "reduce" : "full", forKey: "pldev.motion")
         d.set(textOK ? text : "jost", forKey: "pldev.font")
         d.set(dark ? "dark" : "light", forKey: "pldev.theme")
