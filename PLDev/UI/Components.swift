@@ -172,6 +172,11 @@ struct PLTile: ViewModifier {
     @State private var kit = HouseKit.shared
     @Environment(\.colorScheme) private var scheme
 
+    init(shape: AnyShape, look: String) {
+        self.shape = shape
+        self.look = look
+    }
+
     static func shape(_ name: String) -> AnyShape {
         switch name {
         case "circle": AnyShape(Circle())
@@ -301,6 +306,12 @@ extension View {
 struct ThemeWall: View {
     let spec: String, key: Color, strength: Double
     @State private var image: UIImage?
+
+    init(spec: String, key: Color, strength: Double) {
+        self.spec = spec
+        self.key = key
+        self.strength = strength
+    }
 
     var body: some View {
         let parts = spec.split(separator: "|", maxSplits: 1).map(String.init)

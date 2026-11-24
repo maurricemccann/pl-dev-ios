@@ -236,6 +236,11 @@ struct ThemeGround: View {
     @AppStorage("pldev.styleRepeat") private var repeatSize = 300.0
     @State private var tile: UIImage?
 
+    init(spec: String? = nil, quiet: Bool = true) {
+        self.spec = spec
+        self.quiet = quiet
+    }
+
     var body: some View {
         let p = kit.palette
         let ground = PLCarry.tone(.ground, scheme, p.groundColor)

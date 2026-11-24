@@ -14,6 +14,8 @@ struct GlassPage: View {
     @AppStorage("pldev.styleLook") private var look = "glass"
     @State private var kit = HouseKit.shared
 
+    init() {}
+
     var body: some View {
         List {
             Section {
@@ -97,6 +99,8 @@ struct WallpaperPage: View {
         ("From the archive", "invert|" + art + "glyph-abstract_organic-labyrinthine_monochrome_ink_017.jpg"),
         ("Ember", "mask|" + art + "abstract-pattern_organic-interlocking_black-white_ink-marker_1239.jpg")]
     private let columns = [GridItem(.adaptive(minimum: 96), spacing: 10)]
+
+    init() {}
 
     var body: some View {
         let theme = PLThemePreset.current
@@ -221,6 +225,8 @@ struct FacePage: View {
     @State private var kit = HouseKit.shared
     @State private var busy: String?
     @State private var problem: String?
+
+    init(isTitle: Bool) { self.isTitle = isTitle }
 
     var body: some View {
         List {
