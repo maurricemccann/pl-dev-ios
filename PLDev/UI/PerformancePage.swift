@@ -87,7 +87,7 @@ struct PerformancePage: View {
     @AppStorage("pldev.todayLead") private var todayLead = ""
     @AppStorage("pldev.appliedChanges") private var appliedJSON = "[]"
     @AppStorage("pldev.settledProposals") private var settledCSV = ""
-    struct Applied: Codable, Identifiable { let id: String; let text: String; let before: String; let at: String }
+    @AppStorage("pldev.proposalWeek") private var proposalWeek = ""   // the week he last answered one: one answer a week
     @State private var decisionDraft = ""
 
     var body: some View {
@@ -509,7 +509,7 @@ struct PerformancePage: View {
                 Text("Your moves: " + by.map { "\($0.key) \($0.value)" }.joined(separator: " · ")).font(.footnote).foregroundStyle(.secondary)
             }
             experimentRows(thisWeek: thisWeek, lastWeek: lastWeek)
-            proposalRows(moves: moves)
+            proposalRows(moves: moves, thisWeek: thisWeek)
             if let d = decisions[lastWeek], !d.isEmpty {
                 VStack(alignment: .leading, spacing: 2) {
                     Text("Last week you decided").plLabel(10).foregroundStyle(.secondary)
@@ -555,44 +555,30 @@ struct PerformancePage: View {
         }
     }
 
-    /// The app's one proposal this week, and the list of what it changed with Undo (Plans/SPEC — PL DEV PROPOSES ITS OWN CHANGES).
-    @ViewBuilder private func proposalRows(moves: [String]) -> some View {
+    /// The app's one proposal this week (Plans/SPEC — PL DEV PROPOSES ITS OWN CHANGES). The list of what it changed, with Undo, is in Settings.
+    @ViewBuilder private func proposalRows(moves: [String], thisWeek: String) -> some View {
         let settled = Set(settledCSV.split(separator: ",").map(String.init))
         let oldest = CaptureSection.state.deck.compactMap { Date.pl($0.created_at) }.min()
         let p = ProposalRules.pick(.init(movesLast7: Dictionary(moves.map { ($0, 1) }, uniquingKeysWith: +),
-                                         oldestWaitingCaptureDays: oldest.map { Int(Date.now.timeIntervalSince($0) / 86400) }, settled: settled))
-        let applied = (try? JSONDecoder().decode([Applied].self, from: Data(appliedJSON.utf8))) ?? []
+                                         oldestWaitingCaptureDays: oldest.map { Int(Date.now.timeIntervalSince($0) / 86400) }, settled: settled,
+                                         thisWeek: thisWeek, lastActedWeek: proposalWeek.isEmpty ? nil : proposalWeek))
         if let p {
             VStack(alignment: .leading, spacing: 6) {
                 Label(p.text, systemImage: "wand.and.stars").font(.callout)
                 HStack(spacing: 8) {
                     Button("Yes") {
-                        let rec = Applied(id: p.id, text: p.text, before: todayLead, at: String(Date.now.formatted(.iso8601.year().month().day())))
-                        if p.setting == "todayLead" { todayLead = p.value }
-                        if let s = try? JSONEncoder().encode(applied + [rec]), let j = String(data: s, encoding: .utf8) { appliedJSON = j }
-                        settledCSV = (settled.union([p.id])).joined(separator: ",")
+                        let log = (try? JSONDecoder().decode([ProposalRules.Change].self, from: Data(appliedJSON.utf8))) ?? []
+                        let rec = ProposalRules.Change(id: p.id, text: p.text, before: todayLead, at: String(Date.now.formatted(.iso8601.year().month().day())))
+                        if p.setting == "todayLead", ProposalRules.allowed["todayLead"]?.contains(p.value) == true { todayLead = p.value }
+                        if let s = try? JSONEncoder().encode(log + [rec]), let j = String(data: s, encoding: .utf8) { appliedJSON = j }
+                        settledCSV = settled.union([p.id]).joined(separator: ",")
+                        proposalWeek = thisWeek
                     }
-                    .buttonStyle(.bordered).tint(PLTone.accent)
-                    Button("Never ask this") { settledCSV = (settled.union([p.id])).joined(separator: ",") }.buttonStyle(.bordered).tint(.secondary)
+                    .buttonStyle(.bordered).tint(PLTone.accent).frame(minHeight: 44)
+                    Button("Not now") { proposalWeek = thisWeek }.buttonStyle(.bordered).tint(.secondary).frame(minHeight: 44)
+                    Button("Never ask") { settledCSV = settled.union([p.id]).joined(separator: ","); proposalWeek = thisWeek }.buttonStyle(.bordered).tint(.secondary).frame(minHeight: 44)
                 }
             }
-        }
-        if !applied.isEmpty {
-            DisclosureGroup("Changes the app made (\(applied.count))") {
-                ForEach(applied.reversed()) { a in
-                    HStack {
-                        Text(a.text).font(.caption).lineLimit(2)
-                        Spacer(minLength: 6)
-                        Button("Undo") {
-                            todayLead = a.before
-                            let rest = applied.filter { $0.id != a.id }
-                            if let s = try? JSONEncoder().encode(rest), let j = String(data: s, encoding: .utf8) { appliedJSON = j }
-                        }
-                        .font(.caption.weight(.semibold))
-                    }
-                }
-            }
-            .font(.footnote)
         }
     }
 
