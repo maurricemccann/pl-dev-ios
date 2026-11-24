@@ -37,7 +37,7 @@ struct HousePalette: Codable, Hashable, Identifiable {
         HousePalette(name: "fun-terminal", ground: "#0b0f0b", text: "#c8f7c5", key: "#33ff66", accent: "#ffb000"),
         HousePalette(name: "fun-glass", ground: "#0e1b2a", text: "#eef6ff", key: "#9fd4ff", accent: "#ffffff"),
         HousePalette(name: "fun-eink", ground: "#f2f0e9", text: "#111111", key: "#2b2b2b", accent: "#777777"),
-        HousePalette(name: "fun-synthwave", ground: "#1a0b2e", text: "#fbe7ff", key: "#ff2fd6", accent: "#00f0ff"),
+        HousePalette(name: "fun-synthwave", ground: "#14061f", text: "#ffe9fb", key: "#ff2a9d", accent: "#2de2e6"),   // his retrowave reference 11-24: hot pink and teal neon
         HousePalette(name: "fun-cyberpunk", ground: "#140a1e", text: "#f2e9f7", key: "#ff4f5e", accent: "#19e3c8"),   // his references 11-24: violet-black, coral frames, teal
         HousePalette(name: "fun-retro", ground: "#008080", text: "#ffffff", key: "#ffff55", accent: "#ff55ff"),
         HousePalette(name: "fun-hyperspace", ground: "#02010a", text: "#e6f0ff", key: "#7b5cff", accent: "#3cf2ff"),
@@ -356,9 +356,9 @@ struct PLThemePreset: Identifiable, Hashable {
         .init(id: "fun-eink", title: "E ink", palette: "fun-eink", face: "bundle:Literata-Regular", text: "bundle:Literata-Regular",
               note: "Paper and ink: a book face, flat panels, no curves, no motion", dark: false,
               card: .solid, radius: 0.35, space: 1.1, tile: "square", repeatSize: 300, curves: 0, calm: true, icon: nil, fun: true),
-        .init(id: "fun-synthwave", title: "Synthwave", palette: "fun-synthwave", face: "bundle:Monoton-Regular", text: "jost",
-              note: "Neon pink and cyan on violet night, neon outlines", dark: true,
-              card: .outline, radius: 1, space: 1, tile: "circle", repeatSize: 380, curves: 0.75, calm: false, icon: nil, fun: true),
+        .init(id: "fun-synthwave", title: "Synthwave", palette: "fun-synthwave", face: "bundle:MrDafoe-Regular", text: "jost",
+              note: "Retrowave: pink script titles, hot pink and teal neon, glowing lines on purple night", dark: true,
+              card: .outline, radius: 1, space: 1, tile: "circle", repeatSize: 420, curves: 0.85, calm: false, icon: nil, fun: true),
         .init(id: "fun-cyberpunk", title: "Cyberpunk", palette: "fun-cyberpunk", face: "bundle:ChakraPetch-SemiBold", text: "bundle:GeistMono-Regular",
               note: "Night city OS: coral hairline frames on violet-black, teal, a code font", dark: true,
               card: .outline, radius: 0.6, space: 0.85, tile: "square", repeatSize: 220, curves: 0.3, calm: false, icon: nil, fun: true),
