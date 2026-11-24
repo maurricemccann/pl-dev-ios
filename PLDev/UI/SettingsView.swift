@@ -500,7 +500,7 @@ struct ThemePacksView: View {
     private func row(_ t: PLThemePreset) -> some View {
         let p = kit.allPalettes.first { $0.name == t.palette }
         let on = kit.paletteName == t.palette && kit.titleFace == t.face && textFace == t.text
-        return Button { withAnimation(.snappy) { kit.paletteName = t.palette; kit.titleFace = t.face; textFace = t.text } } label: {
+        return Button { withAnimation(.snappy) { t.apply() } } label: {
             HStack(spacing: 12) {
                 RoundedRectangle(cornerRadius: 10, style: .continuous).fill(p?.groundColor ?? .black)
                     .overlay { Text("Aa").font(.custom(face(t.face), size: 20)).foregroundStyle(p?.keyColor ?? .orange) }
