@@ -215,7 +215,7 @@ struct Wallpaper: View {
             kit.palette.groundColor
             if ready, let tile = Self.stencil {
                 Image(uiImage: tile).renderingMode(.template).resizable(resizingMode: .tile)
-                    .foregroundStyle(kit.palette.keyColor).opacity(min(1, 0.15 + strength * 1.7))
+                    .foregroundStyle(kit.palette.keyColor).opacity(strength <= 0 ? 0 : min(1, 0.15 + strength * 1.7))   // 0 = no curves (E ink, macOS)
             }
         }
         .ignoresSafeArea()

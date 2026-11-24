@@ -31,6 +31,18 @@ struct HousePalette: Codable, Hashable, Identifiable {
 
     /// His own Home Screen (the 11-13 reference: orange curves on deep brown, sampled), the default until he picks another.
     static let homeScreen = HousePalette(name: "home-screen", ground: "#5a1f0e", text: "#efe9dc", key: "#b85536", accent: "#f0a070")
+    /// The Fun themes' palettes (S353·7b1e, his ask 11-24: "a few fun ones"). Built in, not in the Design Kit: they are play, not house colour.
+    static let fun: [HousePalette] = [
+        HousePalette(name: "fun-macos", ground: "#f5f5f7", text: "#1d1d1f", key: "#0a84ff", accent: "#64d2ff"),
+        HousePalette(name: "fun-terminal", ground: "#0b0f0b", text: "#c8f7c5", key: "#33ff66", accent: "#ffb000"),
+        HousePalette(name: "fun-glass", ground: "#0e1b2a", text: "#eef6ff", key: "#9fd4ff", accent: "#ffffff"),
+        HousePalette(name: "fun-eink", ground: "#f2f0e9", text: "#111111", key: "#2b2b2b", accent: "#777777"),
+        HousePalette(name: "fun-synthwave", ground: "#1a0b2e", text: "#fbe7ff", key: "#ff2fd6", accent: "#00f0ff"),
+        HousePalette(name: "fun-cyberpunk", ground: "#0a0a0f", text: "#f4f4f4", key: "#fcee0a", accent: "#00f0ff"),
+        HousePalette(name: "fun-retro", ground: "#008080", text: "#ffffff", key: "#ffff55", accent: "#ff55ff"),
+        HousePalette(name: "fun-hyperspace", ground: "#02010a", text: "#e6f0ff", key: "#7b5cff", accent: "#3cf2ff"),
+        HousePalette(name: "fun-vibe", ground: "#282a36", text: "#f8f8f2", key: "#bd93f9", accent: "#ff79c6"),
+    ]
 }
 
 @MainActor @Observable final class HouseKit {
@@ -45,7 +57,7 @@ struct HousePalette: Codable, Hashable, Identifiable {
     var titleFace: String = UserDefaults.standard.string(forKey: "pldev.titleFace") ?? "v1" {
         didSet { UserDefaults.standard.set(titleFace, forKey: "pldev.titleFace"); apply() }
     }
-    var allPalettes: [HousePalette] { palettes + archivePalettes + familyPalettes + mixes.map(\.palette) }
+    var allPalettes: [HousePalette] { palettes + archivePalettes + familyPalettes + mixes.map(\.palette) + HousePalette.fun }
     func harmonies(of base: String) -> [Mix] { mixes.filter { $0.base == base } }
     private(set) var titleFont: String?          // his hand, V1 (main), once registered
     var paletteName: String = UserDefaults.standard.string(forKey: "pldev.palette") ?? "home-screen" {
@@ -278,6 +290,7 @@ struct PLThemePreset: Identifiable, Hashable {
     enum Card: String { case frosted, clear, solid, outline }
     let id: String, title: String, palette: String, face: String, text: String, note: String, dark: Bool
     let card: Card, radius: Double, space: Double, tile: String, repeatSize: Double, curves: Double, calm: Bool, icon: String?
+    var fun = false   // the Fun group (his ask 11-24), listed after Dark and Light
 
     private static func house(_ f: String) -> String { "file:fonts/house/\(f)" }
     static let all: [PLThemePreset] = [
@@ -326,6 +339,35 @@ struct PLThemePreset: Identifiable, Hashable {
         .init(id: "pearl", title: "Pearl", palette: "pearl-gold", face: house("fruktur.ttf"), text: "jost",
               note: "Fruktur titles, clear glass, soft corners, wide curves", dark: false,
               card: .clear, radius: 1.35, space: 1, tile: "squircle", repeatSize: 460, curves: 0.3, calm: false, icon: nil),
+        // Fun (his list 11-24: macOS, terminal/Linux, glass, E ink, synthwave/neon, cyberpunk, retro 90s, hyperspace, vibe coded).
+        // Open fonts bundled in the app (OFL, Google Fonts), so they work offline.
+        .init(id: "fun-macos", title: "macOS", palette: "fun-macos", face: "bundle:system", text: "system",
+              note: "Apple's own face, frosted glass, soft squircles, no curves", dark: false,
+              card: .frosted, radius: 1.35, space: 1.1, tile: "squircle", repeatSize: 300, curves: 0, calm: false, icon: nil, fun: true),
+        .init(id: "fun-terminal", title: "Terminal", palette: "fun-terminal", face: "bundle:IBMPlexMono-Regular", text: "bundle:IBMPlexMono-Regular",
+              note: "Green phosphor on black, mono everything, square and still", dark: true,
+              card: .outline, radius: 0.15, space: 0.85, tile: "square", repeatSize: 160, curves: 0.12, calm: true, icon: nil, fun: true),
+        .init(id: "fun-glass", title: "Glass", palette: "fun-glass", face: "bundle:Michroma-Regular", text: "system",
+              note: "All clear glass over deep blue, round and airy", dark: true,
+              card: .clear, radius: 1.5, space: 1.2, tile: "circle", repeatSize: 480, curves: 0.35, calm: false, icon: nil, fun: true),
+        .init(id: "fun-eink", title: "E ink", palette: "fun-eink", face: "bundle:Literata-Regular", text: "bundle:Literata-Regular",
+              note: "Paper and ink: a book face, flat panels, no curves, no motion", dark: false,
+              card: .solid, radius: 0.35, space: 1.1, tile: "square", repeatSize: 300, curves: 0, calm: true, icon: nil, fun: true),
+        .init(id: "fun-synthwave", title: "Synthwave", palette: "fun-synthwave", face: "bundle:Monoton-Regular", text: "jost",
+              note: "Neon pink and cyan on violet night, neon outlines", dark: true,
+              card: .outline, radius: 1, space: 1, tile: "circle", repeatSize: 380, curves: 0.75, calm: false, icon: nil, fun: true),
+        .init(id: "fun-cyberpunk", title: "Cyberpunk", palette: "fun-cyberpunk", face: "bundle:Orbitron-Regular", text: "bundle:ShareTechMono-Regular",
+              note: "Hazard yellow and cyan, hard edges, tight and loud", dark: true,
+              card: .solid, radius: 0.15, space: 0.85, tile: "square", repeatSize: 220, curves: 0.55, calm: false, icon: nil, fun: true),
+        .init(id: "fun-retro", title: "Retro 90s", palette: "fun-retro", face: "bundle:PressStart2P-Regular", text: "courier",
+              note: "Pixel titles on desktop teal, chunky solid panels", dark: true,
+              card: .solid, radius: 0.15, space: 1, tile: "square", repeatSize: 200, curves: 0.2, calm: false, icon: nil, fun: true),
+        .init(id: "fun-hyperspace", title: "Hyperspace", palette: "fun-hyperspace", face: "bundle:Audiowide-Regular", text: "jost",
+              note: "Violet and cyan in deep space, frosted, the curves vast", dark: true,
+              card: .frosted, radius: 1.35, space: 1.2, tile: "circle", repeatSize: 560, curves: 0.9, calm: false, icon: nil, fun: true),
+        .init(id: "fun-vibe", title: "Vibe coded", palette: "fun-vibe", face: "bundle:JetBrainsMono-Regular", text: "bundle:JetBrainsMono-Regular",
+              note: "Editor night: purple and pink, code font, outlined panes", dark: true,
+              card: .outline, radius: 0.6, space: 1, tile: "squircle", repeatSize: 260, curves: 0.3, calm: false, icon: nil, fun: true),
     ]
 
     /// Fetches the theme's house fonts (first time only), then sets every switch it owns; the views read the same keys.

@@ -81,6 +81,15 @@
 		<string>Jost-500-Medium.ttf</string>
 		<string>Jost-600-Semi.ttf</string>
 		<string>Jost-700-Bold.ttf</string>
+		<string>Audiowide-Regular.ttf</string>
+		<string>IBMPlexMono-Regular.ttf</string>
+		<string>JetBrainsMono.ttf</string>
+		<string>Literata.ttf</string>
+		<string>Michroma-Regular.ttf</string>
+		<string>Monoton-Regular.ttf</string>
+		<string>Orbitron.ttf</string>
+		<string>PressStart2P-Regular.ttf</string>
+		<string>ShareTechMono-Regular.ttf</string>
 	</array>
 	<key>UISupportedInterfaceOrientations</key>
 	<array>

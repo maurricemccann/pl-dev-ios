@@ -42,8 +42,11 @@ enum HouseFonts {
     private static func local(_ token: String) -> URL { dir.appendingPathComponent((token as NSString).lastPathComponent) }
 
     /// The PostScript name for a face token once its file is registered; nil for built-in faces or before it arrives.
+    /// "bundle:<PostScript name>" is a font shipped in the app (the Fun themes' open fonts); "bundle:system" is Apple's own face
+    /// (Font.custom and UIFont(name:) fall back to the system font for a name that is not installed).
     static func name(_ token: String) -> String? {
-        token.hasPrefix("file:") ? UserDefaults.standard.string(forKey: "pldev.ps." + token) : nil
+        if token.hasPrefix("bundle:") { return String(token.dropFirst(7)) }
+        return token.hasPrefix("file:") ? UserDefaults.standard.string(forKey: "pldev.ps." + token) : nil
     }
 
     /// At launch: every font already cached is registered again (registration lasts one process).

@@ -81,3 +81,7 @@ INCLUDING ANY GENERAL, SPECIAL, INDIRECT, INCIDENTAL, OR CONSEQUENTIAL
 DAMAGES, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING
 FROM, OUT OF THE USE OR INABILITY TO USE THE FONT SOFTWARE OR FROM
 OTHER DEALINGS IN THE FONT SOFTWARE.
+
+---
+Added S353·7b1e (2026-11-24) for the Fun themes, all SIL Open Font License 1.1, from github.com/google/fonts (ofl/):
+Audiowide, IBM Plex Mono, JetBrains Mono, Literata, Michroma, Monoton, Orbitron, Press Start 2P, Share Tech Mono.

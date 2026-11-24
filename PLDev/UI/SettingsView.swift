@@ -487,8 +487,9 @@ struct ThemePacksView: View {
     var body: some View {
         List {
             if let note { Text(note).font(.footnote).foregroundStyle(.secondary) }
-            Section("Dark") { ForEach(PLThemePreset.all.filter(\.dark)) { row($0) } }
-            Section("Light") { ForEach(PLThemePreset.all.filter { !$0.dark }) { row($0) } }
+            Section("Dark") { ForEach(PLThemePreset.all.filter { $0.dark && !$0.fun }) { row($0) } }
+            Section("Light") { ForEach(PLThemePreset.all.filter { !$0.dark && !$0.fun }) { row($0) } }
+            Section("Fun") { ForEach(PLThemePreset.all.filter(\.fun)) { row($0) } }
             // S353·7b1e: was a second "Theme pack" row under Appearance (his report 11-24: two theme pack options); one place now.
             Section {
                 Button { pack.load() } label: {
