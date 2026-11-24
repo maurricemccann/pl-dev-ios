@@ -250,27 +250,32 @@ struct ThemeGround: View {
         let clash = !plain && (TileLook.luminance(p.groundColor) > 0.5) == (scheme == .dark)
         let parts = (spec ?? wall).split(separator: "|", maxSplits: 1).map(String.init)
         let kind = parts.first ?? "curves", arg = parts.count == 2 ? parts[1] : ""
-        ZStack {
-            if plain && scheme == .light { Color(uiColor: .systemGroupedBackground); p.textColor.opacity(0.45) } else { ground }
-            if !reduce {
-                Group {
-                    switch kind {
-                    case "code": CodeGround(name: arg, key: p.keyColor, accent: p.accentColor, ink: p.textColor, ground: p.groundColor)
-                    case "mask", "invert", "color": ThemeWall(spec: kind + "|" + arg, key: ink, strength: strength)
-                    case "kit":
-                        if let tile {
-                            Image(uiImage: tile).renderingMode(.template).resizable(resizingMode: .tile).foregroundStyle(ink).opacity(min(1, 0.1 + strength))
-                        }
-                    default:
-                        if let s = Wallpaper.stencil {
-                            Image(uiImage: s).renderingMode(.template).resizable(resizingMode: .tile).foregroundStyle(ink)
-                                .opacity(strength <= 0 ? 0 : min(1, 0.15 + strength * 1.7))
+        // Color.clear takes exactly the offered size, so a filled picture cannot stretch the screen or catch a neighbour's tap
+        Color.clear.overlay {
+            ZStack {
+                if plain && scheme == .light { Color(uiColor: .systemGroupedBackground); p.textColor.opacity(0.45) } else { ground }
+                if !reduce {
+                    Group {
+                        switch kind {
+                        case "code": CodeGround(name: arg, key: p.keyColor, accent: p.accentColor, ink: p.textColor, ground: p.groundColor)
+                        case "mask", "invert", "color": ThemeWall(spec: kind + "|" + arg, key: ink, strength: strength)
+                        case "kit":
+                            if let tile {
+                                Image(uiImage: tile).renderingMode(.template).resizable(resizingMode: .tile).foregroundStyle(ink).opacity(min(1, 0.1 + strength))
+                            }
+                        default:
+                            if let s = Wallpaper.stencil {
+                                Image(uiImage: s).renderingMode(.template).resizable(resizingMode: .tile).foregroundStyle(ink)
+                                    .opacity(strength <= 0 ? 0 : min(1, 0.15 + strength * 1.7))
+                            }
                         }
                     }
+                    .opacity(clash ? 0.12 : quiet ? (kind == "code" ? 0.7 : 0.3) : 1)
                 }
-                .opacity(clash ? 0.12 : quiet ? (kind == "code" ? 0.7 : 0.3) : 1)
             }
         }
+        .clipped()
+        .allowsHitTesting(false)
         .ignoresSafeArea()
         .accessibilityHidden(true)
         .task(id: kind + arg + String(repeatSize)) { if kind == "kit" { tile = await KitPattern.load(arg, size: repeatSize) } }
