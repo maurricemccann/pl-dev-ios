@@ -307,6 +307,7 @@ struct SettingsView: View {
             Text("Optional text faces: Jost and Courier Prime, under the SIL Open Font License 1.1.")
                 .plFont(.footnote)
                 .foregroundStyle(.secondary)
+            NavigationLink { AcknowledgementsPage() } label: { Text("Acknowledgements").plFont(.body) }
         } header: {
             Text("About").plFont(.footnote)
         }

@@ -12,6 +12,7 @@ struct GlassPage: View {
     @AppStorage("pldev.glass.tile.through") private var tileThrough = 0.5
     @AppStorage("pldev.styleTile") private var tileShape = "squircle"
     @AppStorage("pldev.styleLook") private var look = "glass"
+    @AppStorage("pldev.styleIcons") private var iconSet = "pl"
     @State private var kit = HouseKit.shared
 
     init() {}
@@ -24,7 +25,7 @@ struct GlassPage: View {
                     VStack(spacing: PLSpace.margin) {
                         HStack(spacing: 28) {
                             ForEach(["house", "curate", "town"], id: \.self) { id in
-                                PLIcon.image(PLIcon.forSection[id] ?? "house").resizable().scaledToFit().frame(width: 34, height: 34)
+                                TileIcon(section: id, symbol: "square", iconSet: iconSet)
                                     .modifier(PLTile(shape: PLTile.shape(tileShape), look: look))
                             }
                         }
@@ -215,6 +216,24 @@ struct ArchiveWallPage: View {
             pieces = try JSONDecoder().decode(Manifest.self, from: data).pieces.filter { $0.shareable != false && !Self.hidden.contains($0.cr) }
             if pieces.isEmpty { problem = "The list came back empty." }
         } catch { problem = plainSentence(error) }
+    }
+}
+
+/// The notices the open icon sets ask for.
+struct AcknowledgementsPage: View {
+    init() {}
+
+    var body: some View {
+        List {
+            ForEach(Licences.all, id: \.name) { l in
+                Section(l.name) {
+                    Text(l.source).font(.footnote).foregroundStyle(.secondary)
+                    Text(l.text).font(.footnote).textSelection(.enabled)
+                }
+            }
+        }
+        .plGround()
+        .plScreenTitle("Acknowledgements")
     }
 }
 

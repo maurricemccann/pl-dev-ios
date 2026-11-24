@@ -136,10 +136,7 @@ struct SectionTile: View {
     /// One app on Home: the theme's tile, its glyph, the name under it in the theme's ink.
     var body: some View {
         VStack(spacing: 6) {
-            Group {
-                if iconSet == "pl", let mine = PLIcon.forSection[entry.manifest.id] { PLIcon.image(mine).resizable().scaledToFit().frame(width: 34, height: 34) }
-                else { Image(systemName: entry.manifest.symbol).font(Font.pl(size: 28, weight: .medium)).symbolRenderingMode(.hierarchical) }
-            }
+            TileIcon(section: entry.manifest.id, symbol: entry.manifest.symbol, iconSet: iconSet)
             .modifier(PLTile(shape: PLTile.shape(tileShape), look: look))
             .overlay(alignment: .bottomTrailing) {
                 if !ready { Image(systemName: "key.fill").font(Font.pl(.caption).bold()).foregroundStyle(.primary).padding(4) }
@@ -162,6 +159,22 @@ struct SectionTile: View {
         .accessibilityElement(children: .ignore)
         .accessibilityLabel(spoken)
         .accessibilityAddTraits(.isButton)
+    }
+}
+
+/// A tile's glyph from the theme's icon set: "pl" his drawn icons, "pixel", "tabler" or "iconoir" the open sets (Licences.swift),
+/// "sf" Apple's. A section a set does not cover keeps its system symbol.
+struct TileIcon: View {
+    let section: String, symbol: String, iconSet: String
+
+    var body: some View {
+        if iconSet == "pl", let mine = PLIcon.forSection[section] {
+            PLIcon.image(mine).resizable().scaledToFit().frame(width: 34, height: 34)
+        } else if let art = UIImage(named: "IconSets/\(iconSet)/\(section)") {
+            Image(uiImage: art).renderingMode(.template).resizable().scaledToFit().frame(width: 34, height: 34)
+        } else {
+            Image(systemName: symbol).font(.system(size: 28, weight: .medium)).symbolRenderingMode(.hierarchical)
+        }
     }
 }
 
