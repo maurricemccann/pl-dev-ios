@@ -108,7 +108,7 @@ struct CandleTabs: View {
         }
         .frame(maxWidth: .infinity)   // the band spans the screen whichever layout fits
         .padding(.horizontal, 20).padding(.vertical, 10)
-        .background(Candle.bg.opacity(0.92))
+        .background(Candle.bg)   // solid: at 0.92 the scrolled card text read through behind the chips (baseline frame 05-trends-4)
         .overlay(alignment: .bottom) { Rectangle().fill(Candle.rule).frame(height: 1) }
     }
 
