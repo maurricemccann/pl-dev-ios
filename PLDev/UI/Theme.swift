@@ -165,6 +165,8 @@ struct PLSurface<S: Shape>: ViewModifier {
     @AppStorage private var amount: Double
     @AppStorage private var through: Double
     @AppStorage("pldev.styleTile") private var tile = "squircle"   // one shape per theme: notched tiles notch every surface (his 11-24)
+    @AppStorage("pldev.styleLook") private var look = "glass"
+    @AppStorage("pldev.themeId") private var themeId = ""
     @Environment(\.colorScheme) private var scheme
 
     init(part: Part, tint: Color?, interactive: Bool, shape: S) {
@@ -179,8 +181,13 @@ struct PLSurface<S: Shape>: ViewModifier {
 
     func body(content: Content) -> some View {
         let shape: AnyShape = tile == "notch" ? AnyShape(NotchShape(cut: 12)) : AnyShape(self.shape)
-        let key = PLTone.accent
         let surface = PLCarry.tone(.surface, scheme, Color(uiColor: .secondarySystemGroupedBackground))
+        styled(content, shape: shape, surface: surface)
+            .modifier(CardEdge(on: part == .card, look: look, theme: themeId, shape: shape, key: PLTone.accent, surface: surface))
+    }
+
+    @ViewBuilder private func styled(_ content: Content, shape: AnyShape, surface: Color) -> some View {
+        let key = PLTone.accent
         let wash: Color? = tint ?? (amount > 0 ? key.opacity(amount * 0.6) : nil)
         // see-through 0.5 and no tint = Apple's glass as it was; lower lays the card colour behind it
         let backing = max(0, 0.5 - through) * 1.8
@@ -194,6 +201,41 @@ struct PLSurface<S: Shape>: ViewModifier {
                 .overlay(shape.stroke(key.opacity(0.85), lineWidth: 1).allowsHitTesting(false))
         default:
             content.glassEffect(Glass.regular.tint(wash).interactive(interactive), in: shape).background(surface.opacity(backing), in: shape)
+        }
+    }
+}
+
+/// A card's edge in its theme, with the values of North-Abyss/ui-themes (MIT, Licences.swift); CSS blur halves to a SwiftUI radius.
+private struct CardEdge: ViewModifier {
+    let on: Bool, look: String, theme: String, shape: AnyShape, key: Color, surface: Color
+
+    func body(content: Content) -> some View {
+        if !on {
+            content
+        } else if look == "brutal" {        // Neo-Brutalism: border 2.5px solid #000, shadow 4px 4px 0 #000
+            content.background { shape.fill(Color.black).offset(x: 4, y: 4) }
+                .overlay(shape.stroke(Color.black, lineWidth: 2.5).allowsHitTesting(false))
+        } else if look == "neu" {           // Neumorphism: 8px 8px 16px dark, -8px -8px 16px light
+            content.background {
+                shape.fill(surface)
+                    .shadow(color: surface.mix(with: .black, by: 0.15), radius: 8, x: 8, y: 8)
+                    .shadow(color: surface.mix(with: .white, by: 0.7), radius: 8, x: -8, y: -8)
+            }
+        } else if look == "neon" {          // Vaporwave / Cyberpunk: glow 0 0 20px at 0.35
+            content.background { shape.stroke(key.opacity(0.6), lineWidth: 1).shadow(color: key.opacity(0.35), radius: 10) }
+        } else if look == "terminal" {      // Phosphor terminal: border 1px, glow 0 0 10px at 0.2
+            content.background { shape.stroke(key, lineWidth: 1).shadow(color: key.opacity(0.2), radius: 5) }
+        } else if look == "clay" {          // Claymorphism: 16px 16px 32px at 0.22
+            content.background { shape.fill(surface).shadow(color: key.opacity(0.22), radius: 16, x: 16, y: 16) }
+        } else if theme == "fun-eink" {     // E-Ink paper: border 1.5px #1A1A1A, shadow 2px 2px 0 at 0.12
+            let ink = Color(red: 26 / 255, green: 26 / 255, blue: 26 / 255)
+            content.background { shape.fill(ink.opacity(0.12)).offset(x: 2, y: 2) }
+                .overlay(shape.stroke(ink, lineWidth: 1.5).allowsHitTesting(false))
+        } else if theme == "fun-glass" {    // Frutiger Aero: border 1px white 0.85, shadow 0 4px 12px sky at 0.12
+            content.overlay(shape.stroke(Color.white.opacity(0.85), lineWidth: 1).allowsHitTesting(false))
+                .background { shape.stroke(Color.white.opacity(0.01)).shadow(color: Color(red: 2 / 255, green: 132 / 255, blue: 199 / 255).opacity(0.12), radius: 6, y: 4) }
+        } else {
+            content
         }
     }
 }

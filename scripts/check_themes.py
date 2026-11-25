@@ -6,7 +6,7 @@ import itertools, os, re, sys
 root = os.path.join(os.path.dirname(os.path.abspath(__file__)), "..", "PLDev")
 src = open(os.path.join(root, "UI", "Themes.swift"), encoding="utf-8").read()
 block = src[src.index("static let all: [PLThemePreset]"):src.index("var chosenWall")]
-SHAPE = {"0.1": "sharp", "0.5": "cut", "1": "house", "1.5": "round"}
+SHAPE = {"0.01": "sharp", "0.1": "sharp", "0.125": "sharp", "0.25": "sharp", "0.5": "cut", "1": "house", "1.125": "house", "1.5": "round", "2": "round"}  # ui-themes px values (S353)
 
 
 def value(body, name, default=None):

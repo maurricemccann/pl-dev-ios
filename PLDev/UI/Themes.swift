@@ -80,7 +80,7 @@ struct PLThemePreset: Identifiable, Hashable {
               curves: 0.45, tint: 0.2, through: 0.7),
         .init(id: "indigo", title: "Deep indigo", palette: "th-indigo", face: house("major-mono-display.ttf"), text: house("syne-mono.ttf"),
               note: "Mono display and mono text, cut outlines, a small dense curve grid", dark: true,
-              card: .outline, radius: 0.5, space: 0.85, tile: "square", look: "terminal", wall: "kit|patterns/ar-curve-tile.png",
+              card: .outline, radius: 0.125, space: 0.85, tile: "square", look: "terminal", wall: "kit|patterns/ar-curve-tile.png",
               curves: 0.35, repeatSize: 200, tint: 0, icon: "AppIcon-DeepIndigo", icons: "iconoir"),
         .init(id: "silver", title: "Night silver", palette: "th-silver", face: house("big-shoulders-stencil.ttf"), text: house("cutive-mono.ttf"),
               note: "Stencil titles, typewriter text, metal keycaps on brushed steel, still", dark: true,
@@ -99,20 +99,20 @@ struct PLThemePreset: Identifiable, Hashable {
               card: .outline, radius: 1.5, space: 0.85, tile: "circle", look: "bare", wall: "invert|" + art + "glyph-abstract_organic-labyrinthine_monochrome_ink_017.jpg",
               curves: 0.55, tint: 0, mark: "poverty-to-luxury"),
         .init(id: "drop", title: "Drop day", palette: "th-drop", face: "ransom", text: "jost",
-              note: "Your Ransom titles on blush paper, solid sharp stamps, Drop day on the wall", dark: false,
-              card: .solid, radius: 0.1, space: 0.85, tile: "square", look: "flat", wall: "color|" + art + "abstract-pattern_organic-interlocking_red-warm_digital_2437.png",
+              note: "Your Ransom titles on blush paper, thick black frames and hard shadows, Drop day on the wall", dark: false,
+              card: .solid, radius: 0.5, space: 0.85, tile: "square", look: "brutal", wall: "color|" + art + "abstract-pattern_organic-interlocking_red-warm_digital_2437.png",
               curves: 0.2, tint: 0.5, through: 0.15, icon: "AppIcon-BoneOxblood", mark: "money"),
         .init(id: "ledger", title: "The ledger", palette: "th-ledger", face: "ledger", text: "courier",
               note: "Your Ledger hand on ledger paper, typewriter keys, ruled outlines, still", dark: false,
               card: .outline, radius: 1, space: 1, tile: "circle", look: "typewriter", wall: "invert|" + art + "abstract-pattern_organic-interlocking_monochrome_digital-ink_5373.png",
               calm: true, curves: 0.05, tint: 0),
         .init(id: "linen", title: "Linen", palette: "th-linen", face: "v2", text: "jost",
-              note: "Your second hand on sage cloth, clear glass bubbles, airy", dark: false,
-              card: .clear, radius: 1.5, space: 1.2, tile: "circle", look: "bubble", wall: "code|weave",
-              tint: 0.2, through: 0.75, icons: "iconoir"),
+              note: "Your second hand on sage cloth, soft raised cloth that lifts off the ground", dark: false,
+              card: .solid, radius: 1, space: 1.2, tile: "circle", look: "neu", wall: "code|weave",
+              tint: 0, through: 0, icons: "iconoir"),
         .init(id: "copper", title: "Copper", palette: "th-copper", face: house("saira-stencil-one.ttf"), text: house("dirty-enough.ttf"),
               note: "Stencil over worn type, solid bevelled plates, Copper as you made it", dark: false,
-              card: .solid, radius: 1, space: 1, tile: "squircle", look: "clay", wall: "color|" + art + "abstract-pattern_organic-flowing_warm-pink_digital_4693.png",
+              card: .solid, radius: 2, space: 1, tile: "squircle", look: "clay", wall: "color|" + art + "abstract-pattern_organic-flowing_warm-pink_digital_4693.png",
               curves: 0.15, tint: 0.35, through: 0.2),
         .init(id: "smoke", title: "Warm smoke", palette: "th-smoke", face: house("pencilant.otf"), text: house("special-elite.ttf"),
               note: "Pencil titles, typed text, round soft outlines on smoke, still", dark: false,
@@ -134,11 +134,11 @@ struct PLThemePreset: Identifiable, Hashable {
               tint: 0.35, through: 0.35, icons: "tabler", fun: true),
         .init(id: "fun-glass", title: "Glass", palette: "th-glass", face: "bundle:Michroma-Regular", text: "system",
               note: "Liquid Glass at its fullest: clear and airy over aero light", dark: true,
-              card: .clear, radius: 1.5, space: 1.2, tile: "squircle", look: "glass", wall: "code|aero",
+              card: .clear, radius: 1.125, space: 1.2, tile: "squircle", look: "glass", wall: "code|aero",
               tint: 0.15, through: 0.9, icons: "sf", fun: true),
         .init(id: "fun-eink", title: "E ink", palette: "th-eink", face: "bundle:Literata-Regular", text: "bundle:Literata-Regular",
               note: "Paper and ink: a book face, flat square panels, no curves, no motion", dark: false,
-              card: .solid, radius: 0.1, space: 1.1, tile: "square", look: "flat", wall: "code|paper",
+              card: .solid, radius: 0.25, space: 1.1, tile: "square", look: "flat", wall: "code|paper",
               calm: true, curves: 0, tint: 0, through: 0, icons: "iconoir", fun: true),
         .init(id: "fun-synthwave", title: "Synthwave", palette: "th-synthwave", face: "bundle:MrDafoe-Regular", text: "jost",
               note: "Pink script titles, neon rings, a sunset over the grid floor", dark: true,
@@ -146,11 +146,11 @@ struct PLThemePreset: Identifiable, Hashable {
               curves: 0.8, tint: 0.2, through: 0.45, icons: "sf", fun: true, titleFX: "chrome"),
         .init(id: "fun-cyberpunk", title: "Cyberpunk", palette: "th-cyberpunk", face: "bundle:ChakraPetch-SemiBold", text: "bundle:GeistMono-Regular",
               note: "Night city OS: coral hairline frames, teal, scanlines on violet-black", dark: true,
-              card: .outline, radius: 0.5, space: 0.85, tile: "notch", look: "terminal", wall: "code|night",
+              card: .outline, radius: 0.25, space: 0.85, tile: "notch", look: "terminal", wall: "code|night",
               tint: 0.1, through: 0.3, icons: "tabler", fun: true, titleFX: "glow"),
         .init(id: "fun-retro", title: "Retro 90s", palette: "th-retro", face: "bundle:PixelifySans-Regular", text: "jost",
               note: "Vaporwave windows: raised pink panels on a lavender grid, pixel titles", dark: false,
-              card: .solid, radius: 0.5, space: 1, tile: "square", look: "bevel", wall: "code|vapor",
+              card: .solid, radius: 0.01, space: 1, tile: "square", look: "bevel", wall: "code|vapor",
               tint: 0.2, through: 0.1, icons: "pixel", fun: true),
         .init(id: "fun-hyperspace", title: "Hyperspace", palette: "th-hyperspace", face: "bundle:Audiowide-Regular", text: "jost",
               note: "Violet and cyan in deep space, frosted domes, the tunnel behind", dark: true,
@@ -456,6 +456,14 @@ struct TileLook: View {
             case "fuzzy":
                 shape.fill(RadialGradient(colors: [accent.opacity(0.9), key], center: .center, startRadius: 2, endRadius: 40)).blur(radius: 1.2)
                 shape.stroke(accent.opacity(0.55), style: StrokeStyle(lineWidth: 2.5, lineCap: .round, dash: [0.5, 3.5]))
+            case "brutal":   // ui-themes Neo-Brutalism: shadow-sm 2px 2px 0 #000, border 2.5px solid #000
+                shape.fill(Color.black).offset(x: 2, y: 2)
+                shape.fill(key)
+                shape.stroke(Color.black, lineWidth: 2.5)
+            case "neu":      // ui-themes Neumorphism: shadow-sm 4px 4px 8px dark, -4px -4px 8px light (CSS blur 8 = radius 4)
+                shape.fill(key)
+                    .shadow(color: key.mix(with: .black, by: 0.3), radius: 4, x: 4, y: 4)
+                    .shadow(color: key.mix(with: .white, by: 0.6), radius: 4, x: -4, y: -4)
             case "flat":
                 shape.fill(key)
             default:
@@ -472,7 +480,7 @@ struct TileLook: View {
         switch look {
         case "terminal", "neon", "bare": return key
         case "bevel", "chrome": return Color(white: 0.08)
-        case "flat": return luminance(key) > 0.55 ? .black : .white
+        case "flat", "brutal", "neu": return luminance(key) > 0.55 ? .black : .white
         case "glass": return scheme == .dark ? Color(red: 1, green: 0.95, blue: 0.9) : Color.primary
         default: return .white
         }
