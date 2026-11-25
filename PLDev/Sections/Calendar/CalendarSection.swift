@@ -8,7 +8,7 @@ import UserNotifications
     static let manifest = SectionManifest(id: "calendar", title: "Calendar", symbol: "calendar", needsKeys: ["widgetWrite"], needsOrigins: ["cron"])
     static let state = CalendarModel()
 
-    static func makeRoot(model: AppModel) -> AnyView { AnyView(CalendarView(model: model, state: state)) }
+    static func makeRoot(model: AppModel) -> AnyView { AnyView(SharedCalendarView(model: model, state: state)) }
     static func probes(model: AppModel) -> [ProbeModel.Item] { [] }
     static func settingsRows(model: AppModel) -> AnyView? { nil }
     static func notificationCategories() -> Set<UNNotificationCategory> { [] }
@@ -109,7 +109,7 @@ struct CalendarItem: Decodable, Identifiable, Hashable {
     }
 }
 
-struct CalendarView: View {
+struct SharedCalendarView: View {
     let model: AppModel
     let state: CalendarModel
     @State private var adding = false
