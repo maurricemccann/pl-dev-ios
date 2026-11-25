@@ -384,20 +384,23 @@ struct CurveScale: View {
     }
 }
 
-/// His ruling 11-25: Buddy sits in a little screen on a stand, so something holds him.
-struct BuddyScreen: View {
+/// His head for Buddy (his drawing, 11-25, the red figure from the left-chest embroidery), used as he drew it; the face is
+/// laid on the upper block and the stem's flat foot rests on whatever is under it.
+struct BuddyHead: View {
     let model: BuddyModel
+    var side: CGFloat = 128
+    private static let art = Bundle.main.url(forResource: "buddy-head", withExtension: "png").flatMap { UIImage(contentsOfFile: $0.path) }
+
     var body: some View {
-        VStack(spacing: 0) {
+        // BuddyView fits its 440 x 530 face into 0.92 of the box: this box draws the face 0.40 of the head wide
+        let w = side * 0.40 / 0.92, h = w * 530 / 440
+        ZStack {
+            if let art = Self.art { Image(uiImage: art).resizable().scaledToFit().accessibilityHidden(true) }
             BuddyView(model: model, pinned: true)
-                .frame(width: 72, height: 62)
-                .padding(7)
-                .background(Color.black.opacity(0.85), in: RoundedRectangle(cornerRadius: 14, style: .continuous))
-                .overlay(RoundedRectangle(cornerRadius: 14, style: .continuous).stroke(PLTone.accent, lineWidth: 3))
-            Rectangle().fill(PLTone.accent).frame(width: 10, height: 8)
-            Capsule().fill(PLTone.accent).frame(width: 46, height: 6)
+                .frame(width: w, height: h)
+                .position(x: side * 0.48, y: side * 0.34)
         }
-        .accessibilityElement(children: .combine)
+        .frame(width: side, height: side)
     }
 }
 
@@ -416,9 +419,10 @@ struct RisingBuddy: View {
                     Text(line).plFont(.callout)
                         .padding(12)
                         .plGlass(in: RoundedRectangle(cornerRadius: PLRadius.card, style: .continuous))
-                    BuddyScreen(model: buddy)
+                        .padding(.bottom, 44)
+                    BuddyHead(model: buddy)
                 }
-                .padding(.horizontal, PLSpace.margin).padding(.bottom, PLSpace.gap)
+                .padding(.horizontal, PLSpace.margin)   // no gap under him: his stem stands on the bar
                 .transition(reduce ? .opacity : .move(edge: .trailing).combined(with: .opacity))
                 .onTapGesture { withAnimation { self.line = nil } }
                 .contextMenu {
