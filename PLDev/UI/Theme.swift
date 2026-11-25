@@ -227,6 +227,19 @@ private struct CardEdge: ViewModifier {
             content.background { shape.stroke(key, lineWidth: 1).shadow(color: key.opacity(0.2), radius: 5) }
         } else if look == "clay" {          // Claymorphism: 16px 16px 32px at 0.22
             content.background { shape.fill(surface).shadow(color: key.opacity(0.22), radius: 16, x: 16, y: 16) }
+        } else if look == "skeuo" {         // Skeuomorphism: border 1px .15, shadow 0 4px 12px .12 + 0 1px 3px .08, inset top white .9
+            content.background { shape.fill(surface).shadow(color: .black.opacity(0.12), radius: 6, y: 4).shadow(color: .black.opacity(0.08), radius: 1.5, y: 1) }
+                .overlay(shape.stroke(Color.black.opacity(0.15), lineWidth: 1).allowsHitTesting(false))
+                .overlay(shape.stroke(LinearGradient(colors: [.white.opacity(0.9), .clear], startPoint: .top, endPoint: UnitPoint(x: 0.5, y: 0.15)), lineWidth: 1).allowsHitTesting(false))
+        } else if look == "aurora" {        // Aurora: border 1px white .18, shadow 0 12px 36px violet .22, inset top white .3
+            content.background { shape.stroke(Color.white.opacity(0.01)).shadow(color: key.opacity(0.22), radius: 18, y: 12) }
+                .overlay(shape.stroke(Color.white.opacity(0.18), lineWidth: 1).allowsHitTesting(false))
+        } else if look == "paper" {         // Papercraft: border 1px #E5E0D5, shadow 0 4px 12px .08 + 0 1px 3px .06
+            let ink = Color(red: 43 / 255, green: 38 / 255, blue: 32 / 255)
+            content.background { shape.fill(surface).shadow(color: ink.opacity(0.08), radius: 6, y: 4).shadow(color: ink.opacity(0.06), radius: 1.5, y: 1) }
+                .overlay(shape.stroke(Color(red: 229 / 255, green: 224 / 255, blue: 213 / 255), lineWidth: 1).allowsHitTesting(false))
+        } else if theme == "fun-swiss" {    // Swiss: border 1px solid #000, no shadow
+            content.overlay(shape.stroke(Color.black, lineWidth: 1).allowsHitTesting(false))
         } else if theme == "fun-eink" {     // E-Ink paper: border 1.5px #1A1A1A, shadow 2px 2px 0 at 0.12
             let ink = Color(red: 26 / 255, green: 26 / 255, blue: 26 / 255)
             content.background { shape.fill(ink.opacity(0.12)).offset(x: 2, y: 2) }

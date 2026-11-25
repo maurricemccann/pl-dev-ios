@@ -36,6 +36,10 @@ extension HousePalette {
         th("retro", "#cdbaf5", "#2a1a4a", "#7a3cff", "#ff6ec7", "#fff0fb"),
         th("hyperspace", "#02010a", "#e6f0ff", "#7b5cff", "#3cf2ff", "#130f30"),
         th("vibe", "#050805", "#d8ffd0", "#39ff14", "#bd93f9", "#282a36"),
+        th("skeuo", "#eaecef", "#1c1d1f", "#ff9500", "#2563eb", "#f5f6f8"),
+        th("aurora", "#090714", "#f8fafc", "#a855f7", "#38bdf8", "#130e24"),
+        th("paper", "#f5f2eb", "#2b2620", "#c25e3e", "#2c5e55", "#ffffff"),
+        th("swiss", "#ffffff", "#000000", "#ff3b30", "#007aff", "#ffffff"),
     ]
 }
 
@@ -160,6 +164,23 @@ struct PLThemePreset: Identifiable, Hashable {
               note: "Editor night: acid green on black, terminal keys, code lines on the wall", dark: true,
               card: .outline, radius: 0.1, space: 0.85, tile: "square", look: "terminal", wall: "code|editor",
               tint: 0, through: 0.2, icons: "pixel", fun: true, titleFX: "glow"),
+        // four from North-Abyss/ui-themes presets (his pick 11-24): their colours, corners, borders and shadows
+        .init(id: "fun-skeuo", title: "Skeuomorphism", palette: "th-skeuo", face: "bundle:AvenirNext-Bold", text: "bundle:AvenirNext-Regular",
+              note: "Braun-era device: raised grey plates lit from above, amber keys", dark: false,
+              card: .solid, radius: 1, space: 1, tile: "squircle", look: "skeuo", wall: "code|skeuo",
+              calm: true, tint: 0, through: 0, icons: "sf", fun: true),
+        .init(id: "fun-aurora", title: "Aurora", palette: "th-aurora", face: "bundle:Futura-Bold", text: "bundle:Futura-Medium",
+              note: "Violet and cyan light over deep night glass, soft violet glow", dark: true,
+              card: .frosted, radius: 1.375, space: 1.1, tile: "squircle", look: "aurora", wall: "code|aurora",
+              tint: 0.3, through: 0.6, icons: "tabler", fun: true, titleFX: "glow"),
+        .init(id: "fun-paper", title: "Papercraft", palette: "th-paper", face: "bundle:Georgia-Bold", text: "bundle:Georgia",
+              note: "Folded paper, terracotta and teal, a serif and a soft shadow", dark: false,
+              card: .solid, radius: 0.375, space: 1.1, tile: "square", look: "paper", wall: "code|fold",
+              calm: true, tint: 0, through: 0, icons: "iconoir", fun: true),
+        .init(id: "fun-swiss", title: "Swiss", palette: "th-swiss", face: "bundle:HelveticaNeue-Bold", text: "bundle:HelveticaNeue",
+              note: "International style: white grid, black rules, one red, square everything", dark: false,
+              card: .solid, radius: 0.01, space: 1, tile: "square", look: "flat", wall: "code|swiss",
+              calm: true, tint: 0, through: 0, icons: "sf", fun: true),
     ]
 
     /// The wallpaper this theme wears: his own choice for it when he made one, else the theme's.
@@ -304,7 +325,8 @@ enum KitPattern {
 struct CodeGround: View {
     static let names: [(String, String)] = [("synth", "Sunset and grid floor"), ("waves", "Desktop waves"), ("night", "Night scanlines"), ("ubuntu", "Warm glow"),
         ("bluedesk", "Blue retro desktop"), ("aero", "Aero light"), ("editor", "Code lines"), ("vapor", "Vapor grid"), ("paper", "Plain paper"),
-        ("brushed", "Brushed steel"), ("velvet", "Velvet"), ("contour", "Contour lines"), ("weave", "Linen weave"), ("smoke", "Smoke"), ("pearl", "Pearl sheen")]
+        ("brushed", "Brushed steel"), ("velvet", "Velvet"), ("contour", "Contour lines"), ("weave", "Linen weave"), ("smoke", "Smoke"), ("pearl", "Pearl sheen"),
+        ("skeuo", "Device grey"), ("aurora", "Aurora"), ("fold", "Folded paper"), ("swiss", "Swiss grid")]
     let name: String, key: Color, accent: Color, ink: Color, ground: Color
 
     var body: some View {
@@ -360,6 +382,26 @@ struct CodeGround: View {
         case "weave": canvas { c, s in
             lines(&c, s, every: 5, color: key.opacity(0.1))
             for x in stride(from: 0.0, to: s.width, by: 5) { c.fill(Path(CGRect(x: x, y: 0, width: 1.5, height: s.height)), with: .color(.white.opacity(0.4))) } }
+        case "skeuo": LinearGradient(colors: [ground.mix(with: .white, by: 0.45), ground, ground.mix(with: .black, by: 0.08)], startPoint: .top, endPoint: .bottom)
+        case "aurora": ZStack {   // ui-themes Aurora: radial glows at 15% 15% (violet .28) and opposite corners
+            ground
+            RadialGradient(colors: [key.opacity(0.28), .clear], center: UnitPoint(x: 0.15, y: 0.15), startRadius: 0, endRadius: 420)
+            RadialGradient(colors: [accent.opacity(0.22), .clear], center: UnitPoint(x: 0.85, y: 0.45), startRadius: 0, endRadius: 380)
+            RadialGradient(colors: [key.mix(with: accent, by: 0.5).opacity(0.18), .clear], center: UnitPoint(x: 0.4, y: 0.95), startRadius: 0, endRadius: 360) }
+        case "fold": ZStack {     // ui-themes Papercraft: linear-gradient(135deg, #F8F5EE, #EFEBE0), with folds
+            LinearGradient(colors: [Color(hex: 0xf8f5ee), Color(hex: 0xefebe0)], startPoint: .topLeading, endPoint: .bottomTrailing)
+            canvas { c, s in
+                for i in 1..<5 {
+                    let x = s.width * Double(i) / 5
+                    var p = Path(); p.move(to: CGPoint(x: x, y: 0)); p.addLine(to: CGPoint(x: x - s.width * 0.35, y: s.height))
+                    c.stroke(p, with: .color(.black.opacity(0.05)), lineWidth: 1)
+                    c.stroke(p.offsetBy(dx: 1.5, dy: 0), with: .color(.white.opacity(0.7)), lineWidth: 1) } } }
+        case "swiss": ZStack {    // ui-themes Swiss: white, black 1px rules, one red
+            Color.white
+            canvas { c, s in
+                grid(&c, s, every: 48, color: .black.opacity(0.07))
+                c.fill(Path(CGRect(x: 0, y: s.height * 0.62, width: s.width * 0.42, height: s.width * 0.42)), with: .color(key))
+                c.fill(Path(CGRect(x: s.width * 0.42, y: s.height * 0.62 - 6, width: s.width * 0.58, height: 6)), with: .color(.black)) } }
         case "smoke": ZStack { blob(.white.opacity(0.65), 0.2, 0.15); blob(ink.opacity(0.2), 0.9, 0.4); blob(.white.opacity(0.45), 0.35, 0.75); blob(key.opacity(0.18), 0.85, 0.95) }
         case "pearl": ZStack {
             AngularGradient(colors: [ground, Color(hex: 0xf6dfe8), Color(hex: 0xdcefee), Color(hex: 0xf3ecd2), ground], center: .init(x: 0.7, y: 0.3))
@@ -456,6 +498,17 @@ struct TileLook: View {
             case "fuzzy":
                 shape.fill(RadialGradient(colors: [accent.opacity(0.9), key], center: .center, startRadius: 2, endRadius: 40)).blur(radius: 1.2)
                 shape.stroke(accent.opacity(0.55), style: StrokeStyle(lineWidth: 2.5, lineCap: .round, dash: [0.5, 3.5]))
+            case "skeuo":    // ui-themes Skeuomorphism: border 1px rgba(0,0,0,.15), inset 0 1px 0 white .8, light from above
+                shape.fill(LinearGradient(colors: [key.mix(with: .white, by: 0.25), key.mix(with: .black, by: 0.1)], startPoint: .top, endPoint: .bottom))
+                shape.stroke(LinearGradient(colors: [.white.opacity(0.8), .clear], startPoint: .top, endPoint: .center), lineWidth: 1.5)
+                shape.stroke(Color.black.opacity(0.15), lineWidth: 1)
+            case "aurora":   // ui-themes Aurora: violet to cyan, border 1px white .18, inset top white .3
+                shape.fill(LinearGradient(colors: [key, accent], startPoint: .topLeading, endPoint: .bottomTrailing))
+                shape.stroke(LinearGradient(colors: [.white.opacity(0.3), .white.opacity(0.18)], startPoint: .top, endPoint: .bottom), lineWidth: 1)
+            case "paper":    // ui-themes Papercraft: white sheet, border 1px #E5E0D5, shadow 0 4px 12px at .08, a folded corner
+                shape.fill(Color.white).shadow(color: Color(red: 43 / 255, green: 38 / 255, blue: 32 / 255).opacity(0.12), radius: 4, y: 2)
+                LinearGradient(colors: [Color(white: 0.86), .white.opacity(0)], startPoint: .topTrailing, endPoint: UnitPoint(x: 0.7, y: 0.3)).clipShape(shape)
+                shape.stroke(Color(red: 229 / 255, green: 224 / 255, blue: 213 / 255), lineWidth: 1)
             case "brutal":   // ui-themes Neo-Brutalism: shadow-sm 2px 2px 0 #000, border 2.5px solid #000
                 shape.fill(Color.black).offset(x: 2, y: 2)
                 shape.fill(key)
@@ -478,7 +531,7 @@ struct TileLook: View {
     /// The glyph's colour on that look.
     static func glyph(_ look: String, key: Color, scheme: ColorScheme) -> Color {
         switch look {
-        case "terminal", "neon", "bare": return key
+        case "terminal", "neon", "bare", "paper": return key
         case "bevel", "chrome": return Color(white: 0.08)
         case "flat", "brutal", "neu": return luminance(key) > 0.55 ? .black : .white
         case "glass": return scheme == .dark ? Color(red: 1, green: 0.95, blue: 0.9) : Color.primary

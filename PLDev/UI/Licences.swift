@@ -75,7 +75,7 @@ enum Licences {
         // S353·7b1e: values only (colours, bevel widths, a corner-cut idea), recreated natively; no code or files copied.
         ("Dracula (colour value)", "github.com/dracula/dracula-theme", "MIT License. Copyright (c) 2016 Dracula Theme. Used: the background colour #282a36 as Vibe coded's surface."),
         ("98.css / system.css (bevel values)", "github.com/jdan/98.css, github.com/sakofchit/system.css", "MIT License. Copyright 2020 Jordan Scales; Copyright (c) 2022 Sakun Acharige. Used: the raised-window bevel (white highlight, #808080 shadow, #0a0a0a outer line)."),
-        ("Universal UI Themes (shape values)", "github.com/North-Abyss/ui-themes", "MIT License. Copyright (c) North-Abyss (Yuvanesh KS). Used: the corner, border and shadow values of its Neo-Brutalism, Neumorphism, Claymorphism, Cyberpunk, Retro 90s, E-Ink, Frutiger Aero, Vaporwave and Phosphor presets, redrawn natively."),
+        ("Universal UI Themes (shape values)", "github.com/North-Abyss/ui-themes", "MIT License. Copyright (c) North-Abyss (Yuvanesh KS). Used: the corner, border and shadow values of its Neo-Brutalism, Neumorphism, Claymorphism, Cyberpunk, Retro 90s, E-Ink, Frutiger Aero, Vaporwave, Phosphor, Skeuomorphism, Aurora, Papercraft and Swiss presets (colours too, for the last four), redrawn natively."),
         ("augmented-ui (idea)", "github.com/propjockey/augmented-ui", "BSD 2-Clause License. Copyright (c) 2020 James0x57, PropJockey. Used: the clipped-corner frame idea, drawn natively as Cyberpunk's notched tile."),
     ]
 }

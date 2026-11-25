@@ -48,7 +48,7 @@ struct GlassPage: View {
             controls("Home tiles", style: $tileStyle, tint: $tileTint, through: $tileThrough)
             Section {
                 Picker("Tile look", selection: $look) {
-                    ForEach(["glass", "typewriter", "keycap", "bubble", "dome", "terminal", "neon", "bevel", "flat", "bare", "chrome", "glaze", "clay", "fuzzy", "brutal", "neu"], id: \.self) { Text($0.capitalized).tag($0) }
+                    ForEach(["glass", "typewriter", "keycap", "bubble", "dome", "terminal", "neon", "bevel", "flat", "bare", "chrome", "glaze", "clay", "fuzzy", "brutal", "neu", "skeuo", "aurora", "paper"], id: \.self) { Text($0.capitalized).tag($0) }
                 }
                 Button("Reset to the theme\u{2019}s own") {
                     if let t = PLThemePreset.current { t.resetGlass(); look = t.look } else { reset() }

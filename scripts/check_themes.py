@@ -6,7 +6,8 @@ import itertools, os, re, sys
 root = os.path.join(os.path.dirname(os.path.abspath(__file__)), "..", "PLDev")
 src = open(os.path.join(root, "UI", "Themes.swift"), encoding="utf-8").read()
 block = src[src.index("static let all: [PLThemePreset]"):src.index("var chosenWall")]
-SHAPE = {"0.01": "sharp", "0.1": "sharp", "0.125": "sharp", "0.25": "sharp", "0.5": "cut", "1": "house", "1.125": "house", "1.5": "round", "2": "round"}  # ui-themes px values (S353)
+IOS_FONTS = {"AvenirNext", "Futura", "Georgia", "HelveticaNeue"}   # installed on every iPhone, nothing to bundle
+SHAPE = {"0.01": "sharp", "0.1": "sharp", "0.125": "sharp", "0.25": "sharp", "0.5": "cut", "1": "house", "1.125": "house", "1.5": "round", "2": "round", "0.375": "cut", "1.375": "round"}  # ui-themes px values (S353)
 
 
 def value(body, name, default=None):
@@ -23,10 +24,11 @@ for body in block.split(".init(")[1:]:
     t["fun"] = value(body, "fun") == "true"
     themes.append(t)
 
-assert len(themes) == 24, len(themes)
-assert sum(t["fun"] for t in themes) == 9, "9 Fun"
+N = len(themes)
+assert N == 28, N
+assert sum(t["fun"] for t in themes) == 13, "13 Fun"
 for key in ("id", "palette", "face", "wall"):
-    assert len({t[key] for t in themes}) == 24, "two themes share a " + key
+    assert len({t[key] for t in themes}) == N, "two themes share a " + key
 SEVEN = ("palette", "face", "text", "card", "radius", "wall", "motion")
 for a, b in itertools.combinations(themes, 2):
     same = [k for k in SEVEN if a[k] == b[k]]
@@ -34,7 +36,7 @@ for a, b in itertools.combinations(themes, 2):
 fonts = os.listdir(os.path.join(root, "Resources", "Fonts"))
 for t in themes:
     for token in (t["face"], t["text"]):
-        if token.startswith("bundle:") and token != "bundle:system":
+        if token.startswith("bundle:") and token != "bundle:system" and token[7:].split("-")[0] not in IOS_FONTS:
             stem = token[7:].split("-")[0]
             assert any(f.startswith(stem) for f in fonts), "not bundled: " + token
     assert t["radius"] in SHAPE, (t["id"], t["radius"])
@@ -55,4 +57,4 @@ if "--lines" in sys.argv:
         print("- **%s**: palette %s, %s; titles %s; text %s; %s cards; %s corners, %s tiles with the %s look; wall %s; %s." % (
             t["title"], t["palette"].replace("th-", ""), "dark" if t["dark"] == "true" else "light", face(t["face"]), face(t["text"]),
             t["card"], SHAPE[t["radius"]], t["tile"], t["look"], wall(t["wall"]), t["motion"]))
-print("themes ok: 24, no pair shares more than 3 of 7", file=sys.stderr)
+print("themes ok: %d, no pair shares more than 3 of 7" % N, file=sys.stderr)
