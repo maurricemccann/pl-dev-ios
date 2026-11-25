@@ -65,7 +65,10 @@ struct PLThemePreset: Identifiable, Hashable {
     private static func house(_ f: String) -> String { "file:fonts/house/\(f)" }
     private static let art = "https://pub-4420dc4349624d6bbed7eb9555f42661.r2.dev/"
 
-    static let all: [PLThemePreset] = [
+    /// The themes as they ship, with the over-the-air file laid over them (ThemeFeed, his 11-24).
+    static var all: [PLThemePreset] { ThemeFeed.merge(builtIn) }
+
+    static let builtIn: [PLThemePreset] = [
         .init(id: "home", title: "Your Home Screen", palette: "home-screen", face: "v1", text: "jost",
               note: "Your hand, frosted squircles, the curves as you drew them", dark: true,
               card: .frosted, radius: 1, space: 1, tile: "squircle", look: "glass", wall: "curves",

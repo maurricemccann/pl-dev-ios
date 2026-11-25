@@ -48,7 +48,7 @@ struct HousePalette: Codable, Hashable, Identifiable {
     var titleFace: String = UserDefaults.standard.string(forKey: "pldev.titleFace") ?? "v1" {
         didSet { UserDefaults.standard.set(titleFace, forKey: "pldev.titleFace"); apply() }
     }
-    var allPalettes: [HousePalette] { palettes + archivePalettes + familyPalettes + mixes.map(\.palette) + HousePalette.themed }
+    var allPalettes: [HousePalette] { palettes + archivePalettes + familyPalettes + mixes.map(\.palette) + ThemeFeed.palettes(HousePalette.themed) }
     func harmonies(of base: String) -> [Mix] { mixes.filter { $0.base == base } }
     private(set) var titleFont: String?          // his hand, V1 (main), once registered
     var paletteName: String = UserDefaults.standard.string(forKey: "pldev.palette") ?? "home-screen" {
@@ -83,6 +83,9 @@ struct HousePalette: Codable, Hashable, Identifiable {
             try? d.write(to: fontURL)
             registerFont(at: fontURL)
         }
+        // themes over the air (his 11-24): the worn theme is applied again only when its own values changed
+        let changed = await ThemeFeed.refresh()
+        if let worn = PLThemePreset.current, changed.contains(worn.id) { _ = await worn.apply() }
         apply()
     }
 
