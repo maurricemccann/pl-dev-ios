@@ -62,6 +62,7 @@ enum ThemeFeed {
         var symbol: String?
         var accent: Bool?
         var time: String?
+        var color: String? = nil   // accent | blue | green | red | purple | orange | pink | teal | grey (CalendarKinds.color)
     }
     struct CalendarList: Codable, Equatable {
         var kinds: [CalendarKind]?

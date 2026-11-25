@@ -30,8 +30,27 @@ enum CalendarKinds {
     static var all: [ThemeFeed.CalendarKind] { ThemeFeed.calendarKinds ?? builtIn }
     static func find(_ id: String) -> ThemeFeed.CalendarKind? { all.first { $0.id == id } ?? builtIn.first { $0.id == id } }
     static func symbol(_ id: String) -> String { find(id)?.symbol ?? "circle" }
-    static func accent(_ id: String) -> Bool { find(id)?.accent ?? false }
-    static func label(_ id: String) -> String { find(id)?.label ?? id.capitalized }
+    static func label(_ id: String) -> String { find(id)?.label ?? (id == "drop-week" ? "Drop week" : id.capitalized) }
+    /// The kind's marker colour: the feed's `color` when it names one, else the built-in (his ask 11-25); unknown = grey.
+    static let fallbackColor = ["drop": "accent", "drop-week": "accent", "content": "blue", "task": "green", "reminder": "grey"]
+    @MainActor static func color(_ id: String) -> Color {
+        switch find(id)?.color ?? fallbackColor[id] ?? "grey" {
+        case "accent": PLTone.accent
+        case "blue": .blue
+        case "green": .green
+        case "red": .red
+        case "purple": .purple
+        case "orange": .orange
+        case "pink": .pink
+        case "teal": .teal
+        default: .gray
+        }
+    }
+    /// Marker order: drop, drop week, content, then the rest by name.
+    static func ordered(_ ids: Set<String>) -> [String] {
+        let lead = ["drop", "drop-week", "content"]
+        return lead.filter(ids.contains) + ids.subtracting(lead).sorted()
+    }
     static var standard: String {
         let d = ThemeFeed.calendarDefault ?? "reminder"
         return all.contains { $0.id == d } ? d : (all.first?.id ?? "reminder")
@@ -47,6 +66,10 @@ struct CalendarItem: Decodable, Identifiable, Hashable {
     let by: String
     let note: String?
     let done: Int
+    let until: String?   // the last day of a timeline (inclusive), nil for a one-day item
+
+    /// Every day from `date` to `until` (yyyy-MM-dd compares as text).
+    func covers(_ day: String) -> Bool { date <= day && day <= (until ?? date) }
 }
 
 @MainActor @Observable final class CalendarModel {
@@ -163,7 +186,21 @@ struct SharedCalendarView: View {
         return String(format: "%04d-%02d-%02d", c.year ?? 0, c.month ?? 0, c.day ?? 0)
     }
 
-    private var dayItems: [CalendarItem] { state.items.filter { $0.date == selected } }
+    private var dayItems: [CalendarItem] { state.items.filter { $0.covers(selected) } }
+
+    /// The kinds marked on a day: open items covering it, plus content when posts are scheduled.
+    private func kinds(_ k: String) -> [String] {
+        var ids = Set(state.items.filter { $0.done == 0 && $0.covers(k) }.map(\.kind))
+        if (state.posts[k] ?? 0) > 0 { ids.insert("content") }
+        return CalendarKinds.ordered(ids)
+    }
+
+    /// "day N of M" for a timeline on the given day, nil for a one-day item.
+    static func dayOf(_ item: CalendarItem, _ k: String) -> String? {
+        guard let u = item.until, u != item.date, let a = date(item.date), let b = date(u), let d = date(k) else { return nil }
+        let n = (cal.dateComponents([.day], from: a, to: d).day ?? 0) + 1, m = (cal.dateComponents([.day], from: a, to: b).day ?? 0) + 1
+        return "day \(n) of \(m)"
+    }
 
     var body: some View {
         List {
@@ -259,6 +296,19 @@ struct SharedCalendarView: View {
                     else { dayCell(prefix + String(format: "%02d", i - lead + 1)) }
                 }
             }
+            let shown = CalendarKinds.ordered(Set((1...count).flatMap { kinds(prefix + String(format: "%02d", $0)) }))
+            if !shown.isEmpty {
+                LazyVGrid(columns: [GridItem(.adaptive(minimum: 96), alignment: .leading)], alignment: .leading, spacing: PLSpace.tight) {
+                    ForEach(shown, id: \.self) { id in
+                        HStack(spacing: 6) {
+                            Circle().fill(CalendarKinds.color(id)).frame(width: 7, height: 7)
+                            Text(CalendarKinds.label(id)).plFont(.caption).foregroundStyle(.secondary)
+                        }
+                    }
+                }
+                .accessibilityElement(children: .combine)
+                .accessibilityLabel("Key: " + shown.map(CalendarKinds.label).joined(separator: ", "))
+            }
         }
         .contentShape(Rectangle())
         .gesture(DragGesture(minimumDistance: 30).onEnded { v in
@@ -268,9 +318,8 @@ struct SharedCalendarView: View {
 
     private func dayCell(_ k: String) -> some View {
         let isToday = k == CalendarModel.today, isSelected = k == selected
-        let open = state.items.filter { $0.date == k && $0.done == 0 }
-        let hasDrop = open.contains { CalendarKinds.accent($0.kind) }   // the accent dot: drops in build 380, any accent calendar from the feed
-        let hasOther = open.contains { !CalendarKinds.accent($0.kind) } || (state.posts[k] ?? 0) > 0
+        let marks = kinds(k)
+        let spans = Array(state.items.filter { $0.done == 0 && $0.until != nil && $0.until != $0.date && $0.covers(k) }.prefix(2))
         return Button { selected = k } label: {
             VStack(spacing: 3) {
                 Text("\(Int(k.suffix(2)) ?? 0)")
@@ -280,24 +329,37 @@ struct SharedCalendarView: View {
                     .frame(width: 36, height: 36)
                     .background { if isSelected { Circle().fill(isToday ? PLTone.accent : Color.primary) } }
                 HStack(spacing: 3) {
-                    if hasDrop { Circle().fill(PLTone.accent).frame(width: 5, height: 5) }
-                    if hasOther { Circle().fill(Color.secondary).frame(width: 5, height: 5) }
+                    ForEach(Array(marks.prefix(3)), id: \.self) { id in Circle().fill(CalendarKinds.color(id)).frame(width: 5, height: 5) }
                 }
                 .frame(height: 5)
+                // timelines: a 3 pt bar per span, edge to edge so it runs on through the week row, rounded only at its real ends
+                VStack(spacing: 2) {
+                    ForEach(spans) { item in
+                        let start = item.date == k, end = item.until == k
+                        UnevenRoundedRectangle(topLeadingRadius: start ? 1.5 : 0, bottomLeadingRadius: start ? 1.5 : 0,
+                                               bottomTrailingRadius: end ? 1.5 : 0, topTrailingRadius: end ? 1.5 : 0)
+                            .fill(CalendarKinds.color(item.kind))
+                            .frame(height: 3)
+                            .padding(.leading, start ? 4 : 0).padding(.trailing, end ? 4 : 0)
+                    }
+                }
+                .frame(height: 8, alignment: .top)
             }
             .frame(maxWidth: .infinity, minHeight: PLMetric.touch + 8)
             .contentShape(Rectangle())
         }
         .buttonStyle(.plain)
-        .accessibilityLabel(accessibility(k, open: open.count, drop: hasDrop))
+        .accessibilityLabel(accessibility(k, marks: marks))
         .accessibilityAddTraits(isSelected ? .isSelected : [])
     }
 
-    private func accessibility(_ k: String, open: Int, drop: Bool) -> String {
+    /// Names each marker: "Thu Dec 18, drop, drop week, 3 posts".
+    private func accessibility(_ k: String, marks: [String]) -> String {
         var parts = [Self.heading(k)]
-        if open > 0 { parts.append("\(open) item\(open == 1 ? "" : "s")") }
-        if drop { parts.append("a drop") }
-        if let n = state.posts[k], n > 0 { parts.append("\(n) post\(n == 1 ? "" : "s")") }
+        let posts = state.posts[k] ?? 0
+        let contentItem = state.items.contains { $0.kind == "content" && $0.done == 0 && $0.covers(k) }
+        for id in marks where !(id == "content" && !contentItem) { parts.append(CalendarKinds.label(id).lowercased()) }
+        if posts > 0 { parts.append("\(posts) post\(posts == 1 ? "" : "s")") }
         return parts.joined(separator: ", ")
     }
 
@@ -314,10 +376,11 @@ struct SharedCalendarView: View {
 
     private func row(_ item: CalendarItem) -> some View {
         HStack(alignment: .top, spacing: PLSpace.gap) {
-            Image(systemName: CalendarKinds.symbol(item.kind)).foregroundStyle(CalendarKinds.accent(item.kind) ? PLTone.accent : .secondary)
+            Image(systemName: CalendarKinds.symbol(item.kind)).foregroundStyle(CalendarKinds.color(item.kind))
                 .frame(width: 24)
             VStack(alignment: .leading, spacing: 2) {
-                Text(item.title).plFont(.body).strikethrough(item.done == 1).foregroundStyle(item.done == 1 ? .secondary : .primary)
+                Text(Self.dayOf(item, selected).map { "\(item.title) · \($0)" } ?? item.title)
+                    .plFont(.body).strikethrough(item.done == 1).foregroundStyle(item.done == 1 ? .secondary : .primary)
                 HStack(spacing: 6) {
                     if let time = item.time { Text(Self.time12(time)) }
                     Text(item.by == "claude" ? "Claude" : "You")
