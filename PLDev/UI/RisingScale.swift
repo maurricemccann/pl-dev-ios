@@ -30,7 +30,7 @@ struct CheckIn: Codable { let at: Date; let band: Band; var word: String?; var t
 
 @MainActor @Observable final class RisingScale {
     static let shared = RisingScale()
-    static let id = "daily"
+    nonisolated static let id = "daily"
     private let d = UserDefaults.standard
     private(set) var log: [CheckIn]
     var note: String { didSet { d.set(note, forKey: "pldev.rising.note") } }
