@@ -55,7 +55,9 @@ enum TownStreet {
     static func building(_ id: String) -> TownBuilding? { buildings.first { $0.id == id } }
 
     /// What the session is doing -> where he walks: a repo area first, then the kind of call.
-    static let areaB: [String: String] = ["gallery": "studio", "headless": "shop", "cron": "clock", "os": "terminal", "jarvis": "jarvis", "r1": "r1", "vault": "library",
+    /// The feed's lists.townAreas add or move an area, only to a building the town already draws (S353·7b1e).
+    static var areaB: [String: String] { builtInAreas.merging((ThemeFeed.feed?.lists?.townAreas ?? [:]).filter { building($0.value) != nil }) { _, new in new } }
+    static let builtInAreas: [String: String] = ["gallery": "studio", "headless": "shop", "cron": "clock", "os": "terminal", "jarvis": "jarvis", "r1": "r1", "vault": "library",
                                           "forge": "forge", "world": "arcade", "voice": "voice", "interview": "voice", "printful": "print", "square": "bank", "social": "signal"]
     static let kindB: [String: String] = ["edit": "studio", "shell": "terminal", "deploy": "post", "send": "post", "read": "library", "web": "lookout", "commerce": "shop",
                                           "ask": "home", "cloud": "dock", "other": "clock"]

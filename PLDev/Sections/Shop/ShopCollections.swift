@@ -23,8 +23,34 @@ struct ShopCollection: Identifiable, Hashable {
         name.lowercased().split(separator: " ", omittingEmptySubsequences: false).map { String($0.prefix(1)).uppercased() + String($0.dropFirst()) }.joined(separator: " ")
     }
 
+    /// The built-in rules with the feed's `shop.collections` laid over them (config over the air, S353·7b1e): a feed slug the app
+    /// has replaces that rule in place, a new one is added, and `order` moves one to that position.
+    static var all: [ShopCollection] {
+        let rules = ThemeFeed.feed?.shop?.collections?.filter { !$0.name.isEmpty && !$0.match.isEmpty } ?? []
+        guard !rules.isEmpty else { return builtIn }
+        var out = builtIn
+        for r in rules {
+            let slug = r.slug.flatMap { $0.isEmpty ? nil : $0 } ?? r.name.lowercased().split(whereSeparator: { !$0.isLetter && !$0.isNumber }).joined(separator: "-")
+            let c = ShopCollection(slug: slug, name: r.name, match: rule(r.match, exclude: r.exclude ?? []))
+            if let i = out.firstIndex(where: { $0.slug == slug }) { out[i] = c } else { out.append(c) }
+            if let o = r.order, let i = out.firstIndex(where: { $0.slug == slug }) { let m = out.remove(at: i); out.insert(m, at: max(0, min(o, out.count))) }
+        }
+        return out
+    }
+
+    /// One generic test: any `match` entry hits and no `exclude` entry does ("^X" starts with X, "=X" is exactly X, else contains).
+    static func rule(_ match: [String], exclude: [String]) -> @Sendable (String) -> Bool {
+        let m = match.map { $0.uppercased() }, x = exclude.map { $0.uppercased() }
+        @Sendable func hit(_ n: String, _ p: String) -> Bool {
+            if p.hasPrefix("^") { return n.hasPrefix(String(p.dropFirst())) }
+            if p.hasPrefix("=") { return n == String(p.dropFirst()) }
+            return n.contains(p)
+        }
+        return { n in m.contains { hit(n, $0) } && !x.contains { hit(n, $0) } }
+    }
+
     /// Every collection the site has, in its order (`COLLECTIONS`, less the newest-N drop, which is a time rule and not a name).
-    static let all: [ShopCollection] = [
+    static let builtIn: [ShopCollection] = [
         ShopCollection(slug: "classics", name: "CLASSICS") { $0.contains("HEART") || $0.hasPrefix("PSYCHED") },
         ShopCollection(slug: "glyphs", name: "Glyphs") { $0.contains("GLYPH") },
         ShopCollection(slug: "what-goes-around-comes-around", name: "WHAT GOES AROUND COMES AROUND") { $0.contains("WHAT GOES AROUND") },

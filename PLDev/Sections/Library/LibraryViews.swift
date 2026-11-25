@@ -68,7 +68,9 @@ struct LibraryView: View {
     @Environment(\.dismiss) private var dismiss
 
     struct UndoStep { let id: String; let prev: TasteMark? }
-    private let classes: [(String?, String)] = [(nil, "All classes"), ("still", "Stills"), ("cinematic", "Shorts"), ("code-piece", "Code"), ("font", "Fonts"), ("archive-work", "Archive")]
+    private var classes: [(String?, String)] {   // config over the air (S353·7b1e)
+        [(nil, "All classes")] + (ThemeFeed.pairs(ThemeFeed.feed?.lists?.taxonomy?.classes)?.map { (Optional($0.0), $0.1) } ?? [("still", "Stills"), ("cinematic", "Shorts"), ("code-piece", "Code"), ("font", "Fonts"), ("archive-work", "Archive")])
+    }
 
     private var scope: LibScope {
         LibScope(cls: cls, source: source, batch: batch, tag: tagFilter, q: q, items: data.items.count, tagged: data.tags.count, rev: data.tags.values.reduce(0) { $0 + $1.count })

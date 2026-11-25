@@ -128,7 +128,7 @@ struct ArchiveClose: View {
                         .font(SiteFont.display(38, italic: true)).foregroundStyle(Color(hex: 0xf1ece1)).multilineTextAlignment(.center)
                     Text("It extends into a room \u{2014} architecture you can walk, raised inside Meta Horizon. Every world there is now open on the web. No headset required. You do not look at the Sanctuary. You enter it.")
                         .siteBody(15).multilineTextAlignment(.center)
-                    Button { if let u = URL(string: "https://horizon.meta.com/worlds/1149841928202125/") { openURL(u) } } label: { Text("Enter the Sanctuary \u{2192}").padding(.horizontal, 12) }
+                    Button { if let u = ThemeFeed.https(ThemeFeed.feed?.links?.horizon) ?? URL(string: "https://horizon.meta.com/worlds/1149841928202125/") { openURL(u) } } label: { Text("Enter the Sanctuary \u{2192}").padding(.horizontal, 12) }
                         .buttonStyle(SitePill(gold: true)).fixedSize()
                     VStack(spacing: 1) {
                         card("Helium", "Will Haynes\u{2019} sound, made for the brand, carried through the room. The Sanctuary has an ear.")

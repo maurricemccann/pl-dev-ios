@@ -573,7 +573,15 @@ enum SystemData {
         ("06", "The draft", "Assembled with its artwork into the queue. Complete, but not yet real."),
         ("07", "The founder\u{2019}s say", "Nothing posts. Nothing ships. Not until one hand approves it. The machine drafts; the founder decides. Always."),
     ]
-    static let receipts: [(String, String, String)] = [
+    // the feed's shop.system replaces these numbers when set; the session refreshes them when it publishes (S353·7b1e)
+    static var receipts: [(String, String, String)] { ThemeFeed.triples(ThemeFeed.feed?.shop?.system?.lines) ?? builtInReceipts }
+    static var models: [(String, String, Double)] {
+        let m = (ThemeFeed.feed?.shop?.system?.models ?? []).filter { !$0.name.isEmpty }.map { ($0.name, $0.total, $0.share) }
+        return m.isEmpty ? builtInModels : m
+    }
+    static var stack: [String] { ThemeFeed.list(ThemeFeed.feed?.shop?.system?.stack) ?? builtInStack }
+    static var specs: [(String, String)] { ThemeFeed.pairs(ThemeFeed.feed?.shop?.system?.specs) ?? builtInSpecs }
+    static let builtInReceipts: [(String, String, String)] = [
         ("317,227", "Lines of code", "across nineteen systems, written and reviewed \u{2014} source files only, vendored code excluded"),
         ("1,950", "Commits", "dated and continuous, every repository"),
         ("1,391", "Notes", "the Second Mind \u{2014} doctrine, evidence, memory"),
@@ -582,7 +590,7 @@ enum SystemData {
         ("257+", "Build sessions", "each one opened, logged, and closed on the record"),
         ("95.1M", "Tokens with the fleet", "the dialogue that built the second mind \u{2014} measured to Jun 22 2026, not re-counted since"),
     ]
-    static let models: [(String, String, Double)] = [("Opus 4.8", "63.0M total", 66.2), ("Sonnet 4.6", "25.3M total", 26.6), ("Fable 5", "6.7M total", 7.1), ("Haiku 4.5", "0.1M total", 0.1)]
+    static let builtInModels: [(String, String, Double)] = [("Opus 4.8", "63.0M total", 66.2), ("Sonnet 4.6", "25.3M total", 26.6), ("Fable 5", "6.7M total", 7.1), ("Haiku 4.5", "0.1M total", 0.1)]
     static let timeline: [(String, String, String)] = [
         ("May 13", "The first keystroke", "It begins with the study \u{2014} the philosophy, mapped. Three weeks before the first line of the site is committed."),
         ("May 15\u{2013}28", "The experiments", "Curve studies, the archive, an early site, the outreach and signal engines. The shape gets found by building it wrong first."),
@@ -608,8 +616,8 @@ enum SystemData {
         ("The Defiance", "Healing through the hurt \u{2014} the work made under pressure, that reaches those carrying the same weight. The Golden Mend."),
         ("Fine Art", "The private archive. The permanent record. The one body never sold as product."),
     ]
-    static let stack = ["Next.js 16", "Cloudflare Workers", "D1", "R2", "Vectorize", "AI Search", "Workers AI \u{00B7} llama-3.3-70b", "Resend", "Square"]
-    static let specs: [(String, String)] = [("19", "systems"), ("317,227", "lines of code"), ("48", "skills"), ("17", "named instruments"), ("37", "craft laws"), ("10", "vault domains")]
+    static let builtInStack = ["Next.js 16", "Cloudflare Workers", "D1", "R2", "Vectorize", "AI Search", "Workers AI \u{00B7} llama-3.3-70b", "Resend", "Square"]
+    static let builtInSpecs: [(String, String)] = [("19", "systems"), ("317,227", "lines of code"), ("48", "skills"), ("17", "named instruments"), ("37", "craft laws"), ("10", "vault domains")]
 
     /// `SystemFlowchart`'s tiers: label, then each node's name, line and colour.
     static let tiers: [(String, [(String, String, UInt32)])] = [

@@ -14,6 +14,11 @@ import UserNotifications
 @MainActor enum PracticeNotice {
     static let id = "practice.evening"
     static var on: Bool { UserDefaults.standard.object(forKey: "practice.remind") as? Bool ?? true }
+    /// A notice's words from the feed's practice.notifications (S353·7b1e).
+    nonisolated static func note(_ key: String, _ fallback: String) -> String {
+        let t = ThemeFeed.feed?.practice?.notifications?[key]?.trimmingCharacters(in: .whitespaces) ?? ""
+        return t.isEmpty ? fallback : t
+    }
     static var hour: Int { UserDefaults.standard.object(forKey: "practice.hour") as? Int ?? ThemeFeed.practiceHour ?? 21 }
 
     static func registerActions() {
@@ -23,9 +28,9 @@ import UserNotifications
             guard let habits = try? await Practice.get("habits", [PracticeHabit].self, model: model),
                   let next = habits.first(where: { !$0.tickedToday }) else { return }
             if (try? await Practice.post("habits/\(next.id)/tick", model: model)) != nil {
-                _ = await NotificationHub.shared.post(id: "practice.ticked", title: "Ticked", body: next.response, category: nil, link: nil)
+                _ = await NotificationHub.shared.post(id: "practice.ticked", title: Self.note("ticked", "Ticked"), body: next.response, category: nil, link: nil)
             } else {
-                _ = await NotificationHub.shared.post(id: "practice.ticked", title: "Not ticked", body: "The practice did not answer. Open PL DEV to try again.", category: nil, link: nil)
+                _ = await NotificationHub.shared.post(id: "practice.ticked", title: Self.note("notTicked", "Not ticked"), body: Self.note("notTickedBody", "The practice did not answer. Open PL DEV to try again."), category: nil, link: nil)
             }
         }
         NotificationHub.actions["practice.line"] = {
@@ -167,7 +172,10 @@ extension Date {
 
 @MainActor enum RehearsalLive {
     nonisolated static var running: Activity<RehearsalAttributes>? { Activity<RehearsalAttributes>.activities.first }
-    private static let titles = ["See it", "Hear it", "Feel it", "The feeling", "Hold it"]
+    /// The five stages' titles; the feed's practice.rehearsal when it carries all five (S353·7b1e).
+    nonisolated private static var titles: [String] {
+        ThemeFeed.list(ThemeFeed.feed?.practice?.rehearsal).flatMap { $0.count == 5 ? $0 : nil } ?? ["See it", "Hear it", "Feel it", "The feeling", "Hold it"]
+    }
 
     /// Started only from the foreground, by his tap on Begin: a defined beginning and a defined end (two minutes).
     static func start(desire: String, started: Date, titles full: [String]) {
@@ -179,7 +187,7 @@ extension Date {
     /// Updated only when the sense changes.
     nonisolated static func update(stage: Int, titles full: [String]) async {
         guard let a = running, a.content.state.stage != stage else { return }
-        let names = ["See it", "Hear it", "Feel it", "The feeling", "Hold it"]
+        let names = titles
         await a.update(.init(state: .init(stage: stage, title: names[min(stage, names.count - 1)]), staleDate: nil, relevanceScore: 90))
     }
 

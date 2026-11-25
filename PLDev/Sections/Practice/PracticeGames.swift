@@ -127,7 +127,7 @@ struct GamesScreen: View {
         .contentShape(Rectangle())
     }
 
-    static var truths: [String] { ThemeFeed.truths ?? ["Prepared for luxury", "You are in control of your reality", "What persists in the mind becomes your reality"] }   // the feed's truths when it carries all three (S353·7b1e)
+    nonisolated static var truths: [String] { ThemeFeed.truths ?? ["Prepared for luxury", "You are in control of your reality", "What persists in the mind becomes your reality"] }   // the feed's truths when it carries all three (S353·7b1e)
     static func seeds(_ c: Course) -> [String] {
         c.units.first { $0.n == 6 }?.items?.filter { $0.kind == "seed" }.map(\.text).filter { $0.split(separator: " ").count <= 14 } ?? []
     }

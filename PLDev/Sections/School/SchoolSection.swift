@@ -61,15 +61,24 @@ struct PadRow: Hashable { let heading: String; let label: String; let steps: [Bo
     var open: SchoolTrack?
     let player = SchoolPlayer()
 
+    /// The lessons fetched over the air (ThemeFeed, `pldev/school.json`, same shape) when that copy reads, else the bundled one.
     init() {
         let url = Bundle.main.url(forResource: "school", withExtension: "json")
             ?? Bundle.main.url(forResource: "school", withExtension: "json", subdirectory: "School")
-        guard let url, let data = try? Data(contentsOf: url), let f = try? JSONDecoder().decode(SchoolFile.self, from: data), f.v == 2 else {
+        let remote = ThemeFeed.extra("school.json").flatMap { Self.decode($0) }
+        guard let f = remote ?? url.flatMap({ try? Data(contentsOf: $0) }).flatMap({ Self.decode($0) }) else {
             loadError = "The lessons are missing from this build."; return
         }
         tracks = f.tracks; his = f.his
         byId = Dictionary(f.lessons.map { ($0.id, $0) }, uniquingKeysWith: { a, _ in a })
     }
+
+    nonisolated private static func decode(_ data: Data) -> SchoolFile? {
+        guard let f = try? JSONDecoder().decode(SchoolFile.self, from: data), f.v == 2, !f.tracks.isEmpty else { return nil }
+        return f
+    }
+    /// What ThemeFeed checks before it keeps a fetched copy.
+    nonisolated static func valid(_ data: Data) -> Bool { decode(data) != nil }
 
     func lesson(_ id: String) -> SchoolLesson? { byId[id] }
     /// Page 0 is the whole-track pads; page n is step n. Kept per track, as the R1 keeps `school.at.<track>`.

@@ -460,7 +460,7 @@ struct MakeView: View {
     @State private var result: String?
     @State private var busy = false
     @State private var tick = 0
-    private let platforms = ["instagram", "threads", "bluesky", "tumblr", "facebook", "linkedin", "pinterest"]
+    private var platforms: [String] { ThemeFeed.list(ThemeFeed.feed?.house?.platforms) ?? ["instagram", "threads", "bluesky", "tumblr", "facebook", "linkedin", "pinterest"] }   // config over the air (S353·7b1e)
 
     @State private var intakeKind = "artwork"
     @State private var intakeText = ""

@@ -15,7 +15,7 @@ struct StudyView: View {
         ("Behavioral Alignment", "Identity, once decided, shapes every decision made. The actions follow the position \u{2014} not the other way around."),
         ("Declaration as Commitment", "Wearing it publicly is not performance. It is the declaration that you have already decided on the destination."),
     ]
-    private static let practice = ["Believe first", "Document", "Declare", "Hold the vision", "Persist", "Let the results speak"]
+    nonisolated private static var practice: [String] { ThemeFeed.list(ThemeFeed.feed?.shop?.study) ?? ["Believe first", "Document", "Declare", "Hold the vision", "Persist", "Let the results speak"] }   // config over the air (S353·7b1e)
 
     var body: some View {
         ScrollViewReader { proxy in

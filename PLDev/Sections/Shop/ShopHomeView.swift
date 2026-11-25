@@ -14,7 +14,8 @@ struct ShopHomeView: View {
 
     struct Desire: Hashable { let text: String; let name: String? }
 
-    private static let truths: [(String, String, String)] = [
+    nonisolated private static var truths: [(String, String, String)] { ThemeFeed.triples(ThemeFeed.feed?.shop?.truths).flatMap { $0.count == 3 ? $0 : nil } ?? builtInTruths }   // config over the air (S353·7b1e)
+    private static let builtInTruths: [(String, String, String)] = [
         ("I", "Prepared for Luxury", "The preparation is the luxury. Readiness as the luxury itself \u{2014} not wealth seeking it. The garment confirms what the mind has already established."),
         ("II", "You Are in Control of Your Reality", "Not influence. Control. Sovereign control. Not a comfort \u{2014} a responsibility. The brand does not sell hope. It sells sovereignty."),
         ("III", "What Persists in the Mind Becomes Your Reality", "The mechanism. The law behind the law. Seven years of daily creation is the longest argument the brand makes."),

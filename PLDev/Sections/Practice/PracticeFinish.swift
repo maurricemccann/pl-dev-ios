@@ -8,7 +8,7 @@ struct LessonFinishCard: View {
     @Environment(\.accessibilityReduceMotion) private var reduceMotion
     @State private var shown = false
 
-    private static var truths: [String] { GamesScreen.truths }
+    nonisolated private static var truths: [String] { GamesScreen.truths }
     private var anchor: String { (1...3).contains(unit.n) ? "Truth \(unit.n) \u{00b7} \(Self.truths[unit.n - 1])" : unit.title }
 
     var body: some View {

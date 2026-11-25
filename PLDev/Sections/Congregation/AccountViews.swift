@@ -31,7 +31,9 @@ struct ActivityItem: Decodable, Identifiable, Hashable {
 
 /// The site's bell kinds he can switch off (its Settings page has the same five). News that a post went live or was removed always shows.
 enum BellKinds {
-    static let all: [(key: String, label: String)] = [("follow", "Follows"), ("react", "Reactions"), ("comment", "Replies"), ("mention", "Mentions"), ("repost", "Reposts")]
+    static var all: [(key: String, label: String)] {   // config over the air (S353·7b1e)
+        ThemeFeed.pairs(ThemeFeed.feed?.lists?.notifyKinds)?.map { (key: $0.0, label: $0.1) } ?? [("follow", "Follows"), ("react", "Reactions"), ("comment", "Replies"), ("mention", "Mentions"), ("repost", "Reposts")]
+    }
     static func shows(_ kind: String) -> Bool {
         guard all.contains(where: { $0.key == kind }) else { return true }
         return UserDefaults.standard.object(forKey: "pldev.bell." + kind) as? Bool ?? true
@@ -307,7 +309,7 @@ extension Color {
 /// "I am here as", the site's intent declaration.
 struct IntentSetting: View {
     private struct Reply: Decodable { let intent: String? }
-    private let options = ["buyer", "collaborator", "student", "teacher", "believer"]
+    private var options: [String] { ThemeFeed.list(ThemeFeed.feed?.lists?.roles) ?? ["buyer", "collaborator", "student", "teacher", "believer"] }   // config over the air (S353·7b1e)
     @State private var intent = ""
     @State private var loaded = false
     @State private var line: String?

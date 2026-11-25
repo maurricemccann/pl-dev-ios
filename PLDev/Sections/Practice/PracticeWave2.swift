@@ -18,7 +18,7 @@ struct SignalGame: View {
     private let count = 30, gap = 1.4, fall = 6.0
 
     /// The banned words (the feed's words.banned when set, one-word ones only) and the hedges and hype that are not banned.
-    static var noise: [String] {
+    nonisolated static var noise: [String] {
         let banned = ThemeFeed.banned.map { $0.filter { !$0.contains(" ") } } ?? ["excited", "honored", "blessed", "amazing", "unique", "limited", "exclusive"]
         return banned + ["maybe", "hopefully", "someday", "eventually", "trying", "wish", "might", "could", "deal", "hurry", "viral", "hack", "guaranteed"]
     }

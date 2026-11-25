@@ -40,6 +40,10 @@ enum ThemeFeed {
         var wallpapers: [Wallpaper]? = nil
         var timing: Timing? = nil
         var links: Links? = nil
+        // phase 2 (his "build all phases", 11-25)
+        var practice: Practice? = nil
+        var lists: Lists? = nil
+        var shop: Shop? = nil
     }
 
     /// Home over the air (his "Sure", 11-24): the sections' order, which are hidden, what each is called, and its SF Symbol.
@@ -70,8 +74,88 @@ enum ThemeFeed {
         var voice: [String]?
     }
 
+    /// House: the doors, plus its lists. Pairs are [id, label]; council rows are [id, name, blurb]; job paths must be
+    /// `run/<name>` routes the console already serves.
     struct House: Codable, Equatable {
         var doors: Doors?
+        var council: [[String]]?
+        var seasons: [[String]]?
+        var jobs: [Job]?
+        var platforms: [String]?
+        var pipeline: [String]?
+        var generators: [String: String]?
+    }
+    struct Job: Codable, Equatable {
+        var path: String
+        var title: String
+        var symbol: String
+    }
+
+    /// Practice wording and lists. boardSources are [id, label]; rooms rename a room or change its SF Symbol by id;
+    /// rehearsal is the five stage titles; wordLists are "runner" (the jumping game) and "restore" (the sliding puzzle).
+    struct Practice: Codable, Equatable {
+        var moods: [String]?
+        var boardSources: [[String]]?
+        var rooms: [String: Room]?
+        var rehearsal: [String]?
+        var notifications: [String: String]?
+        var wordLists: [String: [String]]?
+    }
+    struct Room: Codable, Equatable {
+        var title: String?
+        var symbol: String?
+    }
+
+    /// GlyphBot, Congregation, Town, Library and Curate lists. notifyKinds are [key, label]; townAreas map a session area to a
+    /// building id the town already draws. The taxonomy must match the server's.
+    struct Lists: Codable, Equatable {
+        var interviewDomains: [String]?
+        var modelCosts: [String: Double]?
+        var notifyKinds: [[String]]?
+        var roles: [String]?
+        var townAreas: [String: String]?
+        var taxonomy: Taxonomy?
+    }
+    /// pillars, media, bodies: names. categories (the Library's file-in rooms): [label, id]. classes: [id, label].
+    /// archive (Curate's three archive categories): [id, label].
+    struct Taxonomy: Codable, Equatable {
+        var pillars: [String]?
+        var categories: [[String]]?
+        var media: [String]?
+        var bodies: [String]?
+        var classes: [[String]]?
+        var archive: [[String]]?
+    }
+
+    /// The app's shop. collections: a piece is in one when its upper-cased name contains any `match` entry and no `exclude`
+    /// entry ("^X" = starts with X, "=X" = is exactly X); a slug the app has replaces that collection, `order` places it.
+    struct Shop: Codable, Equatable {
+        var collections: [ShopRule]?
+        var system: System?
+        var study: [String]?
+        var code: [String]?
+        var engines: [String]?
+        var truths: [[String]]?
+        var orderSteps: [String]?
+    }
+    struct ShopRule: Codable, Equatable {
+        var slug: String?
+        var name: String
+        var match: [String]
+        var exclude: [String]?
+        var order: Int?
+    }
+    /// The system page's numbers: lines are [value, label, detail]; specs are [value, label]; models are name, total, share (%).
+    struct System: Codable, Equatable {
+        var lines: [[String]]?
+        var specs: [[String]]?
+        var stack: [String]?
+        var models: [Model]?
+    }
+    struct Model: Codable, Equatable {
+        var name: String
+        var total: String
+        var share: Double
     }
     /// The House rooms, by room id: the Rooms panel's order, the doors hidden anywhere, and their names.
     struct Doors: Codable, Equatable {
@@ -104,6 +188,11 @@ enum ThemeFeed {
     struct Links: Codable, Equatable {
         var socials: [Social]?
         var compose: [String: String]?
+        var horizon: String?
+        var academy: String?
+        var shopDebug: String?
+        /// Status's health path per origin name ("cron": "health"); paths only, never an address.
+        var healthPaths: [String: String]?
     }
 
     /// Composer and PL World stay off Home unless the feed's `home.hidden` says otherwise (a list there replaces this one).
@@ -124,8 +213,33 @@ enum ThemeFeed {
 
     static func text(_ key: String, _ fallback: String) -> String { nonEmpty(cached?.copy?[key]) ?? fallback }
 
+    /// The cached feed, for the phase-2 screens; read with the helpers below so an empty list falls back.
+    static var feed: Feed? { cached }
+
+    /// A non-empty list of non-empty strings, else nil.
+    static func list(_ a: [String]?) -> [String]? {
+        let l = (a ?? []).map { $0.trimmingCharacters(in: .whitespaces) }.filter { !$0.isEmpty }
+        return l.isEmpty ? nil : l
+    }
+    /// Rows of exactly two non-empty strings, else nil.
+    static func pairs(_ a: [[String]]?) -> [(String, String)]? {
+        let p = (a ?? []).filter { $0.count == 2 && !$0[0].isEmpty && !$0[1].isEmpty }.map { ($0[0], $0[1]) }
+        return p.isEmpty ? nil : p
+    }
+    /// Rows of exactly three non-empty strings, else nil.
+    static func triples(_ a: [[String]]?) -> [(String, String, String)]? {
+        let p = (a ?? []).filter { $0.count == 3 && !$0.contains(where: \.isEmpty) }.map { ($0[0], $0[1], $0[2]) }
+        return p.isEmpty ? nil : p
+    }
+    /// An https address from the links block, else nil.
+    static func https(_ s: String?) -> URL? {
+        guard let s = nonEmpty(s), s.hasPrefix("https://") else { return nil }
+        return URL(string: s)
+    }
+
     static var calendarKinds: [CalendarKind]? {
-        let k = (cached?.calendar?.kinds ?? []).filter { !$0.id.trimmingCharacters(in: .whitespaces).isEmpty }
+        // the id shape pl-cron stores (^[a-z0-9-]{1,24}$, b8fd54e); anything else would save as a reminder
+        let k = (cached?.calendar?.kinds ?? []).filter { $0.id.range(of: "^[a-z0-9-]{1,24}$", options: .regularExpression) != nil }
         return k.isEmpty ? nil : k
     }
     static var calendarDefault: String? { nonEmpty(cached?.calendar?.default) }
@@ -167,10 +281,6 @@ enum ThemeFeed {
         guard let t = s?.trimmingCharacters(in: .whitespaces), !t.isEmpty else { return nil }
         return t
     }
-    private static func list(_ a: [String]?) -> [String]? {
-        let l = (a ?? []).map { $0.trimmingCharacters(in: .whitespaces) }.filter { !$0.isEmpty }
-        return l.isEmpty ? nil : l
-    }
     private static func hhmm(_ s: String?) -> String? {
         guard let s, Quiet.minutes(s) != nil else { return nil }
         return s
@@ -179,6 +289,30 @@ enum ThemeFeed {
     static func sectionName(_ id: String, _ fallback: String) -> String {
         guard let name = cached?.home?.names?[id]?.trimmingCharacters(in: .whitespaces), !name.isEmpty else { return fallback }
         return name
+    }
+
+    // MARK: larger content beside the feed (phase 2): School's lessons and the Paint handbook
+
+    private static func extraFile(_ name: String) -> URL {
+        FileManager.default.urls(for: .applicationSupportDirectory, in: .userDomainMask)[0].appendingPathComponent("house/feed-" + name)
+    }
+
+    /// The last good copy of `pldev/<name>` fetched from the bucket, or nil (the screen then reads its bundled copy).
+    static func extra(_ name: String) -> Data? { try? Data(contentsOf: extraFile(name)) }
+
+    /// Each file is kept only when it reads as the bundled shape; a 404 removes the copy (back to the bundle); offline keeps it.
+    @MainActor private static func fetchExtras() async {
+        let files: [(String, (Data) -> Bool)] = [("school.json", SchoolModel.valid), ("handbook.json", { !NativeHandbook.parse($0).isEmpty })]
+        for (name, valid) in files {
+            guard let u = URL(string: r2 + "pldev/" + name) else { continue }
+            var req = URLRequest(url: u, cachePolicy: .reloadIgnoringLocalCacheData, timeoutInterval: 20)
+            req.setValue("PLDev", forHTTPHeaderField: "User-Agent")
+            guard let (data, resp) = try? await URLSession.shared.data(for: req), let code = (resp as? HTTPURLResponse)?.statusCode else { continue }
+            if code == 404 { try? FileManager.default.removeItem(at: extraFile(name)); continue }
+            guard code == 200, valid(data) else { continue }
+            try? FileManager.default.createDirectory(at: extraFile(name).deletingLastPathComponent(), withIntermediateDirectories: true)
+            try? data.write(to: extraFile(name))
+        }
     }
 
     private static var file: URL {
@@ -190,6 +324,7 @@ enum ThemeFeed {
 
     /// Fetches the feed; returns the ids of themes whose values changed (so the worn one can be applied again). Offline = no change.
     @MainActor static func refresh() async -> Set<String> {
+        await fetchExtras()
         var req = URLRequest(url: url, cachePolicy: .reloadIgnoringLocalCacheData, timeoutInterval: 20)
         req.setValue("PLDev", forHTTPHeaderField: "User-Agent")
         guard let (data, resp) = try? await URLSession.shared.data(for: req),

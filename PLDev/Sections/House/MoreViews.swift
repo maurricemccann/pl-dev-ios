@@ -56,8 +56,10 @@ struct MoreTab: View {
 
 struct CouncilView: View {
     let model: AppModel
-    private let seats = [("research", "Research", "Trend reads, signal analysis"), ("content", "Content", "Captions and drafts"),
+    private var seats: [(String, String, String)] {   // config over the air (S353·7b1e)
+        ThemeFeed.triples(ThemeFeed.feed?.house?.council) ?? [("research", "Research", "Trend reads, signal analysis"), ("content", "Content", "Captions and drafts"),
                          ("strategist", "Strategist", "Options and direction"), ("language", "Language", "Paste copy to check the voice")]
+    }
     @State private var seat = "research"
     @State private var query = ""
     @State private var answer: String?
@@ -184,7 +186,7 @@ struct MerchView: View {
     @State private var asks: [Ask] = []
     @State private var result: String?
     @Environment(\.colorScheme) private var scheme
-    private let seasons = [("fw", "Fall / Winter"), ("ss", "Spring / Summer"), ("always", "Always"), ("rest", "Resting")]
+    private var seasons: [(String, String)] { ThemeFeed.pairs(ThemeFeed.feed?.house?.seasons) ?? [("fw", "Fall / Winter"), ("ss", "Spring / Summer"), ("always", "Always"), ("rest", "Resting")] }   // config over the air (S353·7b1e)
     /// fw = Sep 1 to the end of Feb, ss = Mar 1 to Aug 31 (pl-headless isOutOfSeason).
     private var nowSeason: String { let m = Calendar.current.component(.month, from: .now); return (m >= 9 || m <= 2) ? "fw" : "ss" }
     private func onGrid(_ season: String) -> Bool { season == "always" || season == nowSeason }
@@ -478,9 +480,13 @@ struct StackHealthView: View {
 
 struct AutomationView: View {
     let model: AppModel
-    private let jobs = [("run/digest", "Morning digest", "sun.horizon"), ("run/ig-insights", "Instagram numbers", "chart.line.uptrend.xyaxis"),
+    /// The feed's house.jobs when set: only `run/<name>` paths, the shape the console serves (S353·7b1e).
+    private var jobs: [(String, String, String)] {
+        let feed = (ThemeFeed.feed?.house?.jobs ?? []).filter { $0.path.range(of: "^run/[a-z0-9-]+$", options: .regularExpression) != nil && !$0.title.isEmpty }
+        return feed.isEmpty ? [("run/digest", "Morning digest", "sun.horizon"), ("run/ig-insights", "Instagram numbers", "chart.line.uptrend.xyaxis"),
                         ("run/content-wave", "Content wave", "water.waves"), ("run/captures", "Sort the captures", "tray.and.arrow.down"),
-                        ("run/stack-health", "Stack health", "stethoscope")]
+                        ("run/stack-health", "Stack health", "stethoscope")] : feed.map { ($0.path, $0.title, $0.symbol) }
+    }
     @State private var running: String?
     @State private var results: [String: String] = [:]
 

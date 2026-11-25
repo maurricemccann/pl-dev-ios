@@ -15,7 +15,7 @@ struct VisionBoardCard: View {
     @State private var uploading = false
     @State private var loaded = false
     @State private var failed = false
-    private static let sources = [("house", "the catalogue"), ("abundance", "abundance"), ("love", "love"), ("success", "success")]
+    nonisolated private static var sources: [(String, String)] { ThemeFeed.pairs(ThemeFeed.feed?.practice?.boardSources) ?? [("house", "the catalogue"), ("abundance", "abundance"), ("love", "love"), ("success", "success")] }   // config over the air (S353·7b1e)
 
     private struct Cell: Identifiable { let url: String; let alt: String; let pinned: Bool; var id: String { url } }
 

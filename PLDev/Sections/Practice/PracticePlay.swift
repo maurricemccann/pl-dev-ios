@@ -137,7 +137,7 @@ struct MatchPairsBoard: View {
 struct SortCardsBoard: View {
     let exercises: [CourseExercise]
     let close: () -> Void
-    private static var truths: [String] { GamesScreen.truths }
+    nonisolated private static var truths: [String] { GamesScreen.truths }
     @State private var index = 0
     @State private var picked: Int?
     @State private var finished = false

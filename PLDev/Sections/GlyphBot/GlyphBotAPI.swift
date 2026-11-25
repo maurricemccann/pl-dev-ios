@@ -98,7 +98,7 @@ import SwiftUI
                                                  body: try JSONSerialization.data(withJSONObject: ["text": String(text.prefix(600))])), idempotent: false, timeout: 60)
     }
 
-    static let domains = ["philosophy", "art-design", "process", "seeds", "archive", "business", "social-content", "world", "taste", "legacy", "origin"]
+    nonisolated static var domains: [String] { ThemeFeed.list(ThemeFeed.feed?.lists?.interviewDomains) ?? ["philosophy", "art-design", "process", "seeds", "archive", "business", "social-content", "world", "taste", "legacy", "origin"] }   // config over the air (S353·7b1e)
 
     static func domainTitle(_ d: String) -> String {
         switch d {

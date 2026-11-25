@@ -187,7 +187,7 @@ private struct MatrixSketch: View {
     private final class Box { var streams: [(x: Double, y: Double, speed: Double)] = [] }
     @State private var box = Box()
     private static let chars = Array("01{}[]<>/=+*;:!%$#@")
-    private static let lines = ["PREPARED", "FOR", "LUXURY", "\u{00B7}"]
+    nonisolated private static var lines: [String] { ThemeFeed.list(ThemeFeed.feed?.shop?.code) ?? ["PREPARED", "FOR", "LUXURY", "\u{00B7}"] }   // config over the air (S353·7b1e)
 
     var body: some View {
         LabBitmapSketch(ground: CGColor(gray: 0, alpha: 1), step: { c, size, frame in
@@ -451,7 +451,8 @@ struct LivingCurvesSourceView: View {
     @State private var blocks: [String] = []
     @State private var failed = false
     @Environment(\.colorScheme) private var scheme
-    private static let labels = ["The Shared Engine", "I \u{00B7} The Cloth", "II \u{00B7} The Cloth, in Blood", "III \u{00B7} The Transmission", "IV \u{00B7} The Field",
+    nonisolated private static var labels: [String] { ThemeFeed.list(ThemeFeed.feed?.shop?.engines) ?? builtInLabels }   // config over the air (S353·7b1e)
+    private static let builtInLabels = ["The Shared Engine", "I \u{00B7} The Cloth", "II \u{00B7} The Cloth, in Blood", "III \u{00B7} The Transmission", "IV \u{00B7} The Field",
                                  "V \u{00B7} The Spiral", "VI \u{00B7} The Chain", "VII \u{00B7} The Mind"]
 
     var body: some View {

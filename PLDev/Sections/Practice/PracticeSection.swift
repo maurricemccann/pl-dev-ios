@@ -57,6 +57,7 @@ enum PracticeRoom: String, CaseIterable, Identifiable, Hashable {
     var id: String { rawValue }
 
     var title: String {
+        if let t = ThemeFeed.feed?.practice?.rooms?[rawValue]?.title, !t.isEmpty { return t }   // config over the air (S353·7b1e)
         switch self {
         case .morning: return "Morning check-in"; case .evening: return "Evening check-in"; case .lesson: return "Today's lesson"
         case .reframe: return "Reframe a belief"; case .affirmations: return "Affirmations"; case .coach: return "Talk it through"
@@ -67,6 +68,7 @@ enum PracticeRoom: String, CaseIterable, Identifiable, Hashable {
     }
 
     var symbol: String {
+        if let s = ThemeFeed.feed?.practice?.rooms?[rawValue]?.symbol, !s.isEmpty { return s }
         switch self {
         case .morning: return "sunrise"; case .evening: return "moon.stars"; case .lesson: return "book"
         case .reframe: return "arrow.triangle.2.circlepath"; case .affirmations: return "quote.bubble"; case .coach: return "bubble.left.and.bubble.right"

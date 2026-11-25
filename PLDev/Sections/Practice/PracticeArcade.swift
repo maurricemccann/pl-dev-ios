@@ -284,7 +284,7 @@ struct ReturnGame: View {
     var running = false
     var over = false
     var last: Date?
-    let words = ["DOUBT", "DISTRACTION", "FEAR", "NOISE", "RESISTANCE", "DELAY"]
+    let words = ThemeFeed.list(ThemeFeed.feed?.practice?.wordLists?["runner"]) ?? ["DOUBT", "DISTRACTION", "FEAR", "NOISE", "RESISTANCE", "DELAY"]   // config over the air (S353·7b1e)
 
     func reset() { y = 0; vy = 0; days = 0; spawnIn = 1.5; obstacles = []; over = false; running = true; last = nil }
     func jump() { if y == 0 { vy = 840 } }
@@ -441,7 +441,11 @@ struct CompoundGame: View {
 // MARK: - Restore the Archive (sliding puzzle of a real piece)
 
 struct RestoreGame: View {
-    private static let words = ["CURVE", "MARK", "GLYPH", "VOID", "GOLD", "PRACTICE", "PATTERN", "FIGURE", "SIGNAL", "ARCHIVE", "PERSIST", "CONTROL", "PREPARE", "RETURN", "DESCENT"]
+    /// Fifteen words, one per tile; the feed's practice.wordLists.restore only when it carries fifteen (S353·7b1e).
+    nonisolated private static var words: [String] {
+        ThemeFeed.list(ThemeFeed.feed?.practice?.wordLists?["restore"]).flatMap { $0.count == 15 ? $0 : nil }
+            ?? ["CURVE", "MARK", "GLYPH", "VOID", "GOLD", "PRACTICE", "PATTERN", "FIGURE", "SIGNAL", "ARCHIVE", "PERSIST", "CONTROL", "PREPARE", "RETURN", "DESCENT"]
+    }
     struct Piece: Decodable { let cr: String?; let title: String?; let thumb: String?; let url: String? }
     struct Manifest: Decodable { let pieces: [Piece] }
     @State private var board = Array(0..<16)

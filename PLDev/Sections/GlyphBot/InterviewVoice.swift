@@ -293,7 +293,7 @@ struct InterviewSettingsView: View {
     }
 
     private var estimate: String {
-        let per: [String: Double] = ["auto": 0.9, "haiku": 0.25, "sonnet": 0.9, "opus": 2.6]
+        let per: [String: Double] = ["auto": 0.9, "haiku": 0.25, "sonnet": 0.9, "opus": 2.6].merging(ThemeFeed.feed?.lists?.modelCosts ?? [:]) { _, new in new }   // config over the air (S353·7b1e)
         let t = sitting.settings.targetMin
         let cost = (per[model] ?? 0.9) * (t > 0 ? Double(t) / 30 : 1)
         return "About $\(String(format: "%.2f", cost)) per \(t > 0 ? t : 30)-minute sitting on \(model)\(sitting.settings.deep ? " with deep" : ""). Monthly cap $65."

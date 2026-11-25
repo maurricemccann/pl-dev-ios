@@ -472,10 +472,11 @@ struct ClassifyRoom: View {
     @State private var result: String?
     @State private var confirmPublish = false
     @State private var busy = false
-    private let pillars = ["Art", "Philosophy", "Process", "Proof"]
-    private let cats = [("Digital", "digital"), ("Seeds", "seeds"), ("Finished", "finished_works"), ("Studies", "studies")]
-    private let media = ["Digital", "Physical"]
-    private let bodies = ["Commercial", "Fine Art", "Interference"]
+    // the feed's lists.taxonomy when set; it must match the server's (S353·7b1e)
+    private var pillars: [String] { ThemeFeed.list(ThemeFeed.feed?.lists?.taxonomy?.pillars) ?? ["Art", "Philosophy", "Process", "Proof"] }
+    private var cats: [(String, String)] { ThemeFeed.pairs(ThemeFeed.feed?.lists?.taxonomy?.categories) ?? [("Digital", "digital"), ("Seeds", "seeds"), ("Finished", "finished_works"), ("Studies", "studies")] }
+    private var media: [String] { ThemeFeed.list(ThemeFeed.feed?.lists?.taxonomy?.media) ?? ["Digital", "Physical"] }
+    private var bodies: [String] { ThemeFeed.list(ThemeFeed.feed?.lists?.taxonomy?.bodies) ?? ["Commercial", "Fine Art", "Interference"] }
 
     private var cur: Piece? { queue.first }
     private var valid: Bool {

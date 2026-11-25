@@ -367,7 +367,7 @@ struct NotionView: View {
     @Environment(\.colorScheme) private var scheme
 
     /// The stages in the order a piece moves through them; a stage Notion adds later falls in after these, by name.
-    private static let order = ["Candidates", "Development", "Scheduled", "Published"]
+    nonisolated private static var order: [String] { ThemeFeed.list(ThemeFeed.feed?.house?.pipeline) ?? ["Candidates", "Development", "Scheduled", "Published"] }   // config over the air (S353·7b1e)
     private func stages(_ p: [String: Int]) -> [String] {
         Self.order.filter { p[$0] != nil } + p.keys.filter { !Self.order.contains($0) }.sorted()
     }

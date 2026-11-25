@@ -247,7 +247,9 @@ struct CalendarView: View {
         .navigationTitle("Calendar")
     }
 
-    private static let gen = ["story-batch": "story batch", "queue-weekly-reel": "reel", "keep-feeder": "KEEP feeder", "content-wave": "content wave"]
+    nonisolated private static var gen: [String: String] {   // config over the air (S353·7b1e)
+        ["story-batch": "story batch", "queue-weekly-reel": "reel", "keep-feeder": "KEEP feeder", "content-wave": "content wave"].merging(ThemeFeed.feed?.house?.generators ?? [:]) { _, new in new }
+    }
     private var fillLine: some View {
         Group {
             if let f = fill {

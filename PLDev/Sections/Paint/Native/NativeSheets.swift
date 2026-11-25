@@ -428,10 +428,16 @@ final class NativeHandbook: @unchecked Sendable {
     struct Chapter: Identifiable { let id: String; let n: String; let title: String; let secs: [Section] }
     let chapters: [Chapter]
 
+    /// The handbook fetched over the air (ThemeFeed, `pldev/handbook.json`, same shape) when it reads, else the bundled one.
     init() {
-        guard let url = Bundle.main.url(forResource: "NativeHandbook", withExtension: "json"), let d = try? Data(contentsOf: url),
-              let o = try? JSONSerialization.jsonObject(with: d) as? [String: Any], let cs = o["chapters"] as? [[String: Any]] else { chapters = []; return }
-        chapters = cs.map { c in
+        let remote = ThemeFeed.extra("handbook.json").map(Self.parse) ?? []
+        if !remote.isEmpty { chapters = remote; return }
+        chapters = Bundle.main.url(forResource: "NativeHandbook", withExtension: "json").flatMap { try? Data(contentsOf: $0) }.map(Self.parse) ?? []
+    }
+
+    static func parse(_ d: Data) -> [Chapter] {
+        guard let o = try? JSONSerialization.jsonObject(with: d) as? [String: Any], let cs = o["chapters"] as? [[String: Any]] else { return [] }
+        return cs.map { c in
             Chapter(id: c["id"] as? String ?? UUID().uuidString, n: c["n"] as? String ?? "", title: c["title"] as? String ?? "", secs: (c["secs"] as? [[String: Any]] ?? []).map { s in
                 Section(id: s["id"] as? String ?? UUID().uuidString, title: s["title"] as? String ?? "", b: (s["b"] as? [[String: Any]] ?? []).map { b in
                     let x = b["x"]

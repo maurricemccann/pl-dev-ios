@@ -20,7 +20,7 @@ import UserNotifications
 }
 
 /// The calendars (config over the air, S353·7b1e): the feed's `calendar.kinds` when it lists any, else build 380's four.
-/// An id the server does not know yet is stored as a reminder (pl-cron `calendar_items` accepts drop, reminder, content, task, other).
+/// pl-cron stores any kind id shaped ^[a-z0-9-]{1,24}$ (its b8fd54e); ThemeFeed drops feed kinds of any other shape.
 enum CalendarKinds {
     static let builtIn: [ThemeFeed.CalendarKind] = [
         .init(id: "reminder", label: "Reminder", symbol: "bell", accent: false, time: nil),

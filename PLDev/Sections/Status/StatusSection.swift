@@ -7,7 +7,10 @@ import UserNotifications
     static let manifest = SectionManifest(id: "status", title: "Status", symbol: "waveform.path.ecg")
 
     /// Address name -> a health path to GET. This build knows none, so every address is asked with a HEAD of its base.
-    static let healthPaths: [String: String] = ["cron": "health", "paint": "index"]   // paint: the door has no root page (a HEAD of it is 404); its work list answers with the key
+    /// The feed's links.healthPaths move a path (paths only, never an address; S353·7b1e).
+    nonisolated static var healthPaths: [String: String] {
+        ["cron": "health", "paint": "index"].merging((ThemeFeed.feed?.links?.healthPaths ?? [:]).filter { $0.value.range(of: "^[a-z0-9/_-]{1,60}$", options: .regularExpression) != nil }) { _, new in new }
+    }   // paint: the door has no root page (a HEAD of it is 404); its work list answers with the key
 
     static let state = StatusModel()
 

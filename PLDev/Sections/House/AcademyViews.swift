@@ -5,7 +5,7 @@ import SwiftUI
 /// against the live Worker, with no web view. Source: `C:\dev\pl-academy\src\index.ts` + `drills.ts`, `C:\dev\pl-os\app\academy\page.tsx`.
 /// The Worker is public (it answers anyone), so there is no key; its address is already in this repo's earlier Link.
 @MainActor enum Academy {
-    static let base = URL(string: "https://pl-academy.psychedluxuries.workers.dev")!
+    nonisolated static var base: URL { ThemeFeed.https(ThemeFeed.feed?.links?.academy) ?? URL(string: "https://pl-academy.psychedluxuries.workers.dev")! }   // config over the air (S353·7b1e)
 
     enum Problem: LocalizedError {
         case unreachable, refused(String)

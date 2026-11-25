@@ -170,7 +170,7 @@ struct CheckinCard: View {
     let model: AppModel
     let state: PracticeModel
     let evening: Bool
-    private static let moods = ["calm", "hopeful", "doubtful", "anxious", "grounded"]
+    nonisolated private static var moods: [String] { ThemeFeed.list(ThemeFeed.feed?.practice?.moods) ?? ["calm", "hopeful", "doubtful", "anxious", "grounded"] }   // config over the air (S353·7b1e)
     @State private var mood = "calm"
     @State private var story = ""
     @State private var gratitude = ""

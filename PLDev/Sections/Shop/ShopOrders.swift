@@ -16,7 +16,7 @@ struct FlexNumber: Decodable {
 }
 
 enum OrderStep {
-    static let names = ["Confirmed", "In production", "Shipped", "Delivered"]
+    static var names: [String] { ThemeFeed.list(ThemeFeed.feed?.shop?.orderSteps).flatMap { $0.count == 4 ? $0 : nil } ?? ["Confirmed", "In production", "Shipped", "Delivered"] }   // config over the air (S353·7b1e)
 
     /// The step an order has reached (the site's `stepIndex`).
     static func reached(status: String?, shipped: String?, delivered: String?, tracking: String?) -> Int {

@@ -11,8 +11,10 @@ struct CurateMode: Hashable, Identifiable, Sendable {
 
     var id: String { [kind.rawValue, cls ?? "", tag ?? ""].joined(separator: ":") }
 
-    static let classLabels: [(String?, String)] = [(nil, "Everything"), ("seed", "Seed phrases"), ("still", "Stills"), ("cinematic", "Shorts (cinematics)"),
-                                                   ("code-piece", "Code"), ("archive-work", "Archive"), ("essay", "Essays"), ("font", "Fonts")]
+    static var classLabels: [(String?, String)] {   // config over the air (S353·7b1e)
+        [(nil, "Everything")] + (ThemeFeed.pairs(ThemeFeed.feed?.lists?.taxonomy?.classes)?.map { (Optional($0.0), $0.1) } ?? [("seed", "Seed phrases"), ("still", "Stills"), ("cinematic", "Shorts (cinematics)"),
+                                                   ("code-piece", "Code"), ("archive-work", "Archive"), ("essay", "Essays"), ("font", "Fonts")])
+    }
     static func classLabel(_ c: String?) -> String { classLabels.first { $0.0 == c }?.1 ?? (c ?? "Everything") }
 
     var title: String {
@@ -82,7 +84,7 @@ struct CurateMode: Hashable, Identifiable, Sendable {
 }
 
 /// The three archive categories (web CATEGORIES) and the machine's guess for a card.
-let curateCategories: [(String, String)] = [("digital", "Digital"), ("physical", "Physical"), ("seeds", "Seeds")]
+var curateCategories: [(String, String)] { ThemeFeed.pairs(ThemeFeed.feed?.lists?.taxonomy?.archive) ?? [("digital", "Digital"), ("physical", "Physical"), ("seeds", "Seeds")] }   // config over the air (S353·7b1e)
 
 @MainActor @Observable final class CurateModel {
     struct Done { let item: LibraryItem; let dir: String; let prev: TasteMark? }
