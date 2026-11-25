@@ -63,6 +63,47 @@ struct PickTally: Decodable, Equatable {
     var looking: Palette?
     var mine: String? = UserDefaults.standard.string(forKey: "pick.mine")
     private(set) var pending: String? = UserDefaults.standard.string(forKey: "pick.pending")
+    /// His own colours, typed as hex or caught with the camera (his ask 11-24, S353·7b1e). Each joins the vote as "hex-rrggbb", a name
+    /// the cron's color-pick route already takes, so a colour someone else caught arrives through the tally too.
+    private(set) var custom: [String] = UserDefaults.standard.stringArray(forKey: "pick.custom") ?? []
+
+    /// "#RRGGBB" from what he typed ("1a2b3c", "#1A2B3C"), or nil.
+    static func normalHex(_ raw: String) -> String? {
+        let h = raw.trimmingCharacters(in: .whitespacesAndNewlines).replacingOccurrences(of: "#", with: "").lowercased()
+        return h.count == 6 && h.allSatisfy(\.isHexDigit) ? "#" + h : nil
+    }
+
+    static func hexName(_ hex: String) -> String { "hex-" + hex.replacingOccurrences(of: "#", with: "").lowercased() }
+
+    /// Adds a colour to his set and to the grid; false when it is not a hex colour.
+    @discardableResult func addColour(_ raw: String) -> Bool {
+        guard let h = Self.normalHex(raw) else { return false }
+        if !custom.contains(h) {
+            custom.append(h)
+            UserDefaults.standard.set(custom, forKey: "pick.custom")
+        }
+        mergeCustom()
+        return true
+    }
+
+    /// His colours and any "hex-" colour in the tally, as colourways after the kit's own.
+    private func mergeCustom() {
+        var names = Set(palettes.map(\.name))
+        let fromTally = tally.keys.filter { $0.hasPrefix("hex-") }.sorted().map { "#" + $0.dropFirst(4) }
+        for h in custom + fromTally {
+            let n = Self.hexName(h)
+            guard !names.contains(n), Self.normalHex(h) != nil, Self.nameOK(n) else { continue }
+            palettes.append(Palette(name: n, ground: h, text: Self.ink(on: h), key: h, accent: h))
+            names.insert(n)
+        }
+    }
+
+    /// Black or bone text, whichever reads on that colour.
+    static func ink(on hex: String) -> String {
+        let v = Int(hex.dropFirst(), radix: 16) ?? 0
+        let l = 0.2126 * Double((v >> 16) & 0xff) + 0.7152 * Double((v >> 8) & 0xff) + 0.0722 * Double(v & 0xff)
+        return l > 140 ? "#171310" : "#f0ece4"
+    }
 
     private static func nameOK(_ s: String) -> Bool {
         (2...40).contains(s.count) && s.allSatisfy { $0.isASCII && ($0.isLowercase || $0.isNumber || $0 == "-") }
@@ -77,6 +118,7 @@ struct PickTally: Decodable, Equatable {
             palettes = kit.colors.palettes.filter {
                 Color(hex: $0.ground) != nil && Color(hex: $0.key) != nil && Self.nameOK($0.name)
             }
+            mergeCustom()
             message = palettes.isEmpty ? "No colourways in the kit." : nil
         } catch {
             if palettes.isEmpty { message = "Could not load the colourways. Pull down to try again." }
@@ -91,6 +133,7 @@ struct PickTally: Decodable, Equatable {
         if let data = try? await http.send(RequestPlan(origin: "cron", path: "api/color-pick")),
            let out = try? JSONDecoder().decode(Out.self, from: data) {
             tally = out.tally ?? [:]
+            mergeCustom()
             publishGlance()
         }
     }
@@ -187,6 +230,8 @@ struct PickView: View {
     let model: AppModel
     @Bindable var state: PickModel
     @State private var nav = PickNav.shared
+    @State private var addingHex = false   // his colours (11-24)
+    @State private var catching = false
     private let cols = [GridItem(.adaptive(minimum: 150), spacing: 14)]
     @Environment(\.colorScheme) private var scheme
 
@@ -200,6 +245,14 @@ struct PickView: View {
                     Text(state.showResults ? "\(state.totalVotes) \(state.totalVotes == 1 ? "pick" : "picks"), most first."
                                            : "One tap. The most picked becomes the next piece.").plHand(15, relativeTo: .subheadline).foregroundStyle(PLG.goldDim(scheme))
                     if !state.showResults { TipView(PickLookTip()) }
+                    if !state.showResults {
+                        HStack(spacing: 10) {
+                            Button { addingHex = true } label: { Label("Add a colour", systemImage: "number") }
+                                .buttonStyle(.bordered).frame(minHeight: PLMetric.touch)
+                            Button { catching = true } label: { Label("Catch a colour", systemImage: "eyedropper") }
+                                .buttonStyle(.bordered).frame(minHeight: PLMetric.touch)
+                        }
+                    }
                     if state.showResults, state.totalVotes > 0 {
                         // the standings at a glance (his ask 11-14): the bar is the votes, the dots are the colourway's own colours
                         let top = Double(state.ranked.first.map { state.votes($0) } ?? 1)
@@ -289,6 +342,8 @@ struct PickView: View {
         .toolbarBackground(.hidden, for: .navigationBar)
         .navigationTitle("Colour Survey").navigationBarTitleDisplayMode(.inline)
         .sheet(item: $state.looking) { p in PickLook(state: state, p: p) }
+        .sheet(isPresented: $addingHex) { PickHexSheet(state: state) }
+        .sheet(isPresented: $catching) { PickCatcher(state: state, model: model) }
         .task { if state.palettes.isEmpty { await state.load(model: model) } else { await state.loadTally(model: model) } }
         .onChange(of: state.showResults) { _, on in if on { Task { await state.loadTally(model: model) } } }
         .onChange(of: nav.room) { _, room in apply(room) }

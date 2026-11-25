@@ -97,7 +97,10 @@ enum OriginReach: Equatable {
         for entry in sections { badges[entry.id] = entry.badge }
         var seen = Set<String>()
         var built: [SectionEntry] = []
-        for id in config.sections where seen.insert(id).inserted {
+        // S353·7b1e: the Calendar (his ask 11-24) shows second on Home even when the loaded config predates it
+        var order = config.sections
+        if !order.contains("calendar") { order.insert("calendar", at: min(1, order.count)) }
+        for id in order where seen.insert(id).inserted {
             guard let section = SectionRegistry.section(id) else { continue }   // a section this build does not have yet
             let manifest = section.manifest
             built.append(SectionEntry(manifest: manifest, readiness: manifest.readiness(in: config),
