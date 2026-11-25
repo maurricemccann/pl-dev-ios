@@ -89,6 +89,9 @@ struct CalendarItem: Decodable, Identifiable, Hashable {
             // only a window that starts this month holds every reminder still ahead; another month would drop some
             if start == Self.thisMonth { scheduleReminders() }
         } catch {
+            // a re-run load (pull to refresh, a month change) cancels this one: keep the last good items, say nothing.
+            // Task.isCancelled, not URLError.cancelled: a refused certificate also ends as URLError.cancelled and must still show.
+            if Task.isCancelled || error is CancellationError { return }
             problem = "The calendar did not load: " + plainSentence(error)
         }
     }
@@ -102,6 +105,7 @@ struct CalendarItem: Decodable, Identifiable, Hashable {
             await load(model: model)
             return true
         } catch {
+            if Task.isCancelled || error is CancellationError { return false }   // cancelled, not refused: no false sentence
             problem = "Not saved: " + plainSentence(error)
             return false
         }
