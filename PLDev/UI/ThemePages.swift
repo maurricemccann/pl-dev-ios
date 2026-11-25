@@ -90,8 +90,17 @@ struct WallpaperPage: View {
     @AppStorage("pldev.styleWall") private var wall = ""
     @AppStorage("pldev.tileStrength") private var strength = 0.5
 
-    private static let art = "https://pub-4420dc4349624d6bbed7eb9555f42661.r2.dev/"
-    private static let picks: [(String, String)] = [
+    private static let art = ThemeFeed.r2
+    /// Build 380's wallpapers, then the feed's (config over the air, S353·7b1e): a feed id that matches one ("PL-0138") replaces it.
+    private static var picks: [(String, String)] {
+        let feed = ThemeFeed.wallpapers
+        let kept = builtInPicks.filter { p in !feed.contains { p.0.hasPrefix($0.id + " ") } }
+        return kept + feed.map { w in
+            let mode = ["mask", "color", "invert"].contains(w.mode ?? "") ? w.mode! : "color"
+            return (w.title, mode + "|" + (w.url.hasPrefix("https://") ? w.url : art + w.url))
+        }
+    }
+    private static let builtInPicks: [(String, String)] = [
         ("PL-0138 · Studio night", "mask|" + art + "abstract-pattern_organic-curves_monochrome_digital_970.png"),
         ("PL-0369 · Drop day", "color|" + art + "abstract-pattern_organic-interlocking_red-warm_digital_2437.png"),
         ("PL-0539 · Copper", "color|" + art + "abstract-pattern_organic-flowing_warm-pink_digital_4693.png"),

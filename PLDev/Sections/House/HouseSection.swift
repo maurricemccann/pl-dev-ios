@@ -276,19 +276,18 @@ struct FounderTab: View {
                     door("Tempo engine", "metronome", .tempo)
                 }
                 OSPanel(title: "Rooms") {
-                    door("The Atlas · the whole house, drawn", "map", .atlas)
-                    door("Operations · support, shipping, returns", "shippingbox", .ops)
-                    door("Codex", "book.closed", .codex)
-                    door("Source interview", "quote.bubble", .source)
-                    door("Comments to post", "text.bubble", .comments)
-                    door("Precedent", "square.grid.2x2", .precedent)
-                    door("Search the corpus", "magnifyingglass", .corpus)
-                    door("Council", "person.3", .council)
-                    door("V.A.U.L.T. board · the local fleet, in chat", "terminal", .jarvis)
-                    Link(destination: URL(string: "psyclaupse://")!) {   // the call app, by its own scheme (11-13)
-                        OSRow(title: "Call Claude", meta: "Psyclaupse") { Image(systemName: "phone.fill").foregroundStyle(PLOS.gold) }
+                    // the feed's house.doors orders, hides and renames these (config over the air, S353·7b1e); "call" is the call app
+                    ForEach(ThemeFeed.doorOrder(Self.rooms.map(\.id)), id: \.self) { id in
+                        if id == "call" {
+                            if !ThemeFeed.doorHidden("call") {
+                                Link(destination: URL(string: "psyclaupse://")!) {   // the call app, by its own scheme (11-13)
+                                    OSRow(title: ThemeFeed.doorName("call", "Call Claude"), meta: "Psyclaupse") { Image(systemName: "phone.fill").foregroundStyle(PLOS.gold) }
+                                }
+                            }
+                        } else if let r = Self.rooms.first(where: { $0.id == id }), let room = HouseRoom(rawValue: id) {
+                            door(r.title, r.symbol, room)
+                        }
                     }
-                    door("Academy · reader, oracle, forge, drills", "graduationcap", .academy)
                 }
                 houseSwitches
                 standingPanel
@@ -487,14 +486,26 @@ struct FounderTab: View {
 
     // MARK: a door to a room
 
-    private func door(_ title: String, _ symbol: String, _ room: HouseRoom, plain: Bool = false) -> some View {
-        Button { state.room = room } label: {
-            if plain { Label(title, systemImage: symbol) }
-            else {
-                OSRow(title: title) { Image(systemName: "chevron.right").font(Font.pl(.caption).weight(.bold)).foregroundStyle(PLOS.goldDim(scheme)) }
+    /// The Rooms panel in build 380's order; ids are HouseRoom names, plus "call".
+    private static let rooms: [(id: String, title: String, symbol: String)] = [
+        ("atlas", "The Atlas · the whole house, drawn", "map"), ("ops", "Operations · support, shipping, returns", "shippingbox"),
+        ("codex", "Codex", "book.closed"), ("source", "Source interview", "quote.bubble"), ("comments", "Comments to post", "text.bubble"),
+        ("precedent", "Precedent", "square.grid.2x2"), ("corpus", "Search the corpus", "magnifyingglass"), ("council", "Council", "person.3"),
+        ("jarvis", "V.A.U.L.T. board · the local fleet, in chat", "terminal"), ("call", "Call Claude", "phone.fill"),
+        ("academy", "Academy · reader, oracle, forge, drills", "graduationcap")]
+
+    /// A door the feed's house.doors has not hidden, under the name it gives (S353·7b1e).
+    @ViewBuilder private func door(_ title: String, _ symbol: String, _ room: HouseRoom, plain: Bool = false) -> some View {
+        if !ThemeFeed.doorHidden(room.rawValue) {
+            let name = ThemeFeed.doorName(room.rawValue, title)
+            Button { state.room = room } label: {
+                if plain { Label(name, systemImage: symbol) }
+                else {
+                    OSRow(title: name) { Image(systemName: "chevron.right").font(Font.pl(.caption).weight(.bold)).foregroundStyle(PLOS.goldDim(scheme)) }
+                }
             }
+            .buttonStyle(.plain)
         }
-        .buttonStyle(.plain)
     }
 }
 

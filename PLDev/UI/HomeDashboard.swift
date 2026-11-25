@@ -50,7 +50,7 @@ struct HomeDashboard: View {
         }
         .task { await load() }
         .task {   // the PC moves; read it again every minute while Home is on screen
-            while !Task.isCancelled { try? await Task.sleep(for: .seconds(60)); await loadPC() }
+            while !Task.isCancelled { try? await Task.sleep(for: .seconds(ThemeFeed.pcPoll ?? 60)); await loadPC() }
         }
     }
 
@@ -58,7 +58,7 @@ struct HomeDashboard: View {
 
     private var runwayCard: some View {
         VStack(alignment: .leading, spacing: 10) {
-            Text("The drip").plHand(20)
+            Text(ThemeFeed.text("home.card.drip", "The drip")).plHand(20)
             let lanes = (runway?.lane_runway_days ?? [:]).map { (p: $0.key, d: $0.value) }.sorted { $0.d < $1.d }
             let target = runway?.lane_runway_ceiling_days ?? 14
             if lanes.isEmpty {
@@ -124,9 +124,9 @@ struct HomeDashboard: View {
         let fresh = capture.trail.filter { ($0.created_at ?? "").hasPrefix(today) }
         let back = capture.deck.sorted { ($0.created_at ?? "") < ($1.created_at ?? "") }.first   // the oldest still waiting
         return VStack(alignment: .leading, spacing: 10) {
-            Text("Captures").plHand(20)
+            Text(ThemeFeed.text("home.card.captures", "Captures")).plHand(20)
             if fresh.isEmpty {
-                Text("Nothing captured today yet.").font(Font.pl(.callout)).foregroundStyle(.secondary)
+                Text(ThemeFeed.text("home.captures.empty", "Nothing captured today yet.")).font(Font.pl(.callout)).foregroundStyle(.secondary)
             } else {
                 Text("Today, \(fresh.count)").plLabel(10).foregroundStyle(.secondary)
                 ForEach(fresh.prefix(4)) { r in
@@ -193,7 +193,7 @@ struct HomeDashboard: View {
         return door("town") {
             VStack(alignment: .leading, spacing: 10) {
                 HStack {
-                    Text("Task Town").plHand(20)
+                    Text(ThemeFeed.text("home.card.town", "Task Town")).plHand(20)
                     Spacer()
                     Image(systemName: "arrow.right").font(Font.pl(size: 11, weight: .bold)).foregroundStyle(Color.primary.opacity(0.9))
                 }
@@ -265,7 +265,7 @@ struct HomeDashboard: View {
         door("glyphbot/ask") {
             HStack(spacing: 10) {
                 Image(systemName: "sparkle").foregroundStyle(Color.primary)
-                Text("Ask GlyphBot anything").foregroundStyle(Color.primary.opacity(0.85))
+                Text(ThemeFeed.text("home.ask", "Ask GlyphBot anything")).foregroundStyle(Color.primary.opacity(0.85))
                 Spacer()
                 Image(systemName: "arrow.up.circle.fill").font(Font.pl(.title3)).foregroundStyle(Color.primary)
             }
@@ -279,7 +279,7 @@ struct HomeDashboard: View {
     private var pcCard: some View {
         VStack(alignment: .leading, spacing: 10) {
             HStack {
-                Text("The PC").plHand(20)
+                Text(ThemeFeed.text("home.card.pc", "The PC")).plHand(20)
                 Spacer()
                 if let at = pc?.thermal?.last?.date {
                     // the PC logs every 5 minutes: a reading over 10 minutes old is late, over 30 means the logger has stopped
@@ -327,7 +327,7 @@ struct HomeDashboard: View {
 
     private var houseCard: some View {
         VStack(alignment: .leading, spacing: 10) {
-            Text("The house").plHand(20)
+            Text(ThemeFeed.text("home.card.house", "The house")).plHand(20)
             if let h = house {
                 HStack(alignment: .top) {
                     door("house/founder") { stat("Needs you", icon: "exclamationmark.circle", "\(h.needs)", PLStatus.waiting(h.needs, whenAny: .bad)) }   // a tap opens what needs him (his note 11-13)

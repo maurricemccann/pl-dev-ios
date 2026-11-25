@@ -61,7 +61,7 @@ struct HomeView: View {
                 NoteLine(symbol: "exclamationmark.triangle.fill", tint: PLTone.warn, text: line)
             }
             if model.sections.isEmpty {
-                EmptyNote(symbol: "square.grid.2x2", title: "Nothing to show yet",
+                EmptyNote(symbol: "square.grid.2x2", title: ThemeFeed.text("home.empty", "Nothing to show yet"),
                           detail: "Your config lists sections this build does not have. Settings and the probes still work.",
                           actionTitle: "Open Settings") { openSettings() }
                     .padding(.top, PLSpace.block)
@@ -105,17 +105,22 @@ struct HomeView: View {
         .padding(.horizontal, PLSpace.margin).padding(.top, PLSpace.gap).padding(.bottom, 120)
     }
 
+    /// The three pages' names; the feed's copy may rename them (config over the air, S353·7b1e).
+    private static var pageNames: [String] {
+        [ThemeFeed.text("home.page.today", "Today"), ThemeFeed.text("home.page.apps", "Apps"), ThemeFeed.text("home.page.pulse", "Pulse")]
+    }
+
     private var pageDots: some View {
         HStack(spacing: 8) {
             ForEach(0..<3, id: \.self) { i in   // named, not dots (Codex 11-14, his pick N6)
-                Text(["Today", "Apps", "Pulse"][i]).font(Font.pl(.footnote).weight(page == i ? .bold : .regular))
+                Text(Self.pageNames[i]).font(Font.pl(.footnote).weight(page == i ? .bold : .regular))
                     .foregroundStyle(Color.primary.opacity(page == i ? 0.95 : 0.5))
                     .frame(minHeight: 32).contentShape(Rectangle())
                     .onTapGesture { withAnimation(.snappy) { page = i } }
             }
         }
         .padding(.horizontal, 6).padding(.vertical, 6)
-        .accessibilityElement().accessibilityLabel(["Today, page 1 of 3", "Apps, page 2 of 3", "Pulse, page 3 of 3"][min(max(page, 0), 2)])
+        .accessibilityElement().accessibilityLabel("\(Self.pageNames[min(max(page, 0), 2)]), page \(min(max(page, 0), 2) + 1) of 3")
         .accessibilityAdjustableAction { d in withAnimation { page = min(max(page + (d == .increment ? 1 : -1), 0), 2) } }
     }
 
@@ -378,7 +383,7 @@ private struct WidgetHowTo: View {
     @State private var where_ = 0
     @Environment(\.dismiss) private var dismiss
     private let home = ["Touch and hold an empty part of the Home Screen until the apps jiggle.", "Tap Edit at the top, then Add Widget.",
-                        "Search PL DEV, pick a widget (House, Snapshot, Practice, Composer and the rest) and a size, then Add Widget.",
+                        "Search PL DEV, pick a widget (House, Snapshot, Practice and the rest) and a size, then Add Widget.",
                         "To see them all in one place, swipe right on your first Home Screen page: that is Today View."]
     private let lock = ["Touch and hold the Lock Screen until Customize shows, then tap Customize and Lock Screen.",
                         "Tap the space under the clock to open the widget tray.", "Search PL DEV and add House, Practice or the Status ring.",

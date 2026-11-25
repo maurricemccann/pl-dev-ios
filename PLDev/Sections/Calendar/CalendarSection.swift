@@ -19,6 +19,25 @@ import UserNotifications
     }
 }
 
+/// The calendars (config over the air, S353·7b1e): the feed's `calendar.kinds` when it lists any, else build 380's four.
+/// An id the server does not know yet is stored as a reminder (pl-cron `calendar_items` accepts drop, reminder, content, task, other).
+enum CalendarKinds {
+    static let builtIn: [ThemeFeed.CalendarKind] = [
+        .init(id: "reminder", label: "Reminder", symbol: "bell", accent: false, time: nil),
+        .init(id: "drop", label: "Drop", symbol: "bag", accent: true, time: "09:00"),
+        .init(id: "content", label: "Content", symbol: "film", accent: false, time: nil),
+        .init(id: "task", label: "Task", symbol: "checklist", accent: false, time: nil)]
+    static var all: [ThemeFeed.CalendarKind] { ThemeFeed.calendarKinds ?? builtIn }
+    static func find(_ id: String) -> ThemeFeed.CalendarKind? { all.first { $0.id == id } ?? builtIn.first { $0.id == id } }
+    static func symbol(_ id: String) -> String { find(id)?.symbol ?? "circle" }
+    static func accent(_ id: String) -> Bool { find(id)?.accent ?? false }
+    static func label(_ id: String) -> String { find(id)?.label ?? id.capitalized }
+    static var standard: String {
+        let d = ThemeFeed.calendarDefault ?? "reminder"
+        return all.contains { $0.id == d } ? d : (all.first?.id ?? "reminder")
+    }
+}
+
 struct CalendarItem: Decodable, Identifiable, Hashable {
     let id: Int
     let date: String
@@ -59,7 +78,7 @@ struct CalendarItem: Decodable, Identifiable, Hashable {
         struct Post: Decodable { let date: String; let count: Int }
         let start = from ?? self.from
         do {
-            let data = try await http.send(RequestPlan(origin: "cron", path: "api/widget/calendar", query: ["from": start, "days": "120"]),
+            let data = try await http.send(RequestPlan(origin: "cron", path: "api/widget/calendar", query: ["from": start, "days": String(ThemeFeed.calendarDays ?? 120)]),
                                            extraHeaders: ["Authorization": "Bearer " + key])
             let out = try JSONDecoder().decode(Out.self, from: data)
             items = out.items
@@ -98,7 +117,7 @@ struct CalendarItem: Decodable, Identifiable, Hashable {
         guard d.bool(forKey: "pldev.notify") else { return }
         let pt = TimeZone(identifier: "America/Los_Angeles")
         for item in items where item.done == 0 {
-            let time = item.time ?? (item.kind == "drop" ? "09:00" : nil)
+            let time = item.time ?? CalendarKinds.find(item.kind)?.time   // build 380: drops at 09:00, the rest only with a time
             guard let time else { continue }
             let d = item.date.split(separator: "-").compactMap { Int($0) }, t = time.split(separator: ":").compactMap { Int($0) }
             guard d.count == 3, t.count == 2 else { continue }
@@ -106,7 +125,7 @@ struct CalendarItem: Decodable, Identifiable, Hashable {
             parts.timeZone = pt
             guard let when = Calendar(identifier: .gregorian).date(from: parts), when > Date() else { continue }
             let content = UNMutableNotificationContent()
-            content.title = item.kind == "drop" ? "Drop today" : "Calendar"
+            content.title = item.kind == "drop" ? ThemeFeed.text("calendar.dropNotice", "Drop today") : ThemeFeed.text("calendar.notice", "Calendar")
             content.body = item.title
             content.sound = .default
             center.add(UNNotificationRequest(identifier: "cal-\(item.id)", content: content,
@@ -160,7 +179,7 @@ struct SharedCalendarView: View {
                 }
                 if state.loaded && dayItems.isEmpty {
                     Button { adding = true } label: {
-                        Label("Nothing on this day. Add one", systemImage: "plus.circle")
+                        Label(ThemeFeed.text("calendar.empty", "Nothing on this day. Add one"), systemImage: "plus.circle")
                             .plFont(.callout).frame(maxWidth: .infinity, minHeight: PLMetric.touch, alignment: .leading)
                     }
                     .tint(PLTone.accent)
@@ -186,7 +205,7 @@ struct SharedCalendarView: View {
             }
         }
         .plGround()
-        .plScreenTitle("Calendar")
+        .plScreenTitle(ThemeFeed.text("calendar.title", "Calendar"))
         .toolbar {
             ToolbarItem(placement: .topBarLeading) {
                 Button("Today") { select(CalendarModel.today) }
@@ -246,8 +265,8 @@ struct SharedCalendarView: View {
     private func dayCell(_ k: String) -> some View {
         let isToday = k == CalendarModel.today, isSelected = k == selected
         let open = state.items.filter { $0.date == k && $0.done == 0 }
-        let hasDrop = open.contains { $0.kind == "drop" }
-        let hasOther = open.contains { $0.kind != "drop" } || (state.posts[k] ?? 0) > 0
+        let hasDrop = open.contains { CalendarKinds.accent($0.kind) }   // the accent dot: drops in build 380, any accent calendar from the feed
+        let hasOther = open.contains { !CalendarKinds.accent($0.kind) } || (state.posts[k] ?? 0) > 0
         return Button { selected = k } label: {
             VStack(spacing: 3) {
                 Text("\(Int(k.suffix(2)) ?? 0)")
@@ -291,14 +310,14 @@ struct SharedCalendarView: View {
 
     private func row(_ item: CalendarItem) -> some View {
         HStack(alignment: .top, spacing: PLSpace.gap) {
-            Image(systemName: Self.symbol(item.kind)).foregroundStyle(item.kind == "drop" ? PLTone.accent : .secondary)
+            Image(systemName: CalendarKinds.symbol(item.kind)).foregroundStyle(CalendarKinds.accent(item.kind) ? PLTone.accent : .secondary)
                 .frame(width: 24)
             VStack(alignment: .leading, spacing: 2) {
                 Text(item.title).plFont(.body).strikethrough(item.done == 1).foregroundStyle(item.done == 1 ? .secondary : .primary)
                 HStack(spacing: 6) {
                     if let time = item.time { Text(Self.time12(time)) }
                     Text(item.by == "claude" ? "Claude" : "You")
-                    Text(item.kind.capitalized)
+                    Text(CalendarKinds.label(item.kind))
                 }
                 .plFont(.caption).foregroundStyle(.secondary)
                 if let note = item.note, !note.isEmpty { Text(note).plFont(.caption).foregroundStyle(.secondary) }
@@ -307,16 +326,6 @@ struct SharedCalendarView: View {
         }
         .frame(minHeight: PLMetric.touch)
         .accessibilityElement(children: .combine)
-    }
-
-    static func symbol(_ kind: String) -> String {
-        switch kind {
-        case "drop": return "bag"
-        case "content": return "film"
-        case "task": return "checklist"
-        case "reminder": return "bell"
-        default: return "circle"
-        }
     }
 
     static func time12(_ hhmm: String) -> String {
@@ -346,7 +355,7 @@ struct CalendarAddSheet: View {
     @State private var day = Date()
     @State private var timed = false
     @State private var time = Date()
-    @State private var kind = "reminder"
+    @State private var kind = CalendarKinds.standard
     @State private var note = ""
     @State private var saving = false
 
@@ -362,7 +371,7 @@ struct CalendarAddSheet: View {
             Form {
                 TextField("What", text: $title)
                 Picker("Kind", selection: $kind) {
-                    Text("Reminder").tag("reminder"); Text("Drop").tag("drop"); Text("Content").tag("content"); Text("Task").tag("task")
+                    ForEach(CalendarKinds.all, id: \.id) { k in Text(CalendarKinds.label(k.id)).tag(k.id) }
                 }
                 DatePicker("Day", selection: $day, displayedComponents: .date)
                 Toggle("At a time", isOn: $timed)

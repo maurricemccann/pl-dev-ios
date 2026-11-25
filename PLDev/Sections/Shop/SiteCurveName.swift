@@ -15,7 +15,8 @@ struct CurveNameView: View {
 
     struct ShareImage: Identifiable { let image: Image; let id = UUID() }
 
-    private static let socials: [(String, String)] = [
+    private static var socials: [(String, String)] { ThemeFeed.socials ?? builtInSocials }   // the feed's links.socials (S353·7b1e)
+    private static let builtInSocials: [(String, String)] = [
         ("Instagram", "https://instagram.com/psychedluxuries"), ("Threads", "https://www.threads.net/@psychedluxuries"),
         ("Tumblr", "https://psychedluxuries.tumblr.com"), ("Bluesky", "https://bsky.app/profile/psychedluxuries.bsky.social"),
         ("X", "https://x.com/psychedluxuries"),

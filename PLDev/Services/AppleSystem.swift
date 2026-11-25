@@ -162,12 +162,12 @@ import FoundationModels
         #endif
     }
 
-    private static let banned = ["excited", "honored", "blessed", "check out", "amazing", "unique", "limited", "exclusive", "manifest"]
+    private static var banned: [String] { ThemeFeed.banned ?? ["excited", "honored", "blessed", "check out", "amazing", "unique", "limited", "exclusive", "manifest"] }   // the feed's words.banned when set (S353·7b1e)
 
     /// A first draft of a caption from a seed (a title, a line, an existing caption). The house voice is in the instructions and
     /// checked after: a draft that breaks it is thrown away, not shown.
     static func captionDraft(seed: String, platform: String?) async -> String? {
-        let rules = "You write captions for Psyched Luxuries, a philosophy-first wearable art brand. Voice: declarative, earned certainty, spare and weighted, catalogue prose. Never use: excited, honored, blessed, check out, amazing, unique, limited, exclusive, manifest. Never ask a question. No hashtags, no emoji. Two short sentences at most."
+        let rules = "You write captions for Psyched Luxuries, a philosophy-first wearable art brand. Voice: declarative, earned certainty, spare and weighted, catalogue prose. Never use: " + banned.joined(separator: ", ") + ". Never ask a question. No hashtags, no emoji. Two short sentences at most."
         guard let text = await ask(instructions: rules, prompt: "Write one caption" + (platform.map { " for \($0)" } ?? "") + " about:\n\(seed)") else { return nil }
         let lower = text.lowercased()
         if banned.contains(where: { lower.contains($0) }) || text.hasSuffix("?") { return nil }

@@ -6,7 +6,9 @@ import Foundation
 /// looks and walls the app already draws, or hides one; its palettes override or add colourways by name. New code still needs
 /// SideStore. Sessions publish it: `Plans/SPEC — PL DEV THEMES OVER THE AIR (S353).md`.
 enum ThemeFeed {
-    static let url = URL(string: "https://pub-4420dc4349624d6bbed7eb9555f42661.r2.dev/pldev/themes.json")!
+    /// The public archive bucket (art and this feed). One constant: Themes, the wallpapers and the feed all read it.
+    static let r2 = "https://pub-4420dc4349624d6bbed7eb9555f42661.r2.dev/"
+    static let url = URL(string: r2 + "pldev/themes.json")!
 
     struct Patch: Codable, Equatable {
         var id: String
@@ -23,27 +25,155 @@ enum ThemeFeed {
         var hidden: Bool?
     }
 
+    /// Every block is optional (config over the air, phase 1, S353·7b1e): a missing block leaves that screen on its built-in value.
+    /// Builds before this one still need `version`, `themes` and `palettes` in the file; only ever add optional fields.
     struct Feed: Codable, Equatable {
         var version: Int
-        var themes: [Patch]
-        var palettes: [HousePalette]
+        var themes: [Patch]? = nil
+        var palettes: [HousePalette]? = nil
         var home: Home? = nil
+        var calendar: CalendarList? = nil
+        var copy: [String: String]? = nil
+        var words: Words? = nil
+        var truths: [String]? = nil
+        var house: House? = nil
+        var wallpapers: [Wallpaper]? = nil
+        var timing: Timing? = nil
+        var links: Links? = nil
     }
 
-    /// Home over the air (his "Sure", 11-24): the sections' order, which are hidden, and what each is called.
+    /// Home over the air (his "Sure", 11-24): the sections' order, which are hidden, what each is called, and its SF Symbol.
     struct Home: Codable, Equatable {
+        var order: [String]?
+        var hidden: [String]?
+        var names: [String: String]?
+        var symbols: [String: String]?
+    }
+
+    /// One calendar in Calendar's Add picker: id (what the server stores), label, SF Symbol, accent (true) or grey, and the
+    /// reminder time for an item of that kind with no time of its own ("09:00"; left out = no reminder).
+    struct CalendarKind: Codable, Equatable {
+        var id: String
+        var label: String?
+        var symbol: String?
+        var accent: Bool?
+        var time: String?
+    }
+    struct CalendarList: Codable, Equatable {
+        var kinds: [CalendarKind]?
+        var `default`: String?
+        var days: Int?
+    }
+
+    struct Words: Codable, Equatable {
+        var banned: [String]?
+        var voice: [String]?
+    }
+
+    struct House: Codable, Equatable {
+        var doors: Doors?
+    }
+    /// The House rooms, by room id: the Rooms panel's order, the doors hidden anywhere, and their names.
+    struct Doors: Codable, Equatable {
         var order: [String]?
         var hidden: [String]?
         var names: [String: String]?
     }
 
+    /// A wallpaper from the archive: `url` is a full https address or a file name in the public bucket; `mode` is how it is
+    /// drawn (color, mask or invert; color when left out). An id the app already has replaces that wallpaper.
+    struct Wallpaper: Codable, Equatable {
+        var id: String
+        var title: String
+        var url: String
+        var mode: String?
+    }
+
+    /// Refresh rates in seconds, the stream page size, and the defaults for the practice hour and quiet hours ("HH:MM").
+    struct Timing: Codable, Equatable {
+        var poll, pcPoll: Double?
+        var streamLimit, practiceHour: Int?
+        var quietFrom, quietTo: String?
+    }
+
+    struct Social: Codable, Equatable {
+        var name: String
+        var url: String
+    }
+    /// `compose` maps a platform to its composer address; `{text}` in it becomes the caption, encoded.
+    struct Links: Codable, Equatable {
+        var socials: [Social]?
+        var compose: [String: String]?
+    }
+
+    /// Composer and PL World stay off Home unless the feed's `home.hidden` says otherwise (a list there replaces this one).
+    static let defaultHidden = ["composer", "plworld"]
+
     /// The config's section order with the feed's laid over it: its order first, then any section it did not name (so a new
     /// section is never lost), minus the hidden ones.
     static func homeOrder(_ base: [String]) -> [String] {
-        guard let h = cached?.home else { return base }
-        let first = (h.order ?? []).filter(base.contains)
-        let hidden = Set(h.hidden ?? [])
+        let h = cached?.home
+        let first = (h?.order ?? []).filter(base.contains)
+        let hidden = Set(h?.hidden ?? defaultHidden)
         return (first + base.filter { !first.contains($0) }).filter { !hidden.contains($0) }
+    }
+
+    static func sectionSymbol(_ id: String, _ fallback: String) -> String { nonEmpty(cached?.home?.symbols?[id]) ?? fallback }
+
+    // MARK: the phase-1 blocks, read by the screens (nil or empty = the screen keeps its built-in value)
+
+    static func text(_ key: String, _ fallback: String) -> String { nonEmpty(cached?.copy?[key]) ?? fallback }
+
+    static var calendarKinds: [CalendarKind]? {
+        let k = (cached?.calendar?.kinds ?? []).filter { !$0.id.trimmingCharacters(in: .whitespaces).isEmpty }
+        return k.isEmpty ? nil : k
+    }
+    static var calendarDefault: String? { nonEmpty(cached?.calendar?.default) }
+    static var calendarDays: Int? { cached?.calendar?.days.flatMap { (1...400).contains($0) ? $0 : nil } }
+
+    static var banned: [String]? { list(cached?.words?.banned) }
+    static var voice: [String]? { list(cached?.words?.voice) }
+
+    /// The Three Truths, only when the file carries all three.
+    static var truths: [String]? { list(cached?.truths).flatMap { $0.count == 3 ? $0 : nil } }
+
+    static func doorName(_ id: String, _ fallback: String) -> String { nonEmpty(cached?.house?.doors?.names?[id]) ?? fallback }
+    static func doorHidden(_ id: String) -> Bool { cached?.house?.doors?.hidden?.contains(id) ?? false }
+    /// The ids in the feed's order first, then the rest in their own order.
+    static func doorOrder(_ base: [String]) -> [String] {
+        let first = (cached?.house?.doors?.order ?? []).filter(base.contains)
+        return first + base.filter { !first.contains($0) }
+    }
+
+    static var wallpapers: [Wallpaper] {
+        (cached?.wallpapers ?? []).filter { !$0.id.isEmpty && !$0.title.isEmpty && !$0.url.isEmpty }
+    }
+
+    static var poll: Double? { cached?.timing?.poll.flatMap { $0 >= 30 && $0 <= 3600 ? $0 : nil } }
+    static var pcPoll: Double? { cached?.timing?.pcPoll.flatMap { $0 >= 15 && $0 <= 3600 ? $0 : nil } }
+    static var streamLimit: Int? { cached?.timing?.streamLimit.flatMap { (1...100).contains($0) ? $0 : nil } }
+    static var practiceHour: Int? { cached?.timing?.practiceHour.flatMap { (0...23).contains($0) ? $0 : nil } }
+    static var quietFrom: String? { hhmm(cached?.timing?.quietFrom) }
+    static var quietTo: String? { hhmm(cached?.timing?.quietTo) }
+
+    static var socials: [(String, String)]? {
+        let s = (cached?.links?.socials ?? []).filter { !$0.name.isEmpty && $0.url.hasPrefix("https://") }.map { ($0.name, $0.url) }
+        return s.isEmpty ? nil : s
+    }
+    static func social(_ name: String) -> String? { socials?.first { $0.0 == name }?.1 }
+    static func compose(_ platform: String) -> String? { nonEmpty(cached?.links?.compose?[platform]).flatMap { $0.hasPrefix("https://") ? $0 : nil } }
+
+    private static func nonEmpty(_ s: String?) -> String? {
+        guard let t = s?.trimmingCharacters(in: .whitespaces), !t.isEmpty else { return nil }
+        return t
+    }
+    private static func list(_ a: [String]?) -> [String]? {
+        let l = (a ?? []).map { $0.trimmingCharacters(in: .whitespaces) }.filter { !$0.isEmpty }
+        return l.isEmpty ? nil : l
+    }
+    private static func hhmm(_ s: String?) -> String? {
+        guard let s, Quiet.minutes(s) != nil else { return nil }
+        return s
     }
 
     static func sectionName(_ id: String, _ fallback: String) -> String {
@@ -72,22 +202,24 @@ enum ThemeFeed {
         cached = new
         if new.home != old?.home { AppModel.shared.reloadHome() }
         var changed = Set<String>()
-        let ids = Set((old?.themes ?? []).map(\.id)).union(new.themes.map(\.id))
-        for id in ids where old?.themes.first(where: { $0.id == id }) != new.themes.first(where: { $0.id == id }) { changed.insert(id) }
-        let palettesChanged = Set((old?.palettes ?? []).map(\.name)).symmetricDifference(new.palettes.map(\.name))
-            .union(new.palettes.filter { p in old?.palettes.first(where: { $0.name == p.name }) != p }.map(\.name))
+        let oldThemes = old?.themes ?? [], newThemes = new.themes ?? []
+        let oldPalettes = old?.palettes ?? [], newPalettes = new.palettes ?? []
+        let ids = Set(oldThemes.map(\.id)).union(newThemes.map(\.id))
+        for id in ids where oldThemes.first(where: { $0.id == id }) != newThemes.first(where: { $0.id == id }) { changed.insert(id) }
+        let palettesChanged = Set(oldPalettes.map(\.name)).symmetricDifference(newPalettes.map(\.name))
+            .union(newPalettes.filter { p in oldPalettes.first(where: { $0.name == p.name }) != p }.map(\.name))
         for t in PLThemePreset.all where palettesChanged.contains(t.palette) { changed.insert(t.id) }
         return changed
     }
 
     /// The built-in themes with the feed laid over them.
     static func merge(_ base: [PLThemePreset]) -> [PLThemePreset] {
-        guard let feed = cached else { return base }
+        guard let themes = cached?.themes, !themes.isEmpty else { return base }
         var out = base.compactMap { b -> PLThemePreset? in
-            guard let p = feed.themes.first(where: { $0.id == b.id }) else { return b }
+            guard let p = themes.first(where: { $0.id == b.id }) else { return b }
             return p.hidden == true ? nil : apply(p, to: b)
         }
-        for p in feed.themes where p.hidden != true && !base.contains(where: { $0.id == p.id }) {
+        for p in themes where p.hidden != true && !base.contains(where: { $0.id == p.id }) {
             if let t = whole(p) { out.append(t) }
         }
         return out
@@ -95,9 +227,9 @@ enum ThemeFeed {
 
     /// The built-in palettes with the feed's: a palette of the same name is replaced, a new one is added.
     static func palettes(_ base: [HousePalette]) -> [HousePalette] {
-        guard let feed = cached, !feed.palettes.isEmpty else { return base }
-        let names = Set(feed.palettes.map(\.name))
-        return base.filter { !names.contains($0.name) } + feed.palettes
+        guard let feedPalettes = cached?.palettes, !feedPalettes.isEmpty else { return base }
+        let names = Set(feedPalettes.map(\.name))
+        return base.filter { !names.contains($0.name) } + feedPalettes
     }
 
     private static func apply(_ p: Patch, to b: PLThemePreset) -> PLThemePreset {

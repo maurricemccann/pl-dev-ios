@@ -48,7 +48,7 @@ enum Quiet {
     static let shared = Poller()
     static let taskID = "com.psychedluxuries.dev.refresh"   // must match BGTaskSchedulerPermittedIdentifiers in the Info.plist
     static let processID = "com.psychedluxuries.dev.process"   // the longer, plugged-in window iOS grants a BGProcessingTask
-    private static let interval: Duration = .seconds(120)
+    private static var interval: Duration { .seconds(ThemeFeed.poll ?? 120) }   // the feed's timing.poll when set (S353·7b1e)
 
     private var loop: Task<Void, Never>?
     private var refreshing = false

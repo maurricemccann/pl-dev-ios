@@ -108,7 +108,7 @@ struct StreamItem: Decodable, Hashable, Identifiable {
     private struct Page: Decodable { let items: [StreamItem]; let nextCursor: Int?; let total: Int? }
 
     private func fetch(_ cursor: Int) async throws -> Page {
-        var q = ["cursor": String(cursor), "limit": "24"]
+        var q = ["cursor": String(cursor), "limit": String(ThemeFeed.streamLimit ?? 24)]
         if let kind { q["kind"] = kind }
         return try await Site.get("api/congregation/stream", Page.self, query: q)
     }

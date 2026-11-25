@@ -261,8 +261,11 @@ struct ArchitectGame: View {
     }
 
     static let hedges = ["maybe", "try", "hope", "want", "wish", "might", "could", "would like", "someday", "eventually"]
-    static let strong = ["am", "is", "are", "have", "create", "build", "attract", "generate", "lead", "command", "hold", "own", "shape", "become", "draw", "move", "know", "see", "stand", "walk"]
-    static let banned = ["excited", "honored", "blessed", "check out", "amazing", "unique", "limited", "exclusive", "manifest"]
+    // config over the air (S353·7b1e): the feed's words.voice and words.banned replace these when set
+    static var strong: [String] { ThemeFeed.voice ?? builtInStrong }
+    static var banned: [String] { ThemeFeed.banned ?? Self.builtInBanned }
+    static let builtInStrong = ["am", "is", "are", "have", "create", "build", "attract", "generate", "lead", "command", "hold", "own", "shape", "become", "draw", "move", "know", "see", "stand", "walk"]
+    static let builtInBanned = ["excited", "honored", "blessed", "check out", "amazing", "unique", "limited", "exclusive", "manifest"]
 
     /// The beta's clarity rules, on whole words (the beta matched "try" inside "country"). Returns the score and a line per rule hit.
     static func score(_ raw: String) -> (score: Int, notes: [String]) {

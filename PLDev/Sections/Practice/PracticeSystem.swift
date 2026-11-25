@@ -14,7 +14,7 @@ import UserNotifications
 @MainActor enum PracticeNotice {
     static let id = "practice.evening"
     static var on: Bool { UserDefaults.standard.object(forKey: "practice.remind") as? Bool ?? true }
-    static var hour: Int { UserDefaults.standard.object(forKey: "practice.hour") as? Int ?? 21 }
+    static var hour: Int { UserDefaults.standard.object(forKey: "practice.hour") as? Int ?? ThemeFeed.practiceHour ?? 21 }
 
     static func registerActions() {
         NotificationHub.actions["practice.habit"] = {
@@ -92,7 +92,7 @@ import UserNotifications
 /// Practice's own Settings rows: the reminder, its hour, and the tips.
 struct PracticeSettingsRows: View {
     @AppStorage("practice.remind") private var on = true
-    @AppStorage("practice.hour") private var hour = 21
+    @AppStorage("practice.hour") private var hour = ThemeFeed.practiceHour ?? 21
     @AppStorage("practice.lessonHour") private var lessonHour = 16
     @AppStorage("course.minutes") private var minutes = 0
 

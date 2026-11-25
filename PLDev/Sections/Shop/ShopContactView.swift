@@ -103,7 +103,7 @@ struct ContactView: View {
                     Text("Or reach out directly \u{2014}").font(SiteFont.body(13)).foregroundStyle(Bone.inkFaint(scheme)).padding(.top, 8)
                     HStack(spacing: 12) {
                         Button("Email") { if let u = Site.base?.host().flatMap({ URL(string: "mailto:support@" + $0.replacingOccurrences(of: "www.", with: "")) }) { openURL(u) } }.buttonStyle(SiteGhost())
-                        Button("Instagram") { if let u = URL(string: "https://instagram.com/psychedluxuries") { openURL(u) } }.buttonStyle(SiteGhost())
+                        Button("Instagram") { if let u = URL(string: ThemeFeed.social("Instagram") ?? "https://instagram.com/psychedluxuries") { openURL(u) } }.buttonStyle(SiteGhost())
                     }
                     NavigationLink { SignalView() } label: { Text("Want the work in your inbox? Receive the signal \u{2192}").siteLabel(10).frame(minHeight: 44) }.buttonStyle(.plain)
                     Text("Watch this.").font(SiteFont.display(26, italic: true)).foregroundStyle(Bone.gold).padding(.top, 4)

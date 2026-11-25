@@ -163,10 +163,10 @@ struct SettingsView: View {
                 }
                 toggleRow("Quiet hours", "No notices between the two times. They are not kept for later.", isOn: quietOn, icon: ("moon.fill", IOS27.SystemColors.indigo))
                 if quietOn.wrappedValue {
-                    DatePicker(selection: time($quietFrom, fallback: "22:00"), displayedComponents: .hourAndMinute) {
+                    DatePicker(selection: time($quietFrom, fallback: ThemeFeed.quietFrom ?? "22:00"), displayedComponents: .hourAndMinute) {
                         Text("From").plFont(.body)
                     }
-                    DatePicker(selection: time($quietTo, fallback: "07:00"), displayedComponents: .hourAndMinute) {
+                    DatePicker(selection: time($quietTo, fallback: ThemeFeed.quietTo ?? "07:00"), displayedComponents: .hourAndMinute) {
                         Text("To").plFont(.body)
                     }
                 }
@@ -199,8 +199,8 @@ struct SettingsView: View {
         Binding(
             get: { Quiet.minutes(quietFrom) != nil && Quiet.minutes(quietTo) != nil },
             set: { on in
-                quietFrom = on ? "22:00" : ""
-                quietTo = on ? "07:00" : ""
+                quietFrom = on ? (ThemeFeed.quietFrom ?? "22:00") : ""
+                quietTo = on ? (ThemeFeed.quietTo ?? "07:00") : ""
             })
     }
 
@@ -241,14 +241,16 @@ struct SettingsView: View {
 
     private var sections: some View {
         Section {
-            ForEach(SectionRegistry.all.map { $0.manifest }) { manifest in
+            // Composer is listed only while the feed has it on Home (so an empty feed reads as build 380 did)
+            ForEach(SectionRegistry.all.map { $0.manifest }.filter { $0.id != "composer" || model.sections.contains { $0.id == "composer" } }) { manifest in
                 let readiness = model.config.map { manifest.readiness(in: $0) } ?? .notListed
                 HStack(spacing: PLSpace.pad) {
-                    Image(systemName: manifest.symbol)
+                    // the names and icons Home shows, from the feed when it sets them (config over the air, S353·7b1e)
+                    Image(systemName: ThemeFeed.sectionSymbol(manifest.id, manifest.symbol))
                         .foregroundStyle(readiness.isReady ? PLTone.accent : PLTone.quiet)
                         .frame(width: 28)
                         .accessibilityHidden(true)
-                    ValueRow(label: manifest.title, value: readiness.plNote ?? "Ready")
+                    ValueRow(label: ThemeFeed.sectionName(manifest.id, manifest.title), value: readiness.plNote ?? "Ready")
                 }
                 if let rows = SectionRegistry.section(manifest.id)?.settingsRows(model: model) {
                     rows

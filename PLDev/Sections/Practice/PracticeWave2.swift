@@ -17,8 +17,11 @@ struct SignalGame: View {
     @State private var done = false
     private let count = 30, gap = 1.4, fall = 6.0
 
-    static let noise = ["excited", "honored", "blessed", "amazing", "unique", "limited", "exclusive", "maybe", "hopefully", "someday",
-                        "eventually", "trying", "wish", "might", "could", "deal", "hurry", "viral", "hack", "guaranteed"]
+    /// The banned words (the feed's words.banned when set, one-word ones only) and the hedges and hype that are not banned.
+    static var noise: [String] {
+        let banned = ThemeFeed.banned.map { $0.filter { !$0.contains(" ") } } ?? ["excited", "honored", "blessed", "amazing", "unique", "limited", "exclusive"]
+        return banned + ["maybe", "hopefully", "someday", "eventually", "trying", "wish", "might", "could", "deal", "hurry", "viral", "hack", "guaranteed"]
+    }
     static let stop: Set<String> = ["about", "after", "again", "their", "there", "these", "those", "which", "while", "where", "other", "every", "being", "would", "should"]
 
     var body: some View {

@@ -407,7 +407,15 @@ private struct ManualRow: View {
     @Environment(\.openURL) private var openURL
 
     /// pl-os ManualPostPanel's compose table: Threads prefills; the rest open their composer with a paste note.
+    /// The feed's links.compose sets a platform's address, {text} becoming the caption; the paste note stays (S353·7b1e).
     private var compose: (url: URL?, note: String?) {
+        let built = builtInCompose
+        guard let p = m.platform, let t = ThemeFeed.compose(p) else { return built }
+        let cap = (m.caption ?? "").addingPercentEncoding(withAllowedCharacters: .alphanumerics) ?? ""
+        return (URL(string: t.replacingOccurrences(of: "{text}", with: cap)), built.note)
+    }
+
+    private var builtInCompose: (url: URL?, note: String?) {
         let cap = (m.caption ?? "").addingPercentEncoding(withAllowedCharacters: .alphanumerics) ?? ""   // & = + # encoded too, like encodeURIComponent
         switch m.platform {
         case "threads": return (URL(string: "https://www.threads.net/intent/post?text=\(cap)"), nil)

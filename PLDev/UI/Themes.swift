@@ -63,7 +63,7 @@ struct PLThemePreset: Identifiable, Hashable {
     var titleFX = ""
 
     private static func house(_ f: String) -> String { "file:fonts/house/\(f)" }
-    private static let art = "https://pub-4420dc4349624d6bbed7eb9555f42661.r2.dev/"
+    private static let art = ThemeFeed.r2
 
     /// The themes as they ship, with the over-the-air file laid over them (ThemeFeed, his 11-24).
     static var all: [PLThemePreset] { ThemeFeed.merge(builtIn) }
