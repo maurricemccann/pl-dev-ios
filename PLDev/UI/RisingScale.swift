@@ -385,7 +385,7 @@ struct CurveScale: View {
 }
 
 /// His head for Buddy (his drawing, 11-25, the red figure from the left-chest embroidery), used as he drew it; the face is
-/// laid on the upper block and the stem's flat foot rests on whatever is under it.
+/// laid on it and the stem's flat foot rests on whatever is under it.
 struct BuddyHead: View {
     let model: BuddyModel
     var side: CGFloat = 144
@@ -394,7 +394,11 @@ struct BuddyHead: View {
     var body: some View {
         ZStack {
             if let art = Self.art { Image(uiImage: art).resizable().scaledToFit().accessibilityHidden(true) }
-            BuddyView(model: model, pinned: true, onHead: true)   // the face sits where he circled on the head
+            // the big face he ticked (11-25), anchored at his green dot (0.47, 0.36 of the head): face 0.66 of the head wide.
+            // pinned = it stays on that spot; every expression and move still plays on it
+            BuddyView(model: model, pinned: true)
+                .frame(width: side * 0.717, height: side * 0.864)   // BuddyView fits 440 x 530 into 0.92 of this box
+                .position(x: side * 0.48, y: side * 0.31)
         }
         .frame(width: side, height: side)
     }
@@ -431,7 +435,9 @@ struct RisingBuddy: View {
         .task(id: rising.current?.at) {
             try? await Task.sleep(for: .seconds(3))
             guard !Task.isCancelled, let said = rising.buddyLine() else { return }
-            buddy.move = "happy"; buddy.moveAt = .now   // a move on his pieces; the whole-face pictures would not fit the head
+            buddy.react(.open)
+            // and the face that matches where he is: calm when low, happy in the middle, excited when high
+            if let band = rising.current?.band { buddy.playState(band <= .low ? "calm" : band <= .steady ? "happy" : "excited") }
             withAnimation { line = said }
             AccessibilityNotification.Announcement(said).post()
             try? await Task.sleep(for: .seconds(8))

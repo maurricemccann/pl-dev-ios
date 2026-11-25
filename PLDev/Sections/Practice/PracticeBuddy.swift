@@ -244,7 +244,6 @@ struct BuddyView: View {
     var trail: [String: CGSize] = [:]   // per-piece lag on his rope (the ragdoll squish); empty everywhere else
     var pinned = false                  // on his rope: no whole-face drift, so the face never leaves the rope's tip (his note 11-15)
     var lesson = false                  // in a lesson he wears ChatGPT's glossy 3D mouth (his ruling 11-15)
-    var onHead = false                  // on his drawn head (11-25): the box is the whole head and the pieces sit where he circled
     @State private var centre = CGPoint.zero   // his centre on screen (global), so his eyes know where the finger is
     @Environment(\.accessibilityReduceMotion) private var reduceMotion
 
@@ -284,16 +283,11 @@ struct BuddyView: View {
 
     private func face(_ a: BuddyFaceArt, size: CGSize, n: [String: Double], now: Date) -> some View {
         let r: (String) -> CGFloat = { CGFloat(n[$0] ?? 0) }   // one number type throughout: mixed Double/CGFloat stalls the type checker
-        // on his head (1200 px square): the eyes' middle lands at (592, 385), 0.98 head px per face px
-        let k = onHead ? size.width * 0.98 / 1200 : min(size.width / a.layout.w, size.height / a.layout.h) * 0.92
-        let ox = onHead ? size.width * 592 / 1200 - 209 * k : (size.width - a.layout.w * k) / 2
-        let oy = onHead ? size.height * 385 / 1200 - 168 * k : (size.height - a.layout.h * k) / 2
+        let k = min(size.width / a.layout.w, size.height / a.layout.h) * 0.92
+        let ox = (size.width - a.layout.w * k) / 2, oy = (size.height - a.layout.h * k) / 2
         func rect(_ p: String) -> CGRect? {
             guard let b = a.layout.parts[p] else { return nil }
-            var x = b.x, y = b.y, w = b.w, h = b.h
-            if onHead, p == "mouth" { w *= 0.62; h *= 0.62; x = 209 - w / 2; y = 195 }   // between the eyes, scaled evenly
-            else if onHead { x += p.hasSuffix("L") ? -135 : 135 }                        // eyes set wide, as on his figure
-            return CGRect(x: ox + x * k, y: oy + y * k, width: w * k, height: h * k)
+            return CGRect(x: ox + b.x * k, y: oy + b.y * k, width: b.w * k, height: b.h * k)
         }
         let eyeW = (a.layout.parts["eyeL"]?.w ?? 200) * k
         let level = model.mouthFrame(n, now: now)   // 0 closed ... 50 his full grin (read once: it moves the mouth's state)
