@@ -27,6 +27,28 @@ enum ThemeFeed {
         var version: Int
         var themes: [Patch]
         var palettes: [HousePalette]
+        var home: Home? = nil
+    }
+
+    /// Home over the air (his "Sure", 11-24): the sections' order, which are hidden, and what each is called.
+    struct Home: Codable, Equatable {
+        var order: [String]?
+        var hidden: [String]?
+        var names: [String: String]?
+    }
+
+    /// The config's section order with the feed's laid over it: its order first, then any section it did not name (so a new
+    /// section is never lost), minus the hidden ones.
+    static func homeOrder(_ base: [String]) -> [String] {
+        guard let h = cached?.home else { return base }
+        let first = (h.order ?? []).filter(base.contains)
+        let hidden = Set(h.hidden ?? [])
+        return (first + base.filter { !first.contains($0) }).filter { !hidden.contains($0) }
+    }
+
+    static func sectionName(_ id: String, _ fallback: String) -> String {
+        guard let name = cached?.home?.names?[id]?.trimmingCharacters(in: .whitespaces), !name.isEmpty else { return fallback }
+        return name
     }
 
     private static var file: URL {
@@ -48,6 +70,7 @@ enum ThemeFeed {
         try? FileManager.default.createDirectory(at: file.deletingLastPathComponent(), withIntermediateDirectories: true)
         try? data.write(to: file)
         cached = new
+        if new.home != old?.home { AppModel.shared.reloadHome() }
         var changed = Set<String>()
         let ids = Set((old?.themes ?? []).map(\.id)).union(new.themes.map(\.id))
         for id in ids where old?.themes.first(where: { $0.id == id }) != new.themes.first(where: { $0.id == id }) { changed.insert(id) }

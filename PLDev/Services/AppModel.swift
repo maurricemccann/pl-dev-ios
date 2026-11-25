@@ -88,6 +88,9 @@ enum OriginReach: Equatable {
         writeSnapshot()
     }
 
+    /// The theme feed changed Home's order or names (ThemeFeed, 11-24).
+    func reloadHome() { rebuildSections() }
+
     private func rebuildSections() {
         guard let config else {
             sections = []
@@ -100,9 +103,10 @@ enum OriginReach: Equatable {
         // S353·7b1e: the Calendar (his ask 11-24) shows second on Home even when the loaded config predates it
         var order = config.sections
         if !order.contains("calendar") { order.insert("calendar", at: min(1, order.count)) }
-        for id in order where seen.insert(id).inserted {
+        for id in ThemeFeed.homeOrder(order) where seen.insert(id).inserted {
             guard let section = SectionRegistry.section(id) else { continue }   // a section this build does not have yet
-            let manifest = section.manifest
+            var manifest = section.manifest
+            manifest.title = ThemeFeed.sectionName(id, manifest.title)
             built.append(SectionEntry(manifest: manifest, readiness: manifest.readiness(in: config),
                                       makeRoot: { SectionRegistry.section(id)?.makeRoot(model: AppModel.shared) ?? AnyView(EmptyView()) },
                                       badge: badges[id]))
