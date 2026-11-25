@@ -60,6 +60,7 @@ struct HomeView: View {
             if let line = model.configError ?? model.lastError {
                 NoteLine(symbol: "exclamationmark.triangle.fill", tint: PLTone.warn, text: line)
             }
+            RisingBar()   // how he feels, one tap (the Rising Scale, 11-25)
             if model.sections.isEmpty {
                 EmptyNote(symbol: "square.grid.2x2", title: ThemeFeed.text("home.empty", "Nothing to show yet"),
                           detail: "Your config lists sections this build does not have. Settings and the probes still work.",
@@ -148,6 +149,7 @@ struct HomeView: View {
             .refreshable { await Poller.shared.refreshAll() }
             // one bar like the Home Screen dock (his note 11-14 with Aqara's tab bar on Cosmos: the dots and Settings floated apart and
             // cut through the screen, and sat high): dots left, Settings right, one glass bar, close to the home indicator
+            .overlay(alignment: .bottomTrailing) { RisingBuddy() }   // above the bar below, which is inset outside this
             .safeAreaInset(edge: .bottom, spacing: 0) { controls }
             .toolbar(.hidden, for: .navigationBar)
             .navigationDestination(for: String.self) { id in

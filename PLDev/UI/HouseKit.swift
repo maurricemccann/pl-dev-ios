@@ -48,7 +48,7 @@ struct HousePalette: Codable, Hashable, Identifiable {
     var titleFace: String = UserDefaults.standard.string(forKey: "pldev.titleFace") ?? "v1" {
         didSet { UserDefaults.standard.set(titleFace, forKey: "pldev.titleFace"); apply() }
     }
-    var allPalettes: [HousePalette] { palettes + archivePalettes + familyPalettes + mixes.map(\.palette) + ThemeFeed.palettes(HousePalette.themed) }
+    var allPalettes: [HousePalette] { palettes + archivePalettes + familyPalettes + mixes.map(\.palette) + ThemeFeed.palettes(HousePalette.themed) + [RisingScale.palette()] }
     func harmonies(of base: String) -> [Mix] { mixes.filter { $0.base == base } }
     private(set) var titleFont: String?          // his hand, V1 (main), once registered
     var paletteName: String = UserDefaults.standard.string(forKey: "pldev.palette") ?? "home-screen" {

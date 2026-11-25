@@ -66,7 +66,7 @@ struct PLThemePreset: Identifiable, Hashable {
     private static let art = ThemeFeed.r2
 
     /// The themes as they ship, with the over-the-air file laid over them (ThemeFeed, his 11-24).
-    static var all: [PLThemePreset] { ThemeFeed.merge(builtIn) }
+    static var all: [PLThemePreset] { ThemeFeed.merge(builtIn) + [RisingScale.preset()] }
 
     static let builtIn: [PLThemePreset] = [
         .init(id: "home", title: "Your Home Screen", palette: "home-screen", face: "v1", text: "jost",

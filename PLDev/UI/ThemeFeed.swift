@@ -44,6 +44,8 @@ enum ThemeFeed {
         var practice: Practice? = nil
         var lists: Lists? = nil
         var shop: Shop? = nil
+        /// Buddy's check-in lines by group: low, middle, high, body (the Rising Scale).
+        var buddy: [String: [String]]? = nil
     }
 
     /// Home over the air (his "Sure", 11-24): the sections' order, which are hidden, what each is called, and its SF Symbol.
