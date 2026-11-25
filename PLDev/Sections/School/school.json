@@ -136,6 +136,238 @@
      "stage 2, the drop"
     ]
    }
+  },
+  {
+   "id": "b4",
+   "title": "Beat 4 · Underwater sample",
+   "sub": "B minor · 83",
+   "slides": [
+    "ch4-cover",
+    "ch4-sample",
+    "ch4-chop",
+    "ch4-water",
+    "ch4-snare",
+    "ch4-clap",
+    "ch4-kick",
+    "ch4-check"
+   ],
+   "ref": "b4-ref",
+   "refName": "finished beat 4",
+   "color": "blue",
+   "clips": {
+    "ch4-sample": [
+     "b4-s1",
+     "stage 1, the sample slowed"
+    ],
+    "ch4-chop": [
+     "b4-s2",
+     "stage 2, chopped"
+    ],
+    "ch4-water": [
+     "b4-s3",
+     "stage 3, underwater"
+    ],
+    "ch4-snare": [
+     "b4-s4",
+     "stage 4, plus snare"
+    ],
+    "ch4-clap": [
+     "b4-s5",
+     "stage 5, plus the clap layer"
+    ],
+    "ch4-kick": [
+     "b4-s6",
+     "stage 6, plus the kick"
+    ]
+   }
+  },
+  {
+   "id": "b5",
+   "title": "Beat 5 · Arp and strings",
+   "sub": "C# minor · 140, feels 70",
+   "slides": [
+    "ch5-cover",
+    "ch5-arp",
+    "ch5-strings",
+    "ch5-snare",
+    "ch5-kick",
+    "ch5-hats",
+    "ch5-808",
+    "ch5-hook",
+    "ch5-check"
+   ],
+   "ref": "b5-ref",
+   "refName": "finished beat 5",
+   "color": "blue",
+   "clips": {
+    "ch5-arp": [
+     "b5-s1",
+     "stage 1, the arp"
+    ],
+    "ch5-strings": [
+     "b5-s2",
+     "stage 2, plus strings"
+    ],
+    "ch5-snare": [
+     "b5-s3",
+     "stage 3, plus snare"
+    ],
+    "ch5-kick": [
+     "b5-s4",
+     "stage 4, plus kick"
+    ],
+    "ch5-hats": [
+     "b5-s5",
+     "stage 5, plus hats"
+    ],
+    "ch5-808": [
+     "b5-s6",
+     "stage 6, plus 808"
+    ],
+    "ch5-hook": [
+     "b5-s7",
+     "stage 7, the hook"
+    ]
+   }
+  },
+  {
+   "id": "b6",
+   "title": "Beat 6 · Room",
+   "sub": "G minor · 68",
+   "slides": [
+    "ch6-cover",
+    "ch6-keys",
+    "ch6-bass",
+    "ch6-kick",
+    "ch6-snare",
+    "ch6-offbeat",
+    "ch6-check"
+   ],
+   "ref": "b6-ref",
+   "refName": "finished beat 6",
+   "color": "blue",
+   "clips": {
+    "ch6-keys": [
+     "b6-s1",
+     "stage 1, the keys"
+    ],
+    "ch6-bass": [
+     "b6-s2",
+     "stage 2, plus bass"
+    ],
+    "ch6-kick": [
+     "b6-s3",
+     "stage 3, plus kick"
+    ],
+    "ch6-snare": [
+     "b6-s4",
+     "stage 4, plus snare"
+    ],
+    "ch6-offbeat": [
+     "b6-s5",
+     "stage 5, offbeat snare and open hat"
+    ]
+   }
+  },
+  {
+   "id": "b7",
+   "title": "Beat 7 · Story",
+   "sub": "A minor · 84 · the long form",
+   "slides": [
+    "ch7-cover",
+    "ch7-guitar",
+    "ch7-verse",
+    "ch7-hook",
+    "ch7-long",
+    "ch7-check"
+   ],
+   "ref": "b7-ref",
+   "refName": "finished beat 7",
+   "color": "red",
+   "clips": {
+    "ch7-guitar": [
+     "b7-s1",
+     "stage 1, the guitar alone"
+    ],
+    "ch7-verse": [
+     "b7-s2",
+     "stage 2, verse drums"
+    ],
+    "ch7-hook": [
+     "b7-s3",
+     "stage 3, the hook"
+    ]
+   }
+  },
+  {
+   "id": "b8",
+   "title": "Beat 8 · The switch",
+   "sub": "G minor · 100, 88, 104",
+   "slides": [
+    "ch8-cover",
+    "ch8-guitar",
+    "ch8-rap",
+    "ch8-switch",
+    "ch8-heavy",
+    "ch8-tempo",
+    "ch8-check"
+   ],
+   "ref": "b8-ref",
+   "refName": "finished beat 8",
+   "color": "red",
+   "clips": {
+    "ch8-guitar": [
+     "b8-s1",
+     "stage 1, the guitar"
+    ],
+    "ch8-rap": [
+     "b8-s2",
+     "stage 2, the rap verse"
+    ],
+    "ch8-switch": [
+     "b8-s3",
+     "stage 3, the sung part"
+    ],
+    "ch8-heavy": [
+     "b8-s4",
+     "stage 4, heavier"
+    ]
+   }
+  },
+  {
+   "id": "b9",
+   "title": "Beat 9 · Road",
+   "sub": "C minor · 94",
+   "slides": [
+    "ch9-cover",
+    "ch9-guitar",
+    "ch9-stomp",
+    "ch9-clap",
+    "ch9-all",
+    "ch9-feel",
+    "ch9-check"
+   ],
+   "ref": "b9-ref",
+   "refName": "finished beat 9",
+   "color": "red",
+   "clips": {
+    "ch9-guitar": [
+     "b9-s1",
+     "stage 1, the guitar"
+    ],
+    "ch9-stomp": [
+     "b9-s2",
+     "stage 2, plus stomp"
+    ],
+    "ch9-clap": [
+     "b9-s3",
+     "stage 3, plus claps"
+    ],
+    "ch9-all": [
+     "b9-s4",
+     "stage 4, all in"
+    ]
+   }
   }
  ],
  "his": [
@@ -855,7 +1087,7 @@
    "chips": [],
    "grids": [
     {
-     "label": "KICK · bars 1-3, 5-7",
+     "label": "KICK · PL kick.wav · bars 1-3, 5-7",
      "steps": [
       true,
       false,
@@ -923,7 +1155,7 @@
    "chips": [],
    "grids": [
     {
-     "label": "HAT · most bars",
+     "label": "HAT · PL hat.wav · most bars",
      "steps": [
       true,
       false,
@@ -967,7 +1199,7 @@
      "color": "#c9a84c"
     },
     {
-     "label": "OPEN HAT · bars 2 and 6",
+     "label": "OPEN HAT · PL hat-open.wav · bars 2 and 6",
      "steps": [
       false,
       false,
@@ -1326,7 +1558,7 @@
    "chips": [],
    "grids": [
     {
-     "label": "KICK · verse",
+     "label": "KICK · PL kick.wav · verse",
      "steps": [
       true,
       false,
@@ -1392,7 +1624,7 @@
      "color": "#c9a84c"
     },
     {
-     "label": "HAT · every bar",
+     "label": "HAT · PL hat.wav · every bar",
      "steps": [
       true,
       false,
@@ -1443,7 +1675,7 @@
     },
     {
      "head": "",
-     "text": "In the hook only: an open hat on box 15 and a shaker on every odd box, quiet. Pull both down until you feel them. Play “Stage 1 verse drums” again and listen for the turn."
+     "text": "In the hook only: an open hat (PL hat-open.wav) on box 15 and a shaker (PL shaker.wav) on every odd box, quiet. Pull both down until you feel them. Play “Stage 1 verse drums” again and listen for the turn."
     },
     {
      "head": "",
@@ -1786,7 +2018,7 @@
    "chips": [],
    "grids": [
     {
-     "label": "CLAP + SNARE",
+     "label": "CLAP + SNARE · PL clap.wav + PL snare.wav",
      "steps": [
       false,
       false,
@@ -1808,7 +2040,7 @@
      "color": "#c9a84c"
     },
     {
-     "label": "KICK",
+     "label": "KICK · PL kick.wav",
      "steps": [
       true,
       false,
@@ -1852,7 +2084,7 @@
      "color": "#c9a84c"
     },
     {
-     "label": "HAT",
+     "label": "HAT · PL hat.wav",
      "steps": [
       true,
       false,
@@ -1969,7 +2201,7 @@
     },
     {
      "head": "Open hat",
-     "text": "Box 15 on even bars only. A lift, not a pattern."
+     "text": "PL hat-open.wav on box 15, even bars only. A lift, not a pattern."
     },
     {
      "head": "",
@@ -2122,6 +2354,1921 @@
    ],
    "table": [],
    "notes": "Acceptance tests from the spec. The Transfer test is the pass; a loudness number alone earns nothing."
+  },
+  {
+   "id": "ch4-cover",
+   "eyebrow": "Psyched Luxuries · PL Prod · Beat 4",
+   "title": "Underwater sample",
+   "chips": [],
+   "grids": [],
+   "blocks": [
+    {
+     "head": "",
+     "text": "B minor · FL at 83, straight · 20 bars: 4 sample, 8 beat, 8 with hats"
+    },
+    {
+     "head": "Load",
+     "text": "From the Beat 4 download: Sample.wav, Kick.wav, Snare.wav, Clap.wav, Hat.wav, chops.mid. No 808."
+    },
+    {
+     "head": "Hear it first",
+     "text": "Play Finished beat 4. Count 4 bars of sample alone; the snare comes in on bar 5."
+    },
+    {
+     "head": "The lesson",
+     "text": "The music is a sample. Chop it, slow it, flip a piece, cut the highs. Then the drums answer it."
+    },
+    {
+     "head": "",
+     "text": "Beat 4 · Underwater sample · B minor · FL at 83"
+    }
+   ],
+   "table": [],
+   "notes": "Beat 4 crowned 11-25. Music first, drums after. Files: Music/PL Kits/_school/Beat 4 - B minor 83/."
+  },
+  {
+   "id": "ch4-sample",
+   "eyebrow": "Step 1 · the sample",
+   "title": "Slow it",
+   "chips": [],
+   "grids": [],
+   "blocks": [
+    {
+     "head": "",
+     "text": "Load Sample.wav. It is already at 83 in B minor: two bars, slowed down and pitched down from the original loop."
+    },
+    {
+     "head": "",
+     "text": "Put it on its own channel and loop the two bars. Play Stage 1."
+    },
+    {
+     "head": "",
+     "text": "Beat 4 · Underwater sample · B minor · FL at 83"
+    }
+   ],
+   "table": [],
+   "notes": "The loop is a Cymatics free-licence loop, slowed and pitched."
+  },
+  {
+   "id": "ch4-chop",
+   "eyebrow": "Step 2 · the chop",
+   "title": "Chop it",
+   "chips": [],
+   "grids": [],
+   "blocks": [
+    {
+     "head": "",
+     "text": "Eight chops, one a beat. Play them 1 2 3 4, 1 2, then chop 7 backwards, then 8. When in doubt, throw it in reverse."
+    },
+    {
+     "head": "",
+     "text": "In FL: Slicer on Sample.wav, 8 slices, then import chops.mid (slice 1 = C5). Play Stage 2."
+    },
+    {
+     "head": "",
+     "text": "Beat 4 · Underwater sample · B minor · FL at 83"
+    }
+   ],
+   "table": [],
+   "notes": "chops.mid carries the order."
+  },
+  {
+   "id": "ch4-water",
+   "eyebrow": "Step 3 · underwater",
+   "title": "Cut the highs",
+   "chips": [],
+   "grids": [],
+   "blocks": [
+    {
+     "head": "",
+     "text": "A low-pass on the sample channel, cutoff around 1100 Hz. The sample sinks behind where a voice would sit."
+    },
+    {
+     "head": "",
+     "text": "Keep the lows: they carry the bottom, so this beat needs no 808. Play Stage 3."
+    },
+    {
+     "head": "",
+     "text": "Beat 4 · Underwater sample · B minor · FL at 83"
+    }
+   ],
+   "table": [],
+   "notes": "Underwater = low-pass. The voice gets the top of the spectrum."
+  },
+  {
+   "id": "ch4-snare",
+   "eyebrow": "Step 4 · drums answer",
+   "title": "Snare first",
+   "chips": [],
+   "grids": [
+    {
+     "label": "SNARE · Snare.wav",
+     "steps": [
+      false,
+      false,
+      false,
+      false,
+      true,
+      false,
+      false,
+      false,
+      false,
+      false,
+      false,
+      false,
+      true,
+      false,
+      false,
+      false
+     ],
+     "color": "#c9a84c"
+    }
+   ],
+   "blocks": [
+    {
+     "head": "",
+     "text": "Snare.wav on 2 and 4. Boxes 5 and 13. Snares first, to get the head bob going."
+    },
+    {
+     "head": "",
+     "text": "Nothing else yet. Play Stage 4."
+    },
+    {
+     "head": "",
+     "text": "Beat 4 · Underwater sample · B minor · FL at 83"
+    }
+   ],
+   "table": [],
+   "notes": "From bar 5."
+  },
+  {
+   "id": "ch4-clap",
+   "eyebrow": "Step 5 · the layer",
+   "title": "Clap on the snare",
+   "chips": [],
+   "grids": [
+    {
+     "label": "CLAP · Clap.wav",
+     "steps": [
+      false,
+      false,
+      false,
+      false,
+      true,
+      false,
+      false,
+      false,
+      false,
+      false,
+      false,
+      false,
+      true,
+      false,
+      false,
+      false
+     ],
+     "color": "#c9a84c"
+    },
+    {
+     "label": "SNARE · Snare.wav",
+     "steps": [
+      false,
+      false,
+      false,
+      false,
+      true,
+      false,
+      false,
+      false,
+      false,
+      false,
+      false,
+      false,
+      true,
+      false,
+      false,
+      false
+     ],
+     "color": "#c9a84c"
+    }
+   ],
+   "blocks": [
+    {
+     "head": "",
+     "text": "Clap.wav on the same boxes, with a long reverb, about 3 seconds, so it fills the space."
+    },
+    {
+     "head": "",
+     "text": "The layer does not have to sound good alone. Play Stage 5."
+    },
+    {
+     "head": "",
+     "text": "Beat 4 · Underwater sample · B minor · FL at 83"
+    }
+   ],
+   "table": [],
+   "notes": "Clap + snare layer."
+  },
+  {
+   "id": "ch4-kick",
+   "eyebrow": "Step 6 · the one",
+   "title": "Kick on the one",
+   "chips": [],
+   "grids": [
+    {
+     "label": "KICK · Kick.wav",
+     "steps": [
+      true,
+      false,
+      false,
+      false,
+      false,
+      false,
+      false,
+      false,
+      false,
+      false,
+      false,
+      false,
+      false,
+      false,
+      false,
+      false
+     ],
+     "color": "#c9a84c"
+    },
+    {
+     "label": "CLAP + SNARE",
+     "steps": [
+      false,
+      false,
+      false,
+      false,
+      true,
+      false,
+      false,
+      false,
+      false,
+      false,
+      false,
+      false,
+      true,
+      false,
+      false,
+      false
+     ],
+     "color": "#c9a84c"
+    },
+    {
+     "label": "HAT · Hat.wav, last 8 bars",
+     "steps": [
+      true,
+      false,
+      true,
+      false,
+      true,
+      false,
+      true,
+      false,
+      true,
+      false,
+      true,
+      false,
+      true,
+      false,
+      true,
+      false
+     ],
+     "color": "#c9a84c"
+    }
+   ],
+   "blocks": [
+    {
+     "head": "",
+     "text": "Kick.wav, once a bar, on box 1. That is the whole kick part. The sample does the rest."
+    },
+    {
+     "head": "",
+     "text": "Last 8 bars: Hat.wav, soft, on every other box. Play Stage 6."
+    },
+    {
+     "head": "",
+     "text": "Beat 4 · Underwater sample · B minor · FL at 83"
+    }
+   ],
+   "table": [],
+   "notes": "Kick on the one only."
+  },
+  {
+   "id": "ch4-check",
+   "eyebrow": "Check",
+   "title": "Does the voice fit?",
+   "chips": [],
+   "grids": [],
+   "blocks": [
+    {
+     "head": "",
+     "text": "Mute one part at a time. Keep only what a voice needs. Four sounds and a sample is a whole beat."
+    },
+    {
+     "head": "",
+     "text": "Then play your loop next to Finished beat 4."
+    },
+    {
+     "head": "",
+     "text": "Beat 4 · Underwater sample · B minor · FL at 83"
+    }
+   ],
+   "table": [],
+   "notes": "The space check."
+  },
+  {
+   "id": "ch5-cover",
+   "eyebrow": "Psyched Luxuries · PL Prod · Beat 5",
+   "title": "Arp and strings",
+   "chips": [],
+   "grids": [],
+   "blocks": [
+    {
+     "head": "",
+     "text": "C# minor · FL at 140, half-time · 24 bars: 4 arp, 8 verse, 8 hook, 4 arp"
+    },
+    {
+     "head": "Load",
+     "text": "From the Beat 5 download: Pluck.wav, Strings C#m7.wav, Strings Amaj7.wav, Kick.wav, Snare.wav, Clap.wav, Hat.wav, Open Hat.wav, 808 C#.wav, 808 A.wav, chords.mid, 808.mid."
+    },
+    {
+     "head": "Hear it first",
+     "text": "Play Finished beat 5. The arp plays alone for 4 bars; the drums land on bar 5."
+    },
+    {
+     "head": "The lesson",
+     "text": "The melody comes from an arpeggiator. Two chords, a string bed, galloping hats, a loud 808 tucked in."
+    },
+    {
+     "head": "",
+     "text": "Beat 5 · Arp and strings · C# minor · FL at 140, feels 70"
+    }
+   ],
+   "table": [],
+   "notes": "Beat 5 crowned 11-25. Files: Music/PL Kits/_school/Beat 5 - Cs minor 140 (70 feel)/."
+  },
+  {
+   "id": "ch5-arp",
+   "eyebrow": "Step 1 · the arp",
+   "title": "Two chords",
+   "chips": [],
+   "grids": [],
+   "blocks": [
+    {
+     "head": "",
+     "text": "Load Pluck.wav in a Sampler channel and import chords.mid onto it: C#m7 for two bars, Amaj7 for two. Turn on FL's arpeggiator: 1/16, up and down, one octave. Quantize."
+    },
+    {
+     "head": "",
+     "text": "Play Stage 1."
+    },
+    {
+     "head": "",
+     "text": "Beat 5 · Arp and strings · C# minor · FL at 140, feels 70"
+    }
+   ],
+   "table": [],
+   "notes": "Arpeggios are tricky: quantize them."
+  },
+  {
+   "id": "ch5-strings",
+   "eyebrow": "Step 2 · the bed",
+   "title": "Tremolo strings",
+   "chips": [],
+   "grids": [],
+   "blocks": [
+    {
+     "head": "",
+     "text": "Strings C#m7.wav under bars 1-2, Strings Amaj7.wav under bars 3-4, held under the arp: real bowed tremolo, the bow shaking fast."
+    },
+    {
+     "head": "",
+     "text": "Turn them up in the hook. Play Stage 2."
+    },
+    {
+     "head": "",
+     "text": "Beat 5 · Arp and strings · C# minor · FL at 140, feels 70"
+    }
+   ],
+   "table": [],
+   "notes": "The tremolo strings carry the hook later."
+  },
+  {
+   "id": "ch5-snare",
+   "eyebrow": "Step 3 · half-time",
+   "title": "Snare on 3",
+   "chips": [],
+   "grids": [
+    {
+     "label": "CLAP · Clap.wav",
+     "steps": [
+      false,
+      false,
+      false,
+      false,
+      false,
+      false,
+      false,
+      false,
+      true,
+      false,
+      false,
+      false,
+      false,
+      false,
+      false,
+      false
+     ],
+     "color": "#c9a84c"
+    },
+    {
+     "label": "SNARE · Snare.wav",
+     "steps": [
+      false,
+      false,
+      false,
+      false,
+      false,
+      false,
+      false,
+      false,
+      true,
+      false,
+      false,
+      false,
+      false,
+      false,
+      false,
+      false
+     ],
+     "color": "#c9a84c"
+    }
+   ],
+   "blocks": [
+    {
+     "head": "",
+     "text": "Clap.wav and Snare.wav on box 9. At 140 that lands where a 70 beat puts its backbeat: half-time."
+    },
+    {
+     "head": "",
+     "text": "Reverb on the clap. Play Stage 3."
+    },
+    {
+     "head": "",
+     "text": "Beat 5 · Arp and strings · C# minor · FL at 140, feels 70"
+    }
+   ],
+   "table": [],
+   "notes": "Half-time."
+  },
+  {
+   "id": "ch5-kick",
+   "eyebrow": "Step 4 · kick",
+   "title": "Kick",
+   "chips": [],
+   "grids": [
+    {
+     "label": "KICK · Kick.wav",
+     "steps": [
+      true,
+      false,
+      false,
+      true,
+      false,
+      false,
+      false,
+      false,
+      false,
+      false,
+      false,
+      true,
+      false,
+      false,
+      false,
+      false
+     ],
+     "color": "#c9a84c"
+    },
+    {
+     "label": "KICK, bar 4",
+     "steps": [
+      true,
+      false,
+      false,
+      false,
+      false,
+      false,
+      false,
+      false,
+      false,
+      false,
+      false,
+      true,
+      false,
+      false,
+      false,
+      false
+     ],
+     "color": "#c9a84c"
+    }
+   ],
+   "blocks": [
+    {
+     "head": "",
+     "text": "Kick.wav on boxes 1, 4 and 12; on every fourth bar, just 1 and 12."
+    },
+    {
+     "head": "",
+     "text": "Play Stage 4."
+    },
+    {
+     "head": "",
+     "text": "Beat 5 · Arp and strings · C# minor · FL at 140, feels 70"
+    }
+   ],
+   "table": [],
+   "notes": ""
+  },
+  {
+   "id": "ch5-hats",
+   "eyebrow": "Step 5 · the gallop",
+   "title": "Galloping hats",
+   "chips": [],
+   "grids": [
+    {
+     "label": "HAT · Hat.wav",
+     "steps": [
+      true,
+      false,
+      true,
+      true,
+      true,
+      false,
+      true,
+      true,
+      true,
+      false,
+      true,
+      true,
+      true,
+      false,
+      true,
+      true
+     ],
+     "color": "#c9a84c"
+    },
+    {
+     "label": "OPEN HAT · Open Hat.wav",
+     "steps": [
+      false,
+      false,
+      false,
+      false,
+      false,
+      false,
+      false,
+      false,
+      false,
+      false,
+      false,
+      false,
+      false,
+      false,
+      true,
+      false
+     ],
+     "color": "#c9a84c"
+    }
+   ],
+   "blocks": [
+    {
+     "head": "",
+     "text": "Hat.wav, a pair after every eighth: the gallop. Then a delay on the hats: dotted 1/8, two repeats, darker each time."
+    },
+    {
+     "head": "",
+     "text": "Open Hat.wav on box 15 every other bar. Play Stage 5."
+    },
+    {
+     "head": "",
+     "text": "Beat 5 · Arp and strings · C# minor · FL at 140, feels 70"
+    }
+   ],
+   "table": [],
+   "notes": "Galloping hats with a delay."
+  },
+  {
+   "id": "ch5-808",
+   "eyebrow": "Step 6 · the 808",
+   "title": "Loud, and tucked",
+   "chips": [],
+   "grids": [
+    {
+     "label": "808 starts",
+     "steps": [
+      true,
+      false,
+      false,
+      false,
+      false,
+      false,
+      false,
+      false,
+      false,
+      false,
+      true,
+      false,
+      false,
+      false,
+      false,
+      false
+     ],
+     "color": "#c9a84c"
+    }
+   ],
+   "blocks": [
+    {
+     "head": "",
+     "text": "808 C#.wav and 808 A.wav on the roots, loud: import 808.mid. Then sidechain the 808 to the kick so it dips each time the kick hits: the drums still hit first."
+    },
+    {
+     "head": "",
+     "text": "Play Stage 6."
+    },
+    {
+     "head": "",
+     "text": "Beat 5 · Arp and strings · C# minor · FL at 140, feels 70"
+    }
+   ],
+   "table": [],
+   "notes": "Obnoxious 808, tucked behind the drums."
+  },
+  {
+   "id": "ch5-hook",
+   "eyebrow": "Step 7 · the hook",
+   "title": "Faster hats",
+   "chips": [],
+   "grids": [
+    {
+     "label": "HAT, hook",
+     "steps": [
+      true,
+      true,
+      true,
+      true,
+      true,
+      true,
+      true,
+      true,
+      true,
+      true,
+      true,
+      true,
+      true,
+      true,
+      true,
+      true
+     ],
+     "color": "#c9a84c"
+    }
+   ],
+   "blocks": [
+    {
+     "head": "",
+     "text": "In the hook Hat.wav goes on every box. Same drums otherwise; the strings come up."
+    },
+    {
+     "head": "",
+     "text": "Play Stage 7, then Finished beat 5."
+    },
+    {
+     "head": "",
+     "text": "Beat 5 · Arp and strings · C# minor · FL at 140, feels 70"
+    }
+   ],
+   "table": [],
+   "notes": "A faster hat for the hook."
+  },
+  {
+   "id": "ch5-check",
+   "eyebrow": "Check",
+   "title": "Does the voice fit?",
+   "chips": [],
+   "grids": [],
+   "blocks": [
+    {
+     "head": "",
+     "text": "Mute one part at a time. If the arp crowds the voice, pull it down or shorten its notes."
+    },
+    {
+     "head": "",
+     "text": "Then play your loop next to Finished beat 5."
+    },
+    {
+     "head": "",
+     "text": "Beat 5 · Arp and strings · C# minor · FL at 140, feels 70"
+    }
+   ],
+   "table": [],
+   "notes": "The space check."
+  },
+  {
+   "id": "ch6-cover",
+   "eyebrow": "Psyched Luxuries · PL Prod · Beat 6",
+   "title": "Room",
+   "chips": [],
+   "grids": [],
+   "blocks": [
+    {
+     "head": "",
+     "text": "G minor · FL at 68, straight · 20 bars: 4 keys, 8 beat, 4 drop, 4 beat"
+    },
+    {
+     "head": "Load",
+     "text": "From the Beat 6 download: Keys.wav, Bass.wav, Kick.wav, Snare.wav, Open Hat.wav. No 808."
+    },
+    {
+     "head": "Hear it first",
+     "text": "Play Finished beat 6. Hear how little there is."
+    },
+    {
+     "head": "The lesson",
+     "text": "Minimal. The beat is a supporting cast member: the voice needs room to breathe."
+    },
+    {
+     "head": "",
+     "text": "Beat 6 · Room · G minor · FL at 68"
+    }
+   ],
+   "table": [],
+   "notes": "Beat 6 crowned 11-25. Files: Music/PL Kits/_school/Beat 6 - G minor 68/."
+  },
+  {
+   "id": "ch6-keys",
+   "eyebrow": "Step 1 · the keys",
+   "title": "Slow it to 68",
+   "chips": [],
+   "grids": [],
+   "blocks": [
+    {
+     "head": "",
+     "text": "Load Keys.wav: keys and pad, already at 68. The loop came at 80; it is stretched to the project tempo with the pitch kept."
+    },
+    {
+     "head": "",
+     "text": "Low-pass the keys around 3 kHz: the voice lives above. Play Stage 1."
+    },
+    {
+     "head": "",
+     "text": "Beat 6 · Room · G minor · FL at 68"
+    }
+   ],
+   "table": [],
+   "notes": "Room for the voice."
+  },
+  {
+   "id": "ch6-bass",
+   "eyebrow": "Step 2 · the bass",
+   "title": "The loop's own bass",
+   "chips": [],
+   "grids": [],
+   "blocks": [
+    {
+     "head": "",
+     "text": "Add Bass.wav, the same loop's bass line. It carries the bottom, so no 808."
+    },
+    {
+     "head": "",
+     "text": "Play Stage 2."
+    },
+    {
+     "head": "",
+     "text": "Beat 6 · Room · G minor · FL at 68"
+    }
+   ],
+   "table": [],
+   "notes": ""
+  },
+  {
+   "id": "ch6-kick",
+   "eyebrow": "Step 3 · the one",
+   "title": "Kick on the one",
+   "chips": [],
+   "grids": [
+    {
+     "label": "KICK · Kick.wav",
+     "steps": [
+      true,
+      false,
+      false,
+      false,
+      false,
+      false,
+      false,
+      false,
+      false,
+      false,
+      false,
+      false,
+      false,
+      false,
+      false,
+      false
+     ],
+     "color": "#c9a84c"
+    }
+   ],
+   "blocks": [
+    {
+     "head": "",
+     "text": "Kick.wav, once, box 1. Nothing else in the kick part."
+    },
+    {
+     "head": "",
+     "text": "Play Stage 3."
+    },
+    {
+     "head": "",
+     "text": "Beat 6 · Room · G minor · FL at 68"
+    }
+   ],
+   "table": [],
+   "notes": ""
+  },
+  {
+   "id": "ch6-snare",
+   "eyebrow": "Step 4 · the backbeat",
+   "title": "Snare on 2 and 4",
+   "chips": [],
+   "grids": [
+    {
+     "label": "SNARE · Snare.wav",
+     "steps": [
+      false,
+      false,
+      false,
+      false,
+      true,
+      false,
+      false,
+      false,
+      false,
+      false,
+      false,
+      false,
+      true,
+      false,
+      false,
+      false
+     ],
+     "color": "#c9a84c"
+    }
+   ],
+   "blocks": [
+    {
+     "head": "",
+     "text": "Snare.wav on boxes 5 and 13. Plain and steady."
+    },
+    {
+     "head": "",
+     "text": "Play Stage 4."
+    },
+    {
+     "head": "",
+     "text": "Beat 6 · Room · G minor · FL at 68"
+    }
+   ],
+   "table": [],
+   "notes": ""
+  },
+  {
+   "id": "ch6-offbeat",
+   "eyebrow": "Step 5 · the offbeat",
+   "title": "One offbeat snare, one open hat",
+   "chips": [],
+   "grids": [
+    {
+     "label": "SNARE · Snare.wav, even bars",
+     "steps": [
+      false,
+      false,
+      false,
+      false,
+      true,
+      false,
+      false,
+      false,
+      false,
+      false,
+      false,
+      false,
+      true,
+      false,
+      true,
+      false
+     ],
+     "color": "#c9a84c"
+    },
+    {
+     "label": "OPEN HAT · Open Hat.wav",
+     "steps": [
+      false,
+      false,
+      false,
+      false,
+      false,
+      false,
+      false,
+      false,
+      false,
+      false,
+      true,
+      false,
+      false,
+      false,
+      false,
+      false
+     ],
+     "color": "#c9a84c"
+    }
+   ],
+   "blocks": [
+    {
+     "head": "",
+     "text": "A quiet Snare.wav on box 15, every other bar, and Open Hat.wav on box 11. That is all the motion this beat needs."
+    },
+    {
+     "head": "",
+     "text": "Play Stage 5, then Finished beat 6."
+    },
+    {
+     "head": "",
+     "text": "Beat 6 · Room · G minor · FL at 68"
+    }
+   ],
+   "table": [],
+   "notes": "Offbeat snare, open hat."
+  },
+  {
+   "id": "ch6-check",
+   "eyebrow": "Check",
+   "title": "Simplicity wins",
+   "chips": [],
+   "grids": [],
+   "blocks": [
+    {
+     "head": "",
+     "text": "Mute one part at a time. If nothing is missing when a part is gone, leave it gone. People over-produce."
+    },
+    {
+     "head": "",
+     "text": "Then play your loop next to Finished beat 6."
+    },
+    {
+     "head": "",
+     "text": "Beat 6 · Room · G minor · FL at 68"
+    }
+   ],
+   "table": [],
+   "notes": "The space check."
+  },
+  {
+   "id": "ch7-cover",
+   "eyebrow": "Psyched Luxuries · PL Prod · Beat 7",
+   "title": "Story",
+   "chips": [],
+   "grids": [],
+   "blocks": [
+    {
+     "head": "",
+     "text": "A minor · FL at 84, straight · 64 bars, about 3 minutes"
+    },
+    {
+     "head": "Load",
+     "text": "From the Beat 7 download: Guitar.wav, Kick.wav, Snare.wav, Clap.wav, Hat.wav, 808 A.wav, 808 C.wav, 808 E.wav, 808.mid."
+    },
+    {
+     "head": "Hear it first",
+     "text": "Play Finished beat 7. 8 bars of guitar alone before anything else."
+    },
+    {
+     "head": "The lesson",
+     "text": "One voice carries a whole story, so the beat is built around the voice. Guitar and voice first; the long form."
+    },
+    {
+     "head": "",
+     "text": "Beat 7 · Story · A minor · FL at 84"
+    }
+   ],
+   "table": [],
+   "notes": "Beat 7 crowned 11-25. Files: Music/PL Kits/_school/Beat 7 - A minor 84/."
+  },
+  {
+   "id": "ch7-guitar",
+   "eyebrow": "Step 1 · guitar first",
+   "title": "The guitar alone",
+   "chips": [],
+   "grids": [],
+   "blocks": [
+    {
+     "head": "",
+     "text": "Load Guitar.wav: four bars, looped. Slowed from 90 to 84. It plays alone for 8 bars: that is where the story starts."
+    },
+    {
+     "head": "",
+     "text": "Play Stage 1."
+    },
+    {
+     "head": "",
+     "text": "Beat 7 · Story · A minor · FL at 84"
+    }
+   ],
+   "table": [],
+   "notes": "Guitar and voice space first."
+  },
+  {
+   "id": "ch7-verse",
+   "eyebrow": "Step 2 · the verse",
+   "title": "Soft drums",
+   "chips": [],
+   "grids": [
+    {
+     "label": "KICK · Kick.wav",
+     "steps": [
+      true,
+      false,
+      false,
+      false,
+      false,
+      false,
+      true,
+      false,
+      false,
+      false,
+      false,
+      false,
+      false,
+      false,
+      false,
+      false
+     ],
+     "color": "#c9a84c"
+    },
+    {
+     "label": "SNARE · Snare.wav",
+     "steps": [
+      false,
+      false,
+      false,
+      false,
+      true,
+      false,
+      false,
+      false,
+      false,
+      false,
+      false,
+      false,
+      true,
+      false,
+      false,
+      false
+     ],
+     "color": "#c9a84c"
+    }
+   ],
+   "blocks": [
+    {
+     "head": "",
+     "text": "Kick.wav on 1 and 7, a light Snare.wav on 5 and 13. Only that, so the words lead. Nudge the off-beat hits a few milliseconds off the grid."
+    },
+    {
+     "head": "",
+     "text": "In verse 2 a quiet Hat.wav joins on the quarters. Play Stage 2."
+    },
+    {
+     "head": "",
+     "text": "Beat 7 · Story · A minor · FL at 84"
+    }
+   ],
+   "table": [],
+   "notes": "Played feel."
+  },
+  {
+   "id": "ch7-hook",
+   "eyebrow": "Step 3 · the hook",
+   "title": "It opens",
+   "chips": [],
+   "grids": [
+    {
+     "label": "KICK",
+     "steps": [
+      true,
+      false,
+      false,
+      false,
+      false,
+      false,
+      true,
+      false,
+      false,
+      false,
+      true,
+      false,
+      false,
+      false,
+      false,
+      false
+     ],
+     "color": "#c9a84c"
+    },
+    {
+     "label": "CLAP · Clap.wav",
+     "steps": [
+      false,
+      false,
+      false,
+      false,
+      true,
+      false,
+      false,
+      false,
+      false,
+      false,
+      false,
+      false,
+      true,
+      false,
+      false,
+      false
+     ],
+     "color": "#c9a84c"
+    },
+    {
+     "label": "SNARE",
+     "steps": [
+      false,
+      false,
+      false,
+      false,
+      true,
+      false,
+      false,
+      false,
+      false,
+      false,
+      false,
+      false,
+      true,
+      false,
+      false,
+      false
+     ],
+     "color": "#c9a84c"
+    },
+    {
+     "label": "HAT · Hat.wav",
+     "steps": [
+      true,
+      false,
+      true,
+      false,
+      true,
+      false,
+      true,
+      false,
+      true,
+      false,
+      true,
+      false,
+      true,
+      false,
+      true,
+      false
+     ],
+     "color": "#c9a84c"
+    }
+   ],
+   "blocks": [
+    {
+     "head": "",
+     "text": "The hook adds Clap.wav, Hat.wav and the 808: 808 A.wav, 808 C.wav, 808 E.wav, one bar each (A, C, E, C): import 808.mid."
+    },
+    {
+     "head": "",
+     "text": "Play Stage 3."
+    },
+    {
+     "head": "",
+     "text": "Beat 7 · Story · A minor · FL at 84"
+    }
+   ],
+   "table": [],
+   "notes": ""
+  },
+  {
+   "id": "ch7-long",
+   "eyebrow": "Step 4 · the long form",
+   "title": "Lay out the song",
+   "chips": [],
+   "grids": [],
+   "blocks": [
+    {
+     "head": "",
+     "text": "8 guitar, 16 verse, 8 hook, 16 verse, 8 hook, 4 bridge, 4 outro. 64 bars, about 3 minutes. Not a hook song: a story."
+    },
+    {
+     "head": "",
+     "text": "The bridge is the guitar alone, darker. Play Finished beat 7."
+    },
+    {
+     "head": "",
+     "text": "Beat 7 · Story · A minor · FL at 84"
+    }
+   ],
+   "table": [],
+   "notes": "Long form over hook form."
+  },
+  {
+   "id": "ch7-check",
+   "eyebrow": "Check",
+   "title": "Can the voice tell it?",
+   "chips": [],
+   "grids": [],
+   "blocks": [
+    {
+     "head": "",
+     "text": "Read a verse over your loop. If you have to push to be heard, the verse drums are too loud."
+    },
+    {
+     "head": "",
+     "text": "Then play your loop next to Finished beat 7."
+    },
+    {
+     "head": "",
+     "text": "Beat 7 · Story · A minor · FL at 84"
+    }
+   ],
+   "table": [],
+   "notes": "The space check."
+  },
+  {
+   "id": "ch8-cover",
+   "eyebrow": "Psyched Luxuries · PL Prod · Beat 8",
+   "title": "The switch",
+   "chips": [],
+   "grids": [],
+   "blocks": [
+    {
+     "head": "",
+     "text": "G minor · three parts at three tempos: 100, 88, 104 · 28 bars"
+    },
+    {
+     "head": "Load",
+     "text": "From the Beat 8 download: Guitar 100.wav, Guitar 88.wav, Guitar 104.wav, Kick.wav, Snare.wav, Clap.wav, Hat.wav, Open Hat.wav, Snap.wav, 808 G.wav, 808 D.wav, 808 Eb.wav."
+    },
+    {
+     "head": "Hear it first",
+     "text": "Play Finished beat 8. Hear the tempo drop for the sung part, then lift."
+    },
+    {
+     "head": "The lesson",
+     "text": "One song, three feels: a rap verse, a sung part, then heavier. The tempo moves between them."
+    },
+    {
+     "head": "",
+     "text": "Beat 8 · The switch · G minor · 100, 88, 104"
+    }
+   ],
+   "table": [],
+   "notes": "Beat 8 crowned 11-25. Files: Music/PL Kits/_school/Beat 8 - G minor 100 88 104/."
+  },
+  {
+   "id": "ch8-guitar",
+   "eyebrow": "Step 1 · one guitar",
+   "title": "The guitar at 100",
+   "chips": [],
+   "grids": [],
+   "blocks": [
+    {
+     "head": "",
+     "text": "Load Guitar 100.wav: the same four bars all song long. What changes is everything around it."
+    },
+    {
+     "head": "",
+     "text": "Play Stage 1."
+    },
+    {
+     "head": "",
+     "text": "Beat 8 · The switch · G minor · 100, 88, 104"
+    }
+   ],
+   "table": [],
+   "notes": ""
+  },
+  {
+   "id": "ch8-rap",
+   "eyebrow": "Step 2 · the rap verse",
+   "title": "100, hard",
+   "chips": [],
+   "grids": [
+    {
+     "label": "KICK",
+     "steps": [
+      true,
+      false,
+      false,
+      false,
+      false,
+      false,
+      false,
+      true,
+      false,
+      false,
+      true,
+      false,
+      false,
+      false,
+      false,
+      false
+     ],
+     "color": "#c9a84c"
+    },
+    {
+     "label": "SNARE",
+     "steps": [
+      false,
+      false,
+      false,
+      false,
+      true,
+      false,
+      false,
+      false,
+      false,
+      false,
+      false,
+      false,
+      true,
+      false,
+      false,
+      false
+     ],
+     "color": "#c9a84c"
+    },
+    {
+     "label": "HAT",
+     "steps": [
+      true,
+      true,
+      true,
+      true,
+      true,
+      true,
+      true,
+      true,
+      true,
+      true,
+      true,
+      true,
+      true,
+      true,
+      true,
+      true
+     ],
+     "color": "#c9a84c"
+    }
+   ],
+   "blocks": [
+    {
+     "head": "",
+     "text": "Kick.wav on 1, 8 and 11, Snare.wav on 5 and 13, Hat.wav on every box. 808 G.wav, 808 D.wav, 808 Eb.wav, 808 D.wav, one bar each."
+    },
+    {
+     "head": "",
+     "text": "Play Stage 2."
+    },
+    {
+     "head": "",
+     "text": "Beat 8 · The switch · G minor · 100, 88, 104"
+    }
+   ],
+   "table": [],
+   "notes": ""
+  },
+  {
+   "id": "ch8-switch",
+   "eyebrow": "Step 3 · the switch",
+   "title": "88, sung",
+   "chips": [],
+   "grids": [
+    {
+     "label": "KICK",
+     "steps": [
+      true,
+      false,
+      false,
+      false,
+      false,
+      false,
+      false,
+      false,
+      false,
+      false,
+      false,
+      false,
+      false,
+      false,
+      false,
+      false
+     ],
+     "color": "#c9a84c"
+    },
+    {
+     "label": "SNARE + SNAP",
+     "steps": [
+      false,
+      false,
+      false,
+      false,
+      false,
+      false,
+      false,
+      false,
+      true,
+      false,
+      false,
+      false,
+      false,
+      false,
+      false,
+      false
+     ],
+     "color": "#c9a84c"
+    }
+   ],
+   "blocks": [
+    {
+     "head": "",
+     "text": "Tempo down to 88, Guitar 88.wav. Half-time: Snare.wav and Snap.wav on box 9, no hats, no 808. The guitar warmer."
+    },
+    {
+     "head": "",
+     "text": "Play Stage 3."
+    },
+    {
+     "head": "",
+     "text": "Beat 8 · The switch · G minor · 100, 88, 104"
+    }
+   ],
+   "table": [],
+   "notes": "The feel changes mid-song."
+  },
+  {
+   "id": "ch8-heavy",
+   "eyebrow": "Step 4 · heavier",
+   "title": "104, everything back",
+   "chips": [],
+   "grids": [
+    {
+     "label": "KICK",
+     "steps": [
+      true,
+      false,
+      true,
+      false,
+      false,
+      false,
+      false,
+      true,
+      false,
+      false,
+      true,
+      false,
+      false,
+      false,
+      false,
+      false
+     ],
+     "color": "#c9a84c"
+    },
+    {
+     "label": "CLAP + SNARE",
+     "steps": [
+      false,
+      false,
+      false,
+      false,
+      true,
+      false,
+      false,
+      false,
+      false,
+      false,
+      false,
+      false,
+      true,
+      false,
+      false,
+      false
+     ],
+     "color": "#c9a84c"
+    },
+    {
+     "label": "HAT",
+     "steps": [
+      true,
+      false,
+      true,
+      false,
+      true,
+      false,
+      true,
+      false,
+      true,
+      false,
+      true,
+      false,
+      true,
+      false,
+      true,
+      false
+     ],
+     "color": "#c9a84c"
+    },
+    {
+     "label": "OPEN HAT",
+     "steps": [
+      false,
+      false,
+      false,
+      false,
+      false,
+      false,
+      false,
+      false,
+      false,
+      false,
+      false,
+      false,
+      false,
+      false,
+      true,
+      false
+     ],
+     "color": "#c9a84c"
+    }
+   ],
+   "blocks": [
+    {
+     "head": "",
+     "text": "Tempo up to 104, Guitar 104.wav. Kick doubled, Clap.wav on the snare, Open Hat.wav on 15, the 808 driven harder."
+    },
+    {
+     "head": "",
+     "text": "Play Stage 4."
+    },
+    {
+     "head": "",
+     "text": "Beat 8 · The switch · G minor · 100, 88, 104"
+    }
+   ],
+   "table": [],
+   "notes": ""
+  },
+  {
+   "id": "ch8-tempo",
+   "eyebrow": "Step 5 · the tempo moves",
+   "title": "Three tempos, one song",
+   "chips": [],
+   "grids": [],
+   "blocks": [
+    {
+     "head": "",
+     "text": "A tempo change at the start of each part: 100 for the verse, 88 for the sung part, 104 for the heavier part."
+    },
+    {
+     "head": "",
+     "text": "Swap in the guitar for each tempo: Guitar 100.wav, Guitar 88.wav, Guitar 104.wav. Play Finished beat 8."
+    },
+    {
+     "head": "",
+     "text": "Beat 8 · The switch · G minor · 100, 88, 104"
+    }
+   ],
+   "table": [],
+   "notes": ""
+  },
+  {
+   "id": "ch8-check",
+   "eyebrow": "Check",
+   "title": "Does each part feel new?",
+   "chips": [],
+   "grids": [],
+   "blocks": [
+    {
+     "head": "",
+     "text": "Play the three parts back to back. If the sung part does not feel like a breath, take more out of it."
+    },
+    {
+     "head": "",
+     "text": "Then play your loop next to Finished beat 8."
+    },
+    {
+     "head": "",
+     "text": "Beat 8 · The switch · G minor · 100, 88, 104"
+    }
+   ],
+   "table": [],
+   "notes": ""
+  },
+  {
+   "id": "ch9-cover",
+   "eyebrow": "Psyched Luxuries · PL Prod · Beat 9",
+   "title": "Road",
+   "chips": [],
+   "grids": [],
+   "blocks": [
+    {
+     "head": "",
+     "text": "C minor · FL at 94, straight · 32 bars: 4 guitar, 8 groove, 8 full, 4 break, 8 full"
+    },
+    {
+     "head": "Load",
+     "text": "From the Beat 9 download: Guitar.wav, Stomp.wav, Clap.wav, Shaker.wav, 808 C.wav, 808 G.wav, 808 Ab.wav, 808.mid."
+    },
+    {
+     "head": "Hear it first",
+     "text": "Play Finished beat 9. Listen for claps that never land the same way twice."
+    },
+    {
+     "head": "The lesson",
+     "text": "A guitar groove and drums that sound played, not programmed."
+    },
+    {
+     "head": "",
+     "text": "Beat 9 · Road · C minor · FL at 94"
+    }
+   ],
+   "table": [],
+   "notes": "Beat 9 crowned 11-25. Files: Music/PL Kits/_school/Beat 9 - C minor 94/."
+  },
+  {
+   "id": "ch9-guitar",
+   "eyebrow": "Step 1 · the groove",
+   "title": "The guitar",
+   "chips": [],
+   "grids": [],
+   "blocks": [
+    {
+     "head": "",
+     "text": "Load Guitar.wav: four bars, pitched down to C minor and set to 94: C minor, G minor, A flat, A flat."
+    },
+    {
+     "head": "",
+     "text": "Play Stage 1."
+    },
+    {
+     "head": "",
+     "text": "Beat 9 · Road · C minor · FL at 94"
+    }
+   ],
+   "table": [],
+   "notes": ""
+  },
+  {
+   "id": "ch9-stomp",
+   "eyebrow": "Step 2 · the stomp",
+   "title": "Stomp",
+   "chips": [],
+   "grids": [
+    {
+     "label": "STOMP · Stomp.wav",
+     "steps": [
+      true,
+      false,
+      false,
+      false,
+      false,
+      false,
+      false,
+      false,
+      true,
+      false,
+      false,
+      false,
+      false,
+      false,
+      false,
+      false
+     ],
+     "color": "#c9a84c"
+    },
+    {
+     "label": "STOMP, odd bars",
+     "steps": [
+      true,
+      false,
+      false,
+      false,
+      false,
+      false,
+      false,
+      false,
+      true,
+      false,
+      false,
+      false,
+      false,
+      false,
+      true,
+      false
+     ],
+     "color": "#c9a84c"
+    }
+   ],
+   "blocks": [
+    {
+     "head": "",
+     "text": "Stomp.wav on boxes 1 and 9, and one on box 15 every other bar."
+    },
+    {
+     "head": "",
+     "text": "Cut its lowest lows a little: it is boomy. Play Stage 2."
+    },
+    {
+     "head": "",
+     "text": "Beat 9 · Road · C minor · FL at 94"
+    }
+   ],
+   "table": [],
+   "notes": ""
+  },
+  {
+   "id": "ch9-clap",
+   "eyebrow": "Step 3 · the claps",
+   "title": "Two hands",
+   "chips": [],
+   "grids": [
+    {
+     "label": "CLAP · Clap.wav",
+     "steps": [
+      false,
+      false,
+      false,
+      false,
+      true,
+      false,
+      false,
+      false,
+      false,
+      false,
+      false,
+      false,
+      true,
+      false,
+      false,
+      false
+     ],
+     "color": "#c9a84c"
+    }
+   ],
+   "blocks": [
+    {
+     "head": "",
+     "text": "Clap.wav on 5 and 13, each one doubled a hair late and quieter: a room of hands."
+    },
+    {
+     "head": "",
+     "text": "Change every clap's velocity. Play Stage 3."
+    },
+    {
+     "head": "",
+     "text": "Beat 9 · Road · C minor · FL at 94"
+    }
+   ],
+   "table": [],
+   "notes": "Stomp-clap."
+  },
+  {
+   "id": "ch9-all",
+   "eyebrow": "Step 4 · all in",
+   "title": "Shaker and 808",
+   "chips": [],
+   "grids": [
+    {
+     "label": "SHAKER · Shaker.wav",
+     "steps": [
+      true,
+      false,
+      true,
+      false,
+      true,
+      false,
+      true,
+      false,
+      true,
+      false,
+      true,
+      false,
+      true,
+      false,
+      true,
+      false
+     ],
+     "color": "#c9a84c"
+    },
+    {
+     "label": "808 starts",
+     "steps": [
+      true,
+      false,
+      false,
+      false,
+      false,
+      false,
+      false,
+      false,
+      true,
+      false,
+      false,
+      false,
+      false,
+      false,
+      false,
+      false
+     ],
+     "color": "#c9a84c"
+    }
+   ],
+   "blocks": [
+    {
+     "head": "",
+     "text": "Shaker.wav on every other box, and a short round 808 on the roots, beats 1 and 3: 808 C.wav, 808 G.wav, 808 Ab.wav, 808 Ab.wav. Import 808.mid."
+    },
+    {
+     "head": "",
+     "text": "Play Stage 4."
+    },
+    {
+     "head": "",
+     "text": "Beat 9 · Road · C minor · FL at 94"
+    }
+   ],
+   "table": [],
+   "notes": ""
+  },
+  {
+   "id": "ch9-feel",
+   "eyebrow": "Step 5 · played feel",
+   "title": "Off the grid",
+   "chips": [],
+   "grids": [],
+   "blocks": [
+    {
+     "head": "",
+     "text": "Move hits a few milliseconds off the grid by hand, or turn the channel swing up a little. No two hits the same loudness."
+    },
+    {
+     "head": "",
+     "text": "The beat stays put; the hands move. Play Finished beat 9."
+    },
+    {
+     "head": "",
+     "text": "Beat 9 · Road · C minor · FL at 94"
+    }
+   ],
+   "table": [],
+   "notes": "Played live feel."
+  },
+  {
+   "id": "ch9-check",
+   "eyebrow": "Check",
+   "title": "Does it sound played?",
+   "chips": [],
+   "grids": [],
+   "blocks": [
+    {
+     "head": "",
+     "text": "Close your eyes. If you can hear the grid, loosen it more."
+    },
+    {
+     "head": "",
+     "text": "Then play your loop next to Finished beat 9."
+    },
+    {
+     "head": "",
+     "text": "Beat 9 · Road · C minor · FL at 94"
+    }
+   ],
+   "table": [],
+   "notes": ""
   }
  ]
 }
