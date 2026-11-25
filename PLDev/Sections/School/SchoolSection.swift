@@ -37,6 +37,22 @@ struct SchoolTrack: Decodable, Identifiable, Hashable {
     let id, title, sub, ref, refName: String
     let slides: [String]
     let clips: [String: [String]]          // step id -> [audio id, spoken name]
+    let color: String?                     // whose traits the beat studies: "blue" | "red" | "both"
+}
+
+/// The track's dot: system blue, red, or half of each for "both". Nothing drawn for any other value.
+struct TrackDot: View {
+    let kind: String
+    var body: some View {
+        switch kind {
+        case "blue": dot(Circle().fill(Color.blue))
+        case "red": dot(Circle().fill(Color.red))
+        case "both": dot(Circle().fill(LinearGradient(stops: [.init(color: .blue, location: 0.5), .init(color: .red, location: 0.5)],
+                                                      startPoint: .leading, endPoint: .trailing)))
+        default: EmptyView()
+        }
+    }
+    private func dot(_ v: some View) -> some View { v.frame(width: 10, height: 10).accessibilityLabel(kind) }
 }
 struct SchoolBeat: Decodable, Identifiable, Hashable { let id, title, sub: String }
 struct SchoolLesson: Decodable, Identifiable, Hashable {
@@ -161,9 +177,12 @@ struct SchoolView: View {
             Section {
                 ForEach(state.tracks) { t in
                     Button { state.open = t } label: {
-                        VStack(alignment: .leading, spacing: 3) {
-                            Text(t.title).font(Font.pl(.headline)).foregroundStyle(.primary)
-                            Text("\(t.sub) · \(t.slides.count) steps").font(Font.pl(.subheadline)).foregroundStyle(.secondary)
+                        HStack(spacing: 10) {
+                            if let c = t.color { TrackDot(kind: c) }
+                            VStack(alignment: .leading, spacing: 3) {
+                                Text(t.title).font(Font.pl(.headline)).foregroundStyle(.primary)
+                                Text("\(t.sub) · \(t.slides.count) steps").font(Font.pl(.subheadline)).foregroundStyle(.secondary)
+                            }
                         }
                         .frame(maxWidth: .infinity, alignment: .leading)
                         .contentShape(Rectangle())

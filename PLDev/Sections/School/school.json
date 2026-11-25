@@ -20,6 +20,7 @@
    ],
    "ref": "loop-ref",
    "refName": "the curve.kit demo",
+   "color": null,
    "clips": {}
   },
   {
@@ -41,6 +42,7 @@
    ],
    "ref": "b1-ref",
    "refName": "finished beat 1",
+   "color": "blue",
    "clips": {
     "ch1-clap": [
      "b1-s1",
@@ -81,6 +83,7 @@
    ],
    "ref": "b2-ref",
    "refName": "finished beat 2",
+   "color": "blue",
    "clips": {
     "ch2-straight": [
      "b2-s1",
@@ -122,6 +125,7 @@
    ],
    "ref": "b3-ref",
    "refName": "finished beat 3",
+   "color": "both",
    "clips": {
     "ch3-guitar": [
      "b3-s1",
