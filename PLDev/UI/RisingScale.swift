@@ -264,7 +264,14 @@ struct RisingBar: View {
                 }
                 menu
             }
-            if let tap = rising.current, !again { after(tap) } else { scale }
+            if again || rising.current == nil || rising.current?.word == nil {
+                // his ruling 11-25: the scale stands upright as a curve, and the words stack beside it
+                HStack(alignment: .top, spacing: PLSpace.gap) {
+                    CurveScale(band: rising.current?.band) { band in again = false; rising.tap(band) }
+                    if let tap = rising.current { words(tap) }
+                }
+            }
+            if let tap = rising.current { after(tap) }
             if rising.heavyRun, heavyDismissed != RisingScale.shiftDay(.now) {
                 VStack(alignment: .leading, spacing: 4) {
                     Text("Three heavy nights in a row. A good night to reach out to someone you trust.").plFont(.callout)
@@ -284,41 +291,25 @@ struct RisingBar: View {
         .sensoryFeedback(PLHaptic.select, trigger: rising.log.count)
     }
 
-    private var scale: some View {
-        HStack(spacing: 2) {
-            ForEach(Band.allCases, id: \.self) { band in
-                Button {
-                    again = false
-                    rising.tap(band)
-                } label: {
-                    VStack(spacing: 4) {
-                        Circle().fill(Color(hue: Double(band.rawValue) / 7 * 0.45 + 0.62, saturation: 0.55, brightness: 0.9))
-                            .frame(width: 22, height: 22)
-                        Text(band.title).font(Font.pl(.caption2)).lineLimit(1).minimumScaleFactor(0.6)
-                    }
-                    .frame(maxWidth: .infinity, minHeight: 48).contentShape(Rectangle())
+    private func words(_ tap: CheckIn) -> some View {
+        VStack(alignment: .leading, spacing: 0) {
+            ForEach(tap.band.words, id: \.self) { w in
+                Button { again = false; rising.refine(word: w) } label: {
+                    Text(w).fontWeight(tap.word == w ? .bold : .regular)
+                        .frame(maxWidth: .infinity, minHeight: 44, alignment: .leading).contentShape(Rectangle())
                 }
-                .buttonStyle(.plain)
-                .accessibilityLabel("I feel \(band.title)")
             }
         }
     }
 
     private func after(_ tap: CheckIn) -> some View {
         VStack(alignment: .leading, spacing: PLSpace.gap) {
-            // every word on screen: they wrap into rows (his screenshot 11-25: the sideways row cut "overwhelm" off)
-            LazyVGrid(columns: [GridItem(.adaptive(minimum: 104), spacing: 6)], spacing: 6) {
-                ForEach(tap.band.words, id: \.self) { w in
-                    Button { rising.refine(word: w) } label: {
-                        Text(w).fontWeight(tap.word == w ? .bold : .regular).lineLimit(1).minimumScaleFactor(0.7)
-                            .frame(maxWidth: .infinity, minHeight: 44).contentShape(Rectangle())
-                    }
-                }
-            }
             HStack {
                 Button(tap.tiredBody ? "Tired body: on" : "Tired body") { rising.refine(tiredBody: !tap.tiredBody) }.frame(minHeight: 44)
                 Spacer()
-                Button("Change") { again = true }.frame(minHeight: 44)
+                if tap.word != nil {   // a picked word folds the card away; this opens it again
+                    Button(again ? "Done" : "\(tap.band.title): \(tap.word ?? "") · Change") { again.toggle() }.frame(minHeight: 44)
+                }
             }
             if tap.band >= .rising {
                 TextField("A note for your low self", text: $rising.note, axis: .vertical).textFieldStyle(.roundedBorder)
@@ -339,6 +330,77 @@ struct RisingBar: View {
     }
 }
 
+/// The seven bands up a curve, Heavy at the foot and Lit at the top: drag along it (or tap a name) and let go to log it.
+struct CurveScale: View {
+    let band: Band?
+    let pick: (Band) -> Void
+    @State private var dragging: Band?
+    private static let height: CGFloat = 308, step: CGFloat = 44, foot: CGFloat = 18, bulge: CGFloat = 52
+
+    /// Stop i of 0...6 sits mid-row; x follows a quadratic curve, y stays linear so a finger's height is the band.
+    private static func point(_ t: CGFloat) -> CGPoint {
+        CGPoint(x: foot + 2 * (1 - t) * t * bulge, y: height - step / 2 - t * (height - step))
+    }
+    private static func band(at y: CGFloat) -> Band {
+        let i = ((height - step / 2 - y) / (height - step) * 6).rounded()
+        return Band(rawValue: Int(min(6, max(0, i)))) ?? .stuck
+    }
+
+    var body: some View {
+        let shown = dragging ?? band
+        ZStack(alignment: .topLeading) {
+            Path { p in
+                p.move(to: Self.point(0))
+                for i in 1...48 { p.addLine(to: Self.point(CGFloat(i) / 48)) }
+            }
+            .stroke(Color.primary.opacity(0.35), style: StrokeStyle(lineWidth: 6, lineCap: .round))
+            ForEach(Band.allCases, id: \.self) { b in
+                let at = Self.point(CGFloat(b.rawValue) / 6)
+                Text(b.title).fontWeight(shown == b ? .bold : .regular).opacity(shown == b ? 1 : 0.65)
+                    .frame(width: 84, height: Self.step, alignment: .leading)
+                    .offset(x: at.x + 20, y: at.y - Self.step / 2)
+            }
+            if let shown {
+                let at = Self.point(CGFloat(shown.rawValue) / 6)
+                Circle().fill(PLTone.accent).frame(width: 30, height: 30)
+                    .overlay(Circle().stroke(Color.primary.opacity(0.9), lineWidth: 2))
+                    .offset(x: at.x - 15, y: at.y - 15)
+                    .animation(.snappy, value: shown)
+            }
+        }
+        .frame(width: 150, height: Self.height, alignment: .topLeading)
+        .contentShape(Rectangle())
+        .highPriorityGesture(DragGesture(minimumDistance: 0)   // the slider keeps the finger; the page does not scroll under it
+            .onChanged { dragging = Self.band(at: $0.location.y) }
+            .onEnded { v in dragging = nil; pick(Self.band(at: v.location.y)) })
+        .sensoryFeedback(PLHaptic.select, trigger: dragging)
+        .accessibilityElement()
+        .accessibilityLabel("How you feel")
+        .accessibilityValue(band?.title ?? "Not set")
+        .accessibilityAdjustableAction { d in
+            let now = band?.rawValue ?? 3
+            if let b = Band(rawValue: now + (d == .increment ? 1 : -1)) { pick(b) }
+        }
+    }
+}
+
+/// His ruling 11-25: Buddy sits in a little screen on a stand, so something holds him.
+struct BuddyScreen: View {
+    let model: BuddyModel
+    var body: some View {
+        VStack(spacing: 0) {
+            BuddyView(model: model, pinned: true)
+                .frame(width: 72, height: 62)
+                .padding(7)
+                .background(Color.black.opacity(0.85), in: RoundedRectangle(cornerRadius: 14, style: .continuous))
+                .overlay(RoundedRectangle(cornerRadius: 14, style: .continuous).stroke(PLTone.accent, lineWidth: 3))
+            Rectangle().fill(PLTone.accent).frame(width: 10, height: 8)
+            Capsule().fill(PLTone.accent).frame(width: 46, height: 6)
+        }
+        .accessibilityElement(children: .combine)
+    }
+}
+
 /// Buddy slides in from the lower corner of Home, says one line, and leaves after eight seconds. Home only, so he never
 /// covers drawing or audio.
 struct RisingBuddy: View {
@@ -354,7 +416,7 @@ struct RisingBuddy: View {
                     Text(line).plFont(.callout)
                         .padding(12)
                         .plGlass(in: RoundedRectangle(cornerRadius: PLRadius.card, style: .continuous))
-                    BuddyView(model: buddy).frame(width: 72, height: 72)
+                    BuddyScreen(model: buddy)
                 }
                 .padding(.horizontal, PLSpace.margin).padding(.bottom, PLSpace.gap)
                 .transition(reduce ? .opacity : .move(edge: .trailing).combined(with: .opacity))
