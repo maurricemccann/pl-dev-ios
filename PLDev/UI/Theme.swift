@@ -164,6 +164,7 @@ struct PLSurface<S: Shape>: ViewModifier {
     @AppStorage private var style: String
     @AppStorage private var amount: Double
     @AppStorage private var through: Double
+    @AppStorage("pldev.styleTile") private var tile = "squircle"   // one shape per theme: notched tiles notch every surface (his 11-24)
     @Environment(\.colorScheme) private var scheme
 
     init(part: Part, tint: Color?, interactive: Bool, shape: S) {
@@ -177,6 +178,7 @@ struct PLSurface<S: Shape>: ViewModifier {
     }
 
     func body(content: Content) -> some View {
+        let shape: AnyShape = tile == "notch" ? AnyShape(NotchShape(cut: 12)) : AnyShape(self.shape)
         let key = PLTone.accent
         let surface = PLCarry.tone(.surface, scheme, Color(uiColor: .secondarySystemGroupedBackground))
         let wash: Color? = tint ?? (amount > 0 ? key.opacity(amount * 0.6) : nil)

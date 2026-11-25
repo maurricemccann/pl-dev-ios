@@ -104,7 +104,7 @@ struct PLThemePreset: Identifiable, Hashable {
               curves: 0.2, tint: 0.5, through: 0.15, icon: "AppIcon-BoneOxblood", mark: "money"),
         .init(id: "ledger", title: "The ledger", palette: "th-ledger", face: "ledger", text: "courier",
               note: "Your Ledger hand on ledger paper, typewriter keys, ruled outlines, still", dark: false,
-              card: .outline, radius: 0.5, space: 1, tile: "circle", look: "typewriter", wall: "invert|" + art + "abstract-pattern_organic-interlocking_monochrome_digital-ink_5373.png",
+              card: .outline, radius: 1, space: 1, tile: "circle", look: "typewriter", wall: "invert|" + art + "abstract-pattern_organic-interlocking_monochrome_digital-ink_5373.png",
               calm: true, curves: 0.05, tint: 0),
         .init(id: "linen", title: "Linen", palette: "th-linen", face: "v2", text: "jost",
               note: "Your second hand on sage cloth, clear glass bubbles, airy", dark: false,

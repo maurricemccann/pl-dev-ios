@@ -378,8 +378,9 @@ struct ThemeWall: View {
 
 /// Cyberpunk's tile: two corners cut on the diagonal (the clipped-corner frame idea from augmented-ui, BSD-2, drawn natively).
 struct NotchShape: Shape {
+    var cut: CGFloat? = nil   // a fixed cut for cards and bars; tiles cut by their size
     func path(in r: CGRect) -> Path {
-        let n = min(r.width, r.height) * 0.22
+        let n = min(cut ?? min(r.width, r.height) * 0.22, min(r.width, r.height) * 0.45)
         var p = Path()
         p.move(to: CGPoint(x: r.minX + n, y: r.minY))
         p.addLine(to: CGPoint(x: r.maxX, y: r.minY))
