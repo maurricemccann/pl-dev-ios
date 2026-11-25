@@ -388,17 +388,13 @@ struct CurveScale: View {
 /// laid on the upper block and the stem's flat foot rests on whatever is under it.
 struct BuddyHead: View {
     let model: BuddyModel
-    var side: CGFloat = 128
+    var side: CGFloat = 144
     private static let art = Bundle.main.url(forResource: "buddy-head", withExtension: "png").flatMap { UIImage(contentsOfFile: $0.path) }
 
     var body: some View {
-        // BuddyView fits its 440 x 530 face into 0.92 of the box: this box draws the face 0.40 of the head wide
-        let w = side * 0.40 / 0.92, h = w * 530 / 440
         ZStack {
             if let art = Self.art { Image(uiImage: art).resizable().scaledToFit().accessibilityHidden(true) }
-            BuddyView(model: model, pinned: true)
-                .frame(width: w, height: h)
-                .position(x: side * 0.48, y: side * 0.34)
+            BuddyView(model: model, pinned: true, onHead: true)   // the face sits where he circled on the head
         }
         .frame(width: side, height: side)
     }
@@ -435,7 +431,7 @@ struct RisingBuddy: View {
         .task(id: rising.current?.at) {
             try? await Task.sleep(for: .seconds(3))
             guard !Task.isCancelled, let said = rising.buddyLine() else { return }
-            buddy.react(.open)
+            buddy.move = "happy"; buddy.moveAt = .now   // a move on his pieces; the whole-face pictures would not fit the head
             withAnimation { line = said }
             AccessibilityNotification.Announcement(said).post()
             try? await Task.sleep(for: .seconds(8))
