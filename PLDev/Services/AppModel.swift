@@ -103,11 +103,13 @@ enum OriginReach: Equatable {
         // S353·7b1e: the Calendar (his ask 11-24) shows second on Home even when the loaded config predates it
         var order = config.sections
         if !order.contains("calendar") { order.insert("calendar", at: min(1, order.count)) }
+        var listed = config
+        listed.sections = order   // the readiness check counts the added Calendar as listed (his 11-24 screenshot: "does not list this section")
         for id in ThemeFeed.homeOrder(order) where seen.insert(id).inserted {
             guard let section = SectionRegistry.section(id) else { continue }   // a section this build does not have yet
             var manifest = section.manifest
             manifest.title = ThemeFeed.sectionName(id, manifest.title)
-            built.append(SectionEntry(manifest: manifest, readiness: manifest.readiness(in: config),
+            built.append(SectionEntry(manifest: manifest, readiness: manifest.readiness(in: listed),
                                       makeRoot: { SectionRegistry.section(id)?.makeRoot(model: AppModel.shared) ?? AnyView(EmptyView()) },
                                       badge: badges[id]))
         }
