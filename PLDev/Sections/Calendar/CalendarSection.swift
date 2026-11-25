@@ -49,19 +49,26 @@ struct CalendarItem: Decodable, Identifiable, Hashable {
 
     private func key(_ model: AppModel) -> String? { model.config?.key("widgetWrite") }
 
-    func load(model: AppModel) async {
+    /// The first day of this month in Pacific time; the grid's window starts at the month on screen (`from`).
+    static var thisMonth: String { String(today.prefix(8)) + "01" }
+    private(set) var from = CalendarModel.thisMonth
+
+    func load(model: AppModel, from: String? = nil) async {
         guard let http = model.http, let key = key(model) else { problem = "The calendar needs the widget write key in your config."; return }
         struct Out: Decodable { let ok: Bool; let items: [CalendarItem]; let content: [Post]? }
         struct Post: Decodable { let date: String; let count: Int }
+        let start = from ?? self.from
         do {
-            let data = try await http.send(RequestPlan(origin: "cron", path: "api/widget/calendar", query: ["days": "90"]),
+            let data = try await http.send(RequestPlan(origin: "cron", path: "api/widget/calendar", query: ["from": start, "days": "120"]),
                                            extraHeaders: ["Authorization": "Bearer " + key])
             let out = try JSONDecoder().decode(Out.self, from: data)
             items = out.items
             posts = Dictionary((out.content ?? []).map { ($0.date, $0.count) }, uniquingKeysWith: { a, _ in a })
+            self.from = start
             problem = nil
             loaded = true
-            scheduleReminders()
+            // only a window that starts this month holds every reminder still ahead; another month would drop some
+            if start == Self.thisMonth { scheduleReminders() }
         } catch {
             problem = "The calendar did not load: " + plainSentence(error)
         }
@@ -113,64 +120,173 @@ struct SharedCalendarView: View {
     let model: AppModel
     let state: CalendarModel
     @State private var adding = false
+    @State private var selected = CalendarModel.today
+    @State private var month = CalendarModel.thisMonth   // yyyy-MM-01 of the month on screen
 
     init(model: AppModel, state: CalendarModel) {
         self.model = model
         self.state = state
     }
 
-    private var days: [String] {
-        let keys = Set(state.items.map(\.date)).union(state.posts.filter { $0.value > 0 }.map(\.key))
-        return keys.filter { $0 >= CalendarModel.today }.sorted()
+    /// The grid reads Pacific days, as the server keeps them.
+    private static var cal: Calendar { var c = Calendar(identifier: .gregorian); c.timeZone = TimeZone(identifier: "America/Los_Angeles")!; return c }
+    static func date(_ k: String) -> Date? {
+        let p = k.split(separator: "-").compactMap { Int($0) }
+        guard p.count == 3 else { return nil }
+        return cal.date(from: DateComponents(year: p[0], month: p[1], day: p[2], hour: 12))
     }
+    static func key(_ d: Date) -> String {
+        let c = cal.dateComponents([.year, .month, .day], from: d)
+        return String(format: "%04d-%02d-%02d", c.year ?? 0, c.month ?? 0, c.day ?? 0)
+    }
+
+    private var dayItems: [CalendarItem] { state.items.filter { $0.date == selected } }
 
     var body: some View {
         List {
+            Section {
+                monthGrid
+                    .listRowBackground(PLRowGround())
+                    .listRowInsets(EdgeInsets(top: PLSpace.pad, leading: PLSpace.gap, bottom: PLSpace.pad, trailing: PLSpace.gap))
+            }
             if let problem = state.problem {
-                Text(problem).plFont(.footnote).foregroundStyle(.secondary)
+                Text(problem).plFont(.footnote).foregroundStyle(.secondary).listRowBackground(Color.clear)
             }
-            if state.loaded && days.isEmpty {
-                EmptyNote(symbol: "calendar", title: "Nothing ahead", detail: "Add a drop or a reminder, or ask a session to.",
-                          actionTitle: "Add", action: { adding = true })
-            }
-            ForEach(days, id: \.self) { day in
-                Section {
-                    if let n = state.posts[day], n > 0 {
-                        Label("\(n) post\(n == 1 ? "" : "s") scheduled", systemImage: "square.stack")
-                            .plFont(.footnote).foregroundStyle(.secondary)
-                            .listRowBackground(PLRowGround())
-                    }
-                    ForEach(state.items.filter { $0.date == day }) { item in
-                        row(item)
-                            .listRowBackground(PLRowGround())
-                            .swipeActions(edge: .leading) {
-                                Button(item.done == 0 ? "Done" : "Undo") {
-                                    Task { _ = await state.send(["action": "done", "id": item.id, "done": item.done == 0], model: model) }
-                                }
-                                .tint(PLTone.accent)
-                            }
-                            .swipeActions(edge: .trailing) {
-                                Button("Delete", role: .destructive) {
-                                    Task { _ = await state.send(["action": "delete", "id": item.id], model: model) }
-                                }
-                            }
-                    }
-                } header: {
-                    Text(Self.heading(day)).plTitle(.subhead)
+            Section {
+                if let n = state.posts[selected], n > 0 {
+                    Label("\(n) post\(n == 1 ? "" : "s") scheduled", systemImage: "square.stack")
+                        .plFont(.footnote).foregroundStyle(.secondary)
+                        .listRowBackground(PLRowGround())
                 }
+                if state.loaded && dayItems.isEmpty {
+                    Button { adding = true } label: {
+                        Label("Nothing on this day. Add one", systemImage: "plus.circle")
+                            .plFont(.callout).frame(maxWidth: .infinity, minHeight: PLMetric.touch, alignment: .leading)
+                    }
+                    .tint(PLTone.accent)
+                    .listRowBackground(PLRowGround())
+                }
+                ForEach(dayItems) { item in
+                    row(item)
+                        .listRowBackground(PLRowGround())
+                        .swipeActions(edge: .leading) {
+                            Button(item.done == 0 ? "Done" : "Undo") {
+                                Task { _ = await state.send(["action": "done", "id": item.id, "done": item.done == 0], model: model) }
+                            }
+                            .tint(PLTone.accent)
+                        }
+                        .swipeActions(edge: .trailing) {
+                            Button("Delete", role: .destructive) {
+                                Task { _ = await state.send(["action": "delete", "id": item.id], model: model) }
+                            }
+                        }
+                }
+            } header: {
+                Text(Self.heading(selected)).plTitle(.subhead)
             }
         }
         .plGround()
         .plScreenTitle("Calendar")
         .toolbar {
+            ToolbarItem(placement: .topBarLeading) {
+                Button("Today") { select(CalendarModel.today) }
+                    .tint(PLTone.accent)
+                    .disabled(selected == CalendarModel.today && month == CalendarModel.thisMonth)
+            }
             ToolbarItem(placement: .topBarTrailing) {
                 Button { adding = true } label: { Image(systemName: "plus").frame(minWidth: PLMetric.touch, minHeight: PLMetric.touch) }
                     .accessibilityLabel("Add to the calendar")
             }
         }
-        .refreshable { await state.load(model: model) }
-        .task { if !state.loaded { await state.load(model: model) } }
-        .sheet(isPresented: $adding) { CalendarAddSheet(model: model, state: state) }
+        .refreshable { await state.load(model: model, from: month) }
+        .task(id: month) { if !state.loaded || state.from != month { await state.load(model: model, from: month) } }
+        .sheet(isPresented: $adding) { CalendarAddSheet(model: model, state: state, day: Self.date(selected) ?? Date()) }
+    }
+
+    // MARK: the month (Apple's Calendar month view: the month name, a weekday row, numbers in circles, a dot per day that has something)
+
+    private var monthGrid: some View {
+        let cal = Self.cal
+        let first = Self.date(month) ?? Date()
+        let count = cal.range(of: .day, in: .month, for: first)?.count ?? 30
+        let lead = (cal.component(.weekday, from: first) - cal.firstWeekday + 7) % 7
+        let symbols = cal.veryShortWeekdaySymbols
+        let weekdays = Array(symbols[(cal.firstWeekday - 1)...] + symbols[..<(cal.firstWeekday - 1)])
+        let prefix = String(month.prefix(8))
+        return VStack(spacing: PLSpace.gap) {
+            HStack {
+                Text(first.formatted(.dateTime.month(.wide).year())).plTitle(.title3)
+                    .accessibilityAddTraits(.isHeader)
+                Spacer()
+                Button { shift(-1) } label: { Image(systemName: "chevron.left").frame(width: PLMetric.touch, height: PLMetric.touch) }
+                    .accessibilityLabel("Previous month")
+                Button { shift(1) } label: { Image(systemName: "chevron.right").frame(width: PLMetric.touch, height: PLMetric.touch) }
+                    .accessibilityLabel("Next month")
+            }
+            .buttonStyle(.plain).foregroundStyle(PLTone.accent)
+            HStack(spacing: 0) {
+                ForEach(weekdays.indices, id: \.self) { i in
+                    Text(weekdays[i]).plFont(.caption2).foregroundStyle(.secondary).frame(maxWidth: .infinity)
+                }
+            }
+            .accessibilityHidden(true)
+            LazyVGrid(columns: Array(repeating: GridItem(.flexible(), spacing: 0), count: 7), spacing: PLSpace.tight) {
+                ForEach(0..<(lead + count), id: \.self) { i in
+                    if i < lead { Color.clear.frame(height: PLMetric.touch + 8) }
+                    else { dayCell(prefix + String(format: "%02d", i - lead + 1)) }
+                }
+            }
+        }
+        .contentShape(Rectangle())
+        .gesture(DragGesture(minimumDistance: 30).onEnded { v in
+            if abs(v.translation.width) > 60 { shift(v.translation.width < 0 ? 1 : -1) }
+        })
+    }
+
+    private func dayCell(_ k: String) -> some View {
+        let isToday = k == CalendarModel.today, isSelected = k == selected
+        let open = state.items.filter { $0.date == k && $0.done == 0 }
+        let hasDrop = open.contains { $0.kind == "drop" }
+        let hasOther = open.contains { $0.kind != "drop" } || (state.posts[k] ?? 0) > 0
+        return Button { selected = k } label: {
+            VStack(spacing: 3) {
+                Text("\(Int(k.suffix(2)) ?? 0)")
+                    .plFont(.callout, emphasized: isToday || isSelected)
+                    .monospacedDigit()
+                    .foregroundStyle(isSelected ? Color(uiColor: .systemBackground) : isToday ? PLTone.accent : k < CalendarModel.today ? Color.secondary : Color.primary)
+                    .frame(width: 36, height: 36)
+                    .background { if isSelected { Circle().fill(isToday ? PLTone.accent : Color.primary) } }
+                HStack(spacing: 3) {
+                    if hasDrop { Circle().fill(PLTone.accent).frame(width: 5, height: 5) }
+                    if hasOther { Circle().fill(Color.secondary).frame(width: 5, height: 5) }
+                }
+                .frame(height: 5)
+            }
+            .frame(maxWidth: .infinity, minHeight: PLMetric.touch + 8)
+            .contentShape(Rectangle())
+        }
+        .buttonStyle(.plain)
+        .accessibilityLabel(accessibility(k, open: open.count, drop: hasDrop))
+        .accessibilityAddTraits(isSelected ? .isSelected : [])
+    }
+
+    private func accessibility(_ k: String, open: Int, drop: Bool) -> String {
+        var parts = [Self.heading(k)]
+        if open > 0 { parts.append("\(open) item\(open == 1 ? "" : "s")") }
+        if drop { parts.append("a drop") }
+        if let n = state.posts[k], n > 0 { parts.append("\(n) post\(n == 1 ? "" : "s")") }
+        return parts.joined(separator: ", ")
+    }
+
+    private func shift(_ n: Int) {
+        guard let d = Self.date(month), let m = Self.cal.date(byAdding: .month, value: n, to: d) else { return }
+        withAnimation(.snappy) { month = String(Self.key(m).prefix(8)) + "01" }
+        selected = month == CalendarModel.thisMonth ? CalendarModel.today : month
+    }
+
+    private func select(_ k: String) {
+        withAnimation(.snappy) { month = String(k.prefix(8)) + "01" }
+        selected = k
     }
 
     private func row(_ item: CalendarItem) -> some View {
@@ -234,9 +350,11 @@ struct CalendarAddSheet: View {
     @State private var note = ""
     @State private var saving = false
 
-    init(model: AppModel, state: CalendarModel) {
+    /// Opens on the day picked in the grid.
+    init(model: AppModel, state: CalendarModel, day: Date = Date()) {
         self.model = model
         self.state = state
+        _day = State(initialValue: day)
     }
 
     var body: some View {
