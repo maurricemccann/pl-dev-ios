@@ -306,11 +306,12 @@ struct RisingBar: View {
 
     private func after(_ tap: CheckIn) -> some View {
         VStack(alignment: .leading, spacing: PLSpace.gap) {
-            ScrollView(.horizontal, showsIndicators: false) {
-                HStack {
-                    ForEach(tap.band.words, id: \.self) { w in
-                        Button(w) { rising.refine(word: w) }
-                            .fontWeight(tap.word == w ? .bold : .regular).frame(minHeight: 44)
+            // every word on screen: they wrap into rows (his screenshot 11-25: the sideways row cut "overwhelm" off)
+            LazyVGrid(columns: [GridItem(.adaptive(minimum: 104), spacing: 6)], spacing: 6) {
+                ForEach(tap.band.words, id: \.self) { w in
+                    Button { rising.refine(word: w) } label: {
+                        Text(w).fontWeight(tap.word == w ? .bold : .regular).lineLimit(1).minimumScaleFactor(0.7)
+                            .frame(maxWidth: .infinity, minHeight: 44).contentShape(Rectangle())
                     }
                 }
             }
