@@ -6,6 +6,8 @@ struct HomeView: View {
     let model: AppModel
     @State private var path: [String] = []
     @State private var showSettings = false
+    @State private var rising = RisingScale.shared
+    @Environment(\.scenePhase) private var scenePhase
     @State private var showProbes = false
     @State private var showInbox = false
     @State private var showBlocked = false
@@ -60,7 +62,6 @@ struct HomeView: View {
             if let line = model.configError ?? model.lastError {
                 NoteLine(symbol: "exclamationmark.triangle.fill", tint: PLTone.warn, text: line)
             }
-            RisingBar()   // how he feels, one tap (the Rising Scale, 11-25)
             if model.sections.isEmpty {
                 EmptyNote(symbol: "square.grid.2x2", title: ThemeFeed.text("home.empty", "Nothing to show yet"),
                           detail: "Your config lists sections this build does not have. Settings and the probes still work.",
@@ -156,6 +157,12 @@ struct HomeView: View {
                 destination(id)
             }
         }
+        // the check-in comes up only when there is a question (his ruling 11-25)
+        .sheet(isPresented: $rising.asking) { RisingAsk().presentationDragIndicator(.visible) }
+        .task { await rising.firstWear(); rising.scheduleReminders(); rising.askIfDue() }
+        .onChange(of: scenePhase) { _, phase in
+            if phase == .active { Task { await rising.wearIfDue(); rising.scheduleReminders(); rising.askIfDue() } }
+        }
         .sheet(isPresented: $showSettings) {
             SettingsView(model: model)
         }
@@ -191,6 +198,9 @@ struct HomeView: View {
                     .plTitle(.largeTitle)
                     .accessibilityAddTraits(.isHeader)
                 if !mark.isEmpty { PLIcon.symbol(mark).resizable().scaledToFit().frame(width: 30, height: 30).foregroundStyle(PLTone.accent).accessibilityHidden(true) }
+                Spacer(minLength: 0)
+                Button { rising.asking = true } label: { Image(systemName: "point.bottomleft.forward.to.point.topright.scurvepath").frame(width: 44, height: 44) }
+                    .accessibilityLabel("Check in")
             }
             Text(summary)
                 .plFont(.subhead, emphasized: true)

@@ -50,6 +50,23 @@ struct CheckIn: Codable { let at: Date; let band: Band; var word: String?; var t
         return String(format: "%04d-%02d-%02d", p.year ?? 0, p.month ?? 0, p.day ?? 0)
     }
 
+    /// True while the check-in is up. It comes up only when there is a question: one per slot (4:15 PM, 12:30 AM, 4:30 AM).
+    var asking = false
+    private static func slot(_ now: Date = .now) -> Date {
+        let today = pacific.startOfDay(for: now)
+        let all = [-1, 0].flatMap { day -> [Date] in
+            guard let base = pacific.date(byAdding: .day, value: day, to: today) else { return [] }
+            return [(0, 30), (4, 30), (16, 15)].compactMap { pacific.date(bySettingHour: $0.0, minute: $0.1, second: 0, of: base) }
+        }
+        return all.filter { $0 <= now }.max() ?? today
+    }
+    func askIfDue() {
+        let slot = Self.slot()
+        if (log.last?.at ?? .distantPast) < slot, d.double(forKey: "pldev.rising.closedSlot") != slot.timeIntervalSince1970 { asking = true }
+    }
+    /// Closed without answering counts too: it does not come back until the next slot.
+    func closed() { d.set(Self.slot().timeIntervalSince1970, forKey: "pldev.rising.closedSlot") }
+
     var current: CheckIn? { log.last.flatMap { Self.shiftDay($0.at) == Self.shiftDay(.now) ? $0 : nil } }
 
     private func save() { d.set(try? JSONEncoder().encode(Array(log.suffix(2000))), forKey: "pldev.rising.log") }
@@ -247,54 +264,52 @@ struct CheckIn: Codable { let at: Date; let band: Band; var word: String?; var t
     func snooze(hours: Double) { d.set(Date().addingTimeInterval(hours * 3600).timeIntervalSince1970, forKey: "pldev.rising.snooze") }
 }
 
-/// The check-in on Home: seven taps; after one, its words, the body tag, the note and the switches.
-struct RisingBar: View {
+/// The check-in, up only when asked (his ruling 11-25: nothing sits on Home): the curve, then the words, then it leaves.
+struct RisingAsk: View {
     @State private var rising = RisingScale.shared
-    @State private var again = false
+    @State private var answered: CheckIn?
     @State private var heavyDismissed = UserDefaults.standard.string(forKey: "pldev.rising.heavyShown")
-    @Environment(\.scenePhase) private var scenePhase
+    @Environment(\.dismiss) private var dismiss
 
     var body: some View {
-        VStack(alignment: .leading, spacing: PLSpace.gap) {
-            HStack {
-                Text(rising.current.map { "Look: \($0.band.oneUp.title)" } ?? "Tap how you feel").plFont(.subhead, emphasized: true)
-                Spacer()
-                if rising.current != nil, rising.wearsDaily, RisingScale.lookBand() != nil {
-                    Button("Undo") { rising.undoFeeling() }.frame(minWidth: 44, minHeight: 44)
+        ScrollView {
+            VStack(alignment: .leading, spacing: PLSpace.roomy) {
+                HStack {
+                    Text(answered.map { "Look: \($0.band.oneUp.title)" } ?? "Tap how you feel").plTitle(.title2)
+                    Spacer()
+                    if answered != nil, rising.wearsDaily, RisingScale.lookBand() != nil {
+                        Button("Undo") { rising.undoFeeling() }.frame(minWidth: 44, minHeight: 44)
+                    }
+                    menu
+                    Button { dismiss() } label: { Image(systemName: "xmark").frame(width: 44, height: 44) }
+                        .accessibilityLabel("Close")
                 }
-                menu
-            }
-            if again || rising.current == nil || rising.current?.word == nil {
-                // his ruling 11-25: the scale stands upright as a curve, and the words stack beside it
                 HStack(alignment: .top, spacing: PLSpace.gap) {
-                    CurveScale(band: rising.current?.band) { band in again = false; rising.tap(band) }
-                    if let tap = rising.current { words(tap) }
+                    CurveScale(band: answered?.band) { band in rising.tap(band); answered = rising.current }
+                    if let tap = answered { words(tap) }
+                }
+                .frame(maxWidth: .infinity)
+                if let tap = answered { after(tap) }
+                if rising.heavyRun, heavyDismissed != RisingScale.shiftDay(.now) {
+                    VStack(alignment: .leading, spacing: 4) {
+                        Text("Three heavy nights in a row. A good night to reach out to someone you trust.").plFont(.callout)
+                        Button("Close") {
+                            heavyDismissed = RisingScale.shiftDay(.now)
+                            UserDefaults.standard.set(heavyDismissed, forKey: "pldev.rising.heavyShown")
+                        }.frame(minHeight: 44)
+                    }
                 }
             }
-            if let tap = rising.current { after(tap) }
-            if rising.heavyRun, heavyDismissed != RisingScale.shiftDay(.now) {
-                VStack(alignment: .leading, spacing: 4) {
-                    Text("Three heavy nights in a row. A good night to reach out to someone you trust.").plFont(.callout)
-                    Button("Close") {
-                        heavyDismissed = RisingScale.shiftDay(.now)
-                        UserDefaults.standard.set(heavyDismissed, forKey: "pldev.rising.heavyShown")
-                    }.frame(minHeight: 44)
-                }
-            }
-        }
-        .padding(14)
-        .plGlass(in: RoundedRectangle(cornerRadius: PLRadius.card, style: .continuous))
-        .task { await rising.firstWear(); rising.scheduleReminders() }
-        .onChange(of: scenePhase) { _, phase in
-            if phase == .active { Task { await rising.wearIfDue(); rising.scheduleReminders() } }
+            .padding(PLSpace.margin)
         }
         .sensoryFeedback(PLHaptic.select, trigger: rising.log.count)
+        .onDisappear { rising.closed() }
     }
 
     private func words(_ tap: CheckIn) -> some View {
         VStack(alignment: .leading, spacing: 0) {
             ForEach(tap.band.words, id: \.self) { w in
-                Button { again = false; rising.refine(word: w) } label: {
+                Button { rising.refine(word: w); dismiss() } label: {   // the word is the last tap: it closes
                     Text(w).fontWeight(tap.word == w ? .bold : .regular)
                         .frame(maxWidth: .infinity, minHeight: 44, alignment: .leading).contentShape(Rectangle())
                 }
@@ -305,11 +320,11 @@ struct RisingBar: View {
     private func after(_ tap: CheckIn) -> some View {
         VStack(alignment: .leading, spacing: PLSpace.gap) {
             HStack {
-                Button(tap.tiredBody ? "Tired body: on" : "Tired body") { rising.refine(tiredBody: !tap.tiredBody) }.frame(minHeight: 44)
+                Button(rising.current?.tiredBody == true ? "Tired body: on" : "Tired body") {
+                    rising.refine(tiredBody: rising.current?.tiredBody != true)
+                }.frame(minHeight: 44)
                 Spacer()
-                if tap.word != nil {   // a picked word folds the card away; this opens it again
-                    Button(again ? "Done" : "\(tap.band.title): \(tap.word ?? "") · Change") { again.toggle() }.frame(minHeight: 44)
-                }
+                Button("Done") { dismiss() }.frame(minWidth: 44, minHeight: 44)
             }
             if tap.band >= .rising {
                 TextField("A note for your low self", text: $rising.note, axis: .vertical).textFieldStyle(.roundedBorder)
@@ -432,7 +447,8 @@ struct RisingBuddy: View {
                 .accessibilityHint("Tap to send Buddy away")
             }
         }
-        .task(id: rising.current?.at) {
+        .task(id: "\(rising.current?.at.timeIntervalSince1970 ?? 0)/\(rising.asking)") {
+            guard !rising.asking else { line = nil; return }
             try? await Task.sleep(for: .seconds(3))
             guard !Task.isCancelled, let said = rising.buddyLine() else { return }
             buddy.react(.open)
