@@ -244,25 +244,32 @@ struct CheckIn: Codable { let at: Date; let band: Band; var word: String?; var t
     func snooze(hours: Double) { d.set(Date().addingTimeInterval(hours * 3600).timeIntervalSince1970, forKey: "pldev.rising.snooze") }
 }
 
-/// "x,y x,y ..." to points: text, not array literals, which held the compiler for 20 minutes (11-25).
+/// His line (the middle of curve-comp-02, path 11), 61 points from the Heavy end. His drawing runs off the page there, so its
+/// ends were sliced flat and read as clipped (his note 11-25): the same line is drawn with round ends and room around it.
 private enum CurvePoints {
+    /// "x,y x,y ..." to points: text, not array literals, which held the compiler for 20 minutes (11-25).
     static func read(_ s: String) -> [(CGFloat, CGFloat)] {
         s.split(separator: " ").compactMap { pair in
             let v = pair.split(separator: ",").compactMap { Double($0) }
             return v.count == 2 ? (CGFloat(v[0]), CGFloat(v[1])) : nil
         }
     }
+    static let line = read(
+        "0.0,0.9465 0.0088,0.9318 0.0192,0.9137 0.0392,0.9179 0.0591,0.9227 0.0791,0.9275 0.0991,0.932 0.1191,0.9361 0.1391,0.9398 0.1592,0.9431 0.1792,0.946 0.1993,0.9484 0.2194,0.9503 0.2395,0.9517 0.2596,0.9526 0.2797,0.9528 0.2998,0.9526 0.3199,0.9516 0.34,0.95 0.36,0.9476 0.3801,0.9445 0.4001,0.9406 0.4201,0.9358 0.44,0.9301 0.4599,0.9235 0.4796,0.9159 0.4993,0.907 0.5189,0.8972 0.5383,0.886 0.5575,0.8736 0.5765,0.8598 0.5953,0.8446 0.6138,0.8279 0.632,0.8097 0.6498,0.7899 0.6672,0.7685 0.6842,0.7456 0.7007,0.721 0.7166,0.695 0.732,0.6675 0.7468,0.6385 0.761,0.6082 0.7746,0.5767 0.7876,0.5441 0.8,0.5105 0.8118,0.476 0.8234,0.4409 0.8348,0.4058 0.8463,0.3707 0.8578,0.3356 0.8694,0.3007 0.881,0.2658 0.8927,0.231 0.9045,0.1964 0.9163,0.1619 0.9283,0.1275 0.9404,0.0934 0.9526,0.0594 0.968,0.0371 0.9843,0.0205 1.0,0.0068")
+    static let width: CGFloat = 14, inset: CGFloat = 9
+    /// The drawn part: the corner hooks left by the flat cuts are trimmed off.
+    static let drawn = 2...56
+    static func at(_ i: Int, in r: CGRect) -> CGPoint {
+        let p = line[min(max(i, drawn.lowerBound), drawn.upperBound)]
+        return CGPoint(x: r.minX + inset + p.0 * (r.width - 2 * inset), y: r.minY + inset + p.1 * (r.height - 2 * inset))
+    }
 }
 
-/// His shape (curve-comp-02, path 11), scaled to whatever box it is given.
 private struct HisCurve: Shape {
-    fileprivate static let shape: [(CGFloat, CGFloat)] = CurvePoints.read(
-        "0.0,0.8623 0.0,0.9045 0.0,0.9465 0.0151,0.9596 0.0352,0.9644 0.0554,0.9697 0.0756,0.9745 0.0957,0.979 0.1159,0.9832 0.1362,0.987 0.1564,0.9902 0.1766,0.9932 0.1969,0.9955 0.2172,0.9975 0.2375,0.9989 0.2578,0.9997 0.2781,1.0 0.2984,0.9997 0.3187,0.9988 0.3389,0.9971 0.3592,0.9948 0.3794,0.9918 0.3996,0.988 0.4198,0.9833 0.44,0.9777 0.46,0.9712 0.48,0.9636 0.4999,0.9552 0.5196,0.9455 0.5392,0.9346 0.5587,0.9226 0.5779,0.9092 0.5969,0.8945 0.6157,0.8784 0.6341,0.8609 0.6523,0.842 0.67,0.8215 0.6873,0.7994 0.7041,0.7759 0.7204,0.7508 0.7362,0.7243 0.7513,0.6963 0.7659,0.6671 0.7799,0.6366 0.7933,0.605 0.8061,0.5723 0.8184,0.5388 0.8302,0.5045 0.8416,0.4697 0.8529,0.4347 0.8643,0.3999 0.8757,0.3652 0.8872,0.3304 0.8987,0.2958 0.9104,0.2613 0.922,0.2269 0.9338,0.1926 0.9457,0.1585 0.9577,0.1245 0.9698,0.0907 0.9821,0.0572 0.9945,0.0239 0.9932,0.0 0.9729,0.0 0.9526,0.0 0.9376,0.022 0.9253,0.0557 0.9133,0.0895 0.9014,0.1236 0.8896,0.1578 0.8779,0.1923 0.8663,0.2267 0.8547,0.2613 0.8432,0.2959 0.8317,0.3308 0.8203,0.3656 0.8089,0.4004 0.7976,0.4353 0.786,0.4699 0.7738,0.5036 0.761,0.5362 0.7476,0.5677 0.7335,0.5981 0.7188,0.6271 0.7035,0.6547 0.6876,0.6809 0.6711,0.7055 0.6541,0.7285 0.6367,0.75 0.6188,0.7699 0.6005,0.7881 0.5818,0.8047 0.5629,0.8197 0.5437,0.8332 0.5242,0.8453 0.5046,0.8562 0.4849,0.8657 0.4649,0.8741 0.445,0.8814 0.4249,0.8875 0.4048,0.8927 0.3846,0.8969 0.3643,0.9003 0.344,0.903 0.3238,0.9047 0.3035,0.9058 0.2832,0.9062 0.2629,0.9059 0.2426,0.9051 0.2223,0.9037 0.202,0.9017 0.1818,0.8993 0.1615,0.8964 0.1413,0.893 0.1211,0.8892 0.1009,0.885 0.0807,0.8804 0.0605,0.8756 0.0404,0.8703 0.0203,0.8655")
     func path(in r: CGRect) -> Path {
         var p = Path()
-        p.addLines(Self.shape.map { CGPoint(x: r.minX + $0.0 * r.width, y: r.minY + $0.1 * r.height) })
-        p.closeSubpath()
-        return p
+        p.addLines(CurvePoints.drawn.map { CurvePoints.at($0, in: r) })
+        return p.strokedPath(StrokeStyle(lineWidth: CurvePoints.width, lineCap: .round, lineJoin: .round))
     }
 }
 
@@ -275,13 +282,10 @@ struct RisingCurve: View {
     @State private var pulse = false
     private static let size = CGSize(width: 190, height: 89)   // his shape's own 2.13 : 1
 
-    /// The middle of his shape, 61 points from the Heavy end; band i sits at point i * 10.
-    private static let line: [(CGFloat, CGFloat)] = CurvePoints.read(
-        "0.0,0.9465 0.0088,0.9318 0.0192,0.9137 0.0392,0.9179 0.0591,0.9227 0.0791,0.9275 0.0991,0.932 0.1191,0.9361 0.1391,0.9398 0.1592,0.9431 0.1792,0.946 0.1993,0.9484 0.2194,0.9503 0.2395,0.9517 0.2596,0.9526 0.2797,0.9528 0.2998,0.9526 0.3199,0.9516 0.34,0.95 0.36,0.9476 0.3801,0.9445 0.4001,0.9406 0.4201,0.9358 0.44,0.9301 0.4599,0.9235 0.4796,0.9159 0.4993,0.907 0.5189,0.8972 0.5383,0.886 0.5575,0.8736 0.5765,0.8598 0.5953,0.8446 0.6138,0.8279 0.632,0.8097 0.6498,0.7899 0.6672,0.7685 0.6842,0.7456 0.7007,0.721 0.7166,0.695 0.732,0.6675 0.7468,0.6385 0.761,0.6082 0.7746,0.5767 0.7876,0.5441 0.8,0.5105 0.8118,0.476 0.8234,0.4409 0.8348,0.4058 0.8463,0.3707 0.8578,0.3356 0.8694,0.3007 0.881,0.2658 0.8927,0.231 0.9045,0.1964 0.9163,0.1619 0.9283,0.1275 0.9404,0.0934 0.9526,0.0594 0.968,0.0371 0.9843,0.0205 1.0,0.0068")
-    private static func at(_ p: (CGFloat, CGFloat)) -> CGPoint { CGPoint(x: p.0 * size.width, y: p.1 * size.height) }
+    private static func at(_ i: Int) -> CGPoint { CurvePoints.at(i, in: CGRect(origin: .zero, size: size)) }
     private static func band(near p: CGPoint) -> Band {
-        let i = line.indices.min { a, b in
-            hypot(at(line[a]).x - p.x, at(line[a]).y - p.y) < hypot(at(line[b]).x - p.x, at(line[b]).y - p.y)
+        let i = CurvePoints.line.indices.min { a, b in
+            hypot(at(a).x - p.x, at(a).y - p.y) < hypot(at(b).x - p.x, at(b).y - p.y)
         } ?? 30
         return Band(rawValue: Int((Double(i) / 10).rounded())) ?? .stuck
     }
@@ -298,7 +302,7 @@ struct RisingCurve: View {
             if let shown {
                 Color.clear.frame(width: 34, height: 34)
                     .glassEffect(.clear.tint(RisingScale.tint(shown).opacity(0.55)).interactive(), in: Circle())
-                    .position(Self.at(Self.line[shown.rawValue * 10]))
+                    .position(Self.at(shown.rawValue * 10))
                     .animation(.snappy, value: shown)
             }
             Text(shown?.title ?? "How do you feel")
