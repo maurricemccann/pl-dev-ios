@@ -170,7 +170,7 @@ struct PackScreen: View {
                     Button { close() } label: { Image(systemName: "xmark").font(Font.pl(size: 15, weight: .medium)).foregroundStyle(Candle.ink).frame(width: 44, height: 44) }
                         .accessibilityLabel("Close")
                     Spacer()
-                    BuddyView(model: buddy).frame(width: 46, height: 46)
+                    BuddyHead(model: buddy, side: 64)
                 }
                 if let pack {
                     PackOpening(model: model, cards: pack.cards, animate: pack.new)

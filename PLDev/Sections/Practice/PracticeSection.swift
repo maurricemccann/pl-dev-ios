@@ -397,8 +397,9 @@ struct BuddyRope: View {
             let _ = rig.advance(tl.date, still: false, calm: reduceMotion, faceAt: buddy.stateAt)
             ZStack(alignment: .topLeading) {
                 Canvas { ctx, _ in ctx.stroke(rig.path(), with: .color(Self.orange), style: StrokeStyle(lineWidth: 26, lineCap: .butt, lineJoin: .round)) }
-                BuddyView(model: buddy, trail: ["eyeL": rig.lagOffset(3), "eyeR": rig.lagOffset(5), "mouth": rig.lagOffset(8)], pinned: true)
-                    .frame(width: 46, height: 46).position(rig.tip)
+                // the new head (his 11-25), placed so the face's spot (0.48, 0.31 of the head) stays on the rope's tip
+                BuddyHead(model: buddy, side: 72, trail: ["eyeL": rig.lagOffset(3), "eyeR": rig.lagOffset(5), "mouth": rig.lagOffset(8)])
+                    .position(x: rig.tip.x + 72 * 0.02, y: rig.tip.y + 72 * 0.19)
             }
         }
     }

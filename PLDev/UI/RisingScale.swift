@@ -404,6 +404,7 @@ struct RisingPanel: View {
 struct BuddyHead: View {
     let model: BuddyModel
     var side: CGFloat = 144
+    var trail: [String: CGSize] = [:]   // per-piece lag when he rides the Practice rope
     private static let art = Bundle.main.url(forResource: "buddy-head", withExtension: "png").flatMap { UIImage(contentsOfFile: $0.path) }
 
     var body: some View {
@@ -411,7 +412,7 @@ struct BuddyHead: View {
             if let art = Self.art { Image(uiImage: art).resizable().scaledToFit().accessibilityHidden(true) }
             // the big face he ticked (11-25), anchored at his green dot (0.47, 0.36 of the head): face 0.66 of the head wide.
             // pinned = it stays on that spot; every expression and move still plays on it
-            BuddyView(model: model, pinned: true)
+            BuddyView(model: model, trail: trail, pinned: true)
                 .frame(width: side * 0.717, height: side * 0.864)   // BuddyView fits 440 x 530 into 0.92 of this box
                 .position(x: side * 0.48, y: side * 0.31)
         }
@@ -454,6 +455,7 @@ struct RisingBuddy: View {
             buddy.react(.open)
             // and the face that matches where he is: calm when low, happy in the middle, excited when high
             if let band = rising.current?.band { buddy.playState(band <= .low ? "calm" : band <= .steady ? "happy" : "excited") }
+            buddy.say(said)
             withAnimation { line = said }
             AccessibilityNotification.Announcement(said).post()
             try? await Task.sleep(for: .seconds(8))

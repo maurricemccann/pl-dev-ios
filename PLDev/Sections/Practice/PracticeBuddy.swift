@@ -129,6 +129,44 @@ final class BuddyRig: @unchecked Sendable {
         return x * x * (3 - 2 * x)
     }
 
+    // Silent lip sync (his ask 11-25: "make Buddy lip sync without a audio"): a line's letters become a mouth track, one slot
+    // per 70 ms, played through his own mouth drawings.
+    private static let slot = 0.07
+    private var saidAt = Date.distantPast
+    @ObservationIgnored private var track: [Double] = []
+
+    nonisolated static func mouthTrack(_ text: String) -> [Double] {
+        text.lowercased().flatMap { c -> [Double] in
+            switch c {
+            case "a": [0.9]
+            case "o": [0.8]
+            case "e": [0.65]
+            case "u": [0.5]
+            case "i", "y": [0.45]
+            case "m", "b", "p": [0]          // lips together
+            case "f", "v": [0.12]
+            case "w", "q": [0.35]
+            case " ": [0.15]
+            case ".", ",", "!", "?", ";", ":": [0, 0, 0, 0]   // a breath
+            default: c.isLetter ? [0.28] : c.isNumber ? [0.55, 0.2] : []
+            }
+        }
+    }
+
+    /// Moves his mouth through `text` with no sound. A face queued just before waits until he has finished.
+    func say(_ text: String) {
+        assert(Self.mouthTrack("Ma.") == [0, 0.9, 0, 0, 0, 0], "mouth track")
+        track = Self.mouthTrack(text)
+        saidAt = .now
+        if state != nil { stateAt = saidAt.addingTimeInterval(Double(track.count) * Self.slot) }
+    }
+
+    /// The mouth's opening at `now` while a line is being said; nil once it is over.
+    func speaking(_ now: Date) -> Double? {
+        let i = Int(max(0, now.timeIntervalSince(saidAt)) / Self.slot)
+        return i < track.count ? track[i] : nil
+    }
+
     @ObservationIgnored private var deck: [String] = []
 
     /// A tap on Buddy in the title bar plays his next move: every rig move once, in a shuffled order, then a fresh shuffle
@@ -173,6 +211,7 @@ final class BuddyRig: @unchecked Sendable {
         mouthAt = now
         // lip sync (his ruling 11-15): while one of his recorded lines plays, the mouth follows the loudness of his own voice
         if let v = PracticeClips.shared.voiceLevel { mouthLevel = v; return Int((v * 50).rounded()) }
+        if let v = speaking(now) { mouthLevel += (v - mouthLevel) * 0.55; return Int((mouthLevel * 50).rounded()) }
         mouthLevel = move == "talking" ? target : mouthLevel + max(-step, min(step, target - mouthLevel))   // speech follows the rig frame by frame
         return Int((mouthLevel * 50).rounded())
     }
@@ -248,7 +287,7 @@ struct BuddyView: View {
     @Environment(\.accessibilityReduceMotion) private var reduceMotion
 
     var body: some View {
-        TimelineView(.animation(minimumInterval: 1 / 30, paused: reduceMotion && model.move == nil && Date().timeIntervalSince(model.stateAt) > 3)) { tl in   // a face playing always animates   // a move asked for always plays; Reduce Motion only stills the idle breathing
+        TimelineView(.animation(minimumInterval: 1 / 30, paused: reduceMotion && model.move == nil && model.speaking(.now) == nil && Date().timeIntervalSince(model.stateAt) > 3)) { tl in   // a face playing always animates   // a move asked for always plays; Reduce Motion only stills the idle breathing
             GeometryReader { geo in
                 if let art = BuddyFaceArt.grin {
                     let n0 = watching(reduceMotion && model.move == nil ? [:] : model.numbers(tl.date), now: tl.date)
@@ -295,7 +334,7 @@ struct BuddyView: View {
         // in a lesson: ChatGPT's 3D mouth opens through its frames 0-4, a wrong answer shows its grimace (12);
         // elsewhere a moment flows into its emotion and back (2.4 s); otherwise the glass face's mouth
         let lessonM = lesson && !a.lessonMouth.isEmpty
-        let st = lessonM ? nil : model.stateFrame(now, timing: a.timing).flatMap { a.states[$0.0]?[$0.1] }.flatMap { UIImage(contentsOfFile: $0) }   // the one frame showing, read now
+        let st = lessonM || model.speaking(now) != nil ? nil : model.stateFrame(now, timing: a.timing).flatMap { a.states[$0.0]?[$0.1] }.flatMap { UIImage(contentsOfFile: $0) }   // the one frame showing, read now
         let mf = lessonM ? a.lessonMouth[frownNow > 0 ? 12 : min(4, Int((Double(level) / 50 * 4).rounded()))]
             : (a.mouthFrames.isEmpty ? nil : a.mouthFrames[min(a.mouthFrames.count - 1, Int((Double(level) / 50 * Double(a.mouthFrames.count - 1)).rounded()))])
         // the whole face: a small drift, turn and stretch (the rig's face_* numbers)

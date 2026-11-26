@@ -216,10 +216,10 @@ struct PathScreen: View {
         return VStack(alignment: .leading, spacing: 6) {
             if daysAway >= 3 {
                 HStack(spacing: 10) {
-                    BuddyView(model: pathBuddy).frame(width: 52, height: 52)
+                    BuddyHead(model: pathBuddy, side: 72)
                     Text("Welcome back.").candleH2()
                 }
-                .onAppear { pathBuddy.react(.returned) }
+                .onAppear { pathBuddy.react(.returned); pathBuddy.say("Welcome back.") }
             }
             // Gemini 11-17: a big gold 0 reads as a score; day one says so instead
             Text(record.days.isEmpty ? "Day one" : "\(record.days.count) \(record.days.count == 1 ? "day" : "days") of lessons").font(Font.pl(size: 22, weight: .semibold)).foregroundStyle(Candle.goldHi)
@@ -375,7 +375,10 @@ struct LessonView: View {
                 Spacer(minLength: 0)
                 // his ruling 11-15: Buddy lives down in the empty space under the exercise (never over it), as large as the room left
                 // allows; a tap plays his next move
-                Button { buddy.playNext() } label: { BuddyView(model: buddy, lesson: true).aspectRatio(440 / 530, contentMode: .fit).frame(maxWidth: 220, maxHeight: 240) }
+                Button { buddy.playNext() } label: {
+                    GeometryReader { geo in BuddyHead(model: buddy, side: min(geo.size.width, geo.size.height)).frame(width: geo.size.width, height: geo.size.height) }
+                        .aspectRatio(1, contentMode: .fit).frame(maxWidth: 240, maxHeight: 240)
+                }
                     .buttonStyle(.plain)
                     .frame(maxWidth: .infinity)
                     .layoutPriority(-1)
