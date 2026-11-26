@@ -331,7 +331,7 @@ enum PLHaptic {
 /// Motion: springs, or a short fade when Reduce Motion or the app's own Motion setting asks for less.
 enum PLMotion {
     static func standard(reduce: Bool) -> Animation { reduce ? .easeInOut(duration: 0.2) : .smooth }
-    static func spring(reduce: Bool) -> Animation { reduce ? .easeInOut(duration: 0.15) : .spring(response: 0.32, dampingFraction: 0.68) }
+    static func spring(reduce: Bool) -> Animation { reduce ? .easeInOut(duration: 0.15) : .spring(response: 0.3, dampingFraction: 0.9) }
 }
 
 /// The Theme setting as SwiftUI's colour scheme; nil follows the system.

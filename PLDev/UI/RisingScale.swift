@@ -41,8 +41,8 @@ enum RisingAsk {
 
     /// One sentence from the answers, the strongest need first.
     static func nudge(_ t: CheckIn) -> String? {
-        if t.energy == 0 { return "Empty tank. Water, then lie down ten minutes. Nothing else is owed." }
-        if t.control == 0 { return "That part is not yours to carry tonight. Pick one thing that is, however small." }
+        if t.energy == 0 { return "Empty tank. Water, then lie down." }
+        if t.control == 0 { return "Not yours tonight. Pick one thing that is." }
         return switch t.about {
         case "Work": "Finish one small thing before the next one starts."
         case "Money": "Name the next money move, and the one thing in its way."
@@ -168,6 +168,19 @@ enum RisingAsk {
                                                                     trigger: UNTimeIntervalNotificationTrigger(timeInterval: 15 * 60, repeats: false)))
     }
 
+    /// The last seven shift days, oldest first: the day's letter and its average step (nil = no tap, which costs nothing).
+    var week: [(letter: String, step: Double?)] {
+        let days = Dictionary(grouping: log.suffix(200), by: { Self.shiftDay($0.at) })
+        let f = DateFormatter()
+        f.dateFormat = "EEEEE"
+        return (0..<7).reversed().map { back in
+            let date = Date().addingTimeInterval(Double(-back) * 86400)
+            let taps = days[Self.shiftDay(date)] ?? []
+            let step = taps.isEmpty ? nil : Double(taps.map(\.band.rawValue).reduce(0, +)) / Double(taps.count)
+            return (f.string(from: date.addingTimeInterval(-15 * 3600)), step)
+        }
+    }
+
     /// Three shift days in a row averaging Heavy.
     var heavyRun: Bool {
         let days = Dictionary(grouping: log, by: { Self.shiftDay($0.at) })
@@ -243,7 +256,7 @@ enum RisingAsk {
         let f = seed(), step = lookBand().map(RisingStep.of)
         var t = PLThemePreset(id: id, title: "Daily", palette: "th-daily", face: "v1", text: "jost",
                               note: "A new look each day; your check-in leads it one step up", dark: true, card: .frosted,
-                              radius: step?.radius ?? [0.5, 1, 1.5][Int(f[2] * 3)], space: step?.space ?? 1,
+                              radius: step?.radius ?? [1, 1.25, 1.5][Int(f[2] * 3)], space: step?.space ?? 1,
                               tile: step?.tile ?? "squircle", look: "glass",
                               wall: step?.wall ?? ["curves", "code|aurora", "code|contour", "code|night"][Int(f[3] * 4)])
         t.calm = (step?.calm ?? false) || UserDefaults.standard.bool(forKey: "pldev.rising.drained")
@@ -450,7 +463,7 @@ struct RisingPanel: View {
                 // at the very bottom ask almost nothing: the words wait until he wants them (research, 11-26)
                 if let word = tap.word {
                     Text(word).plFont(.callout, emphasized: true).frame(minHeight: 44)
-                } else if tap.band == .heavy && !named {
+                } else if tap.band <= .low && !named {
                     Button("Name it") { named = true }.frame(minHeight: 44)
                 } else {
                     words(tap)
@@ -462,6 +475,7 @@ struct RisingPanel: View {
                 }
                 if tap.band >= .stuck {
                     Text("Today's magnet move: " + RisingAsk.magnet()).plFont(.footnote).foregroundStyle(.secondary).padding(.top, 4)
+                    weekBars
                 }
                 }
                 if rising.heavyRun, heavyDismissed != RisingScale.shiftDay(.now) {
@@ -483,6 +497,25 @@ struct RisingPanel: View {
         .background {
             if rising.showWords { Color.clear.plGlass(in: RoundedRectangle(cornerRadius: PLRadius.card, style: .continuous)) }
         }
+    }
+
+    /// Seven days as bars: height is the step, so it reads without the colour.
+    private var weekBars: some View {
+        let days = rising.week
+        return HStack(alignment: .bottom, spacing: 8) {
+            ForEach(days.indices, id: \.self) { i in
+                VStack(spacing: 4) {
+                    Capsule()
+                        .fill(days[i].step.map { RisingScale.tint(Band(rawValue: Int($0.rounded())) ?? .stuck) } ?? Color.secondary.opacity(0.25))
+                        .frame(width: 10, height: days[i].step.map { 8 + CGFloat($0) * 6 } ?? 4)
+                    Text(days[i].letter).plFont(.caption2).foregroundStyle(.secondary)
+                }
+                .frame(maxWidth: .infinity)
+            }
+        }
+        .padding(.top, 8)
+        .accessibilityElement(children: .ignore)
+        .accessibilityLabel("Last seven days: " + days.map { d in d.step.map { Band(rawValue: Int($0.rounded()))?.title ?? "" } ?? "no tap" }.joined(separator: ", "))
     }
 
     private func question(_ q: (ask: String, options: [String]), at i: Int) -> some View {

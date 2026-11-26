@@ -44,11 +44,11 @@ struct RisingStep {
         wall: "code|rise-window", title: "Add a little", face: "happy", side: 144,
         lines: ["Steady is a good base. Add one thing that moves the work forward.",
                 "Hope is a real step up. Write one line about the version of you who has plenty."])
-    private static let rising = RisingStep(hue: 80, chroma: 0.11, light: 0.22, turn: 12, radius: 1, space: 1, tile: "squircle", calm: false,
+    private static let rising = RisingStep(hue: 80, chroma: 0.13, light: 0.22, turn: 12, radius: 1, space: 1, tile: "squircle", calm: false,
         wall: "curves", title: "Make something", face: "excited", side: 144,
         lines: ["This is the practice working. Put it into one thing you make tonight.",
                 "Luxury living is a way of standing in the world. You are standing in it now."])
-    private static let lit = RisingStep(hue: nil, chroma: 0.13, light: 0.19, turn: 40, radius: 1, space: 1, tile: "squircle", calm: false,
+    private static let lit = RisingStep(hue: nil, chroma: 0.15, light: 0.19, turn: 40, radius: 1, space: 1, tile: "squircle", calm: false,
         wall: nil, title: "Keep this", face: "excited", side: 144,
         lines: ["Remember this. Leave yourself a note for a harder night.",
                 "Good nights add up. Keep this one as a marker for the next."])
