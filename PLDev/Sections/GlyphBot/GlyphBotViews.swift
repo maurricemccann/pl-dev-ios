@@ -178,9 +178,9 @@ struct SourcesSheet: View {
 
 @MainActor @Observable final class SittingModel {
     enum Mode: String, CaseIterable, Identifiable {
-        case interview, free
+        case interview, free, mastermind
         var id: String { rawValue }
-        var title: String { self == .interview ? "Interview" : "Free talk" }
+        var title: String { switch self { case .interview: "Interview"; case .free: "Free talk"; case .mastermind: "Mastermind" } }
     }
     struct Line: Identifiable { let id = UUID(); let mine: Bool; let text: String; let seat: String? }
 
@@ -253,10 +253,10 @@ struct SourcesSheet: View {
         let mineLine = Line(mine: true, text: text, seat: nil)
         if visible { lines.append(mineLine) }
         do {
-            let dom: String? = mode == .free ? (sid == nil ? "free" : nil) : (sid == nil && !domain.isEmpty ? domain : nil)
+            let dom: String? = mode != .interview ? (sid == nil ? mode.rawValue : nil) : (sid == nil && !domain.isEmpty ? domain : nil)
             var engine = settings
             InterviewPrefs.apply(to: &engine)   // model, adventure, reply length and the bank, from Voice and answers
-            let r = try await GlyphBot.turn(session: sid, text: text, domain: dom, settings: engine, model: model)
+            let r = try await GlyphBot.turn(session: sid, text: text, domain: dom, settings: engine, model: model, context: mode == .mastermind ? GateStore.shared.summary : nil)
             sid = r.session_id ?? sid
             if visible { answers += 1 }
             done = r.done == true
@@ -320,9 +320,11 @@ struct SitTab: View {
         let interview = sitting.mode == .interview
         return ScrollView {
             VStack(alignment: .leading, spacing: 16) {
-                SitePageHead(eyebrow: "The interview", lead: interview ? "GlyphBot asks," : "You start,", accent: interview ? "you answer." : "it answers.",
+                SitePageHead(eyebrow: sitting.mode == .mastermind ? "The mastermind" : "The interview", lead: interview ? "GlyphBot asks," : "You start,",
+                             accent: interview ? "you answer." : sitting.mode == .mastermind ? "two minds make a third." : "it answers.",
                              lede: interview ? "One question at a time. It pulls on what you say, and everything you answer is saved word for word."
-                                             : "GlyphBot answers like someone who has read everything you ever said.")
+                                 : sitting.mode == .mastermind ? "Bring what you are calling in. GlyphBot sharpens it, names what is in the way, and holds you to it. It sees your Gate."
+                                 : "GlyphBot answers like someone who has read everything you ever said.")
                 VStack(alignment: .leading, spacing: 16) {
                     GlyphUsageRow(model: model)
                     SiteSegment(titles: SittingModel.Mode.allCases.map(\.title), index: modeIndex)

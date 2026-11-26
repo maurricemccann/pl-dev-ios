@@ -19,7 +19,7 @@ import UserNotifications
     static func handle(link: DeepLink, model: AppModel) -> Bool {
         if case .section(_, let path, _) = link, let first = path.first, let room = GlyphBotRoom(rawValue: first) {
             state.tab = room.tab
-            if room == .freetalk { state.sitting.mode = .free } else if room == .interview { state.sitting.mode = .interview }
+            if room == .freetalk { state.sitting.mode = .free } else if room == .interview { state.sitting.mode = .interview } else if room == .mastermind { state.sitting.mode = .mastermind }
         }
         return true
     }
@@ -42,13 +42,13 @@ struct AnswerHoldTip: Tip {
 
 /// Every GlyphBot destination, by name, so a link, Siri or Spotlight can land on it.
 enum GlyphBotRoom: String, CaseIterable, Identifiable, Hashable {
-    case ask, interview, freetalk, record
+    case ask, interview, freetalk, mastermind, record
     var id: String { rawValue }
     var title: String {
-        switch self { case .ask: return "Ask the Oracle"; case .interview: return "Interview sitting"; case .freetalk: return "Free talk"; case .record: return "The interview record" }
+        switch self { case .ask: return "Ask the Oracle"; case .interview: return "Interview sitting"; case .freetalk: return "Free talk"; case .mastermind: return "Mastermind"; case .record: return "The interview record" }
     }
     var tab: GlyphBotModel.Tab {
-        switch self { case .ask: return .ask; case .interview, .freetalk: return .sit; case .record: return .record }
+        switch self { case .ask: return .ask; case .interview, .freetalk, .mastermind: return .sit; case .record: return .record }
     }
 }
 

@@ -96,6 +96,23 @@ struct GateTrial: Codable, Identifiable { var id = UUID(); var at = Date(); var 
         try? JSONEncoder().encode(saved).write(to: Self.url, options: [.atomic, .completeFileProtection])
     }
 
+    /// What the mastermind sees: never the text of a sealed pattern, only that it is sealed and until when.
+    var summary: String {
+        load()
+        let s = saved
+        var out: [String] = []
+        let sealed = s.patterns.filter { $0.until > .now }
+        if !sealed.isEmpty { out.append("Sealed patterns: \(sealed.count), the next opens \(sealed.map(\.until).min()!.formatted(date: .abbreviated, time: .omitted)).") }
+        for p in s.patterns where p.until <= .now { out.append("Pattern \(p.happened == true ? "came in" : p.happened == false ? "did not come this time" : "is due to judge"): \(p.text)") }
+        for q in s.questions.suffix(5) { out.append("Question sent out: \(q.text)" + (q.answer.isEmpty ? "" : " Answer: \(q.answer)")) }
+        for m in s.missions.suffix(4) { out.append("\(m.day ? "Mission Day" : "Mission Night"): \(m.text)" + (m.came.isEmpty ? "" : " What came: \(m.came)")) }
+        let inBox = s.box.filter { $0.released == nil }.count
+        if inBox > 0 { out.append("In the box: \(inBox) things set aside.") }
+        let done = s.trials.filter { $0.picked != nil }
+        if !done.isEmpty { out.append("Viewing game: \(done.filter { $0.picked == $0.target }.count) of \(done.count) found.") }
+        return out.joined(separator: "\n")
+    }
+
     /// Questions still open inside their three days, and sealed patterns whose date has come.
     var dueCount: Int {
         saved.questions.filter { $0.thanked == nil && $0.answer.isEmpty }.count + saved.patterns.filter { $0.happened == nil && $0.until <= .now }.count
@@ -452,7 +469,8 @@ private struct GateFiveCard: View {
     var body: some View {
         PCard(title: "Five questions", hint: "Who am I. Where and who was I before this. What is my purpose here. What can I do now to serve it. What is the most important message for me now. Then five messages, fifth most important first.") {
             Text("They are queued for GlyphBot's interviewer. Sit down with it and they come up; every answer is kept word for word.").candleHint()
-            Button("Open GlyphBot, Sit") { AppModel.shared.route = .section(id: "glyphbot", path: ["sit"], query: [:]) }.buttonStyle(CandleGhost())
+            Button("Open GlyphBot, Sit") { AppModel.shared.route = .section(id: "glyphbot", path: ["interview"], query: [:]) }.buttonStyle(CandleGhost())
+            Button("Mastermind with GlyphBot") { AppModel.shared.route = .section(id: "glyphbot", path: ["mastermind"], query: [:]) }.buttonStyle(CandleButton())
         }
     }
 }

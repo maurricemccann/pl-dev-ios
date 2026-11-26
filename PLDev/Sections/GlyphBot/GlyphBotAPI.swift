@@ -62,11 +62,12 @@ import SwiftUI
     }
 
     /// One turn. His words reach this call only from the Send button; nothing else on the phone calls it with an answer.
-    static func turn(session: Int?, text: String, domain: String?, settings: Settings, model: AppModel) async throws -> Reply {
+    static func turn(session: Int?, text: String, domain: String?, settings: Settings, model: AppModel, context: String? = nil) async throws -> Reply {
         var body: [String: Any] = ["text": text, "settings": ["boldness": settings.boldness, "target_min": settings.targetMin, "deep": settings.deep, "model": settings.model,
                                                                    "adventure": settings.adventure, "max_len": settings.maxLen, "bank": settings.bank] as [String: Any]]
         if let session, session > 0 { body["session_id"] = session }
         if let domain, !domain.isEmpty { body["domain"] = domain }
+        if let context, !context.isEmpty { body["context"] = String(context.prefix(1500)) }
         let data = try await client(model).send(RequestPlan(origin: "interview", method: "POST", path: "api/r1/interview/turn", headers: ["content-type": "application/json"],
                                                             body: try JSONSerialization.data(withJSONObject: body)), idempotent: false, timeout: 120)
         let r = try JSONDecoder().decode(Reply.self, from: data)
