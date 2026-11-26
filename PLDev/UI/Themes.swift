@@ -66,6 +66,8 @@ struct PLThemePreset: Identifiable, Hashable {
     /// "curves", "mask|url", "invert|url", "color|url", "kit|path" or "code|name" (ThemeGround draws each).
     let wall: String
     var calm = false, curves = 0.5, repeatSize = 300.0, tint = 0.3, through = 0.5
+    /// Text size, motion pace and Home's columns: the Daily look sets them by band; every other theme keeps the house values.
+    var textScale = 1.0, pace = 1.0, columns = 3
     var icon: String? = nil
     /// "pl" = his drawn icons where he drew one; "sf" = system symbols only. A new open-licence set gets its own name here.
     var icons = "pl"
@@ -269,6 +271,7 @@ struct PLThemePreset: Identifiable, Hashable {
         d.set(tile, forKey: "pldev.styleTile"); d.set(look, forKey: "pldev.styleLook"); d.set(icons, forKey: "pldev.styleIcons")
         d.set(mark ?? "", forKey: "pldev.styleMark"); d.set(repeatSize, forKey: "pldev.styleRepeat")
         d.set(titleFX, forKey: "pldev.styleTitleFX")
+        d.set(textScale, forKey: "pldev.styleText"); d.set(pace, forKey: "pldev.stylePace"); d.set(columns, forKey: "pldev.styleColumns")
         resetGlass()
         d.set(chosenWall, forKey: "pldev.styleWall")
         d.set(curves, forKey: "pldev.tileStrength"); d.set(calm ? "reduce" : "full", forKey: "pldev.motion")

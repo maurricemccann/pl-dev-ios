@@ -105,6 +105,7 @@ struct FrequencyCard: View {
             }
             if !log.saved.wishes.isEmpty { ledger }
             tapes
+            reports
             skipped
         }
         .onAppear { log.load() }
@@ -138,6 +139,32 @@ struct FrequencyCard: View {
             Text("All six Waves, in the manual's order, live in the Gate now.").candleHint()
             Button("Open the Gate") { AppModel.shared.route = .section(id: "gate", path: [], query: [:]) }.buttonStyle(CandleGhost())
         }
+    }
+
+    /// The claims he asked in (11-26 4:00 PM), each with what it rests on. Reports, never promises.
+    private static let claims: [(String, String)] = [
+        ("Remote viewing", "The Army kept a viewing unit going for about twenty years. Lab trials at SRI reported hits above chance; the 1995 review that closed the program found a lab effect reviewers could not agree on and no use for intelligence. Evidence: contested. Try it fairly in the Gate's viewing game."),
+        ("Out-of-body steps", "The Gate's lesson 3.6 teaches five ways to try: roll, rise, back away, out of the top of the head, float. Everything known comes from people's own reports; no study has shown anyone bringing back something they could not otherwise know. Evidence: personal reports only."),
+        ("Healing and pain", "The 1970s overview reports calmer surgery, eased chronic pain, and one stroke patient's speech improving after three sessions. These are the Institute's own case reports with no comparison group. Evidence: anecdotal. Keep every treatment you have."),
+        ("Hawkins's numbers", "David Hawkins scored feelings from 20 (shame) to 1,000 by muscle testing. Blind trials find muscle testing no better than chance. The number beside each band is his muscle-testing number, not a measurement: Heavy, grief 75; Hot, anger 150; Low, fear 100; Stuck, neutrality 250; Steady, willingness 310; Rising, love 500; Lit, joy 540."),
+        ("Colour, motion and felt time", "Cool colours and slower motion may calm the body and make waiting feel shorter; warm colours and quicker motion the reverse. Evidence: weak and mixed. The Daily look uses it as a nudge: cool and slow on the low bands, warmer and quicker up the scale."),
+    ]
+
+    private var reports: some View {
+        DisclosureGroup("What the papers report, and how strong it is") {
+            VStack(alignment: .leading, spacing: 10) {
+                ForEach(Self.claims.indices, id: \.self) { i in
+                    let c = Self.claims[i]
+                    VStack(alignment: .leading, spacing: 4) {
+                        Text(c.0).font(Font.pl(size: 15, weight: .semibold)).foregroundStyle(Candle.ink)
+                        Text(c.1).candleHint().fixedSize(horizontal: false, vertical: true)
+                    }
+                }
+            }
+            .padding(.top, 6)
+        }
+        .tint(Candle.gold)
+        .frame(minHeight: 44)
     }
 
     @State private var jumped = ""

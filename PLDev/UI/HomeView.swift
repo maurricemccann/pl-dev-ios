@@ -23,6 +23,10 @@ struct HomeView: View {
     @AppStorage("pldev.theme") private var theme = "system"
     @AppStorage("pldev.themeId") private var themeId = ""
     @AppStorage("pldev.styleMark") private var mark = ""
+    @AppStorage("pldev.styleColumns") private var styleColumns = 3
+    @AppStorage("pldev.rising.homeFollows") private var homeFollows = true
+    /// Set when Home comes into view, never while it is in view, so a tap never moves a tile under his finger.
+    @State private var homeOrder: [String] = []
 
     // explicit: a view with private state must not depend on the synthesized initializer staying internal
     init(model: AppModel) { self.model = model }
@@ -36,7 +40,15 @@ struct HomeView: View {
 
     /// Three across (both reviews 11-14: four cut "Colour Survey" and "Congregation" short); two at the accessibility text sizes.
     private var columns: [GridItem] {
-        typeSize.isAccessibilitySize ? Array(repeating: GridItem(.flexible()), count: 2) : Array(repeating: GridItem(.flexible(), spacing: PLSpace.pad), count: 3)
+        typeSize.isAccessibilitySize || styleColumns == 2 ? Array(repeating: GridItem(.flexible(), spacing: PLSpace.pad), count: 2)
+            : Array(repeating: GridItem(.flexible(), spacing: PLSpace.pad), count: 3)
+    }
+
+    /// The tiles, the ones that raise the scale for the last tap first (his list 11-26 4:00 PM); the rest keep the config's order.
+    private var tiles: [SectionEntry] {
+        let shown = model.sections.filter { $0.id != "status" }
+        let first = homeOrder.compactMap { id in shown.first { $0.id == id } }
+        return first + shown.filter { !homeOrder.contains($0.id) }
     }
 
     private var summary: String {
@@ -71,13 +83,15 @@ struct HomeView: View {
                     .padding(.top, PLSpace.block)
             } else {
                 LazyVGrid(columns: columns, spacing: PLSpace.roomy + PLSpace.pad) {
-                    ForEach(model.sections.filter { $0.id != "status" }) { entry in tile(entry) }   // Status is a widget on the Today page
+                    ForEach(tiles) { entry in tile(entry) }   // Status is a widget on the Today page
                 }
                 .animation(PLMotion.spring(reduce: reduce), value: model.sections.map(\.badge))
             }
             // the services he signs in to, as a row under the apps (his ruling 11-14: the Backend page folds in here)
             BackendPage(columns: columns, reduce: reduce, embedded: true)
         }
+        .onAppear { homeOrder = RisingScale.homeOrder() }
+        .onChange(of: homeFollows) { homeOrder = RisingScale.homeOrder() }
         .padding(.horizontal, PLSpace.margin).padding(.top, PLSpace.gap).padding(.bottom, PLSpace.block)
     }
 

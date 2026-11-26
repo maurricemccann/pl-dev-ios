@@ -231,6 +231,18 @@ enum RisingAsk {
     }
 
     /// No notices from this screen through his daytime sleep, 6 AM to 3 PM Pacific (3 PM is where the shift day starts).
+    /// Home brings forward the tiles that raise the scale for the last tap (his list 11-26 4:00 PM, over the research's
+    /// "controls never move"); off puts the config's order back.
+    var homeFollows: Bool {
+        get { d.object(forKey: "pldev.rising.homeFollows") as? Bool ?? true }
+        set { d.set(newValue, forKey: "pldev.rising.homeFollows") }
+    }
+    /// The section ids to bring forward now; empty = the config's order.
+    nonisolated static func homeOrder() -> [String] {
+        guard UserDefaults.standard.object(forKey: "pldev.rising.homeFollows") as? Bool ?? true, let b = lookBand() else { return [] }
+        return RisingStep.of(b).lifts
+    }
+
     var quietDay: Bool {
         get { d.object(forKey: "pldev.rising.quiet") as? Bool ?? true }
         set { d.set(newValue, forKey: "pldev.rising.quiet") }
@@ -330,19 +342,23 @@ enum RisingAsk {
         let walls = ["curves", "code|aurora", "code|contour", "code|night"], scores = lookScores()
         let kept = walls.filter { w in let s = scores[w] ?? []; return s.count < 2 || s.reduce(0, +) >= s.count }
         let pool = kept.isEmpty ? walls : kept
-        var t = PLThemePreset(id: id, title: "Daily", palette: "th-daily", face: "v1", text: "jost",
-                              note: "A new look each day; your check-in leads it one step up", dark: true, card: .frosted,
+        var t = PLThemePreset(id: id, title: "Daily", palette: "th-daily", face: step?.titleFace ?? "v1", text: step?.textFace ?? "jost",
+                              note: "A new look each day; your check-in leads it one step up", dark: true, card: step?.card ?? .frosted,
                               radius: step?.radius ?? [1, 1.25, 1.5][Int(f[2] * 3)], space: step?.space ?? 1,
-                              tile: step?.tile ?? "squircle", look: "glass",
+                              tile: step?.tile ?? "squircle", look: step?.look ?? "glass",
                               wall: step?.wall ?? pool[Int(f[3] * Double(pool.count))])
         t.calm = (step?.calm ?? false) || UserDefaults.standard.bool(forKey: "pldev.rising.drained")
         t.tint = 0.4
+        if let step {
+            t.textScale = step.textScale; t.pace = step.pace; t.columns = step.columns
+            t.repeatSize = step.repeatSize; t.curves = step.curves
+        }
         return t
     }
 
     /// Applies the Daily theme only when its day or band changed, so his own tweaks are not stomped on every launch.
     func wearIfDue(force: Bool = false) async {
-        let stamp = Self.shiftDay(.now) + "/v2/" + (Self.lookBand().map { "\($0.rawValue)" } ?? "-") + (d.bool(forKey: "pldev.rising.drained") ? "/still" : "")
+        let stamp = Self.shiftDay(.now) + "/v3/" + (Self.lookBand().map { "\($0.rawValue)" } ?? "-") + (d.bool(forKey: "pldev.rising.drained") ? "/still" : "")
         guard force || (wearsDaily && d.string(forKey: "pldev.rising.stamp") != stamp) else { return }
         d.set(stamp, forKey: "pldev.rising.stamp")
         _ = await Self.preset().apply()
@@ -545,6 +561,8 @@ struct RisingPanel: View {
             if rising.showWords, let tap = rising.current {
                 HStack {
                     Text(RisingStep.of(tap.band).title).plFont(.subhead, emphasized: true)
+                    Text("Hawkins: " + RisingStep.of(tap.band).hawkins).plFont(.caption2).foregroundStyle(.secondary)
+                        .accessibilityLabel("Hawkins's number for this band: " + RisingStep.of(tap.band).hawkins + ". His muscle-testing number, not a measurement.")
                     Spacer()
                     if rising.wearsDaily, RisingScale.lookBand() != nil {
                         Button("Undo") { rising.undoFeeling() }.frame(minWidth: 44, minHeight: 44)
@@ -555,8 +573,13 @@ struct RisingPanel: View {
                     question(RisingAsk.questions[asked], at: asked)
                 } else {
                 if let line = RisingAsk.nudge(tap) { Text(line).plFont(.callout).padding(.vertical, 6) }
-                if let lift = rising.liftLine { Text("What lifts you: " + lift).plFont(.footnote).foregroundStyle(.secondary).padding(.bottom, 4) }
+                if tap.band >= .rising {
+                    visionStrip
+                    Text("Today's magnet move: " + RisingAsk.magnet()).plFont(.footnote).foregroundStyle(.secondary).padding(.vertical, 4)
+                }
+                if tap.band >= .stuck, let lift = rising.liftLine { Text("What lifts you: " + lift).plFont(.footnote).foregroundStyle(.secondary).padding(.bottom, 4) }
                 RisingAction(band: tap.band).id(tap.at)
+                if tap.band < .stuck, let lift = rising.liftLine { Text("What lifts you: " + lift).plFont(.footnote).foregroundStyle(.secondary).padding(.top, 4) }
                 // at the very bottom ask almost nothing: the words wait until he wants them (research, 11-26)
                 if let word = tap.word {
                     Text(word).plFont(.callout, emphasized: true).frame(minHeight: 44)
@@ -573,9 +596,8 @@ struct RisingPanel: View {
                 }
                 tags(tap)
                 if rising.wearsDaily { rateLook }
-                if tap.band >= .rising { visionStrip }
                 if tap.band >= .stuck {
-                    Text("Today's magnet move: " + RisingAsk.magnet()).plFont(.footnote).foregroundStyle(.secondary).padding(.top, 4)
+                    if tap.band < .rising { Text("Today's magnet move: " + RisingAsk.magnet()).plFont(.footnote).foregroundStyle(.secondary).padding(.top, 4) }
                     weekBars
                 }
                 }
@@ -715,6 +737,7 @@ struct RisingPanel: View {
             Toggle("Three reminders", isOn: Binding(get: { rising.reminds }, set: { rising.reminds = $0 }))
             Toggle("Buddy pops up", isOn: Binding(get: { rising.buddyOn }, set: { rising.buddyOn = $0 }))
             Toggle("No notices 6 AM to 3 PM", isOn: Binding(get: { rising.quietDay }, set: { rising.quietDay = $0 }))
+            Toggle("Home follows my mood", isOn: Binding(get: { rising.homeFollows }, set: { rising.homeFollows = $0 }))
             ShareLink("Export my check-ins", item: RisingScale.file)
             Button("Erase my check-ins", role: .destructive) { confirmErase = true }
         } label: {

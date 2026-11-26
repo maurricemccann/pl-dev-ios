@@ -107,6 +107,7 @@ private struct PLFontModifier: ViewModifier {
     let isTitle: Bool
     @AppStorage("pldev.font") private var face = "system"
     @AppStorage("pldev.textSize") private var textSize = 100.0
+    @AppStorage("pldev.styleText") private var styleText = 1.0   // the Daily look's size by band (0 = never set)
     @AppStorage("pldev.styleTitleFX") private var titleFX = ""
     @Environment(\.legibilityWeight) private var legibilityWeight
     @Environment(\.dynamicTypeSize) private var dynamicTypeSize   // read so a Dynamic Type change redraws the scaled system size
@@ -119,7 +120,7 @@ private struct PLFontModifier: ViewModifier {
 
     func body(content: Content) -> some View {
         let _ = dynamicTypeSize
-        let scale = min(1.3, max(0.9, textSize / 100))
+        let scale = min(1.3, max(0.9, textSize / 100 * (styleText > 0 ? styleText : 1)))
         Group {
             if isTitle, let pack = ThemePack.shared.titleFont {
                 content.font(text.packFont(pack, scale: scale))
@@ -330,8 +331,9 @@ enum PLHaptic {
 
 /// Motion: springs, or a short fade when Reduce Motion or the app's own Motion setting asks for less.
 enum PLMotion {
-    static func standard(reduce: Bool) -> Animation { reduce ? .easeInOut(duration: 0.2) : .smooth }
-    static func spring(reduce: Bool) -> Animation { reduce ? .easeInOut(duration: 0.15) : .spring(response: 0.3, dampingFraction: 0.9) }
+    // the theme's pace: slower and cooler on the low bands, quicker toward Rising (felt-time evidence is weak; the Lab says so)
+    static func standard(reduce: Bool) -> Animation { reduce ? .easeInOut(duration: 0.2) : .smooth(duration: 0.35 * PLStyle.pace) }
+    static func spring(reduce: Bool) -> Animation { reduce ? .easeInOut(duration: 0.15) : .spring(response: 0.3 * PLStyle.pace, dampingFraction: 0.9) }
 }
 
 /// The Theme setting as SwiftUI's colour scheme; nil follows the system.

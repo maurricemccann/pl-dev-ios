@@ -61,6 +61,9 @@ enum PLStyle {
         default: let n = HouseFonts.name(face); return n == "system" ? nil : n
         }
     }
+    /// Text size and motion pace by the theme (the Daily look sets them by band; 1 = the house).
+    static var textScale: CGFloat { scale("pldev.styleText") }
+    static var pace: Double { Double(scale("pldev.stylePace")) }
     /// One repeat of the curve wallpaper, in points (his reference is 300).
     static var repeatSize: CGFloat { let v = UserDefaults.standard.double(forKey: "pldev.styleRepeat"); return v > 0 ? v : 300 }
     private static func scale(_ key: String) -> CGFloat { let v = UserDefaults.standard.double(forKey: key); return v > 0 ? v : 1 }
@@ -111,6 +114,7 @@ enum HouseFonts {
 /// reached views that used plFont). Same arguments as Font.system; with no face chosen it IS Font.system.
 extension Font {
     static func pl(size: CGFloat, weight: Font.Weight? = nil, design: Font.Design? = nil) -> Font {
+        let size = size * PLStyle.textScale
         guard let face = PLStyle.textFont else { return .system(size: size, weight: weight, design: design) }
         let f = Font.custom(face, fixedSize: face.contains("Mono") ? size * 0.92 : size)
         return weight.map { f.weight($0) } ?? f
@@ -131,7 +135,7 @@ extension Font {
         case .caption: size = 12
         default: size = 11
         }
-        let f = Font.custom(face, size: face.contains("Mono") ? size * 0.92 : size, relativeTo: style)
+        let f = Font.custom(face, size: (face.contains("Mono") ? size * 0.92 : size) * PLStyle.textScale, relativeTo: style)
         let w = weight ?? (style == .headline ? .semibold : nil)
         return w.map { f.weight($0) } ?? f
     }
