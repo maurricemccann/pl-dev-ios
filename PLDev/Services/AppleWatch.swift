@@ -10,12 +10,12 @@ import UserNotifications
 @MainActor enum AppleWatch {
     /// Notice type → the words Settings shows beside its switch. Types other lanes declared are listed too.
     static let labels: [String: String] = [
-        "drafts": "Drafts waiting (House)",
-        "apple.dm": "Member messages (House)",
-        "apple.support": "Support mail (House)",
+        "drafts": "Drafts waiting (PLOS)",
+        "apple.dm": "Member messages (PLOS)",
+        "apple.support": "Support mail (PLOS)",
         "apple.order": "New orders (Shop)",
         "apple.drop": "Drops chosen (Shop)",
-        "apple.comments": "Comments to post (House)",
+        "apple.comments": "Comments to post (PLOS)",
         "apple.reports": "Reports to moderate (Congregation)",
         "shop.new": "New pieces in the shop",
         "congregation.held": "Posts waiting in the room",
@@ -56,7 +56,7 @@ import UserNotifications
             let body = text.trimmingCharacters(in: .whitespacesAndNewlines)
             guard let email = d.string(forKey: "pldev.apple.dm.email"), !body.isEmpty else { return }
             let said: String
-            if (try? await Console.post("api/dm/send", ["email": email, "body": body], model: model)) != nil { said = "Sent." } else { said = "Not sent. Open House and try again." }
+            if (try? await Console.post("api/dm/send", ["email": email, "body": body], model: model)) != nil { said = "Sent." } else { said = "Not sent. Open PLOS and try again." }
             _ = await NotificationHub.shared.post(id: "apple.dm.sent", title: said, body: body, category: nil, link: nil)
         }
         NotificationHub.actions["apple.support.resolve"] = {
@@ -64,7 +64,7 @@ import UserNotifications
             await model.restoreIfNeeded()
             guard let id = d.string(forKey: "pldev.apple.support.id") else { return }
             let ok = (try? await Console.post("api/pldev/x/contact", ["id": id, "status": "resolved"], model: model)) != nil
-            _ = await NotificationHub.shared.post(id: "apple.support.done", title: ok ? "Marked resolved" : "Not resolved", body: ok ? "The message is closed." : "The console did not answer. Open House and try again.", category: nil, link: nil)
+            _ = await NotificationHub.shared.post(id: "apple.support.done", title: ok ? "Marked resolved" : "Not resolved", body: ok ? "The message is closed." : "The console did not answer. Open PLOS and try again.", category: nil, link: nil)
         }
         NotificationHub.actions["apple.stack.run"] = {
             let model = AppModel.shared

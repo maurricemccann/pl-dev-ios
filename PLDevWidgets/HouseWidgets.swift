@@ -31,7 +31,7 @@ struct HouseWidgetView: View {
             switch family {
             case .accessoryRectangular:
                 VStack(alignment: .leading, spacing: 1) {
-                    Text("House").font(.headline).widgetAccentable()
+                    Text("PLOS").font(.headline).widgetAccentable()
                     Text("\(g.drafts) drafts · \(g.done)/\(g.total) shift")
                     if let n = g.next { Text(n).lineLimit(1) }
                 }
@@ -41,7 +41,7 @@ struct HouseWidgetView: View {
             default:
                 VStack(alignment: .leading, spacing: 6) {
                     HStack {
-                        Label("House", systemImage: "house.fill").font(.caption.bold()).widgetAccentable()
+                        Label("PLOS", systemImage: "house.fill").font(.caption.bold()).widgetAccentable()
                         Spacer()
                         Text(g.updatedAt, style: .relative).font(.caption2).foregroundStyle(.secondary)
                     }
@@ -68,8 +68,8 @@ struct HouseWidgetView: View {
             }
         } else {
             VStack(alignment: .leading, spacing: 4) {
-                Label("House", systemImage: "house").font(.headline)
-                Text("Open House once to fill this.").font(.caption).foregroundStyle(.secondary)
+                Label("PLOS", systemImage: "house").font(.headline)
+                Text("Open PLOS once to fill this.").font(.caption).foregroundStyle(.secondary)
             }
         }
     }
@@ -82,7 +82,7 @@ struct HouseWidget: Widget {
                 .widgetURL(URL(string: "pldev://section/house"))
                 .containerBackground(.fill.tertiary, for: .widget)
         }
-        .configurationDisplayName("House")
+        .configurationDisplayName("PLOS")
         .description("Drafts waiting and how far the shift has come.")
         .supportedFamilies([.systemSmall, .systemMedium, .accessoryRectangular, .accessoryCircular])
     }
@@ -102,7 +102,7 @@ struct ShiftLiveActivity: Widget {
                 .gaugeStyle(.accessoryCircularCapacity)
                 .tint(HouseTint.key)
                 VStack(alignment: .leading, spacing: 2) {
-                    Text(ctx.isStale ? "Open House to refresh" : "Now").font(.caption.weight(.semibold)).foregroundStyle(.secondary)
+                    Text(ctx.isStale ? "Open PLOS to refresh" : "Now").font(.caption.weight(.semibold)).foregroundStyle(.secondary)
                     Text(ctx.state.task).font(.headline.weight(.semibold)).lineLimit(2)
                     Text("\(ctx.state.done) of \(ctx.state.total) done\(ctx.state.time.map { " · \($0)" } ?? "")").font(.caption).foregroundStyle(.secondary)
                 }

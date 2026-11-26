@@ -38,10 +38,10 @@ struct ReviewCard: View {
     var body: some View {
         PCard(title: "Weekly review", id: "review") {
             if due {
-                Text("seven days on the record \u{2014} close the loop").font(Font.pl(size: 12)).foregroundStyle(Candle.ink.opacity(0.5))
+                Text("seven days on the record... close the loop").font(Font.pl(size: 12)).foregroundStyle(Candle.ink.opacity(0.5))
                 PField(prompt: "What worked this week?", text: $worked, lines: 2)
                 PField(prompt: "What gets adjusted?", text: $adjust, lines: 2)
-                PField(prompt: "What gets celebrated \u{2014} effort counts.", text: $celebrate, lines: 2)
+                PField(prompt: "What gets celebrated... effort counts.", text: $celebrate, lines: 2)
                 HStack(spacing: 6) {
                     Button(reading ? "\u{2026}" : "Read my week") { Task { await read() } }.buttonStyle(CandleGhost()).disabled(reading)
                     Spacer(minLength: 0)
@@ -65,7 +65,7 @@ struct ReviewCard: View {
     private func line(_ k: String, _ v: String?) -> some View {
         VStack(spacing: 0) {
             CandleRule()
-            (Text("\(k):").foregroundStyle(Candle.goldHi).fontWeight(.medium) + Text(" \(v.flatMap { $0.isEmpty ? nil : $0 } ?? "\u{2014}")"))
+            (Text("\(k):").foregroundStyle(Candle.goldHi).fontWeight(.medium) + Text(" \(v.flatMap { $0.isEmpty ? nil : $0 } ?? "none yet")"))
                 .font(Font.pl(size: 13.6)).foregroundStyle(Candle.ink.opacity(0.85)).frame(maxWidth: .infinity, alignment: .leading).padding(.vertical, 8)
         }
         .padding(.top, 6)
@@ -79,7 +79,7 @@ struct ReviewCard: View {
         do {
             let d = try await Practice.post("review-summary", model: model)
             let s = (try? JSONDecoder().decode(S.self, from: d))?.summary ?? ""
-            summary = s.isEmpty ? "The record is thin this week \u{2014} the read comes from what\u{2019}s logged." : s
+            summary = s.isEmpty ? "The record is thin this week... the read comes from what\u{2019}s logged." : s
         } catch { result = error.localizedDescription }
     }
 
@@ -142,7 +142,7 @@ struct StoryHistoryCard: View {
                 ForEach(trends) { t in
                     CandleRule()
                     (Text(t.date).fontWeight(.semibold).foregroundStyle(Candle.goldHi)
-                     + Text(" \u{2014} \(t.story.flatMap { $0.isEmpty ? nil : $0 } ?? "(no morning entry)")")
+                     + Text(" \u{00B7} \(t.story.flatMap { $0.isEmpty ? nil : $0 } ?? "(no morning entry)")")
                      + Text(t.story_shifted.flatMap { $0.isEmpty ? nil : " \u{2192} shifted: \($0)" } ?? ""))
                         .font(Font.pl(size: 13.6)).foregroundStyle(Candle.ink.opacity(0.85)).lineSpacing(3)
                         .frame(maxWidth: .infinity, alignment: .leading).padding(.vertical, 8).textSelection(.enabled)

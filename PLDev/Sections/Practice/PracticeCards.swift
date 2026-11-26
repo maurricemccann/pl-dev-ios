@@ -187,12 +187,12 @@ struct CheckinCard: View {
     private var done: Bool { evening ? state.eveningDone : state.morningDone }
     private var label: String {
         if busy { return "\u{2026}" }
-        if failedOnce { return "Save failed \u{2014} try again" }
+        if failedOnce { return "Save failed... try again" }
         return evening ? (done ? "Closed \u{2713}" : "Close the day") : (done ? "Logged \u{2713}" : "Log it")
     }
 
     var body: some View {
-        PCard(title: evening ? "Evening \u{2014} gratitude" : "Morning \u{2014} what\u{2019}s persisting", id: evening ? "evening" : "morning") {
+        PCard(title: evening ? "Evening... gratitude" : "Morning... what\u{2019}s persisting", id: evening ? "evening" : "morning") {
             if evening {
                 PField(prompt: "What was real today?", text: $gratitude, lines: 3)
                 PField(prompt: "Did today\u{2019}s story shift?", text: $shifted, lines: 3)
@@ -349,7 +349,7 @@ struct ReframeCard: View {
     @State private var failed = false
 
     var body: some View {
-        PCard(title: "Reframe", hint: "name the limiting belief \u{2014} replace it with one that\u{2019}s true and useful", id: "reframe") {
+        PCard(title: "Reframe", hint: "name the limiting belief... replace it with one that\u{2019}s true and useful", id: "reframe") {
             PField(prompt: "The belief that\u{2019}s in the way\u{2026}", text: $belief, lines: 2)
             HStack { Button(busy ? "\u{2026}" : "Reframe it") { Task { await make() } }.buttonStyle(CandleButton()).disabled(busy || belief.trimmingCharacters(in: .whitespaces).isEmpty); Spacer(minLength: 0) }
             if suggesting {

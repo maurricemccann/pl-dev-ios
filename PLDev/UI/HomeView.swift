@@ -160,6 +160,7 @@ struct HomeView: View {
             }
         }
         .task {
+            rising.load()
             await rising.firstWear()
             rising.asking = true
             if rising.reminds { _ = await NotificationHub.shared.authorize() }   // the system asks once; then the three are set
@@ -169,6 +170,7 @@ struct HomeView: View {
             if phase == .background { left = true }   // only a real leave counts, not Face ID or a pulled-down notification list
             if phase == .active, left {
                 left = false
+                rising.load()
                 rising.asking = true
                 Task { await rising.wearIfDue(); rising.scheduleReminders() }
             }
@@ -404,10 +406,10 @@ private struct WidgetHowTo: View {
     @State private var where_ = 0
     @Environment(\.dismiss) private var dismiss
     private let home = ["Touch and hold an empty part of the Home Screen until the apps jiggle.", "Tap Edit at the top, then Add Widget.",
-                        "Search PL DEV, pick a widget (House, Snapshot, Practice and the rest) and a size, then Add Widget.",
+                        "Search PL DEV, pick a widget (PLOS, Snapshot, Practice and the rest) and a size, then Add Widget.",
                         "To see them all in one place, swipe right on your first Home Screen page: that is Today View."]
     private let lock = ["Touch and hold the Lock Screen until Customize shows, then tap Customize and Lock Screen.",
-                        "Tap the space under the clock to open the widget tray.", "Search PL DEV and add House, Practice or the Status ring.",
+                        "Tap the space under the clock to open the widget tray.", "Search PL DEV and add PLOS, Practice or the Status ring.",
                         "Tap Done. Live Activities (the shift, renders) show on the Lock Screen on their own."]
     var body: some View {
         NavigationStack {

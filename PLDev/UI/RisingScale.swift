@@ -29,12 +29,42 @@ struct CheckIn: Codable { let at: Date; let band: Band; var word: String?; var t
     static let shared = RisingScale()
     nonisolated static let id = "daily"
     private let d = UserDefaults.standard
-    private(set) var log: [CheckIn]
-    var note: String { didSet { d.set(note, forKey: "pldev.rising.note") } }
+    /// His check-ins and note, in a file the phone cannot be read from while locked (they were in app preferences until 11-26).
+    nonisolated static let file = URL.applicationSupportDirectory.appending(path: "rising.json")
+    private struct Store: Codable { var log: [CheckIn]; var note: String }
+    private(set) var log: [CheckIn] = []
+    var note = "" { didSet { if loaded { save() } } }
+    @ObservationIgnored private var loaded = false
 
-    private init() {
-        log = (UserDefaults.standard.data(forKey: "pldev.rising.log")).flatMap { try? JSONDecoder().decode([CheckIn].self, from: $0) } ?? []
-        note = UserDefaults.standard.string(forKey: "pldev.rising.note") ?? ""
+    private init() { load() }
+
+    /// Nothing is written until a read has worked, so a locked phone cannot replace his history with an empty one.
+    func load() {
+        guard !loaded else { return }
+        if FileManager.default.fileExists(atPath: Self.file.path) {
+            guard let data = try? Data(contentsOf: Self.file) else { return }
+            if let s = try? JSONDecoder().decode(Store.self, from: data) {
+                log = s.log; note = s.note
+            } else {
+                try? FileManager.default.moveItem(at: Self.file, to: Self.file.appendingPathExtension("bad"))   // kept, not overwritten
+            }
+            loaded = true
+        } else {
+            log = d.data(forKey: "pldev.rising.log").flatMap { try? JSONDecoder().decode([CheckIn].self, from: $0) } ?? []
+            note = d.string(forKey: "pldev.rising.note") ?? ""
+            loaded = true
+            if save() { d.removeObject(forKey: "pldev.rising.log"); d.removeObject(forKey: "pldev.rising.note") }
+        }
+    }
+
+    /// Every check-in, the note and the plan, gone from this phone.
+    func erase() {
+        load()
+        guard loaded else { return }
+        log = []; note = ""; save()
+        for k in ["last", "plan", "saidDay", "said", "turn", "undone", "log", "note"] { d.removeObject(forKey: "pldev.rising." + k) }
+        showWords = false
+        Task { await wearIfDue() }
     }
 
     private static let pacific: Calendar = {
@@ -53,9 +83,14 @@ struct CheckIn: Codable { let at: Date; let band: Band; var word: String?; var t
 
     var current: CheckIn? { log.last.flatMap { Self.shiftDay($0.at) == Self.shiftDay(.now) ? $0 : nil } }
 
-    private func save() { d.set(try? JSONEncoder().encode(Array(log.suffix(2000))), forKey: "pldev.rising.log") }
+    @discardableResult private func save() -> Bool {
+        guard loaded, let data = try? JSONEncoder().encode(Store(log: Array(log.suffix(2000)), note: note)) else { return false }
+        try? FileManager.default.createDirectory(at: Self.file.deletingLastPathComponent(), withIntermediateDirectories: true)
+        return (try? data.write(to: Self.file, options: [.atomic, .completeFileProtection])) != nil
+    }
 
     func tap(_ band: Band) {
+        load()
         log.append(CheckIn(at: .now, band: band)); save()
         d.set(Self.shiftDay(.now) + "/\(band.rawValue)", forKey: "pldev.rising.last")
         d.removeObject(forKey: "pldev.rising.undone")
@@ -334,6 +369,7 @@ struct RisingPanel: View {
     @State private var rising = RisingScale.shared
     @State private var heavyDismissed = UserDefaults.standard.string(forKey: "pldev.rising.heavyShown")
     @State private var named = false
+    @State private var confirmErase = false
 
     var body: some View {
         VStack(alignment: .leading, spacing: 0) {
@@ -373,6 +409,9 @@ struct RisingPanel: View {
         }
         .padding(rising.showWords ? 14 : 0)
         .onChange(of: rising.current?.at) { named = false }
+        .confirmationDialog("Erase every check-in, note and plan on this phone?", isPresented: $confirmErase, titleVisibility: .visible) {
+            Button("Erase", role: .destructive) { rising.erase() }
+        }
         .background {
             if rising.showWords { Color.clear.plGlass(in: RoundedRectangle(cornerRadius: PLRadius.card, style: .continuous)) }
         }
@@ -395,6 +434,8 @@ struct RisingPanel: View {
             Toggle("Look follows my check-in", isOn: Binding(get: { rising.followsFeeling }, set: { rising.followsFeeling = $0 }))
             Toggle("Three reminders", isOn: Binding(get: { rising.reminds }, set: { rising.reminds = $0 }))
             Toggle("Buddy pops up", isOn: Binding(get: { rising.buddyOn }, set: { rising.buddyOn = $0 }))
+            ShareLink("Export my check-ins", item: RisingScale.file)
+            Button("Erase my check-ins", role: .destructive) { confirmErase = true }
         } label: {
             Image(systemName: "ellipsis.circle").frame(width: 44, height: 44)
         }

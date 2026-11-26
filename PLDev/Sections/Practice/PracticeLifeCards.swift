@@ -142,7 +142,7 @@ struct DesireMap: View {
 
     var body: some View {
         VStack(alignment: .leading, spacing: 6) {
-            PField(prompt: "Trigger \u{2014} when this happens\u{2026}", text: $trigger, small: true)
+            PField(prompt: "Trigger... when this happens\u{2026}", text: $trigger, small: true)
             PField(prompt: "I will\u{2026}", text: $b1, small: true)
             PField(prompt: "Then\u{2026}", text: $b2, small: true)
             PField(prompt: "Which leads to\u{2026}", text: $outcomeFlow, small: true)
@@ -160,9 +160,9 @@ struct DesireMap: View {
                 }
             }
             VStack(alignment: .leading, spacing: 6) {
-                Text("WOOP \u{2014} contrast it, then plan it").font(Font.pl(size: 10.9)).textCase(.uppercase).tracking(1.1).foregroundStyle(Candle.goldHi.opacity(0.7))
-                PField(prompt: "Outcome \u{2014} the best real result of this\u{2026}", text: $outcome, small: true)
-                PField(prompt: "Obstacle \u{2014} the inner thing most likely to stop me\u{2026}", text: $obstacle, small: true)
+                Text("WOOP... contrast it, then plan it").font(Font.pl(size: 10.9)).textCase(.uppercase).tracking(1.1).foregroundStyle(Candle.goldHi.opacity(0.7))
+                PField(prompt: "Outcome... the best real result of this\u{2026}", text: $outcome, small: true)
+                PField(prompt: "Obstacle... the inner thing most likely to stop me\u{2026}", text: $obstacle, small: true)
                 ViewThatFits(in: .horizontal) {
                     HStack(spacing: 6) { PField(prompt: "If (the obstacle shows up as\u{2026})", text: $ifText, small: true); PField(prompt: "then I will\u{2026}", text: $thenText, small: true) }
                     VStack(spacing: 6) { PField(prompt: "If (the obstacle shows up as\u{2026})", text: $ifText, small: true); PField(prompt: "then I will\u{2026}", text: $thenText, small: true) }
@@ -212,9 +212,9 @@ struct HabitsCard: View {
     @State private var archive: PracticeHabit?
 
     var body: some View {
-        PCard(title: "Habits \u{2014} the tiny stack", hint: "cue \u{2192} response \u{2192} reward \u{00B7} tick it the day it happens", id: "habits") {
+        PCard(title: "Habits... the tiny stack", hint: "cue \u{2192} response \u{2192} reward \u{00B7} tick it the day it happens", id: "habits") {
             if !state.habits.isEmpty { TipView(HabitSwipeTip()) }
-            if state.habits.isEmpty { QuietLine(text: state.loaded ? "No habits yet \u{2014} start with one tiny one." : "\u{2026}") }
+            if state.habits.isEmpty { QuietLine(text: state.loaded ? "No habits yet... start with one tiny one." : "\u{2026}") }
             VStack(spacing: 0) {
                 ForEach(Array(state.habits.enumerated()), id: \.element.id) { i, h in
                     if i > 0 { CandleRule() }
@@ -222,9 +222,9 @@ struct HabitsCard: View {
                 }
             }
             PDetails(summary: "+ new habit", open: $adding) {
-                PField(prompt: "Cue \u{2014} after I\u{2026}", text: $cue, small: true)
-                PField(prompt: "Response \u{2014} I will\u{2026} (the tiny version)", text: $response, small: true)
-                PField(prompt: "Reward \u{2014} then I get\u{2026}", text: $reward, small: true)
+                PField(prompt: "Cue... after I\u{2026}", text: $cue, small: true)
+                PField(prompt: "Response... I will\u{2026} (the tiny version)", text: $response, small: true)
+                PField(prompt: "Reward... then I get\u{2026}", text: $reward, small: true)
                 HStack { Button("Add it") { Task { await add() } }.buttonStyle(CandleButton()).disabled(response.trimmingCharacters(in: .whitespaces).isEmpty); Spacer(minLength: 0) }
             }
             CandleResult(text: result)

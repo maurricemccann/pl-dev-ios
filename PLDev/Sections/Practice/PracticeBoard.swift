@@ -26,7 +26,7 @@ struct VisionBoardCard: View {
     }
 
     var body: some View {
-        PCard(title: "Vision board", hint: "tap an image to choose it \u{2014} chosen images stay", id: "vision") {
+        PCard(title: "Vision board", hint: "tap an image to choose it... chosen images stay", id: "vision") {
             WrapLayout(spacing: 6) {
                 ForEach(Self.sources, id: \.0) { s in CandleChip(title: s.1, on: source == s.0) { source = s.0 } }
                 PhotosPicker(selection: $photo, matching: .images) {

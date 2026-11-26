@@ -20,7 +20,13 @@ struct PracticeEntry: View {
             VStack(spacing: 32) {
                 Text(line).plHand(26, relativeTo: .title).foregroundStyle(Candle.goldHi).multilineTextAlignment(.center)
                     .frame(maxWidth: 320).fixedSize(horizontal: false, vertical: true).animation(.easeIn(duration: 0.4), value: line)
-                Text(hint).font(Font.pl(size: 13.6)).tracking(0.8).foregroundStyle(Candle.ink.opacity(0.45))
+                Text(hint).font(Font.pl(size: 17)).tracking(0.8).foregroundStyle(Candle.ink.opacity(0.7)).multilineTextAlignment(.center)
+                if phase == .idle {
+                    Button { Task { await speak() } } label: {
+                        Text("Begin").font(Font.pl(size: 17)).foregroundStyle(Candle.bg).frame(minWidth: 160, minHeight: 48)
+                            .background(Candle.goldHi, in: Capsule())
+                    }
+                }
             }
             .padding(32)
         }

@@ -87,15 +87,15 @@ struct AffirmationsCard: View {
     @State private var denied = false
     @AppStorage("practice.remind") private var remind = true
 
-    private func word(_ a: PracticeAffirmation) -> String { a.text + (a.mine ? "  \u{2014} yours" : "") }
+    private func word(_ a: PracticeAffirmation) -> String { a.text + (a.mine ? " ... yours" : "") }
 
     var body: some View {
-        PCard(title: "Affirmations \u{2014} the founder\u{2019}s voice", id: "affirmations") {
+        PCard(title: "Affirmations... the founder\u{2019}s voice", id: "affirmations") {
             VStack(alignment: .leading, spacing: 8) {
                 if let line {
                     Text(word(line)).plHand(21, relativeTo: .title3).foregroundStyle(Candle.ink).lineSpacing(4).textSelection(.enabled)
                     if let audio = line.audio { PracticePlayer(key: line.key, path: audio, model: model) { result = $0 } }
-                    else { Text("voice not recorded yet \u{2014} text only").font(Font.pl(size: 12)).foregroundStyle(Candle.ink.opacity(0.5)) }
+                    else { Text("voice not recorded yet... text only").font(Font.pl(size: 12)).foregroundStyle(Candle.ink.opacity(0.5)) }
                 } else if failed { Text(PracticeWords.loadFailed("the lines")).candleHint() }
                 else { Text("\u{2026}").candleHint() }
             }
@@ -124,7 +124,7 @@ struct AffirmationsCard: View {
                 .frame(maxHeight: 256)
             }
             PDetails(summary: "+ write your own", open: $own) {
-                PField(prompt: "Your line \u{2014} present tense, already true.", text: $text, lines: 2)
+                PField(prompt: "Your line... present tense, already true.", text: $text, lines: 2)
                 HStack { Button("Keep it") { Task { await add() } }.buttonStyle(CandleButton()).disabled(text.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty); Spacer(minLength: 0) }
                 if let target = lastOwn ?? (line?.mine == true ? line?.key : nil), PracticeRecorder.available {
                     HStack(spacing: 8) {
@@ -159,7 +159,7 @@ struct AffirmationsCard: View {
             struct Row: Decodable { let id: String?; let text: String? }
             let d = try await Practice.post("custom-affirmations", ["text": text.trimmingCharacters(in: .whitespacesAndNewlines)], model: model)
             let row = try? JSONDecoder().decode(Row.self, from: d)
-            text = ""; result = PracticeRecorder.available ? "saved \u{2014} record it if you want it in your voice" : "Saved."; state.tick += 1
+            text = ""; result = PracticeRecorder.available ? "saved... record it if you want it in your voice" : "Saved."; state.tick += 1
             await load()
             if let id = row?.id { lastOwn = "c-\(id)"; line = items.first { $0.key == "c-\(id)" } ?? line }
         } catch { result = error.localizedDescription }
@@ -170,8 +170,8 @@ struct AffirmationsCard: View {
         let id = key.hasPrefix("c-") ? String(key.dropFirst(2)) : key
         do {
             try await Practice.upload("affirmation-audio", bytes, type: "audio/mp4", model: model, query: ["id": id])
-            lastTake = nil; recorder.discard(); result = "recorded \u{2014} it plays in your voice now"; await load()
-        } catch { result = "upload failed \u{2014} your take is kept, try again" }
+            lastTake = nil; recorder.discard(); result = "recorded... it plays in your voice now"; await load()
+        } catch { result = "upload failed... your take is kept, try again" }
     }
 
     /// Tap to start, tap again to save. The recording is his live voice on his phone, sent as it is.
@@ -182,8 +182,8 @@ struct AffirmationsCard: View {
             result = "uploading\u{2026}"
             do {
                 try await Practice.upload("affirmation-audio", bytes, type: "audio/mp4", model: model, query: ["id": id])
-                recorder.discard(); result = "recorded \u{2014} it plays in your voice now"; await load()
-            } catch { lastTake = (key, bytes); result = "upload failed \u{2014} your take is kept, try again" }
+                recorder.discard(); result = "recorded... it plays in your voice now"; await load()
+            } catch { lastTake = (key, bytes); result = "upload failed... your take is kept, try again" }
         } else if let why = await recorder.start(key) { result = why } else { result = "recording\u{2026}" }
     }
 

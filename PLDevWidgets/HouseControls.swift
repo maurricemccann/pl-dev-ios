@@ -24,9 +24,9 @@ struct CanvasControl: ControlWidget {
 struct HouseControl: ControlWidget {
     var body: some ControlWidgetConfiguration {
         StaticControlConfiguration(kind: "com.psychedluxuries.dev.control.house") {
-            ControlWidgetButton(action: OpenSectionIntent(section: "house")) { Label("House", systemImage: "house.fill") }
+            ControlWidgetButton(action: OpenSectionIntent(section: "house")) { Label("PLOS", systemImage: "house.fill") }
         }
-        .displayName("House").description("Opens the console: the shift, approvals, the house.")
+        .displayName("PLOS").description("Opens the console: the shift, approvals, the house.")
     }
 }
 

@@ -32,6 +32,17 @@ enum Glyphs {
     static func rank(_ tier: String?) -> Int { ["none": 0, "initiate": 1, "aligned": 2, "kin": 3][tier ?? "none"] ?? 0 }
     static func unlocked(_ minTier: String, tier: String?) -> Bool { rank(tier) >= rank(minTier) }
 
+    /// The site's own unlock level for a glyph (read by `loadTiers`), else the one this build shipped with.
+    static func needs(_ key: String, built: String) -> String {
+        (UserDefaults.standard.dictionary(forKey: "pldev.tiers") as? [String: String])?[key] ?? built
+    }
+
+    @MainActor static func loadTiers() async {
+        struct Out: Decodable { struct G: Decodable { let key: String; let minTier: String }; let glyphs: [G] }
+        guard let o = try? await Site.get("api/congregation/tiers", Out.self), !o.glyphs.isEmpty else { return }
+        UserDefaults.standard.set(Dictionary(o.glyphs.map { ($0.key, $0.minTier) }, uniquingKeysWith: { a, _ in a }), forKey: "pldev.tiers")
+    }
+
     /// The brand colours a member can take as their accent (`lib/brand-color.ts`).
     static let palette: [(name: String, hex: String)] = [
         ("House Gold", "#c9a84c"), ("Oxblood", "#5e1622"), ("Amethyst", "#6b4e8f"), ("Verdigris", "#2d8a6e"),

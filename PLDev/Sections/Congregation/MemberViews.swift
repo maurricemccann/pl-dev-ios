@@ -484,7 +484,7 @@ struct GamesPanel: View {
 struct AskPanel: View {
     var body: some View {
         if SiteAccount.shared.isFounder {
-            SiteEmpty(title: "Member messages are in House", detail: "Open House, then Support, to read and answer them.")
+            SiteEmpty(title: "Member messages are in PLOS", detail: "Open PLOS, then Support, to read and answer them.")
         } else { MessagesPanel(title: "Ask the Founder") }
     }
 }

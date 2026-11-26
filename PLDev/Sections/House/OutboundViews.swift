@@ -762,7 +762,9 @@ struct PinterestView: View {
                             if let t = s.account?.account_type { PLChip(word: t, tint: PLOS.dim(scheme)) }
                         }
                     } else {
-                        Text("Pinterest refused the house's sign-in. Connect it again in pl-os on the laptop: Pinterest's sign-in returns to that page.").font(Font.pl(.footnote)).foregroundStyle(.secondary)
+                        Text("Pinterest refused the house's sign-in. Connect it again here, then pull to refresh.").font(Font.pl(.footnote)).foregroundStyle(.secondary)
+                        Button("Connect Pinterest") { Task { await connect() } }.buttonStyle(.borderedProminent).frame(minHeight: PLMetric.touch)
+                        if let note { Text(note).font(Font.pl(.footnote)) }
                     }
                     if let e = s.error { Label(e, systemImage: "exclamationmark.triangle").font(Font.pl(.footnote)).foregroundStyle(PLOS.warn) }
                 }.listRowBackground(OSRowBackground())
@@ -806,5 +808,17 @@ struct PinterestView: View {
     private func load() async {
         do { s = try await Console.get("run/pinterest-sandbox", Sandbox.self, model: model); failed = nil }
         catch { failed = plainSentence(error) }
+    }
+
+    /// Opens Pinterest's own sign-in in the browser; it returns to pl-cron, which stores the new token. The link lasts 15 minutes.
+    private func connect() async {
+        struct Out: Decodable { let authorize_url: String? }
+        do {
+            let o = try await Console.get("run/pinterest-auth-url", Out.self, model: model, query: ["env": "sandbox"])
+            guard let s = o.authorize_url, let url = URL(string: s), url.scheme == "https", url.host?.hasSuffix("pinterest.com") == true else {
+                note = "The console gave no sign-in link."; return
+            }
+            await UIApplication.shared.open(url)
+        } catch { note = plainSentence(error) }
     }
 }

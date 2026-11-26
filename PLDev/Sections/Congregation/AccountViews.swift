@@ -175,10 +175,11 @@ struct SettingsPanel: View {
     var body: some View {
         VStack(alignment: .leading, spacing: 30) {
             VStack(alignment: .leading, spacing: 14) {
-                Text("Your glyph").siteLabel(11)
+                Text("Your glyph").siteLabel(11).task { await Glyphs.loadTiers() }
                 HStack(spacing: 10) {
                     ForEach(Glyphs.all) { g in
-                        let locked = !Glyphs.unlocked(g.minTier, tier: account.me?.pointsTier)
+                        let need = Glyphs.needs(g.key, built: g.minTier)
+                        let locked = !Glyphs.unlocked(need, tier: account.me?.pointsTier)
                         let active = g.key == glyph
                         Button { chooseGlyph(g) } label: {
                             GlyphMark(glyph: g.key, color: active ? accent : Bone.inkFaint(scheme), size: 30)
@@ -189,7 +190,7 @@ struct SettingsPanel: View {
                                 .opacity(locked ? 0.45 : 1)
                         }
                         .buttonStyle(.plain).disabled(busy)
-                        .accessibilityLabel("\(g.label)\(locked ? ", locked until \(g.minTier)" : "")\(active ? ", chosen" : "")")
+                        .accessibilityLabel("\(g.label)\(locked ? ", locked until \(need)" : "")\(active ? ", chosen" : "")")
                     }
                 }
                 if let g = Glyphs.def(glyph) { Text(g.label).siteLabel(10) }
@@ -267,7 +268,8 @@ struct SettingsPanel: View {
 
     private func chooseGlyph(_ g: GlyphDef) {
         guard g.key != glyph else { return }
-        if !Glyphs.unlocked(g.minTier, tier: account.me?.pointsTier) { note = "Not saved. That glyph unlocks at \(g.minTier)."; return }
+        let need = Glyphs.needs(g.key, built: g.minTier)
+        if !Glyphs.unlocked(need, tier: account.me?.pointsTier) { note = "Not saved. That glyph unlocks at \(need)."; return }
         let before = glyph
         glyph = g.key; busy = true; note = nil
         Task {

@@ -265,6 +265,9 @@ struct CaptureWhereSheet: View {
     var body: some View {
         NavigationStack {
             List { Group {
+                if let s = pending.url, let url = URL(string: s) {
+                    Section { LinkCard(url: url) }
+                }
                 Section {
                     ForEach(pending.options) { r in
                         Button { route = r } label: {

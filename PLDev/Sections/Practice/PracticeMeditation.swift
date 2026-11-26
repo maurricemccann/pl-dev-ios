@@ -109,11 +109,11 @@ struct RehearsalSection: View {
     let state: PracticeModel
     @Binding var flow: RehearsalFlow
     private static let stages = [
-        "See it \u{2014} the room, the light, where you are when it\u{2019}s true.",
-        "Hear it \u{2014} what\u{2019}s said around you, the sound of that day.",
-        "Feel it \u{2014} the fabric, the weight, the temperature of it.",
-        "The emotion of it done \u{2014} let it land in the chest.",
-        "Hold the whole scene \u{2014} you inside it, present tense.",
+        "See it... the room, the light, where you are when it\u{2019}s true.",
+        "Hear it... what\u{2019}s said around you, the sound of that day.",
+        "Feel it... the fabric, the weight, the temperature of it.",
+        "The emotion of it done... let it land in the chest.",
+        "Hold the whole scene... you inside it, present tense.",
     ]
     private static let stageSeconds = 24
     @State private var desires: [PracticeDesire] = []
@@ -128,14 +128,14 @@ struct RehearsalSection: View {
             case .setup:
                 HStack(spacing: 6) {
                     PSelect(options: desires.isEmpty ? [("", "write a desire first")] : desires.map { ($0.id, String($0.text.prefix(70))) }, value: $flow.chosen)
-                    Button("Rehearse it \u{2014} 2 minutes") { begin() }.buttonStyle(CandleGhost()).fixedSize().disabled(flow.chosen.isEmpty)
+                    Button("Rehearse it... 2 minutes") { begin() }.buttonStyle(CandleGhost()).fixedSize().disabled(flow.chosen.isEmpty)
                 }
             case .live:
                 Text(Self.stages[stage]).font(Font.pl(size: 16, design: .serif).italic()).foregroundStyle(Candle.goldHi).multilineTextAlignment(.center)
                     .lineSpacing(4).frame(maxWidth: .infinity, minHeight: 56).id(stage).transition(.opacity)
                 Button("end early") { end() }.buttonStyle(CandleGhost())
             case .rate:
-                Text("How vivid did it get \u{2014} how much did it land?").font(Font.pl(size: 12)).foregroundStyle(Candle.ink.opacity(0.5))
+                Text("How vivid did it get... how much did it land?").font(Font.pl(size: 12)).foregroundStyle(Candle.ink.opacity(0.5))
                 HStack(spacing: 6) {
                     ForEach(1...5, id: \.self) { n in Button("\(n)") { Task { await save(n) } }.buttonStyle(CandleButton()).frame(minWidth: 44) }
                 }

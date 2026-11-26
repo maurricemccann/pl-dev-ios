@@ -72,7 +72,7 @@ struct AppleWidgetView: View {
                 }
                 .buttonStyle(.bordered).controlSize(.small)
             } else {
-                Text(g.draftCount > 0 ? "Open House to see them." : "Nothing waits for your word.").font(.caption).foregroundStyle(.secondary)
+                Text(g.draftCount > 0 ? "Open PLOS to see them." : "Nothing waits for your word.").font(.caption).foregroundStyle(.secondary)
             }
             queuedNote(g)
         }

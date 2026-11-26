@@ -5,7 +5,7 @@ import UserNotifications
 /// House: the whole pl-os console on the phone (his order 11-13, "build everything in plos in full"). The web's three tabs,
 /// Founder / Inbound / Outbound, plus More (the rooms and the system drawer). Every call goes through Console (the PL DEV key).
 @MainActor enum HouseSection: PLSection {
-    static let manifest = SectionManifest(id: "house", title: "House", symbol: "house",
+    static let manifest = SectionManifest(id: "house", title: "PLOS", symbol: "house",
                                           needsKeys: ["pldev"], needsOrigins: ["console"])
     static let state = HouseModel()
 
@@ -20,7 +20,7 @@ import UserNotifications
                 SettingsLabel("Show the tips again next time PL DEV opens", "lightbulb", IOS27.SystemColors.yellow)
             }
             Button { Task { await HouseSpotlight.index() } } label: {
-                SettingsLabel("Add House rooms to Spotlight again", "magnifyingglass", Color(uiColor: .systemGray))
+                SettingsLabel("Add PLOS rooms to Spotlight again", "magnifyingglass", Color(uiColor: .systemGray))
             }
         })
     }
@@ -29,7 +29,7 @@ import UserNotifications
         NotificationHub.actions["house.approveAll"] = {
             await AppModel.shared.restoreIfNeeded()
             guard let started = try? await HouseActions.approveAll(model: AppModel.shared) else {
-                _ = await NotificationHub.shared.post(id: "house.approved", title: "Nothing approved", body: "The console did not answer. Open House and try again.", category: nil, link: nil)
+                _ = await NotificationHub.shared.post(id: "house.approved", title: "Nothing approved", body: "The console did not answer. Open PLOS and try again.", category: nil, link: nil)
                 return
             }
             _ = await NotificationHub.shared.post(id: "house.approved", title: "Approving \(started) drafts", body: "Slack reports when it finishes. Pins still wait for you.", category: nil, link: nil)
@@ -515,7 +515,7 @@ struct HouseLookPicker: View {
     @AppStorage("house.look") private var look = "dark"
     var body: some View {
         Picker(selection: $look) { Text("Dark, like pl-os at night").tag("dark"); Text("Light, the ivory console").tag("light") } label: {
-            SettingsLabel("House look", "circle.lefthalf.filled", Color(hex: 0xc9a84c))
+            SettingsLabel("PLOS look", "circle.lefthalf.filled", Color(hex: 0xc9a84c))
         }
     }
 }

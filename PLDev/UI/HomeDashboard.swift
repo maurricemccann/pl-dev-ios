@@ -337,7 +337,7 @@ struct HomeDashboard: View {
                 }
                 Text("\(h.week) drafts made this week").font(Font.pl(.caption)).foregroundStyle(.secondary)
             } else {
-                Text("Not read yet. House opens with the full console.").font(Font.pl(.callout)).foregroundStyle(.secondary)
+                Text("Not read yet. PLOS opens with the full console.").font(Font.pl(.callout)).foregroundStyle(.secondary)
             }
             door("house") {   // the card's foot opens the whole room, like a widget's "see trends" (11-13)
                 HStack(spacing: 4) { Text("Open the house").plLabel(10); Image(systemName: "arrow.right").font(Font.pl(size: 10, weight: .bold)) }

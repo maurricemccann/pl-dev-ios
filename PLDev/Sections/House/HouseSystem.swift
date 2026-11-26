@@ -131,7 +131,7 @@ enum HouseRoom: String, CaseIterable, Identifiable, Hashable {
 }
 
 struct HouseStatusIntent: AppIntent {
-    static let title: LocalizedStringResource = "What's Waiting in the House"
+    static let title: LocalizedStringResource = "What's Waiting in PLOS"
     static let description: IntentDescription? = "Says how many drafts wait for you and how far today's shift has come."
     static let supportedModes: IntentModes = .background
 
@@ -191,7 +191,7 @@ struct ApproveAllDraftsIntent: AppIntent {
 
 /// Opens a House room. Also what Spotlight runs when he picks a House result.
 struct OpenHouseRoomIntent: OpenIntent {
-    static let title: LocalizedStringResource = "Open a House Room"
+    static let title: LocalizedStringResource = "Open a PLOS Room"
     @Parameter(title: "Room") var target: HouseRoomEntity
 
     init() {}
@@ -204,11 +204,11 @@ struct OpenHouseRoomIntent: OpenIntent {
 }
 
 struct HouseRoomEntity: IndexedEntity {
-    static let typeDisplayRepresentation: TypeDisplayRepresentation = "House Room"
+    static let typeDisplayRepresentation: TypeDisplayRepresentation = "PLOS Room"
     static let defaultQuery = HouseRoomQuery()
     let id: String
     let title: String
-    var displayRepresentation: DisplayRepresentation { DisplayRepresentation(title: "\(title)", subtitle: "House") }
+    var displayRepresentation: DisplayRepresentation { DisplayRepresentation(title: "\(title)", subtitle: "PLOS") }
 
     static var all: [HouseRoomEntity] { HouseRoom.allCases.map { HouseRoomEntity(id: $0.rawValue, title: $0.title) } }
 }
