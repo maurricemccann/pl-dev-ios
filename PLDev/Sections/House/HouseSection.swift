@@ -142,11 +142,14 @@ import UserNotifications
         if let c = counts?.captures, c > 0 { flags.append("\(c) capture(s) in inbox") }
         if devStuck > 0 { flags.append("\(devStuck) piece(s) stuck in Development") }
         var out: [String] = []
-        if !flags.isEmpty { out.append(flags.joined(separator: " · ")) }
+        out += flags
         let pending = tasks.filter { !($0.status ?? "").lowercased().contains("done") }.count
         if pending > 0 { out.append("\(pending) founder task(s) pending") }
         return out
     }
+
+    /// Where a Needs You row opens (his screenshot 11-26: every arrow went to Approvals).
+    static func room(for row: String) -> HouseRoom { row.hasSuffix("stuck in Development") ? .pipeline : .approvals }
 
     func tickTask(_ t: PlanTask, _ status: String, model: AppModel) async {
         guard let i = plan?.tasks?.firstIndex(where: { $0.id == t.id }) else { return }
@@ -247,8 +250,8 @@ struct FounderTab: View {
                 kpis
                 OSPanel(title: "Needs you", badge: "\(state.needsYou.count)", owed: !state.needsYou.isEmpty) {
                     if state.needsYou.isEmpty { Text("Nothing waiting on you.").foregroundStyle(PLOS.dim(scheme)) }
-                    ForEach(state.needsYou, id: \.self) { n in
-                        Button { state.room = .approvals } label: { OSRow(title: n) { Image(systemName: "arrow.right").foregroundStyle(PLOS.gold) } }.buttonStyle(.plain)
+                    ForEach(state.needsYou.filter { !$0.hasSuffix("founder task(s) pending") }, id: \.self) { n in
+                        Button { state.room = HouseModel.room(for: n) } label: { OSRow(title: n) { Image(systemName: "arrow.right").foregroundStyle(PLOS.gold) } }.buttonStyle(.plain)
                     }
                     ForEach(state.tasks) { t in
                         OSRow(title: t.title ?? "", meta: [t.project, t.priority, t.due_date].compactMap { $0 }.joined(separator: " · ")) {
@@ -357,7 +360,7 @@ struct FounderTab: View {
                 Text("Do next · raises \(q.label)").osEyebrow(10).foregroundStyle(PLOS.goldDim(scheme))
                 (Text("\(q.score)/25").font(Font.pl(.callout, design: .monospaced)).foregroundStyle(PLOS.dim(scheme)) + Text(" · \(q.note ?? "")").foregroundStyle(PLOS.text(scheme))).font(Font.pl(.callout))
                 if let first = state.needsYou.first {
-                    Button { state.room = .approvals } label: { OSRow(title: first) { Text("Open →").osEyebrow(10).foregroundStyle(PLOS.gold) } }.buttonStyle(.plain)
+                    Button { state.room = HouseModel.room(for: first) } label: { OSRow(title: first) { Text("Open →").osEyebrow(10).foregroundStyle(PLOS.gold) } }.buttonStyle(.plain)
                 }
             }
             .osCard()

@@ -61,7 +61,7 @@ struct GlyphHeader: View {
             .padding(.horizontal, 24).padding(.top, 8).padding(.bottom, 2)
             SiteTabs(titles: titles, index: $index)
         }
-        .background(Bone.ground(scheme).opacity(0.94))
+        .background(Bone.ground(scheme))   // solid: the page read through it (his screenshot 11-26)
     }
 }
 
