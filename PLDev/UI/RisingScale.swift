@@ -84,8 +84,10 @@ struct CheckIn: Codable { let at: Date; let band: Band; var word: String?; var t
 
     // MARK: the look
 
-    /// The feeling's own colour, for the curve and its knob.
-    nonisolated static func tint(_ b: Band) -> Color { Color(hex: hex(0.70, max(b.chroma, 0.03) * 1.6, b.hue)) ?? .orange }
+    /// The feeling's own colour, for the curve and its dot (his ruling 11-25): each state plainly its own, heavy slate to lit yellow.
+    nonisolated static func tint(_ b: Band) -> Color {
+        Color(hex: ["#7f8db0", "#e0524a", "#5b93d6", "#3fb5a6", "#6cbf5e", "#f0912e", "#ffd84d"][b.rawValue]) ?? .orange
+    }
 
     var wearsDaily: Bool { d.string(forKey: "pldev.themeId") == Self.id }
     var followsFeeling: Bool {
@@ -297,11 +299,12 @@ struct RisingCurve: View {
         let tint = (dragging ?? rising.current?.band).map(RisingScale.tint) ?? PLTone.accent
         ZStack(alignment: .topLeading) {
             Color.clear
-                .glassEffect(.regular.tint(tint.opacity(0.85)), in: HisCurve())
+                .glassEffect(.regular.tint(tint.opacity(0.55)), in: HisCurve())
                 .shadow(color: tint.opacity(rising.asking ? 1 : 0), radius: rising.asking ? (pulse ? 16 : 5) : 0)
             if let shown {
-                Color.clear.frame(width: 34, height: 34)
-                    .glassEffect(.clear.tint(RisingScale.tint(shown).opacity(0.55)).interactive(), in: Circle())
+                Color.clear.frame(width: 30, height: 30)
+                    .glassEffect(.regular.tint(RisingScale.tint(shown)).interactive(), in: Circle())   // the dot is the state's colour
+                    .overlay(Circle().stroke(Color.white.opacity(0.95), lineWidth: 2))   // and stands off the curve of the same colour
                     .position(Self.at(shown.rawValue * 10))
                     .animation(.snappy, value: shown)
             }
