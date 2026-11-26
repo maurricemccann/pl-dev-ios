@@ -80,7 +80,7 @@ import PhotosUI
         }
         selection.removeAll()
         tick += 1
-        result = done == ids.count ? "\(action == "approve" ? "Approved" : "Held") \(done)." : "Not all saved: \(done) of \(ids.count). Pull to see what is left."
+        result = done == ids.count ? "\(action == "approve" ? "Approved" : action == "reject" ? "Denied" : "Held") \(done)." : "Not all saved: \(done) of \(ids.count). Pull to see what is left."
     }
 
     func regenerate(_ d: Draft, model: AppModel) async {
@@ -221,11 +221,15 @@ struct ApprovalsView: View {
                         .listRowSeparator(.hidden)
                         .listRowInsets(EdgeInsets(top: 0, leading: 12, bottom: 0, trailing: 12))
                         .swipeActions(edge: .trailing) { Button("Approve") { Task { await state.moderate(d, "approve", model: model) } }.tint(.green) }
-                        .swipeActions(edge: .leading) { Button("Hold") { Task { await state.moderate(d, "hold", model: model) } }.tint(PLTone.house) }
+                        .swipeActions(edge: .leading) {
+                            Button("Hold") { Task { await state.moderate(d, "hold", model: model) } }.tint(PLTone.house)
+                            Button("Deny", role: .destructive) { Task { await state.moderate(d, "reject", model: model) } }
+                        }
                         .contextMenu {
                             Button("Approve", systemImage: "checkmark") { Task { await state.moderate(d, "approve", model: model) } }
                             Button("Post now", systemImage: "bolt") { nowTarget = d }
                             Button("Hold", systemImage: "pause") { Task { await state.moderate(d, "hold", model: model) } }
+                            Button("Deny", systemImage: "xmark", role: .destructive) { Task { await state.moderate(d, "reject", model: model) } }
                             Button("Rewrite the caption", systemImage: "arrow.triangle.2.circlepath") { Task { await state.regenerate(d, model: model) } }
                             Button("Change the picture", systemImage: "photo.on.rectangle") { pictureFor = d }
                             if PLIntelligence.isReady { Button("Draft another on this iPhone", systemImage: "apple.intelligence") { offlineFor = d } }
@@ -233,7 +237,7 @@ struct ApprovalsView: View {
                         }
                 }
             } header: { Text("Drafts · \(state.drafts.count)") } footer: {
-                if !state.drafts.isEmpty { Text("Swipe left to approve, right to hold. Touch and hold for Post now and Rewrite. Select for many at once.") }
+                if !state.drafts.isEmpty { Text("Swipe left to approve, right to hold or deny. Touch and hold for Post now and Rewrite. Select for many at once.") }
             }.listRowBackground(OSRowBackground())
             if !state.captures.isEmpty {
                 Section("Captures") {
@@ -310,6 +314,9 @@ struct ApprovalsView: View {
             if editing.isEditing {
                 ToolbarItemGroup(placement: .bottomBar) {
                     Button("Hold \(state.selection.count)") { Task { await state.bulk("hold", model: model); editing = .inactive } }
+                        .disabled(state.selection.isEmpty)
+                    Spacer()
+                    Button("Deny \(state.selection.count)", role: .destructive) { Task { await state.bulk("reject", model: model); editing = .inactive } }
                         .disabled(state.selection.isEmpty)
                     Spacer()
                     Button("Approve \(state.selection.count)") { Task { await state.bulk("approve", model: model); editing = .inactive } }
