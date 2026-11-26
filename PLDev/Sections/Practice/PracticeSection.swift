@@ -253,6 +253,7 @@ struct TodayScreen: View {
             DesireListCard(model: model, state: state)
             HabitsCard(model: model, state: state)
             MeditationCard(model: model, state: state)
+            FrequencyCard()
             VisionBoardCard(model: model, state: state)
             CheckinCard(model: model, state: state, evening: true)
         }
