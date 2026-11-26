@@ -443,6 +443,7 @@ struct RisingPanel: View {
     @State private var named = false
     @State private var confirmErase = false
     @State private var asked = 0
+    @State private var showBody = false
 
     var body: some View {
         VStack(alignment: .leading, spacing: 0) {
@@ -470,6 +471,7 @@ struct RisingPanel: View {
                 }
                 HStack {
                     Button(tap.tiredBody ? "Tired body: on" : "Tired body") { rising.refine(tiredBody: !tap.tiredBody) }.frame(minHeight: 44)
+                    Button("Body map") { showBody = true }.frame(minHeight: 44).padding(.leading, 12)
                     Spacer()
                     Button("Done") { rising.showWords = false }.frame(minWidth: 44, minHeight: 44)
                 }
@@ -491,6 +493,7 @@ struct RisingPanel: View {
         }
         .padding(rising.showWords ? 14 : 0)
         .onChange(of: rising.current?.at) { named = false; asked = 0 }
+        .sheet(isPresented: $showBody) { GateBodyMap() }
         .confirmationDialog("Erase every check-in, note and plan on this phone?", isPresented: $confirmErase, titleVisibility: .visible) {
             Button("Erase", role: .destructive) { rising.erase() }
         }

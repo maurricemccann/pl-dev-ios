@@ -104,6 +104,7 @@ enum OriginReach: Equatable {
         var order = config.sections
         if !order.contains("needs") { order.insert("needs", at: 0) }   // "Needs you" leads Home (his ask 11-25)
         if !order.contains("calendar") { order.insert("calendar", at: min(1, order.count)) }
+        if !order.contains("gate") { order.insert("gate", at: min(2, order.count)) }   // the Gate (his ask 11-26)
         // Composer is back in the registry, off Home by default; the feed's home.hidden turns it on (config over the air, S353·7b1e)
         if !order.contains("composer") { order.append("composer") }
         var listed = config

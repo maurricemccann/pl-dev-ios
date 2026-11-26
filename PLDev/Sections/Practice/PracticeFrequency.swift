@@ -253,7 +253,10 @@ struct FrequencySession: View {
         ("Fill your hips. Let it out.", 3),
         ("Fill your thighs and knees. Let it out.", 3),
         ("Fill your legs and feet. Let it out.", 3),
-        ("Count slowly to ten. At each number let one part of you go heavy.", 22),
+        ("Keep that breath and hum on each out-breath, at your own pace. Feel it in your head.", 6),
+        ("One, two, three. Mind and brain together.", 4),
+        ("Jaw, eyelids, lips, forehead, cheeks, scalp, neck, eyes: let each go limp. Let it sink into the brain.", 6),
+        ("Four, feet. Five, legs. Six, hips. Seven, belly. Eight, chest. Nine, back. Ten, arms and shoulders.", 6),
         ("Body asleep, mind awake. Watch what comes. Do nothing with it.", 28),
         ("See the thing you want, already done. Then the one obstacle, and your move.", 16),
         ("Count back from ten to one. Move your fingers. Open your eyes.", 8)]
