@@ -125,13 +125,22 @@ struct RiseGround: View {
     }
 }
 
-/// The one thing to do for this answer. Finishing it leaves a tick (the research: control comes first).
+/// The one thing to do for this answer, then the second options (his rulings 11-26 afternoon). Finishing one leaves a tick
+/// (the research: control comes first) and records which move it was, so "what lifts you" can count it against the re-ask.
 struct RisingAction: View {
     let band: Band
     @State private var rising = RisingScale.shared
     @State private var breathing = false
-    @State private var walkUntil: Date?
+    @State private var box = false
+    @State private var timerUntil: Date?
+    @State private var timerName = ""
     @State private var writing = false
+    @State private var open: String?
+    @State private var value: String?
+    @State private var kind = ""
+    @State private var song = UserDefaults.standard.string(forKey: "pldev.rising.song") ?? ""
+    @State private var songDraft = ""
+    @Environment(\.openURL) private var openURL
 
     init(band: Band) { self.band = band }
 
@@ -139,7 +148,14 @@ struct RisingAction: View {
         VStack(alignment: .leading, spacing: 6) {
             if rising.current?.did == true {
                 Label("Done. That counts.", systemImage: "checkmark.circle.fill").frame(minHeight: 44)
+                // once cooled, decide now what to do about it later
+                if band == .hot {
+                    if writing { RisingPlan(fields: ["If it comes up again", "Then I will"]) { writing = false } }
+                    else { button("Decide what you'll do about it later", "arrow.turn.down.right") { writing = true } }
+                }
             } else {
+                // the wake check-in starts with light
+                if rising.firstOfShift { button("Light first: 2 minutes outside or at a bright window", "sun.max") { finish("Light first") } }
                 offer
             }
         }
@@ -149,53 +165,157 @@ struct RisingAction: View {
     @ViewBuilder private var offer: some View {
         switch band {
         case .heavy:
-            if breathing { BreathRing(rounds: 3, done: finish, stop: { breathing = false }) } else {
+            if breathing { BreathRing(rounds: 3, done: { finish("Breathe with me") }, stop: { breathing = false }) } else {
                 button("Breathe with me", "wind") { breathing = true }
-                button("Water", "drop") { finish() }
+                button("Water", "drop") { finish("Water") }
+                practice("Listen", "ear", "One minute. Where is it in your body? What is it trying to tell you? Only listen.", "Listened")
+                songButton
+                button("Step into light", "sun.max") { finish("Step into light") }
             }
         case .hot:
-            if breathing { BreathRing(rounds: 13, done: finish, stop: { breathing = false }) } else { button("Cool down, 2 minutes", "wind") { breathing = true } }
-        case .low: walk
+            if breathing {
+                BreathRing(rounds: box ? 4 : 13, box: box, done: { finish(box ? "Box breathing, 4 by 4" : "Cool down, 2 minutes") }, stop: { breathing = false })
+            } else if timerUntil != nil {
+                timer
+            } else {
+                button("Cool down, 2 minutes", "wind") { box = false; breathing = true }
+                button("Box breathing, 4 by 4", "square") { box = true; breathing = true }
+                button("Timeout, 10 minutes", "timer") { startTimer("Timeout, 10 minutes", "Come back when you're ready.") }
+                button("Cold water on your hands", "drop") { finish("Cold water on your hands") }
+            }
+        case .low:
+            if timerUntil != nil { timer } else {
+                button("Walk 10 minutes, past trees", "figure.walk") { startTimer("Walk 10 minutes, past trees", "Look again.") }
+                practice("Listen", "ear", "One minute. Where is it in your body? What is it trying to tell you? Only listen.", "Listened")
+                practice("Can I wonder", "sparkles", "Ask: can I wonder how it would feel if this went right? Wonder only. No need to believe it yet.", "Wondered")
+                values
+            }
         case .stuck:
-            if writing { RisingPlan(fields: ["The first step is"]) { finish() } } else { button("Do the first step", "arrow.right.circle") { writing = true } }
+            if writing { RisingPlan(fields: ["The first step is"]) { finish("Do the first step") } } else {
+                button("Do the first step", "arrow.right.circle") { writing = true }
+                practice("Can I wonder", "sparkles", "Ask: can I wonder how it would feel if this went right? Wonder only. No need to believe it yet.", "Wondered")
+                button("Make something with no goal", "scribble") { finish("Make something with no goal") }
+            }
         case .steady:
-            if writing { RisingPlan(fields: ["I want", "The best of it", "In the way", "If that happens, I will"]) { finish() } }
-            else { button("Plan one move", "map") { writing = true } }
+            if writing { RisingPlan(fields: ["I want", "The best of it", "In the way", "If that happens, I will"]) { finish("Plan one move") } }
+            else {
+                button("Plan one move", "map") { writing = true }
+                button("Brisk walk with music", "figure.walk") { finish("Brisk walk with music") }
+                nightScene
+            }
         case .rising:
-            button("Made it and showed one person", "paintbrush") { finish() }
+            button("Made it and showed one person", "paintbrush") { finish("Made it and showed one person") }
             TextField("A note for your low self", text: $rising.note, axis: .vertical).textFieldStyle(.roundedBorder)
+            nightScene
         case .lit:
             TextField("A note for a heavy night", text: $rising.note, axis: .vertical).textFieldStyle(.roundedBorder)
-            button("Keep it", "bookmark") { finish() }
+            button("Keep it", "bookmark") { finish("Keep it") }
+            nightScene
         }
     }
 
-    @ViewBuilder private var walk: some View {
-        if let walkUntil {
-            Text(timerInterval: Date()...max(walkUntil, Date()), countsDown: true).monospacedDigit().plFont(.callout, emphasized: true)
-            button("I walked", "checkmark") { stopWalk(); finish() }
+    /// One of his notebook practices: the button opens a short instruction and its own "done".
+    @ViewBuilder private func practice(_ title: String, _ symbol: String, _ text: String, _ done: String) -> some View {
+        if open == title {
+            Text(text).plFont(.callout)
+            button(done, "checkmark") { finish(title) }
         } else {
-            button("Walk 10 minutes", "figure.walk") { startWalk() }
+            button(title, symbol) { open = title }
         }
     }
 
+    /// Tonight's coin flip: a plain, ordinary night or a bright one, each with one obstacle and a move. The re-ask scores each.
+    @ViewBuilder private var nightScene: some View {
+        let calm = rising.nightCalm
+        let name = calm ? "Night scene, ordinary" : "Night scene, bright"
+        if open == name {
+            Text(calm ? "Picture tonight going plain and fine: you at the table, the work getting done, nothing special."
+                      : "Picture tonight at its best: the piece coming out right, and how that feels in your chest.").plFont(.callout)
+            RisingPlan(fields: ["One thing that could get in the way", "My move if it does"]) { finish(name) }
+        } else {
+            button("Night scene", "moon.stars") { open = name }
+        }
+    }
+
+    /// What matters tonight, then one kind line to himself.
+    @ViewBuilder private var values: some View {
+        if open == "Values" {
+            Text("What matters tonight?").plFont(.callout)
+            ScrollView(.horizontal, showsIndicators: false) {
+                HStack(spacing: 6) {
+                    ForEach(["Family", "The work", "Health", "Freedom", "People"], id: \.self) { v in
+                        Button(v) { value = v }.buttonStyle(.bordered).tint(value == v ? PLTone.accent : .secondary).frame(minHeight: 44)
+                    }
+                }
+            }
+            if let value { Text("One small thing for " + value.lowercased() + " tonight.").plFont(.footnote) }
+            TextField("One kind line to yourself, as to a friend", text: $kind, axis: .vertical).textFieldStyle(.roundedBorder)
+            button("Said it", "heart") { finish("Values and a kind line") }
+        } else {
+            button("Values and a kind line", "heart") { open = "Values" }
+        }
+    }
+
+    /// A song picked ahead, for a heavy night.
+    @ViewBuilder private var songButton: some View {
+        if song.isEmpty {
+            TextField("A song for a heavy night (pick it ahead)", text: $songDraft).textFieldStyle(.roundedBorder)
+                .submitLabel(.done)
+                .onSubmit {
+                    song = songDraft.trimmingCharacters(in: .whitespaces)
+                    UserDefaults.standard.set(song, forKey: "pldev.rising.song")
+                }
+        } else {
+            button("Play your song: " + song, "music.note") {
+                let term = song.addingPercentEncoding(withAllowedCharacters: .urlQueryAllowed) ?? ""
+                if let u = URL(string: "https://music.apple.com/search?term=" + term) { openURL(u) }
+                finish("Your song")
+            }
+            .contextMenu { Button("Change the song") { song = ""; songDraft = ""; UserDefaults.standard.removeObject(forKey: "pldev.rising.song") } }
+        }
+    }
+
+    @ViewBuilder private var timer: some View {
+        if let timerUntil {
+            Text(timerInterval: Date()...max(timerUntil, Date()), countsDown: true).monospacedDigit().plFont(.callout, emphasized: true)
+            button(timerName.hasPrefix("Timeout") ? "I'm back" : "I walked", "checkmark") { stopTimer(); finish(timerName) }
+        }
+    }
+
+    /// The move that has lifted him most shows at once; the rest fade in. Nothing changes place.
     private func button(_ title: String, _ symbol: String, _ act: @escaping () -> Void) -> some View {
         Button(action: act) { Label(title, systemImage: symbol).frame(maxWidth: .infinity, minHeight: 44, alignment: .leading) }
             .buttonStyle(.bordered)
+            .modifier(RisingLate(late: rising.lifts.first.map { !$0.move.hasPrefix(title) } ?? false))
     }
 
-    private func finish() { breathing = false; writing = false; walkUntil = nil; rising.markDone() }
+    private func finish(_ move: String) { breathing = false; writing = false; timerUntil = nil; open = nil; rising.markDone(move) }
 
-    private func startWalk() {
-        walkUntil = Date().addingTimeInterval(600)
+    private func startTimer(_ name: String, _ body: String) {
+        timerName = name
+        timerUntil = Date().addingTimeInterval(600)
+        guard !rising.asleep(at: Date().addingTimeInterval(600)) else { return }
         let content = UNMutableNotificationContent()
         content.title = "Ten minutes."
-        content.body = "Look again."
+        content.body = body
         content.sound = .default
         UNUserNotificationCenter.current().add(UNNotificationRequest(identifier: "rising-walk", content: content,
                                                                      trigger: UNTimeIntervalNotificationTrigger(timeInterval: 600, repeats: false)))
     }
-    private func stopWalk() { UNUserNotificationCenter.current().removePendingNotificationRequests(withIdentifiers: ["rising-walk"]) }
+    private func stopTimer() { UNUserNotificationCenter.current().removePendingNotificationRequests(withIdentifiers: ["rising-walk"]) }
+}
+
+/// The likely choice is there at once and the rest fade in over half a second (ephemeral adaptation: faster than a fixed menu
+/// when the guess is right, and nothing moves when it is wrong).
+struct RisingLate: ViewModifier {
+    let late: Bool
+    @State private var shown = false
+
+    func body(content: Content) -> some View {
+        content
+            .opacity(late && !shown ? 0 : 1)
+            .onAppear { if late { withAnimation(.easeIn(duration: 0.5)) { shown = true } } }
+    }
 }
 
 /// A few short lines, then Done. Kept on the phone until the next one.
@@ -215,16 +335,19 @@ private struct RisingPlan: View {
     }
 }
 
-/// Two breaths in, one long breath out (2 s, 1 s, 6 s), with a tap as each breath out starts.
+/// Two breaths in, one long breath out (2 s, 1 s, 6 s), or a box (4 s each side), with a tap as each breath out starts.
 private struct BreathRing: View {
     let rounds: Int
+    let box: Bool   // 4 in, 4 hold, 4 out, 4 hold
     let done: () -> Void, stop: () -> Void
     @Environment(\.accessibilityReduceMotion) private var reduce
     @State private var word = "In"
     @State private var size: CGFloat = 0.5
     @State private var out = 0
 
-    init(rounds: Int, done: @escaping () -> Void, stop: @escaping () -> Void) { self.rounds = rounds; self.done = done; self.stop = stop }
+    init(rounds: Int, box: Bool = false, done: @escaping () -> Void, stop: @escaping () -> Void) {
+        self.rounds = rounds; self.box = box; self.done = done; self.stop = stop
+    }
 
     var body: some View {
         VStack(spacing: 8) {
@@ -241,10 +364,18 @@ private struct BreathRing: View {
         .sensoryFeedback(.impact(weight: .light), trigger: out)
         .task {
             for _ in 0..<rounds {
-                if !(await step("In", 0.85, 2)) { return }
-                if !(await step("More", 1, 1)) { return }
-                out += 1
-                if !(await step("Out", 0.45, 6)) { return }
+                if box {
+                    if !(await step("In", 1, 4)) { return }
+                    if !(await step("Hold", 1, 4)) { return }
+                    out += 1
+                    if !(await step("Out", 0.45, 4)) { return }
+                    if !(await step("Hold", 0.45, 4)) { return }
+                } else {
+                    if !(await step("In", 0.85, 2)) { return }
+                    if !(await step("More", 1, 1)) { return }
+                    out += 1
+                    if !(await step("Out", 0.45, 6)) { return }
+                }
             }
             done()
         }

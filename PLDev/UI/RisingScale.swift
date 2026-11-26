@@ -27,6 +27,8 @@ struct CheckIn: Codable {
     let at: Date; let band: Band; var word: String?; var tiredBody = false; var did: Bool? = nil
     // the quick questions (his 11-26: "it may need more questions to understand how u feel"); optional, so older taps still read
     var energy: Int? = nil, control: Int? = nil, about: String? = nil
+    // what he did and when (for "what lifts you"), and one-tap tags (his rulings 11-26 afternoon); optional, so older taps still read
+    var move: String? = nil, doneAt: Date? = nil, tags: [String]? = nil
 }
 
 /// One-tap questions after the curve, and what the answers change. Wording is a working draft, his to rewrite.
@@ -35,6 +37,9 @@ enum RisingAsk {
         ("How much have you got in you?", ["Empty", "Some", "Plenty"]),
         ("Is it in your hands?", ["No", "Partly", "Yes"]),
         ("What is it about?", ["Work", "Money", "Body", "People", "My art", "No idea"])]
+
+    /// One-tap context for a tap, so the month can be read against what the day held.
+    static let tags = ["Slept short", "Drew", "Posted", "Sale", "Day off"]
 
     /// At the very bottom ask almost nothing.
     static func count(_ band: Band) -> Int { band == .heavy ? 1 : questions.count }
@@ -106,7 +111,7 @@ enum RisingAsk {
         load()
         guard loaded else { return }
         log = []; note = ""; save()
-        for k in ["last", "plan", "saidDay", "said", "turn", "undone", "log", "note", "drained"] { d.removeObject(forKey: "pldev.rising." + k) }
+        for k in ["last", "plan", "saidDay", "said", "turn", "undone", "log", "note", "drained", "looks", "firstSaid", "returned"] { d.removeObject(forKey: "pldev.rising." + k) }
         showWords = false
         Task { await wearIfDue() }
     }
@@ -156,10 +161,10 @@ enum RisingAsk {
         log[log.count - 1] = last; save()
     }
 
-    func markDone() {
+    func markDone(_ move: String) {
         guard current != nil, !log.isEmpty else { return }
-        log[log.count - 1].did = true; save()
-        guard reminds else { return }
+        log[log.count - 1].did = true; log[log.count - 1].move = move; log[log.count - 1].doneAt = .now; save()
+        guard reminds, !asleep(at: Date().addingTimeInterval(15 * 60)) else { return }
         // ask again a little later: the second tap is what shows whether the move lifted him
         let content = UNMutableNotificationContent()
         content.title = "And now? Tap how you feel."
@@ -169,16 +174,16 @@ enum RisingAsk {
                                                                     trigger: UNTimeIntervalNotificationTrigger(timeInterval: 15 * 60, repeats: false)))
     }
 
-    /// The last seven shift days, oldest first: the day's letter and its average step (nil = no tap, which costs nothing).
-    var week: [(letter: String, step: Double?)] {
-        let days = Dictionary(grouping: log.suffix(200), by: { Self.shiftDay($0.at) })
+    /// The last n shift days, oldest first: the day's label, its average step (nil = no tap, which costs nothing) and its tap count.
+    func days(_ n: Int) -> [(letter: String, step: Double?, taps: Int)] {
+        let byDay = Dictionary(grouping: log.suffix(400), by: { Self.shiftDay($0.at) })
         let f = DateFormatter()
-        f.dateFormat = "EEEEE"
-        return (0..<7).reversed().map { back in
+        f.dateFormat = n > 7 ? "d" : "EEEEE"
+        return (0..<n).reversed().map { back in
             let date = Date().addingTimeInterval(Double(-back) * 86400)
-            let taps = days[Self.shiftDay(date)] ?? []
+            let taps = byDay[Self.shiftDay(date)] ?? []
             let step = taps.isEmpty ? nil : Double(taps.map(\.band.rawValue).reduce(0, +)) / Double(taps.count)
-            return (f.string(from: date.addingTimeInterval(-15 * 3600)), step)
+            return (letter: f.string(from: date.addingTimeInterval(-15 * 3600)), step: step, taps: taps.count)
         }
     }
 
@@ -192,7 +197,73 @@ enum RisingAsk {
         }
     }
 
+    /// Each move he marked done, against his next tap inside 90 minutes (the 15-minute re-ask): did it go up. Counted from 7 pairs.
+    var lifts: [(move: String, up: Int, of: Int)] {
+        var t: [String: (up: Int, of: Int)] = [:]
+        for (a, b) in zip(log, log.dropFirst()) {
+            guard let move = a.move, let done = a.doneAt else { continue }
+            let gap = b.at.timeIntervalSince(done)
+            guard gap > 0, gap < 5400 else { continue }
+            let v = t[move] ?? (up: 0, of: 0)
+            t[move] = (up: v.up + (b.band > a.band ? 1 : 0), of: v.of + 1)
+        }
+        return t.filter { $0.value.of >= 7 }
+            .map { (move: $0.key, up: $0.value.up, of: $0.value.of) }
+            .sorted { $0.up * $1.of > $1.up * $0.of }
+    }
+    /// "Walk: you went up 6 of 8 times."
+    var liftLine: String? { lifts.first.map { "\($0.move): you went up \($0.up) of \($0.of) times." } }
+
+    /// The word he picks most for a band, shown first while the rest fade in.
+    func topWord(_ band: Band) -> String? {
+        let words = log.suffix(300).filter { $0.band == band }.compactMap(\.word)
+        return Dictionary(grouping: words, by: { $0 }).max { $0.value.count < $1.value.count }?.key
+    }
+
+    /// The first tap of a shift day is the wake check-in.
+    var firstOfShift: Bool { current != nil && log.suffix(20).filter { Self.shiftDay($0.at) == Self.shiftDay(.now) }.count == 1 }
+
+    func toggle(tag: String) {
+        guard current != nil, !log.isEmpty else { return }
+        var t = log[log.count - 1].tags ?? []
+        if let i = t.firstIndex(of: tag) { t.remove(at: i) } else { t.append(tag) }
+        log[log.count - 1].tags = t; save()
+    }
+
+    /// No notices from this screen through his daytime sleep, 6 AM to 3 PM Pacific (3 PM is where the shift day starts).
+    var quietDay: Bool {
+        get { d.object(forKey: "pldev.rising.quiet") as? Bool ?? true }
+        set { d.set(newValue, forKey: "pldev.rising.quiet") }
+    }
+    func asleep(at date: Date) -> Bool { quietDay && (6..<15).contains(Self.pacific.component(.hour, from: date)) }
+
+    /// Tonight's coin flip between his sources: a calm, ordinary night scene or a bright one. Drawn from the date, so it holds all night.
+    var nightCalm: Bool { Self.seed()[4] < 0.5 }
+
     // MARK: the look
+
+    /// Three taps on today's look, kept per day with its wallpaper; the date's pick leaves out wallpapers that score low.
+    static let lookAsks = ["Pleasant", "Energy", "In control"]
+    private var looksTick = 0
+    var lookRated: [Int] {
+        _ = looksTick
+        return ((d.dictionary(forKey: "pldev.rising.looks") as? [String: [String]])?[Self.shiftDay(.now)] ?? []).dropFirst().compactMap { Int($0) }
+    }
+    func rateLook(_ i: Int) {
+        var all = d.dictionary(forKey: "pldev.rising.looks") as? [String: [String]] ?? [:]
+        var picked = Set(lookRated)
+        if picked.contains(i) { picked.remove(i) } else { picked.insert(i) }
+        all[Self.shiftDay(.now)] = [Self.preset().wall] + picked.sorted().map { String($0) }
+        d.set(all, forKey: "pldev.rising.looks")
+        looksTick += 1
+    }
+    /// Each wallpaper's scores, one per rated day (0 to 3 taps).
+    nonisolated static func lookScores() -> [String: [Int]] {
+        let all = UserDefaults.standard.dictionary(forKey: "pldev.rising.looks") as? [String: [String]] ?? [:]
+        var out: [String: [Int]] = [:]
+        for v in all.values { if let w = v.first { out[w, default: []].append(v.count - 1) } }
+        return out
+    }
 
     /// The feeling's own colour, for the curve and its dot (his ruling 11-25): each state plainly its own, heavy slate to lit yellow.
     nonisolated static func tint(_ b: Band) -> Color {
@@ -255,11 +326,15 @@ enum RisingAsk {
 
     nonisolated static func preset() -> PLThemePreset {
         let f = seed(), step = lookBand().map(RisingStep.of)
+        // the date's wallpaper, leaving out any he rated low (average under 1 of 3) on two or more days
+        let walls = ["curves", "code|aurora", "code|contour", "code|night"], scores = lookScores()
+        let kept = walls.filter { w in let s = scores[w] ?? []; return s.count < 2 || s.reduce(0, +) >= s.count }
+        let pool = kept.isEmpty ? walls : kept
         var t = PLThemePreset(id: id, title: "Daily", palette: "th-daily", face: "v1", text: "jost",
                               note: "A new look each day; your check-in leads it one step up", dark: true, card: .frosted,
                               radius: step?.radius ?? [1, 1.25, 1.5][Int(f[2] * 3)], space: step?.space ?? 1,
                               tile: step?.tile ?? "squircle", look: "glass",
-                              wall: step?.wall ?? ["curves", "code|aurora", "code|contour", "code|night"][Int(f[3] * 4)])
+                              wall: step?.wall ?? pool[Int(f[3] * Double(pool.count))])
         t.calm = (step?.calm ?? false) || UserDefaults.standard.bool(forKey: "pldev.rising.drained")
         t.tint = 0.4
         return t
@@ -336,7 +411,24 @@ enum RisingAsk {
         guard !pool.isEmpty else { return nil }
         let turn = d.integer(forKey: "pldev.rising.turn")
         var line = pool[turn % pool.count]
-        if !tap.tiredBody, tap.band <= .low, !note.isEmpty, turn % 2 == 0 { line = "You left yourself this: " + note }
+        // a line he has heard comes back after 1, 3, 7 and 21 days, on a tap whose pool holds it (spaced returns; his crowned lines, verbatim)
+        let gaps: [Double] = [1, 3, 7, 21], now = Date().timeIntervalSince1970
+        var first = d.dictionary(forKey: "pldev.rising.firstSaid") as? [String: Double] ?? [:]
+        var stage = d.dictionary(forKey: "pldev.rising.returned") as? [String: Int] ?? [:]
+        if let due = pool.first(where: { l in
+            guard let heard = first[l] else { return false }
+            let s = stage[l] ?? 0
+            return s < gaps.count && (now - heard) / 86400 >= gaps[s] }) {
+            line = due
+            let age = (now - (first[due] ?? now)) / 86400
+            stage[due] = gaps.filter { $0 <= age }.count   // a long gap skips the stages it passed, so returns never pile up
+            d.set(stage, forKey: "pldev.rising.returned")
+        } else if !tap.tiredBody, tap.band <= .low, !note.isEmpty, turn % 2 == 0 {
+            line = "You left yourself this: " + note
+        } else if first[line] == nil {
+            first[line] = now
+            d.set(first, forKey: "pldev.rising.firstSaid")
+        }
         said += 1
         d.set(turn + 1, forKey: "pldev.rising.turn"); d.set(said, forKey: "pldev.rising.said"); d.set(today, forKey: "pldev.rising.saidDay")
         spokeFor = tap.at
@@ -463,6 +555,7 @@ struct RisingPanel: View {
                     question(RisingAsk.questions[asked], at: asked)
                 } else {
                 if let line = RisingAsk.nudge(tap) { Text(line).plFont(.callout).padding(.vertical, 6) }
+                if let lift = rising.liftLine { Text("What lifts you: " + lift).plFont(.footnote).foregroundStyle(.secondary).padding(.bottom, 4) }
                 RisingAction(band: tap.band).id(tap.at)
                 // at the very bottom ask almost nothing: the words wait until he wants them (research, 11-26)
                 if let word = tap.word {
@@ -478,6 +571,8 @@ struct RisingPanel: View {
                     Spacer()
                     Button("Done") { rising.showWords = false }.frame(minWidth: 44, minHeight: 44)
                 }
+                tags(tap)
+                if rising.wearsDaily { rateLook }
                 if tap.band >= .rising { visionStrip }
                 if tap.band >= .stuck {
                     Text("Today's magnet move: " + RisingAsk.magnet()).plFont(.footnote).foregroundStyle(.secondary).padding(.top, 4)
@@ -525,23 +620,62 @@ struct RisingPanel: View {
         }
     }
 
-    /// Seven days as bars: height is the step, so it reads without the colour.
-    private var weekBars: some View {
-        let days = rising.week
-        return HStack(alignment: .bottom, spacing: 8) {
-            ForEach(days.indices, id: \.self) { i in
-                VStack(spacing: 4) {
-                    Capsule()
-                        .fill(days[i].step.map { RisingScale.tint(Band(rawValue: Int($0.rounded())) ?? .stuck) } ?? Color.secondary.opacity(0.25))
-                        .frame(width: 10, height: days[i].step.map { 8 + CGFloat($0) * 6 } ?? 4)
-                    Text(days[i].letter).plFont(.caption2).foregroundStyle(.secondary)
+    /// One tap each: what the day held.
+    private func tags(_ tap: CheckIn) -> some View {
+        ScrollView(.horizontal, showsIndicators: false) {
+            HStack(spacing: 6) {
+                ForEach(RisingAsk.tags, id: \.self) { t in
+                    let on = tap.tags?.contains(t) == true
+                    Button { rising.toggle(tag: t) } label: { Label(t, systemImage: on ? "checkmark" : "plus").plFont(.footnote) }
+                        .buttonStyle(.bordered).tint(on ? PLTone.accent : .secondary).frame(minHeight: 44)
+                        .accessibilityAddTraits(on ? .isSelected : [])
                 }
-                .frame(maxWidth: .infinity)
             }
         }
+    }
+
+    /// Three taps on today's look; the Daily generator keeps the wallpapers that score well.
+    private var rateLook: some View {
+        HStack(spacing: 6) {
+            Text("Today's look").plFont(.footnote).foregroundStyle(.secondary)
+            ForEach(Array(RisingScale.lookAsks.enumerated()), id: \.offset) { i, ask in
+                let on = rising.lookRated.contains(i)
+                Button(ask) { rising.rateLook(i) }.plFont(.footnote).buttonStyle(.bordered).tint(on ? PLTone.accent : .secondary)
+                    .frame(minHeight: 44).accessibilityAddTraits(on ? .isSelected : [])
+            }
+        }
+    }
+
+    @State private var month = false
+
+    /// Seven days (or thirty) as bars: height is the step, so it reads without the colour. The missed count sits beside the
+    /// average, because bad nights are the ones that go untapped.
+    private var weekBars: some View {
+        let days = rising.days(month ? 30 : 7)
+        let stepped = days.compactMap(\.step)
+        let missed = days.reduce(0) { $0 + max(0, 3 - $1.taps) }
+        let average = stepped.isEmpty ? "No taps" : "Average " + (Band(rawValue: Int((stepped.reduce(0, +) / Double(stepped.count)).rounded()))?.title ?? "")
+        return VStack(alignment: .leading, spacing: 4) {
+            HStack {
+                Text(average + ", \(missed) of \(days.count * 3) check-ins missed").plFont(.caption2).foregroundStyle(.secondary)
+                Spacer()
+                Button(month ? "Week" : "Month") { month.toggle() }.plFont(.footnote).frame(minWidth: 44, minHeight: 44)
+            }
+            HStack(alignment: .bottom, spacing: month ? 2 : 8) {
+                ForEach(days.indices, id: \.self) { i in
+                    VStack(spacing: 4) {
+                        Capsule()
+                            .fill(days[i].step.map { RisingScale.tint(Band(rawValue: Int($0.rounded())) ?? .stuck) } ?? Color.secondary.opacity(0.25))
+                            .frame(width: month ? 5 : 10, height: days[i].step.map { 8 + CGFloat($0) * 6 } ?? 4)
+                        Text(month && i % 5 != 4 ? " " : days[i].letter).plFont(.caption2).foregroundStyle(.secondary)
+                    }
+                    .frame(maxWidth: .infinity)
+                }
+            }
+            .accessibilityElement(children: .ignore)
+            .accessibilityLabel("Last \(days.count) days: " + days.map { d in d.step.map { Band(rawValue: Int($0.rounded()))?.title ?? "" } ?? "no tap" }.joined(separator: ", "))
+        }
         .padding(.top, 8)
-        .accessibilityElement(children: .ignore)
-        .accessibilityLabel("Last seven days: " + days.map { d in d.step.map { Band(rawValue: Int($0.rounded()))?.title ?? "" } ?? "no tap" }.joined(separator: ", "))
     }
 
     private func question(_ q: (ask: String, options: [String]), at i: Int) -> some View {
@@ -563,11 +697,13 @@ struct RisingPanel: View {
 
     private func words(_ tap: CheckIn) -> some View {
         VStack(alignment: .leading, spacing: 0) {
+            let top = rising.topWord(tap.band)
             ForEach(tap.band.words, id: \.self) { w in
                 Button { rising.refine(word: w) } label: {
                     Text(w)
                         .frame(maxWidth: .infinity, minHeight: 44, alignment: .leading).contentShape(Rectangle())
                 }
+                .modifier(RisingLate(late: top.map { $0 != w } ?? false))   // his usual word first, the rest fade in; nothing moves
             }
         }
     }
@@ -578,6 +714,7 @@ struct RisingPanel: View {
             Toggle("Look follows my check-in", isOn: Binding(get: { rising.followsFeeling }, set: { rising.followsFeeling = $0 }))
             Toggle("Three reminders", isOn: Binding(get: { rising.reminds }, set: { rising.reminds = $0 }))
             Toggle("Buddy pops up", isOn: Binding(get: { rising.buddyOn }, set: { rising.buddyOn = $0 }))
+            Toggle("No notices 6 AM to 3 PM", isOn: Binding(get: { rising.quietDay }, set: { rising.quietDay = $0 }))
             ShareLink("Export my check-ins", item: RisingScale.file)
             Button("Erase my check-ins", role: .destructive) { confirmErase = true }
         } label: {
