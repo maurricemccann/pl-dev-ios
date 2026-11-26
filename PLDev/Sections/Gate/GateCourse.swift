@@ -38,7 +38,26 @@ enum GateCourse {
         ("Wave I · Discovery", discovery), ("Wave II · Threshold", threshold), ("Wave III · Freedom", freedom),
         ("Wave IV · Adventure", adventure), ("Wave V · Exploring", exploring), ("Wave VI · Prospecting", prospecting)]
     static let all: [GateLesson] = waves.flatMap { $0.lessons }
-    static func wave(of l: GateLesson) -> String { waves.first { $0.lessons.contains(l) }?.name ?? "" }
+    static func wave(of l: GateLesson) -> String { waves.first { $0.lessons.contains(l) }?.name ?? "Any time" }
+
+    /// Outside the six Waves (his picks 11-26 from the 1970s Monroe overview, CIA-RDP96-00788R001700270009-7): no hold count, each opens
+    /// once the lesson that teaches its level is comfortable.
+    static let extras: [GateLesson] = [
+        GateLesson(id: "one", title: "One-Minute 10",
+                   why: "The paper's patients dropped into ten between stressful moments at work. One minute, eyes open if you need them.",
+                   steps: ["Breathe in bright energy and think ten.",
+                           "On the out-breath let the face, shoulders and hands go.",
+                           "Three slow breaths in ten, right where you are.",
+                           "Think one. Back to it."],
+                   minutes: 1, holds: 1),
+        GateLesson(id: "nap", title: "Nap and Gentle Wake",
+                   why: "The paper's wake-up: let sleep go light near the end, then a brighter tone brings you up without a jolt. 30 minutes for a nap, 90 for a full cycle.",
+                   steps: ["Lie the way you sleep. Five slow breaths.",
+                           "Count one to twenty into light, easy sleep.",
+                           "Sleep.",
+                           "Rising now. Slowly. Ten, down to one. Move your fingers, open your eyes."],
+                   minutes: 30, holds: 1, level: 20)]
+    static let extraOpensAfter = ["one": "1.2", "nap": "1.5"]
 
     static let discovery: [GateLesson] = [
         GateLesson(id: "1.1", title: "Orientation",
@@ -256,7 +275,16 @@ enum GateCourse {
         GateLesson(id: "5.6", title: "Pathways",
                    why: "Follow the sound down new paths, or old ones you forgot. Walks to try: a flower, a cloud, the surf, a tree, a breeze, the earth's core.",
                    steps: ["Preparation, then let the sound lead.", "Move between ten and twelve whenever you like. What changes?", "Come back your own way."],
-                   quiet: true)]
+                   quiet: true),
+        GateLesson(id: "5.7", title: "Calm Meets Worry",
+                   why: "From the 1970s Monroe paper: the deep calm of ten, paired a little at a time with something that makes you uneasy, until it loses its charge. Small things only. One too-much rests it for a week.",
+                   steps: ["Before you start, pick one small unease: a message to send, a price to say out loud, a call to make. Never an old wound or a big fear.",
+                           "Go to ten and let the body settle fully.",
+                           "Bring the small thing in for a breath or two, at a distance, like a picture across the room. Stay loose.",
+                           "If the body tightens, let the picture go and settle back into ten. That is the work, not a failure.",
+                           "Next time, bring it a little closer or hold it a little longer, only once the last step felt easy.",
+                           "End with green through you. Count back to one."],
+                   signals: ["green"], holds: 3)]
 
     static let prospecting: [GateLesson] = [
         GateLesson(id: "6.1", title: "Metamorphosite",
@@ -315,6 +343,7 @@ enum GateCourse {
     /// The session as timed lines: the preparation the manual teaches (slower in Orientation), the lesson's own steps, the way back.
     static func script(_ l: GateLesson, plan: String, affirmation: String, minutes: Int) -> [(String, Double)] {
         if l.minutes <= 5 { return l.steps.map { ($0, Double(minutes * 60) / Double(l.steps.count)) } }   // one breath needs no preparation
+        if l.id == "nap" { return [(l.steps[0], 40), (l.steps[1], 60), (l.steps[2], max(Double(minutes * 60) - 190, 60)), (l.steps[3], 90)] }
         let index = all.firstIndex(of: l) ?? 0
         var s: [(String, Double)] = [("Lie back, or sit with your head held. Put every worry in your box and close the lid.", 40)]
         if index > 0 {
@@ -350,6 +379,7 @@ struct GateSitting: Codable, Identifiable {
     var held = false
     var tooMuch = false
     var seconds = 0
+    var clickedOut: Bool? = nil   // fell asleep partway: common, never counted against the lesson
 }
 
 struct GateCourseLog: Codable {
@@ -364,8 +394,14 @@ extension GateStore {
     func held(_ id: String) -> Int { course.held[id] ?? 0 }
     func comfortable(_ id: String) -> Bool { course.comfortable.contains(id) }
     func isOpen(_ l: GateLesson) -> Bool {
+        if let after = GateCourse.extraOpensAfter[l.id] { return comfortable(after) }
         guard let i = GateCourse.all.firstIndex(of: l) else { return false }
+        if resting(l) { return false }
         return i == 0 || comfortable(GateCourse.all[i - 1].id)
+    }
+    /// Calm Meets Worry rests a week after a too-much (his pick: mild only, with a stop rule).
+    func resting(_ l: GateLesson) -> Bool {
+        l.id == "5.7" && course.sittings.contains { $0.lesson == l.id && $0.tooMuch && $0.at > Date.now.addingTimeInterval(-7 * 86400) }
     }
     var currentLesson: GateLesson { GateCourse.all.first { !comfortable($0.id) } ?? GateCourse.all[GateCourse.all.count - 1] }
     var carried: [GateSignal] {
@@ -396,6 +432,9 @@ struct GateCourseCard: View {
             Text(l.title).candleH2()
             Text(l.why).candleHint()
             Text("Held \(store.held(l.id)) of \(l.holds) · \(done) of \(GateCourse.all.count) lessons comfortable").candleHint()
+            if store.course.sittings.count >= 10 {
+                Label("\(store.course.sittings.count) sittings. The early reports say the change tends to settle in after the tenth.", systemImage: "seal").candleHint()
+            }
             Button("Start this session") { sitting = l }.buttonStyle(CandleButton()).disabled(!store.readable)
             Button("All lessons") { openAll() }.buttonStyle(CandleGhost())
         }
@@ -425,6 +464,11 @@ struct GateCourseSheet: View {
                     }
                 }
                 Section {
+                    ForEach(GateCourse.extras) { l in
+                        NavigationLink { GateLessonView(store: store, lesson: l, go: { go($0); dismiss() }) } label: { row(l) }
+                    }
+                } header: { Text("Any time") }
+                Section {
                     if store.carried.isEmpty { Text("Each lesson adds a signal you can use awake, on one breath.").foregroundStyle(.secondary) }
                     ForEach(store.carried, id: \.key) { s in
                         VStack(alignment: .leading, spacing: 2) { Text(s.title); Text(s.how).font(.footnote).foregroundStyle(.secondary) }
@@ -444,11 +488,13 @@ struct GateCourseSheet: View {
     private func row(_ l: GateLesson) -> some View {
         let open = store.isOpen(l)
         return HStack(spacing: 12) {
-            Image(systemName: store.comfortable(l.id) ? "checkmark.seal.fill" : open ? "circle" : "lock")
+            Image(systemName: GateCourse.extraOpensAfter[l.id] != nil ? (open ? "clock" : "lock") : store.comfortable(l.id) ? "checkmark.seal.fill" : open ? "circle" : "lock")
                 .foregroundStyle(Candle.gold).accessibilityHidden(true)
             VStack(alignment: .leading, spacing: 2) {
                 Text("\(l.id) · \(l.title)").foregroundStyle(open ? Candle.ink : Candle.ink.opacity(0.5))
-                Text(store.comfortable(l.id) ? "Comfortable" : open ? "Held \(store.held(l.id)) of \(l.holds)" : "Locked").font(.footnote).foregroundStyle(.secondary)
+                Text(GateCourse.extraOpensAfter[l.id] != nil ? (open ? "\(l.minutes) min" : "Locked")
+                     : store.comfortable(l.id) ? "Comfortable" : open ? "Held \(store.held(l.id)) of \(l.holds)" : store.resting(l) ? "Resting this week" : "Locked")
+                    .font(.footnote).foregroundStyle(.secondary)
             }
         }
         .frame(minHeight: 44)
@@ -483,16 +529,20 @@ private struct GateLessonView: View {
                 if let tool = lesson.tool {
                     Button("Open \(tool.title)") { go(tool) }.buttonStyle(CandleGhost())
                 }
-                if !open, let i = GateCourse.all.firstIndex(of: lesson) {
+                if store.resting(lesson) {
+                    Text("Resting for a week after a too-much. Go back to ten on its own meanwhile.").candleHint()
+                } else if !open, let after = GateCourse.extraOpensAfter[lesson.id], let a = GateCourse.all.first(where: { $0.id == after }) {
+                    Text("Opens when \(a.title) is comfortable. You can read it now.").candleHint()
+                } else if !open, let i = GateCourse.all.firstIndex(of: lesson), i > 0 {
                     Text("Opens when \(GateCourse.all[i - 1].title) is comfortable. You can read it now.").candleHint()
                 }
                 Button("Start a session") { sitting = true }.buttonStyle(CandleButton()).disabled(!open || !store.readable)
-                comfortable
+                if GateCourse.extraOpensAfter[lesson.id] == nil { comfortable }
                 if !mine.isEmpty {
                     Text("Your record").candleH2()
                     ForEach(Array(mine)) { s in
                         VStack(alignment: .leading, spacing: 2) {
-                            Text("\(s.at.formatted(date: .abbreviated, time: .shortened)) · \(s.before.title) to \(s.after.title)\(s.held ? " · held" : s.tooMuch ? " · too much" : "")").candleHint()
+                            Text("\(s.at.formatted(date: .abbreviated, time: .shortened)) · \(s.before.title) to \(s.after.title)\(s.held ? " · held" : s.tooMuch ? " · too much" : "")\(s.clickedOut == true ? " · clicked out" : "")").candleHint()
                             if !s.happened.isEmpty { Text(s.happened).font(Font.pl(size: 14)).foregroundStyle(Candle.ink) }
                         }
                     }
@@ -536,6 +586,8 @@ struct GateSittingView: View {
     @State private var happened = ""
     @State private var held = false
     @State private var tooMuch = false
+    @State private var clickedOut = false
+    @State private var fading: AVAudioPlayer?
     @State private var line = ""
     @State private var started = Date()
     @State private var seconds = 0
@@ -578,7 +630,7 @@ struct GateSittingView: View {
         choice("Energy", $energy, ["Low", "Middle", "High"])
         band("Mood now", $before)
         Stepper("Last ate \(mealHours) hour\(mealHours == 1 ? "" : "s") ago", value: $mealHours, in: 0...12).frame(minHeight: 44)
-        Picker("Length", selection: $minutes) { ForEach(Array(Set([lesson.minutes, 10, 20, 30, 45])).sorted(), id: \.self) { Text("\($0) min").tag($0) } }
+        Picker("Length", selection: $minutes) { ForEach(Array(Set(lesson.id == "nap" ? [30, 90] : [lesson.minutes, 10, 20, 30, 45])).sorted(), id: \.self) { Text("\($0) min").tag($0) } }
             .pickerStyle(.segmented)
         Toggle("Tone in the headphones (\(Int(beat)) Hz between the ears)", isOn: $tone).tint(Candle.gold).frame(minHeight: 44)
         if let problem { Text(problem).candleHint() }
@@ -598,6 +650,8 @@ struct GateSittingView: View {
         band("Mood now", $after)
         Toggle("It held", isOn: Binding(get: { held }, set: { held = $0; if $0 { tooMuch = false } })).tint(Candle.gold).frame(minHeight: 44)
         Toggle("It was too much", isOn: Binding(get: { tooMuch }, set: { tooMuch = $0; if $0 { held = false } })).tint(Candle.gold).frame(minHeight: 44)
+        Toggle("I clicked out (fell asleep partway)", isOn: $clickedOut).tint(Candle.gold).frame(minHeight: 44)
+        if clickedOut { Text("Common in the early weeks, and it never counts against the lesson. Try it sitting up, or earlier in your day.").candleHint() }
         if tooMuch { Text("This lesson's count starts again. Go back to the one before until it is easy; nothing is lost.").candleHint() }
         Button("Save") { save() }.buttonStyle(CandleButton())
     }
@@ -646,7 +700,10 @@ struct GateSittingView: View {
     }
 
     private func run() async {
-        for (text, secs) in GateCourse.script(lesson, plan: plan, affirmation: store.course.affirmation, minutes: minutes) {
+        let lines = GateCourse.script(lesson, plan: plan, affirmation: store.course.affirmation, minutes: minutes)
+        for (i, item) in lines.enumerated() {
+            let (text, secs) = item
+            if lesson.id == "nap", i == lines.count - 1, tone { rise() }
             line = text
             do { try await Task.sleep(for: .seconds(secs)) } catch { return }
         }
@@ -660,7 +717,21 @@ struct GateSittingView: View {
         stage = .after
     }
 
+    /// The gentle wake: the slow sleep beat gives way to a brighter one over ten seconds.
+    private func rise() {
+        guard let p = try? AVAudioPlayer(data: FrequencyTone.wav(beat: 14)) else { return }
+        player?.setVolume(0, fadeDuration: 10)
+        p.numberOfLoops = -1
+        p.volume = 0
+        p.play()
+        p.setVolume(1, fadeDuration: 10)
+        fading = player   // held until stop(), so its fade is not cut short
+        player = p
+    }
+
     private func stop() {
+        fading?.stop()
+        fading = nil
         player?.stop()
         player = nil
         UIApplication.shared.isIdleTimerDisabled = false
@@ -668,10 +739,10 @@ struct GateSittingView: View {
 
     private func save() {
         let s = GateSitting(lesson: lesson.id, at: started, plan: plan, position: position, warmth: warmth, energy: energy, mealHours: mealHours,
-                            before: before, after: after, happened: happened.trimmingCharacters(in: .whitespacesAndNewlines), held: held, tooMuch: tooMuch, seconds: seconds)
+                            before: before, after: after, happened: happened.trimmingCharacters(in: .whitespacesAndNewlines), held: held, tooMuch: tooMuch, seconds: seconds, clickedOut: clickedOut ? true : nil)
         store.editCourse { c in
             c.sittings.append(s)
-            if held { c.held[lesson.id, default: 0] += 1 }
+            if held, GateCourse.extraOpensAfter[lesson.id] == nil { c.held[lesson.id, default: 0] += 1 }
             if tooMuch { c.held[lesson.id] = 0 }
         }
         stage = .done
