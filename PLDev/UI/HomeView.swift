@@ -60,6 +60,7 @@ struct HomeView: View {
     private var appsPage: some View {
         VStack(alignment: .leading, spacing: PLSpace.roomy) {
             header
+            RisingPanel()
             if let line = model.configError ?? model.lastError {
                 NoteLine(symbol: "exclamationmark.triangle.fill", tint: PLTone.warn, text: line)
             }
@@ -158,8 +159,6 @@ struct HomeView: View {
                 destination(id)
             }
         }
-        // the check-in comes up only when there is a question (his ruling 11-25)
-        .sheet(isPresented: $rising.asking) { RisingAsk().presentationDragIndicator(.visible) }
         .task {
             await rising.firstWear()
             rising.asking = true
@@ -209,9 +208,6 @@ struct HomeView: View {
                     .plTitle(.largeTitle)
                     .accessibilityAddTraits(.isHeader)
                 if !mark.isEmpty { PLIcon.symbol(mark).resizable().scaledToFit().frame(width: 30, height: 30).foregroundStyle(PLTone.accent).accessibilityHidden(true) }
-                Spacer(minLength: 0)
-                Button { rising.asking = true } label: { Image(systemName: "point.bottomleft.forward.to.point.topright.scurvepath").frame(width: 44, height: 44) }
-                    .accessibilityLabel("Check in")
             }
             Text(summary)
                 .plFont(.subhead, emphasized: true)
@@ -219,6 +215,7 @@ struct HomeView: View {
                 .shadow(color: .black.opacity(0.55), radius: 3, y: 1)   // reads over the wallpaper's lines (Gemini review, checked 11-13)
         }
         .frame(maxWidth: .infinity, alignment: .leading)
+        .overlay(alignment: .trailing) { RisingCurve() }   // his curve beside the title is the check-in (11-25)
         .padding(.top, PLSpace.roomy)
     }
 

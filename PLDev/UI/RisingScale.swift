@@ -52,6 +52,7 @@ struct CheckIn: Codable { let at: Date; let band: Band; var word: String?; var t
 
     /// True while the check-in is up: every time the app is opened or come back to (his ruling 11-25).
     var asking = false
+    var showWords = false
 
     var current: CheckIn? { log.last.flatMap { Self.shiftDay($0.at) == Self.shiftDay(.now) ? $0 : nil } }
 
@@ -240,32 +241,133 @@ struct CheckIn: Codable { let at: Date; let band: Band; var word: String?; var t
     func snooze(hours: Double) { d.set(Date().addingTimeInterval(hours * 3600).timeIntervalSince1970, forKey: "pldev.rising.snooze") }
 }
 
-/// The check-in, up only when asked (his ruling 11-25: nothing sits on Home): the curve, then the words, then it leaves.
-struct RisingAsk: View {
+/// The check-in is one line of his beside the title (curve-comp-02, his 11-25 "Comp 2 curve 11 ... right next to where it says
+/// pl dev"). The curve is the slider: Heavy at its low left end, Lit at the top right. It glows while there is a question.
+struct RisingCurve: View {
     @State private var rising = RisingScale.shared
-    @State private var answered: CheckIn?
-    @State private var heavyDismissed = UserDefaults.standard.string(forKey: "pldev.rising.heavyShown")
-    @Environment(\.dismiss) private var dismiss
+    @State private var dragging: Band?
+    @Environment(\.accessibilityReduceMotion) private var reduceMotion
+    @State private var pulse = false
+    private static let size = CGSize(width: 190, height: 89)   // his shape's own 2.13 : 1
+
+    private static let shape: [(CGFloat, CGFloat)] = [
+        (0.0, 0.8623), (0.0, 0.9045), (0.0, 0.9465), (0.0151, 0.9596), (0.0352, 0.9644), (0.0554, 0.9697),
+        (0.0756, 0.9745), (0.0957, 0.979), (0.1159, 0.9832), (0.1362, 0.987), (0.1564, 0.9902), (0.1766, 0.9932),
+        (0.1969, 0.9955), (0.2172, 0.9975), (0.2375, 0.9989), (0.2578, 0.9997), (0.2781, 1.0), (0.2984, 0.9997),
+        (0.3187, 0.9988), (0.3389, 0.9971), (0.3592, 0.9948), (0.3794, 0.9918), (0.3996, 0.988), (0.4198, 0.9833),
+        (0.44, 0.9777), (0.46, 0.9712), (0.48, 0.9636), (0.4999, 0.9552), (0.5196, 0.9455), (0.5392, 0.9346),
+        (0.5587, 0.9226), (0.5779, 0.9092), (0.5969, 0.8945), (0.6157, 0.8784), (0.6341, 0.8609), (0.6523, 0.842),
+        (0.67, 0.8215), (0.6873, 0.7994), (0.7041, 0.7759), (0.7204, 0.7508), (0.7362, 0.7243), (0.7513, 0.6963),
+        (0.7659, 0.6671), (0.7799, 0.6366), (0.7933, 0.605), (0.8061, 0.5723), (0.8184, 0.5388), (0.8302, 0.5045),
+        (0.8416, 0.4697), (0.8529, 0.4347), (0.8643, 0.3999), (0.8757, 0.3652), (0.8872, 0.3304), (0.8987, 0.2958),
+        (0.9104, 0.2613), (0.922, 0.2269), (0.9338, 0.1926), (0.9457, 0.1585), (0.9577, 0.1245), (0.9698, 0.0907),
+        (0.9821, 0.0572), (0.9945, 0.0239), (0.9932, 0.0), (0.9729, 0.0), (0.9526, 0.0), (0.9376, 0.022),
+        (0.9253, 0.0557), (0.9133, 0.0895), (0.9014, 0.1236), (0.8896, 0.1578), (0.8779, 0.1923), (0.8663, 0.2267),
+        (0.8547, 0.2613), (0.8432, 0.2959), (0.8317, 0.3308), (0.8203, 0.3656), (0.8089, 0.4004), (0.7976, 0.4353),
+        (0.786, 0.4699), (0.7738, 0.5036), (0.761, 0.5362), (0.7476, 0.5677), (0.7335, 0.5981), (0.7188, 0.6271),
+        (0.7035, 0.6547), (0.6876, 0.6809), (0.6711, 0.7055), (0.6541, 0.7285), (0.6367, 0.75), (0.6188, 0.7699),
+        (0.6005, 0.7881), (0.5818, 0.8047), (0.5629, 0.8197), (0.5437, 0.8332), (0.5242, 0.8453), (0.5046, 0.8562),
+        (0.4849, 0.8657), (0.4649, 0.8741), (0.445, 0.8814), (0.4249, 0.8875), (0.4048, 0.8927), (0.3846, 0.8969),
+        (0.3643, 0.9003), (0.344, 0.903), (0.3238, 0.9047), (0.3035, 0.9058), (0.2832, 0.9062), (0.2629, 0.9059),
+        (0.2426, 0.9051), (0.2223, 0.9037), (0.202, 0.9017), (0.1818, 0.8993), (0.1615, 0.8964), (0.1413, 0.893),
+        (0.1211, 0.8892), (0.1009, 0.885), (0.0807, 0.8804), (0.0605, 0.8756), (0.0404, 0.8703), (0.0203, 0.8655)
+    ]
+    /// The middle of his shape, 61 points from the Heavy end; band i sits at point i * 10.
+    private static let line: [(CGFloat, CGFloat)] = [
+        (0.0, 0.9465), (0.0088, 0.9318), (0.0192, 0.9137), (0.0392, 0.9179), (0.0591, 0.9227), (0.0791, 0.9275),
+        (0.0991, 0.932), (0.1191, 0.9361), (0.1391, 0.9398), (0.1592, 0.9431), (0.1792, 0.946), (0.1993, 0.9484),
+        (0.2194, 0.9503), (0.2395, 0.9517), (0.2596, 0.9526), (0.2797, 0.9528), (0.2998, 0.9526), (0.3199, 0.9516),
+        (0.34, 0.95), (0.36, 0.9476), (0.3801, 0.9445), (0.4001, 0.9406), (0.4201, 0.9358), (0.44, 0.9301),
+        (0.4599, 0.9235), (0.4796, 0.9159), (0.4993, 0.907), (0.5189, 0.8972), (0.5383, 0.886), (0.5575, 0.8736),
+        (0.5765, 0.8598), (0.5953, 0.8446), (0.6138, 0.8279), (0.632, 0.8097), (0.6498, 0.7899), (0.6672, 0.7685),
+        (0.6842, 0.7456), (0.7007, 0.721), (0.7166, 0.695), (0.732, 0.6675), (0.7468, 0.6385), (0.761, 0.6082),
+        (0.7746, 0.5767), (0.7876, 0.5441), (0.8, 0.5105), (0.8118, 0.476), (0.8234, 0.4409), (0.8348, 0.4058),
+        (0.8463, 0.3707), (0.8578, 0.3356), (0.8694, 0.3007), (0.881, 0.2658), (0.8927, 0.231), (0.9045, 0.1964),
+        (0.9163, 0.1619), (0.9283, 0.1275), (0.9404, 0.0934), (0.9526, 0.0594), (0.968, 0.0371), (0.9843, 0.0205),
+        (1.0, 0.0068)
+    ]
+    private static func at(_ p: (CGFloat, CGFloat)) -> CGPoint { CGPoint(x: p.0 * size.width, y: p.1 * size.height) }
+    private static func band(near p: CGPoint) -> Band {
+        let i = line.indices.min { a, b in
+            hypot(at(line[a]).x - p.x, at(line[a]).y - p.y) < hypot(at(line[b]).x - p.x, at(line[b]).y - p.y)
+        } ?? 30
+        return Band(rawValue: Int((Double(i) / 10).rounded())) ?? .stuck
+    }
 
     var body: some View {
-        ScrollView {
-            VStack(alignment: .leading, spacing: PLSpace.roomy) {
+        let shown = dragging ?? (rising.asking ? nil : rising.current?.band)
+        ZStack(alignment: .topLeading) {
+            Path { p in
+                p.addLines(Self.shape.map(Self.at))
+                p.closeSubpath()
+            }
+            .fill(Color.primary.opacity(0.92))
+            .shadow(color: PLTone.accent.opacity(rising.asking ? 0.95 : 0), radius: rising.asking ? (pulse ? 14 : 5) : 0)
+            if let shown {
+                Circle().fill(PLTone.accent).frame(width: 24, height: 24)
+                    .overlay(Circle().stroke(Color.primary, lineWidth: 2))
+                    .position(Self.at(Self.line[shown.rawValue * 10]))
+            }
+            Text(shown?.title ?? "How do you feel")
+                .plFont(.subhead, emphasized: true)
+                .lineLimit(1).minimumScaleFactor(0.7)
+                .frame(width: 130, alignment: .leading)
+                .offset(x: 0, y: 14)   // above the low left end, where his line leaves room
+        }
+        .frame(width: Self.size.width, height: Self.size.height, alignment: .topLeading)
+        .contentShape(Rectangle())
+        .highPriorityGesture(DragGesture(minimumDistance: 0)   // the finger stays on the curve; the pages do not swipe under it
+            .onChanged { dragging = Self.band(near: $0.location) }
+            .onEnded { v in
+                dragging = nil
+                rising.tap(Self.band(near: v.location))
+                rising.asking = false
+                rising.showWords = true
+            })
+        .sensoryFeedback(PLHaptic.select, trigger: dragging)
+        .onAppear {
+            guard !reduceMotion else { return }
+            withAnimation(.easeInOut(duration: 1.1).repeatForever(autoreverses: true)) { pulse = true }
+        }
+        .accessibilityElement()
+        .accessibilityLabel("How you feel")
+        .accessibilityValue(rising.current?.band.title ?? "Not set")
+        .accessibilityAdjustableAction { d in
+            let now = rising.current?.band.rawValue ?? 3
+            if let b = Band(rawValue: now + (d == .increment ? 1 : -1)) { rising.tap(b); rising.asking = false; rising.showWords = true }
+        }
+    }
+}
+
+/// The words for where he is, stacked; up only after he answers the curve, and gone on a word or Done.
+struct RisingPanel: View {
+    @State private var rising = RisingScale.shared
+    @State private var heavyDismissed = UserDefaults.standard.string(forKey: "pldev.rising.heavyShown")
+
+    var body: some View {
+        VStack(alignment: .leading, spacing: 0) {
+            if rising.showWords, let tap = rising.current {
                 HStack {
-                    Text(answered.map { "Look: \($0.band.oneUp.title)" } ?? "Tap how you feel").plTitle(.title2)
+                    Text("Look: \(tap.band.oneUp.title)").plFont(.subhead, emphasized: true)
                     Spacer()
-                    if answered != nil, rising.wearsDaily, RisingScale.lookBand() != nil {
+                    if rising.wearsDaily, RisingScale.lookBand() != nil {
                         Button("Undo") { rising.undoFeeling() }.frame(minWidth: 44, minHeight: 44)
                     }
                     menu
-                    Button { dismiss() } label: { Image(systemName: "xmark").frame(width: 44, height: 44) }
-                        .accessibilityLabel("Close")
                 }
-                if let tap = answered {
-                    words(tap)
-                    after(tap)
-                } else {
-                    CurveScale(band: rising.current?.band) { band in rising.tap(band); answered = rising.current }
-                        .frame(maxWidth: .infinity)
+                ForEach(tap.band.words, id: \.self) { w in
+                    Button { rising.refine(word: w); rising.showWords = false } label: {
+                        Text(w).fontWeight(tap.word == w ? .bold : .regular)
+                            .frame(maxWidth: .infinity, minHeight: 44, alignment: .leading).contentShape(Rectangle())
+                    }
+                }
+                HStack {
+                    Button(tap.tiredBody ? "Tired body: on" : "Tired body") { rising.refine(tiredBody: !tap.tiredBody) }.frame(minHeight: 44)
+                    Spacer()
+                    Button("Done") { rising.showWords = false }.frame(minWidth: 44, minHeight: 44)
+                }
+                if tap.band >= .rising {
+                    TextField("A note for your low self", text: $rising.note, axis: .vertical).textFieldStyle(.roundedBorder)
                 }
                 if rising.heavyRun, heavyDismissed != RisingScale.shiftDay(.now) {
                     VStack(alignment: .leading, spacing: 4) {
@@ -277,36 +379,10 @@ struct RisingAsk: View {
                     }
                 }
             }
-            .padding(PLSpace.margin)
         }
-        .sensoryFeedback(PLHaptic.select, trigger: rising.log.count)
-    }
-
-    private func words(_ tap: CheckIn) -> some View {
-        VStack(alignment: .leading, spacing: 0) {
-            ForEach(tap.band.words, id: \.self) { w in
-                Button { rising.refine(word: w); dismiss() } label: {   // the word is the last tap: it closes
-                    Text(w).fontWeight(tap.word == w ? .bold : .regular)
-                        .frame(maxWidth: .infinity, minHeight: 44, alignment: .leading).contentShape(Rectangle())
-                }
-            }
-        }
-    }
-
-    private func after(_ tap: CheckIn) -> some View {
-        VStack(alignment: .leading, spacing: PLSpace.gap) {
-            HStack {
-                Button(rising.current?.tiredBody == true ? "Tired body: on" : "Tired body") {
-                    rising.refine(tiredBody: rising.current?.tiredBody != true)
-                }.frame(minHeight: 44)
-                Spacer()
-                Button("Change") { answered = nil }.frame(minHeight: 44)
-                Spacer()
-                Button("Done") { dismiss() }.frame(minWidth: 44, minHeight: 44)
-            }
-            if tap.band >= .rising {
-                TextField("A note for your low self", text: $rising.note, axis: .vertical).textFieldStyle(.roundedBorder)
-            }
+        .padding(rising.showWords ? 14 : 0)
+        .background {
+            if rising.showWords { Color.clear.plGlass(in: RoundedRectangle(cornerRadius: PLRadius.card, style: .continuous)) }
         }
     }
 
@@ -320,72 +396,6 @@ struct RisingAsk: View {
             Image(systemName: "ellipsis.circle").frame(width: 44, height: 44)
         }
         .accessibilityLabel("Check-in settings")
-    }
-}
-
-/// The seven bands up one line of his: the long S through the first piece of the curve library (curve-comp-01, the first
-/// path, his ruling 11-25 "use the best one"). Heavy at the foot, Lit at the top. Drag near the line and let go.
-struct CurveScale: View {
-    let band: Band?
-    let pick: (Band) -> Void
-    @State private var dragging: Band?
-    private static let size = CGSize(width: 340, height: 462), box = CGRect(x: 52, y: 30, width: 231, height: 400)
-    /// His line as 61 points, equal steps along it, foot first, in its own 0...1 box. Band i sits at point i * 10.
-    private static let line: [(CGFloat, CGFloat)] = [
-        (1.0, 1.0), (0.9957, 0.9753), (0.9906, 0.9507), (0.9849, 0.9262), (0.9786, 0.9017), (0.9716, 0.8772),
-        (0.9641, 0.8528), (0.9558, 0.8285), (0.9468, 0.8043), (0.937, 0.7801), (0.9263, 0.7561), (0.9146, 0.7323),
-        (0.9017, 0.7087), (0.8875, 0.6853), (0.8717, 0.6622), (0.854, 0.6397), (0.8339, 0.6178), (0.8108, 0.5969),
-        (0.784, 0.5776), (0.7523, 0.561), (0.7152, 0.5487), (0.6737, 0.5431), (0.6311, 0.545), (0.5908, 0.5532),
-        (0.5517, 0.5634), (0.511, 0.5712), (0.469, 0.5758), (0.4262, 0.576), (0.3845, 0.5706), (0.3468, 0.559),
-        (0.3159, 0.542), (0.2933, 0.521), (0.2782, 0.4978), (0.2701, 0.4735), (0.2678, 0.4488), (0.2708, 0.4241),
-        (0.2786, 0.3997), (0.2911, 0.376), (0.3079, 0.3532), (0.3293, 0.3318), (0.3549, 0.312), (0.3838, 0.2936),
-        (0.4109, 0.2744), (0.4343, 0.2537), (0.4521, 0.2312), (0.462, 0.2071), (0.4617, 0.1824), (0.4509, 0.1585),
-        (0.4322, 0.1363), (0.4077, 0.1159), (0.3798, 0.0971), (0.3495, 0.0796), (0.3176, 0.0631), (0.2843, 0.0475),
-        (0.248, 0.0343), (0.2093, 0.0238), (0.1688, 0.0156), (0.1274, 0.0094), (0.0853, 0.0048), (0.0427, 0.0018),
-        (0.0, 0.0)
-    ]
-    private static func point(_ i: Int) -> CGPoint {
-        CGPoint(x: box.minX + line[i].0 * box.width, y: box.minY + line[i].1 * box.height)
-    }
-    /// The finger takes the band of the nearest spot on the line.
-    private static func band(at p: CGPoint) -> Band {
-        let i = line.indices.min { a, b in
-            hypot(point(a).x - p.x, point(a).y - p.y) < hypot(point(b).x - p.x, point(b).y - p.y)
-        } ?? 30
-        return Band(rawValue: Int((Double(i) / 10).rounded())) ?? .stuck
-    }
-
-    var body: some View {
-        let shown = dragging ?? band
-        ZStack(alignment: .topLeading) {
-            Path { p in
-                p.move(to: Self.point(0))
-                for i in 1..<Self.line.count { p.addLine(to: Self.point(i)) }
-            }
-            .stroke(Color.primary.opacity(0.9), style: StrokeStyle(lineWidth: 10, lineCap: .round, lineJoin: .round))
-            ForEach(Band.allCases, id: \.self) { b in
-                let at = Self.point(b.rawValue * 10), left = b == .stuck || b == .lit   // the two names the line would cross
-                Circle().fill(PLTone.accent).frame(width: shown == b ? 32 : 14, height: shown == b ? 32 : 14)
-                    .position(at)
-                Text(b.title).fontWeight(shown == b ? .bold : .regular).opacity(shown == b ? 1 : 0.7)
-                    .lineLimit(1).minimumScaleFactor(0.7)
-                    .frame(width: left ? 60 : 80, height: 44, alignment: left ? .trailing : .leading)
-                    .position(x: at.x + (left ? -50 : 62), y: at.y)
-            }
-        }
-        .frame(width: Self.size.width, height: Self.size.height)
-        .contentShape(Rectangle())
-        .highPriorityGesture(DragGesture(minimumDistance: 0)   // the slider keeps the finger; the sheet does not scroll under it
-            .onChanged { dragging = Self.band(at: $0.location) }
-            .onEnded { v in dragging = nil; pick(Self.band(at: v.location)) })
-        .sensoryFeedback(PLHaptic.select, trigger: dragging)
-        .accessibilityElement()
-        .accessibilityLabel("How you feel")
-        .accessibilityValue(band?.title ?? "Not set")
-        .accessibilityAdjustableAction { d in
-            let now = band?.rawValue ?? 3
-            if let b = Band(rawValue: now + (d == .increment ? 1 : -1)) { pick(b) }
-        }
     }
 }
 
