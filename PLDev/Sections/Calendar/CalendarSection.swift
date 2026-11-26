@@ -74,6 +74,7 @@ struct CalendarItem: Decodable, Identifiable, Hashable {
 
 @MainActor @Observable final class CalendarModel {
     private(set) var items: [CalendarItem] = []
+    private(set) var ahead: [CalendarItem] = []   // this month's window, kept while another month is on screen
     private(set) var posts: [String: Int] = [:]
     private(set) var loaded = false
     var problem: String?
@@ -110,7 +111,7 @@ struct CalendarItem: Decodable, Identifiable, Hashable {
             problem = nil
             loaded = true
             // only a window that starts this month holds every reminder still ahead; another month would drop some
-            if start == Self.thisMonth { scheduleReminders() }
+            if start == Self.thisMonth { ahead = items; scheduleReminders() }
         } catch {
             // a re-run load (pull to refresh, a month change) cancels this one: keep the last good items, say nothing.
             // Task.isCancelled, not URLError.cancelled: a refused certificate also ends as URLError.cancelled and must still show.
@@ -168,6 +169,7 @@ struct SharedCalendarView: View {
     @State private var adding = false
     @State private var selected = CalendarModel.today
     @State private var month = CalendarModel.thisMonth   // yyyy-MM-01 of the month on screen
+    @AppStorage("pldev.calendar.expanded") private var expanded = false
 
     init(model: AppModel, state: CalendarModel) {
         self.model = model
@@ -244,6 +246,7 @@ struct SharedCalendarView: View {
             } header: {
                 Text(Self.heading(selected)).plTitle(.subhead)
             }
+            comingUp
         }
         .plGround()
         .plScreenTitle(ThemeFeed.text("calendar.title", "Calendar"))
@@ -261,6 +264,49 @@ struct SharedCalendarView: View {
         .refreshable { await state.load(model: model, from: month) }
         .task(id: month) { if !state.loaded || state.from != month { await state.load(model: model, from: month) } }
         .sheet(isPresented: $adding) { CalendarAddSheet(model: model, state: state, day: Self.date(selected) ?? Date()) }
+    }
+
+    // MARK: coming up (his ask 11-26: "an expanded and collapsed list")
+
+    /// Everything still open from today on: three rows collapsed, all of it expanded. A tap opens that day.
+    @ViewBuilder private var comingUp: some View {
+        let today = CalendarModel.today
+        let all = state.ahead.filter { $0.done == 0 && ($0.until ?? $0.date) >= today }.sorted { ($0.date, $0.time ?? "") < ($1.date, $1.time ?? "") }
+        if !all.isEmpty {
+            Section {
+                ForEach(expanded ? all : Array(all.prefix(3))) { item in
+                    Button { select(max(item.date, today)) } label: { aheadRow(item, today: today) }
+                        .buttonStyle(.plain)
+                        .listRowBackground(PLRowGround())
+                }
+                if all.count > 3 {
+                    Button { withAnimation(.snappy) { expanded.toggle() } } label: {
+                        Label(expanded ? "Show less" : "Show all \(all.count)", systemImage: expanded ? "chevron.up" : "chevron.down")
+                            .plFont(.callout).frame(maxWidth: .infinity, minHeight: PLMetric.touch, alignment: .leading)
+                    }
+                    .tint(PLTone.accent)
+                    .listRowBackground(PLRowGround())
+                }
+            } header: {
+                Text(ThemeFeed.text("calendar.ahead", "Coming up")).plTitle(.subhead)
+            }
+        }
+    }
+
+    private func aheadRow(_ item: CalendarItem, today: String) -> some View {
+        HStack(spacing: PLSpace.gap) {
+            Image(systemName: CalendarKinds.symbol(item.kind)).foregroundStyle(CalendarKinds.color(item.kind))
+                .frame(width: 24)
+            VStack(alignment: .leading, spacing: 2) {
+                Text(item.title).plFont(.body)
+                Text(Self.heading(max(item.date, today)) + (item.time.map { " · " + Self.time12($0) } ?? ""))
+                    .plFont(.caption).foregroundStyle(.secondary)
+            }
+            Spacer(minLength: 0)
+        }
+        .frame(minHeight: PLMetric.touch)
+        .contentShape(Rectangle())
+        .accessibilityElement(children: .combine)
     }
 
     // MARK: the month (Apple's Calendar month view: the month name, a weekday row, numbers in circles, a dot per day that has something)
