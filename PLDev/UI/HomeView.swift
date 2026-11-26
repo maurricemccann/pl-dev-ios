@@ -209,6 +209,7 @@ struct HomeView: View {
                     .accessibilityAddTraits(.isHeader)
                 if !mark.isEmpty { PLIcon.symbol(mark).resizable().scaledToFit().frame(width: 30, height: 30).foregroundStyle(PLTone.accent).accessibilityHidden(true) }
             }
+            .lineLimit(1).minimumScaleFactor(0.5).padding(.trailing, 170)   // wide pack faces shrink instead of running under the curve
             Text(summary)
                 .plFont(.subhead, emphasized: true)
                 .foregroundStyle(Color.primary.opacity(0.88))

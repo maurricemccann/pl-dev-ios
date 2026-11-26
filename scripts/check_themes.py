@@ -25,10 +25,12 @@ for body in block.split(".init(")[1:]:
     themes.append(t)
 
 N = len(themes)
-assert N == 28, N
+assert N == 40, N   # 15 house, 13 Fun, 12 packs
 assert sum(t["fun"] for t in themes) == 13, "13 Fun"
-for key in ("id", "palette", "face", "wall"):
+for key in ("id", "palette", "wall"):
     assert len({t[key] for t in themes}) == N, "two themes share a " + key
+house = [t for t in themes if not t["id"].startswith("pack-")]   # the packs reuse a few faces, as approved
+assert len({t["face"] for t in house}) == len(house), "two themes share a face"
 SEVEN = ("palette", "face", "text", "card", "radius", "wall", "motion")
 for a, b in itertools.combinations(themes, 2):
     same = [k for k in SEVEN if a[k] == b[k]]

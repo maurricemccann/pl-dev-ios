@@ -167,6 +167,7 @@ struct PLSurface<S: Shape>: ViewModifier {
     @AppStorage("pldev.styleTile") private var tile = "squircle"   // one shape per theme: notched tiles notch every surface (his 11-24)
     @AppStorage("pldev.styleLook") private var look = "glass"
     @AppStorage("pldev.themeId") private var themeId = ""
+    @AppStorage("pldev.styleEdge") private var edge = ""
     @Environment(\.colorScheme) private var scheme
 
     init(part: Part, tint: Color?, interactive: Bool, shape: S) {
@@ -183,7 +184,7 @@ struct PLSurface<S: Shape>: ViewModifier {
         let shape: AnyShape = tile == "notch" ? AnyShape(NotchShape(cut: 12)) : AnyShape(self.shape)
         let surface = PLCarry.tone(.surface, scheme, Color(uiColor: .secondarySystemGroupedBackground))
         styled(content, shape: shape, surface: surface)
-            .modifier(CardEdge(on: part == .card, look: look, theme: themeId, shape: shape, key: PLTone.accent, surface: surface))
+            .modifier(CardEdge(on: part == .card, look: look, theme: edge.isEmpty ? themeId : edge, shape: shape, key: PLTone.accent, surface: surface))
     }
 
     @ViewBuilder private func styled(_ content: Content, shape: AnyShape, surface: Color) -> some View {
@@ -211,6 +212,19 @@ private struct CardEdge: ViewModifier {
 
     func body(content: Content) -> some View {
         if !on {
+            content
+        } else if theme == "pack-stitched" {   // stitching just inside the leather
+            content.overlay(shape.stroke(key.opacity(0.9), style: StrokeStyle(lineWidth: 1.2, dash: [5, 4])).padding(5).allowsHitTesting(false))
+                .background { shape.fill(surface).shadow(color: .black.opacity(0.4), radius: 5, y: 4) }
+        } else if theme == "pack-386" {        // DOS double line
+            content.overlay(shape.stroke(Color.white, lineWidth: 1.5).allowsHitTesting(false))
+                .overlay(shape.stroke(Color.white, lineWidth: 1).padding(4).allowsHitTesting(false))
+        } else if theme == "pack-quest" {      // a wood frame with a gold inner line
+            content.overlay(shape.stroke(Color(red: 107 / 255, green: 74 / 255, blue: 36 / 255), lineWidth: 5).allowsHitTesting(false))
+                .overlay(shape.stroke(key, lineWidth: 1.2).padding(4).allowsHitTesting(false))
+        } else if theme == "pack-elite" {      // light caught on the top edge
+            content.overlay(shape.stroke(LinearGradient(colors: [.white.opacity(0.6), .white.opacity(0.06)], startPoint: .top, endPoint: .center), lineWidth: 1).allowsHitTesting(false))
+        } else if theme.hasPrefix("pack-") {   // a pack's cards never borrow another look's edge
             content
         } else if look == "brutal" {        // Neo-Brutalism: border 2.5px solid #000, shadow 4px 4px 0 #000
             content.background { shape.fill(Color.black).offset(x: 4, y: 4) }

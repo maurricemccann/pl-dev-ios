@@ -48,7 +48,7 @@ struct GlassPage: View {
             controls("Home tiles", style: $tileStyle, tint: $tileTint, through: $tileThrough)
             Section {
                 Picker("Tile look", selection: $look) {
-                    ForEach(["glass", "typewriter", "keycap", "bubble", "dome", "terminal", "neon", "bevel", "flat", "bare", "chrome", "glaze", "clay", "fuzzy", "brutal", "neu", "skeuo", "aurora", "paper"], id: \.self) { Text($0.capitalized).tag($0) }
+                    ForEach(["glass", "typewriter", "keycap", "bubble", "dome", "terminal", "neon", "bevel", "flat", "bare", "chrome", "glaze", "clay", "fuzzy", "brutal", "neu", "skeuo", "aurora", "paper", "leather", "wood", "gloss", "longshadow", "tinted"], id: \.self) { Text($0.capitalized).tag($0) }
                 }
                 Button("Reset to the theme\u{2019}s own") {
                     if let t = PLThemePreset.current { t.resetGlass(); look = t.look } else { reset() }
@@ -85,6 +85,86 @@ struct GlassPage: View {
     }
 }
 
+/// Mix: each layer from any theme, over a live preview (his 11-25, the way Cydia stacked themes).
+struct MixPage: View {
+    @AppStorage("pldev.themeId") private var themeId = ""
+    @AppStorage("pldev.styleTile") private var tileShape = "squircle"
+    @AppStorage("pldev.styleLook") private var look = "glass"
+    @AppStorage("pldev.styleIcons") private var iconSet = "pl"
+    @State private var worn: [String: String] = [:]
+    @State private var busy = false
+    @State private var note: String?
+
+    var body: some View {
+        List { Group {
+            Section {
+                ZStack {
+                    ThemeGround(quiet: false)
+                    VStack(spacing: PLSpace.margin) {
+                        HStack(spacing: 28) {
+                            ForEach(["house", "curate", "town"], id: \.self) { id in
+                                TileIcon(section: id, symbol: "square", iconSet: iconSet)
+                                    .modifier(PLTile(shape: PLTile.shape(tileShape), look: look))
+                            }
+                        }
+                        VStack(alignment: .leading, spacing: 4) {
+                            Text("A card").plTitle(.headline)
+                            Text("Panels, rows and sheets wear this.").plFont(.footnote).foregroundStyle(.secondary)
+                        }
+                        .frame(maxWidth: .infinity, alignment: .leading)
+                        .padding(PLSpace.margin)
+                        .plGlass(in: RoundedRectangle(cornerRadius: PLRadius.card, style: .continuous))
+                    }
+                    .padding(PLSpace.margin)
+                }
+                .frame(height: 230)
+                .listRowInsets(EdgeInsets())
+                .accessibilityElement(children: .ignore)
+                .accessibilityLabel("Preview of the mix")
+            }
+            Section {
+                ForEach(MixLayer.allCases) { layer in
+                    Picker(layer.rawValue.capitalized, selection: pick(layer)) {
+                        ForEach(PLThemePreset.all) { Text($0.title).tag($0.id) }
+                    }
+                    .pickerStyle(.navigationLink)
+                }
+                .disabled(busy || PLThemePreset.current == nil)
+            } footer: {
+                Text(PLThemePreset.current == nil ? "Wear a theme first, then mix it." : note ?? "")
+            }
+            Section {
+                Button("Back to one theme") {
+                    Task { _ = await PLThemePreset.current?.apply(); load() }
+                }
+                .frame(minHeight: PLMetric.touch)
+                .disabled(busy || PLThemePreset.current == nil)
+            }
+        }.listRowBackground(PLRowGround()) }
+        .plGround()
+        .plScreenTitle("Mix")
+        .onAppear(perform: load)
+        .sensoryFeedback(PLHaptic.select, trigger: worn)
+    }
+
+    private func load() {
+        for layer in MixLayer.allCases { worn[layer.rawValue] = UserDefaults.standard.string(forKey: "pldev.mix." + layer.rawValue) ?? themeId }
+    }
+
+    private func pick(_ layer: MixLayer) -> Binding<String> {
+        Binding(get: { worn[layer.rawValue] ?? themeId }, set: { id in
+            guard let theme = PLThemePreset.all.first(where: { $0.id == id }) else { return }
+            worn[layer.rawValue] = id
+            busy = true
+            Task {
+                let ok = await theme.wear(layer)
+                note = ok ? nil : "\(theme.title): its fonts need a connection once."
+                busy = false
+            }
+        })
+    }
+}
+
 /// The wallpaper for the theme he is wearing, remembered per theme.
 struct WallpaperPage: View {
     @AppStorage("pldev.styleWall") private var wall = ""
@@ -101,13 +181,13 @@ struct WallpaperPage: View {
         }
     }
     private static let builtInPicks: [(String, String)] = [
-        ("PL-0138 · Studio night", "mask|" + art + "abstract-pattern_organic-curves_monochrome_digital_970.png"),
-        ("PL-0369 · Drop day", "color|" + art + "abstract-pattern_organic-interlocking_red-warm_digital_2437.png"),
-        ("PL-0539 · Copper", "color|" + art + "abstract-pattern_organic-flowing_warm-pink_digital_4693.png"),
-        ("PL-0690 · The ledger", "invert|" + art + "abstract-pattern_organic-interlocking_monochrome_digital-ink_5373.png"),
-        ("PL-0712 · Hyperspace", "invert|" + art + "abstract-pattern_organic-flowing_monochrome_digital_5457.png"),
-        ("PL-0732 · From the archive", "invert|" + art + "glyph-abstract_organic-labyrinthine_monochrome_ink_017.jpg"),
-        ("PL-0984 · Ember", "mask|" + art + "abstract-pattern_organic-interlocking_black-white_ink-marker_1239.jpg")]
+        ("PL-0138 · Studio night", "mask|\(art)abstract-pattern_organic-curves_monochrome_digital_970.png"),
+        ("PL-0369 · Drop day", "color|\(art)abstract-pattern_organic-interlocking_red-warm_digital_2437.png"),
+        ("PL-0539 · Copper", "color|\(art)abstract-pattern_organic-flowing_warm-pink_digital_4693.png"),
+        ("PL-0690 · The ledger", "invert|\(art)abstract-pattern_organic-interlocking_monochrome_digital-ink_5373.png"),
+        ("PL-0712 · Hyperspace", "invert|\(art)abstract-pattern_organic-flowing_monochrome_digital_5457.png"),
+        ("PL-0732 · From the archive", "invert|\(art)glyph-abstract_organic-labyrinthine_monochrome_ink_017.jpg"),
+        ("PL-0984 · Ember", "mask|\(art)abstract-pattern_organic-interlocking_black-white_ink-marker_1239.jpg")]
     private let columns = [GridItem(.adaptive(minimum: 96), spacing: 10)]
 
     init() {}

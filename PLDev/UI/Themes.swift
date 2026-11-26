@@ -40,6 +40,19 @@ extension HousePalette {
         th("aurora", "#090714", "#f8fafc", "#a855f7", "#38bdf8", "#130e24"),
         th("paper", "#f5f2eb", "#2b2620", "#c25e3e", "#2c5e55", "#ffffff"),
         th("swiss", "#ffffff", "#000000", "#ff3b30", "#007aff", "#ffffff"),
+        // the 12 packs he approved 11-25 (Duet job 69, the way Cydia themes did it)
+        th("pack-see-through", "#0e1116", "#f4f6f8", "#ffffff", "#8fd3ff"),
+        th("pack-stitched", "#3b2a1e", "#f3e9da", "#c9a46a", "#8a3b2e", "#5a4432"),
+        th("pack-candy", "#fbeff4", "#2b2233", "#ff7eb6", "#7fd1c7", "#ffffff"),
+        th("pack-long-shadow", "#1f2a44", "#ffffff", "#ffb400", "#ff5a5f", "#2c3a5c"),
+        th("pack-elite", "#050608", "#e8ebef", "#b8c2cc", "#3fa9f5", "#15181d"),
+        th("pack-pocket", "#9bbc0f", "#0f380f", "#306230", "#0f380f", "#8bac0f"),
+        th("pack-memory", "#0b0f3a", "#e6e6ee", "#c0c0c8", "#e0383e", "#1c2260"),
+        th("pack-quest", "#2a1c12", "#f2e4c4", "#d9a441", "#6e9c4a", "#40291a"),
+        th("pack-carriage", "#f4efe3", "#1e1b18", "#1e1b18", "#b23a2e", "#fffdf7"),
+        th("pack-386", "#0000aa", "#ffffff", "#ffff55", "#55ffff", "#000088"),
+        th("pack-tint", "#141414", "#ededed", "#d9b13b", "#d9b13b", "#1f1f1f"),
+        th("pack-shortcut", "#efe8dd", "#3a3530", "#8a9a7b", "#c8a27c", "#f8f4ee"),
     ]
 }
 
@@ -75,11 +88,11 @@ struct PLThemePreset: Identifiable, Hashable {
               tint: 0.45, icon: "AppIcon-HomeScreen", mark: "glyph-guy"),
         .init(id: "studio-night", title: "Studio night", palette: "th-studio-night", face: house("pirata-one.ttf"), text: "jost",
               note: "Blackletter titles, gold hairlines, sharp and tight, Studio night on the wall", dark: true,
-              card: .outline, radius: 0.1, space: 0.85, tile: "square", look: "neon", wall: "mask|" + art + "abstract-pattern_organic-curves_monochrome_digital_970.png",
+              card: .outline, radius: 0.1, space: 0.85, tile: "square", look: "neon", wall: "mask|\(art)abstract-pattern_organic-curves_monochrome_digital_970.png",
               curves: 0.65, tint: 0.1, icon: "AppIcon-ObsidianGold"),
         .init(id: "ember", title: "Ember", palette: "th-ember", face: house("rubik-burned.ttf"), text: house("texturina.ttf"),
               note: "Burned titles over a book face, round domed keys, Ember burning behind", dark: true,
-              card: .frosted, radius: 1.5, space: 1, tile: "circle", look: "dome", wall: "mask|" + art + "abstract-pattern_organic-interlocking_black-white_ink-marker_1239.jpg",
+              card: .frosted, radius: 1.5, space: 1, tile: "circle", look: "dome", wall: "mask|\(art)abstract-pattern_organic-interlocking_black-white_ink-marker_1239.jpg",
               curves: 0.8, tint: 0.55, icon: "AppIcon-VoidEmber"),
         .init(id: "totem", title: "Totem", palette: "th-totem", face: house("unifrakturcook.ttf"), text: house("medievalsharp.ttf"),
               note: "Fraktur over a carved face, clear glass, your tile pattern in gold on deep blue", dark: true,
@@ -103,15 +116,15 @@ struct PLThemePreset: Identifiable, Hashable {
               tint: 0.3, icons: "iconoir"),
         .init(id: "archive", title: "From the archive", palette: "th-archive", face: "file:fonts/PLRansom-Regular.ttf", text: house("veteran-typewriter.ttf"),
               note: "Your ledger scraps as titles, bare icons, gold labyrinth from your archive", dark: true,
-              card: .outline, radius: 1.5, space: 0.85, tile: "circle", look: "bare", wall: "invert|" + art + "glyph-abstract_organic-labyrinthine_monochrome_ink_017.jpg",
+              card: .outline, radius: 1.5, space: 0.85, tile: "circle", look: "bare", wall: "invert|\(art)glyph-abstract_organic-labyrinthine_monochrome_ink_017.jpg",
               curves: 0.55, tint: 0, mark: "poverty-to-luxury"),
         .init(id: "drop", title: "Drop day", palette: "th-drop", face: "ransom", text: "jost",
               note: "Your Ransom titles on blush paper, thick black frames and hard shadows, Drop day on the wall", dark: false,
-              card: .solid, radius: 0.5, space: 0.85, tile: "square", look: "brutal", wall: "color|" + art + "abstract-pattern_organic-interlocking_red-warm_digital_2437.png",
+              card: .solid, radius: 0.5, space: 0.85, tile: "square", look: "brutal", wall: "color|\(art)abstract-pattern_organic-interlocking_red-warm_digital_2437.png",
               curves: 0.2, tint: 0.5, through: 0.15, icon: "AppIcon-BoneOxblood", mark: "money"),
         .init(id: "ledger", title: "The ledger", palette: "th-ledger", face: "ledger", text: "courier",
               note: "Your Ledger hand on ledger paper, typewriter keys, ruled outlines, still", dark: false,
-              card: .outline, radius: 1, space: 1, tile: "circle", look: "typewriter", wall: "invert|" + art + "abstract-pattern_organic-interlocking_monochrome_digital-ink_5373.png",
+              card: .outline, radius: 1, space: 1, tile: "circle", look: "typewriter", wall: "invert|\(art)abstract-pattern_organic-interlocking_monochrome_digital-ink_5373.png",
               calm: true, curves: 0.05, tint: 0),
         .init(id: "linen", title: "Linen", palette: "th-linen", face: "v2", text: "jost",
               note: "Your second hand on sage cloth, soft raised cloth that lifts off the ground", dark: false,
@@ -119,7 +132,7 @@ struct PLThemePreset: Identifiable, Hashable {
               tint: 0, through: 0, icons: "iconoir"),
         .init(id: "copper", title: "Copper", palette: "th-copper", face: house("saira-stencil-one.ttf"), text: house("dirty-enough.ttf"),
               note: "Stencil over worn type, solid bevelled plates, Copper as you made it", dark: false,
-              card: .solid, radius: 2, space: 1, tile: "squircle", look: "clay", wall: "color|" + art + "abstract-pattern_organic-flowing_warm-pink_digital_4693.png",
+              card: .solid, radius: 2, space: 1, tile: "squircle", look: "clay", wall: "color|\(art)abstract-pattern_organic-flowing_warm-pink_digital_4693.png",
               curves: 0.15, tint: 0.35, through: 0.2),
         .init(id: "smoke", title: "Warm smoke", palette: "th-smoke", face: house("pencilant.otf"), text: house("special-elite.ttf"),
               note: "Pencil titles, typed text, round soft outlines on smoke, still", dark: false,
@@ -161,7 +174,7 @@ struct PLThemePreset: Identifiable, Hashable {
               tint: 0.2, through: 0.1, icons: "pixel", fun: true),
         .init(id: "fun-hyperspace", title: "Hyperspace", palette: "th-hyperspace", face: "bundle:Audiowide-Regular", text: "jost",
               note: "Violet and cyan in deep space, frosted domes, the tunnel behind", dark: true,
-              card: .frosted, radius: 1.5, space: 1.2, tile: "circle", look: "dome", wall: "invert|" + art + "abstract-pattern_organic-flowing_monochrome_digital_5457.png",
+              card: .frosted, radius: 1.5, space: 1.2, tile: "circle", look: "dome", wall: "invert|\(art)abstract-pattern_organic-flowing_monochrome_digital_5457.png",
               curves: 0.8, tint: 0.4, through: 0.6, fun: true, titleFX: "glow"),
         .init(id: "fun-vibe", title: "Vibe coded", palette: "th-vibe", face: "bundle:JetBrainsMono-Regular", text: "bundle:JetBrainsMono-Regular",
               note: "Editor night: acid green on black, terminal keys, code lines on the wall", dark: true,
@@ -184,6 +197,56 @@ struct PLThemePreset: Identifiable, Hashable {
               note: "International style: white grid, black rules, one red, square everything", dark: false,
               card: .solid, radius: 0.01, space: 1, tile: "square", look: "flat", wall: "code|swiss",
               calm: true, tint: 0, through: 0, icons: "sf", fun: true),
+
+        // Packs: his 11-25 "Yes you can use them". Their walls say code| or sit in the public bucket.
+        .init(id: "pack-see-through", title: "See Through", palette: "th-pack-see-through", face: "bundle:Inter-Regular", text: "bundle:Inter-Regular",
+              note: "Glasklart, 2010: bare icons over your drawing, clear panels", dark: true,
+              card: .clear, radius: 1, space: 1.2, tile: "squircle", look: "bare", wall: "color|\(art)pldev/walls/curve-comp-09.png",
+              curves: 0, tint: 0, through: 0.85, icons: "lucide"),
+        .init(id: "pack-stitched", title: "Stitched", palette: "th-pack-stitched", face: "bundle:Fraunces-Medium", text: "bundle:Inter-Regular",
+              note: "Old iOS leather: stitched plates and panels, filled icons", dark: true,
+              card: .solid, radius: 1, space: 1, tile: "squircle", look: "leather", wall: "code|stitch",
+              calm: true, tint: 0.1, through: 0.2, icons: "phfill"),
+        .init(id: "pack-candy", title: "Candy", palette: "th-pack-candy", face: "bundle:Inter-Regular", text: "bundle:Inter-Regular",
+              note: "Soft blurs and glossy round keys on pink and mint", dark: false,
+              card: .frosted, radius: 1.5, space: 1.2, tile: "circle", look: "bubble", wall: "code|candy",
+              tint: 0.2, through: 0.6, icons: "phosphor"),
+        .init(id: "pack-long-shadow", title: "Long Shadow", palette: "th-pack-long-shadow", face: "bundle:SpaceGrotesk-Medium", text: "bundle:Inter-Regular",
+              note: "Flat colour, 2013: one hard shadow off every tile", dark: true,
+              card: .solid, radius: 0.5, space: 1, tile: "squircle", look: "longshadow", wall: "code|flat",
+              calm: true, tint: 0, through: 0, icons: "tablerf"),
+        .init(id: "pack-elite", title: "Elite", palette: "th-pack-elite", face: "bundle:Orbitron-Regular", text: "bundle:Inter-Regular",
+              note: "Black gloss, 2010: split-shine keys with chrome edges", dark: true,
+              card: .solid, radius: 1, space: 0.85, tile: "squircle", look: "gloss", wall: "code|sweep",
+              tint: 0.1, through: 0.1, icons: "phduo"),
+        .init(id: "pack-pocket", title: "Pocket", palette: "th-pack-pocket", face: "bundle:PressStart2P-Regular", text: "bundle:Silkscreen-Regular",
+              note: "Four greens and square pixels", dark: false,
+              card: .outline, radius: 0.1, space: 1, tile: "square", look: "flat", wall: "code|pocket",
+              calm: true, curves: 0, tint: 0, through: 0, icons: "pixel"),
+        .init(id: "pack-memory", title: "Memory Card", palette: "th-pack-memory", face: "bundle:Orbitron-Regular", text: "bundle:IBMPlexMono-Regular",
+              note: "Console menu: blue ribbons and square keycaps", dark: true,
+              card: .solid, radius: 0.5, space: 1, tile: "square", look: "keycap", wall: "code|ribbons",
+              tint: 0.1, through: 0.2, icons: "tabler"),
+        .init(id: "pack-quest", title: "Quest Log", palette: "th-pack-quest", face: "bundle:Silkscreen-Regular", text: "bundle:Fraunces-Medium",
+              note: "16-bit RPG: wood tiles and gold-framed windows", dark: true,
+              card: .solid, radius: 0.1, space: 1, tile: "square", look: "wood", wall: "code|hatch",
+              calm: true, tint: 0, through: 0, icons: "pixel"),
+        .init(id: "pack-carriage", title: "Carriage", palette: "th-pack-carriage", face: house("special-elite.ttf"), text: "courier",
+              note: "Typewriter: round keys on ruled paper", dark: false,
+              card: .outline, radius: 0.1, space: 1.2, tile: "circle", look: "typewriter", wall: "code|ruled",
+              calm: true, curves: 0, tint: 0, through: 0, icons: "iconoir"),
+        .init(id: "pack-386", title: "386", palette: "th-pack-386", face: house("vt323.ttf"), text: house("vt323.ttf"),
+              note: "DOS blue screen: double-line boxes, yellow icons", dark: true,
+              card: .outline, radius: 0.1, space: 0.85, tile: "square", look: "terminal", wall: "code|dos",
+              calm: true, curves: 0, tint: 0, through: 0, icons: "pixel"),
+        .init(id: "pack-tint", title: "Tint", palette: "th-pack-tint", face: "bundle:Inter-Regular", text: "bundle:Inter-Regular",
+              note: "One gold for every icon over your drawing", dark: true,
+              card: .solid, radius: 1.5, space: 1, tile: "squircle", look: "tinted", wall: "color|\(art)pldev/walls/curve-comp-02.png",
+              calm: true, curves: 0, tint: 0, through: 0.2, icons: "lucide"),
+        .init(id: "pack-shortcut", title: "Shortcut Kit", palette: "th-pack-shortcut", face: "bundle:CormorantGaramond-SemiBold", text: "bundle:Inter-Regular",
+              note: "Beige and sage, thin icons with nothing under them", dark: false,
+              card: .frosted, radius: 1.5, space: 1.2, tile: "squircle", look: "bare", wall: "code|soft",
+              calm: true, tint: 0, through: 0.7, icons: "heroicons"),
     ]
 
     /// The wallpaper this theme wears: his own choice for it when he made one, else the theme's.
@@ -195,7 +258,8 @@ struct PLThemePreset: Identifiable, Hashable {
         let titleOK = await HouseFonts.ensure(face)
         let textOK = await HouseFonts.ensure(text)
         let kit = HouseKit.shared, d = UserDefaults.standard
-        d.set(id, forKey: "pldev.themeId")
+        d.set(id, forKey: "pldev.themeId"); d.set(id, forKey: "pldev.styleEdge")
+        for layer in MixLayer.allCases { d.removeObject(forKey: "pldev.mix." + layer.rawValue) }
         d.set(radius, forKey: "pldev.styleRadius"); d.set(space, forKey: "pldev.styleSpace")
         d.set(tile, forKey: "pldev.styleTile"); d.set(look, forKey: "pldev.styleLook"); d.set(icons, forKey: "pldev.styleIcons")
         d.set(mark ?? "", forKey: "pldev.styleMark"); d.set(repeatSize, forKey: "pldev.styleRepeat")
@@ -215,14 +279,53 @@ struct PLThemePreset: Identifiable, Hashable {
     func resetGlass() {
         let d = UserDefaults.standard
         d.set(card.rawValue, forKey: "pldev.glass.card.style"); d.set(tint, forKey: "pldev.glass.card.tint"); d.set(through, forKey: "pldev.glass.card.through")
-        let tileStyle: Card = look == "neon" || look == "terminal" || look == "bare" ? .outline : card
-        d.set(tileStyle.rawValue, forKey: "pldev.glass.tile.style"); d.set(max(tint, 0.45), forKey: "pldev.glass.tile.tint"); d.set(through, forKey: "pldev.glass.tile.through")
+        d.set(tileGlass.rawValue, forKey: "pldev.glass.tile.style"); d.set(max(tint, 0.45), forKey: "pldev.glass.tile.tint"); d.set(through, forKey: "pldev.glass.tile.through")
+    }
+
+    /// The glass under a tile: a ringed look takes an outline; a pack's bare icons sit on clear glass.
+    private var tileGlass: Card { id.hasPrefix("pack-") && look == "bare" ? .clear : ["neon", "terminal", "bare"].contains(look) ? .outline : card }
+
+    /// Mix (his 11-25, the way Cydia stacked themes): wear one layer of this theme over whatever is on. False = its font could not be fetched yet.
+    @MainActor func wear(_ layer: MixLayer) async -> Bool {
+        let kit = HouseKit.shared, d = UserDefaults.standard
+        var ok = true
+        switch layer {
+        case .colours:
+            d.set(dark ? "dark" : "light", forKey: "pldev.theme")
+            kit.paletteName = palette
+        case .type:
+            let titleOK = await HouseFonts.ensure(face), textOK = await HouseFonts.ensure(text)
+            ok = titleOK && textOK
+            d.set(textOK ? text : "jost", forKey: "pldev.font"); d.set(titleFX, forKey: "pldev.styleTitleFX")
+            kit.titleFace = face
+        case .cards:
+            d.set(radius, forKey: "pldev.styleRadius"); d.set(space, forKey: "pldev.styleSpace"); d.set(id, forKey: "pldev.styleEdge")
+            d.set(card.rawValue, forKey: "pldev.glass.card.style"); d.set(tint, forKey: "pldev.glass.card.tint"); d.set(through, forKey: "pldev.glass.card.through")
+        case .tiles:
+            d.set(tile, forKey: "pldev.styleTile"); d.set(look, forKey: "pldev.styleLook")
+            d.set(tileGlass.rawValue, forKey: "pldev.glass.tile.style"); d.set(max(tint, 0.45), forKey: "pldev.glass.tile.tint"); d.set(through, forKey: "pldev.glass.tile.through")
+        case .wallpaper:
+            d.set(chosenWall, forKey: "pldev.styleWall"); d.set(repeatSize, forKey: "pldev.styleRepeat")
+            d.set(curves, forKey: "pldev.tileStrength"); d.set(calm ? "reduce" : "full", forKey: "pldev.motion")
+        case .icons:
+            d.set(icons, forKey: "pldev.styleIcons"); d.set(mark ?? "", forKey: "pldev.styleMark")
+        }
+        d.set(id, forKey: "pldev.mix." + layer.rawValue)
+        kit.apply()
+        PLCarry.epoch.n += 1
+        return ok
     }
 
     static var current: PLThemePreset? {
         let id = UserDefaults.standard.string(forKey: "pldev.themeId")
         return all.first { $0.id == id }
     }
+}
+
+/// The six layers Mix can take from different themes.
+enum MixLayer: String, CaseIterable, Identifiable {
+    case colours, type, cards, tiles, wallpaper, icons
+    var id: String { rawValue }
 }
 
 // MARK: - The faces
@@ -329,7 +432,9 @@ struct CodeGround: View {
     static let names: [(String, String)] = [("synth", "Sunset and grid floor"), ("waves", "Desktop waves"), ("night", "Night scanlines"), ("ubuntu", "Warm glow"),
         ("bluedesk", "Blue retro desktop"), ("aero", "Aero light"), ("editor", "Code lines"), ("vapor", "Vapor grid"), ("paper", "Plain paper"),
         ("brushed", "Brushed steel"), ("velvet", "Velvet"), ("contour", "Contour lines"), ("weave", "Linen weave"), ("smoke", "Smoke"), ("pearl", "Pearl sheen"),
-        ("skeuo", "Device grey"), ("aurora", "Aurora"), ("fold", "Folded paper"), ("swiss", "Swiss grid")]
+        ("skeuo", "Device grey"), ("aurora", "Aurora"), ("fold", "Folded paper"), ("swiss", "Swiss grid"),
+        ("stitch", "Leather grain"), ("candy", "Candy blur"), ("flat", "Flat colour"), ("sweep", "Gloss sweep"), ("pocket", "Pocket dots"), ("ribbons", "Menu ribbons"),
+        ("hatch", "Quest hatch"), ("ruled", "Ruled paper"), ("dos", "Blue screen"), ("soft", "Beige and sage")]
     let name: String, key: Color, accent: Color, ink: Color, ground: Color
 
     var body: some View {
@@ -409,8 +514,31 @@ struct CodeGround: View {
         case "pearl": ZStack {
             AngularGradient(colors: [ground, Color(hex: 0xf6dfe8), Color(hex: 0xdcefee), Color(hex: 0xf3ecd2), ground], center: .init(x: 0.7, y: 0.3))
             blob(.white.opacity(0.7), 0.25, 0.65) }
-        default: Color.clear
+        case "stitch": canvas { c, s in dots(&c, s, every: 5, color: .black.opacity(0.35)) }
+        case "candy": ZStack { blob(Color(hex: 0xffc2dc), 0.15, 0.25); blob(Color(hex: 0xbfeee8), 0.9, 0.7) }
+        case "sweep": LinearGradient(stops: [.init(color: .clear, location: 0.18), .init(color: .white.opacity(0.1), location: 0.28), .init(color: .clear, location: 0.4)],
+                                     startPoint: .topLeading, endPoint: .bottomTrailing)
+        case "pocket": canvas { c, s in dots(&c, s, every: 8, color: Color(hex: 0x8bac0f)) }
+        case "ribbons": ZStack {
+            LinearGradient(stops: [.init(color: .clear, location: 0.3), .init(color: Color(hex: 0x5a6eff).opacity(0.3), location: 0.45), .init(color: .clear, location: 0.6)],
+                           startPoint: .topLeading, endPoint: .bottomTrailing)
+            LinearGradient(stops: [.init(color: .clear, location: 0.55), .init(color: Color(hex: 0x8c5aff).opacity(0.24), location: 0.66), .init(color: .clear, location: 0.78)],
+                           startPoint: .leading, endPoint: .trailing) }
+        case "hatch": canvas { c, s in
+            for x in stride(from: -s.height, through: s.width, by: 18) {
+                var p = Path(); p.move(to: CGPoint(x: x, y: 0)); p.addLine(to: CGPoint(x: x + s.height, y: s.height))
+                c.stroke(p, with: .color(key.opacity(0.08)), lineWidth: 2) } }
+        case "ruled": canvas { c, s in
+            for y in stride(from: 27.0, to: s.height, by: 28) { c.fill(Path(CGRect(x: 0, y: y, width: s.width, height: 1)), with: .color(ink.opacity(0.14))) } }
+        case "soft": ZStack { blob(Color(hex: 0xd8c7ad), 0.8, 0.15); blob(Color(hex: 0xc6cdba), 0.1, 0.8) }
+        default: Color.clear   // "flat" and "dos": the palette's ground alone
         }
+    }
+
+    private func dots(_ c: inout GraphicsContext, _ s: CGSize, every: Double, color: Color) {
+        var p = Path()
+        for x in stride(from: 0.0, to: s.width, by: every) { for y in stride(from: 0.0, to: s.height, by: every) { p.addRect(CGRect(x: x, y: y, width: 1.5, height: 1.5)) } }
+        c.fill(p, with: .color(color))
     }
 
     private func canvas(_ draw: @escaping (inout GraphicsContext, CGSize) -> Void) -> some View {
@@ -522,6 +650,22 @@ struct TileLook: View {
                     .shadow(color: key.mix(with: .white, by: 0.6), radius: 4, x: -4, y: -4)
             case "flat":
                 shape.fill(key)
+            case "leather":
+                shape.fill(LinearGradient(colors: [accent.mix(with: .white, by: 0.15), accent.mix(with: .black, by: 0.3)], startPoint: .topLeading, endPoint: .bottomTrailing))
+                    .shadow(color: .black.opacity(0.45), radius: 4, y: 4)
+                shape.stroke(key, style: StrokeStyle(lineWidth: 1.2, dash: [4, 3])).padding(5)
+            case "wood":
+                shape.fill(LinearGradient(colors: [Color(hex: 0x9a6b35), Color(hex: 0x5c3a1c)], startPoint: .top, endPoint: .bottom)).shadow(color: .black.opacity(0.45), radius: 3, y: 4)
+                shape.stroke(key, lineWidth: 2)
+            case "gloss":
+                shape.fill(LinearGradient(stops: [.init(color: Color(hex: 0x4a515c), location: 0), .init(color: Color(hex: 0x23272e), location: 0.49),
+                                                  .init(color: Color(hex: 0x0c0e11), location: 0.5), .init(color: Color(hex: 0x1b1f26), location: 1)], startPoint: .top, endPoint: .bottom))
+                shape.stroke(key, lineWidth: 1)
+            case "longshadow":
+                ForEach(1..<8, id: \.self) { i in shape.fill(Color(hex: 0x141c30)).offset(x: CGFloat(i), y: CGFloat(i)) }
+                shape.fill(key)
+            case "tinted":
+                shape.fill(Color(white: 0.12))
             default:
                 Color.clear
             }
@@ -534,7 +678,9 @@ struct TileLook: View {
     /// The glyph's colour on that look.
     static func glyph(_ look: String, key: Color, scheme: ColorScheme) -> Color {
         switch look {
-        case "terminal", "neon", "bare", "paper": return key
+        case "terminal", "neon", "bare", "paper", "tinted": return key
+        case "longshadow": return Color(hex: 0x1f2a44)
+        case "leather", "wood": return Color(hex: 0xf3e9da)
         case "bevel", "chrome": return Color(white: 0.08)
         case "flat", "brutal", "neu": return luminance(key) > 0.55 ? .black : .white
         case "glass": return scheme == .dark ? Color(red: 1, green: 0.95, blue: 0.9) : Color.primary
