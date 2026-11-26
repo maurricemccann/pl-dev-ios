@@ -169,7 +169,6 @@ struct PracticeView: View {
     let model: AppModel
     @Bindable var state: PracticeModel
     @State private var started = false
-    @State private var rope: BuddyRopeRig?     // the gold rope, built once the bar item's place on screen is known
     @State private var showSettings = false
 
     var body: some View {
@@ -199,6 +198,7 @@ struct PracticeView: View {
         }
         .background { CandleGround() }
         .preferredColorScheme(.dark)
+        .onAppear { BuddyIsland.start() }
         .navigationTitle("Practice")
         .navigationBarTitleDisplayMode(.inline)
         .toolbar {
@@ -206,24 +206,8 @@ struct PracticeView: View {
                 Button { showSettings = true } label: { Image(systemName: "gearshape").frame(width: 44, height: 44) }
                     .accessibilityLabel("Practice settings")
             }
-            ToolbarItem(placement: .topBarTrailing) {
-                // the bar clips anything drawn past an item (the simulator shot 11-15 showed the rope cut to a box), so the bar item is
-                // only the touch target; the rope is drawn in an overlay under the glass bar, from this item's place on screen
-                Color.clear.frame(width: 48, height: 44).contentShape(Rectangle())
-                    .onGeometryChange(for: CGRect.self) { $0.frame(in: .global) } action: { f in
-                        let home = CGPoint(x: f.midX, y: f.midY)
-                        if rope.map({ hypot($0.home.x - home.x, $0.home.y - home.y) > 2 }) ?? true { rope = BuddyRopeRig(home: home) }
-                    }
-                    .gesture(DragGesture(minimumDistance: 6, coordinateSpace: .global)
-                        .onChanged { v in rope?.grab = v.location }
-                        .onEnded { _ in rope?.grab = nil })
-                    .accessibilityHidden(true)
-                    .onAppear { BuddyIsland.start() }
-            }
-            .sharedBackgroundVisibility(.hidden)
         }
         .toolbar(state.entryDone ? .automatic : .hidden, for: .navigationBar)
-        .overlay { if state.entryDone, let rope { BuddyRope(rig: rope).ignoresSafeArea().allowsHitTesting(false) } }
         .overlay { if !state.entryDone { PracticeEntry(model: model, state: state).transition(.opacity) } }
         .sensoryFeedback(PLHaptic.commit, trigger: state.tick)
         .sheet(isPresented: $showSettings) { PracticeSettingsSheet() }
@@ -282,88 +266,6 @@ struct PracticeKpis: View {
         ViewThatFits(in: .horizontal) {
             HStack(spacing: PLSpace.margin) { ForEach(items.indices, id: \.self) { Kpi(title: items[$0].0, value: items[$0].1) } }
             VStack(alignment: .leading, spacing: PLSpace.gap) { ForEach(items.indices, id: \.self) { Kpi(title: items[$0].0, value: items[$0].1) } }
-        }
-    }
-}
-
-/// His orange curve (his mock-up 11-15: "the orange curve then you can play with him like the curve below"): a rope from above the top
-/// edge sweeps down into the corner. Buddy rode its tip until he crossed him out (11-26). The hero curve's rope physics (FieldRig's spring, damping, spread, the
-/// slow breathing drift): dragging Buddy pulls the tip and the rope follows; let go and it swings home. The rope is drawn past the
-/// item's 56x44 frame (the bar does not clip it); only the item takes touches.
-@MainActor final class BuddyRopeRig {
-    static let n = 16
-    let home: CGPoint
-    var hx: [Double] = [], hy: [Double] = [], px: [Double] = [], py: [Double] = [], ox: [Double] = [], oy: [Double] = []
-    var grab: CGPoint?
-    var t = 0.0
-    private var acc = 0.0, last: Date?
-
-    /// Screen points: the rope hangs from above the top edge, left of Buddy, and sweeps down to his home (his mock-up 11-15).
-    init(home: CGPoint) {
-        self.home = home
-        let a = CGPoint(x: home.x - 200, y: -40), c = CGPoint(x: home.x - 90, y: home.y + 6), b = home
-        for k in 0..<Self.n {
-            let u = Double(k) / Double(Self.n - 1)
-            hx.append((1 - u) * (1 - u) * a.x + 2 * (1 - u) * u * c.x + u * u * b.x)
-            hy.append((1 - u) * (1 - u) * a.y + 2 * (1 - u) * u * c.y + u * u * b.y)
-        }
-        px = hx; py = hy; ox = hx; oy = hy
-    }
-
-    var swing = 1.0
-    func advance(_ now: Date, still: Bool, calm: Bool = false) {
-        defer { last = now }
-        swing = calm ? 0.5 : 1.0
-        guard !still, let last else { return }
-        acc += min(0.1, now.timeIntervalSince(last)) * 60
-        var g = 0
-        while acc >= 1, g < 4 { step(); acc -= 1; g += 1 }
-    }
-
-    func step() {
-        let N = Self.n
-        for k in 1..<N {   // the anchor (k = 0) stays above the top edge
-            // a visible idle sway (his note 11-15, "the rope should move"): grows toward the tip, so Buddy swings with it
-            let u = Double(k) / Double(N - 1), s = t * 0.02, amp = 16 * u * u * swing
-            let tx = hx[k] + sin(s * 1.1 + u * 3) * amp, ty = hy[k] + cos(s * 0.9 + u * 2.4) * amp
-            let vx = (px[k] - ox[k]) * FieldRig.damp, vy = (py[k] - oy[k]) * FieldRig.damp
-            ox[k] = px[k]; oy[k] = py[k]
-            px[k] += vx + (tx - px[k]) * FieldRig.spring; py[k] += vy + (ty - py[k]) * FieldRig.spring
-        }
-        if let g = grab { px[N - 1] = g.x; py[N - 1] = g.y }   // the finger holds Buddy; the rope follows
-        for k in 1..<(N - 1) {
-            let dx = (px[k - 1] - hx[k - 1] + px[k + 1] - hx[k + 1]) * 0.5 - (px[k] - hx[k])
-            let dy = (py[k - 1] - hy[k - 1] + py[k + 1] - hy[k + 1]) * 0.5 - (py[k] - hy[k])
-            px[k] += dx * FieldRig.spread; py[k] += dy * FieldRig.spread
-        }
-        t += 1
-    }
-
-    var tip: CGPoint { CGPoint(x: px[Self.n - 1], y: py[Self.n - 1]) }
-
-    func path() -> Path {
-        var p = Path(); let N = Self.n
-        p.move(to: CGPoint(x: px[0], y: py[0]))
-        for k in 1..<(N - 1) { p.addQuadCurve(to: CGPoint(x: (px[k] + px[k + 1]) / 2, y: (py[k] + py[k + 1]) / 2), control: CGPoint(x: px[k], y: py[k])) }
-        p.addLine(to: tip)
-        // the band runs on past Buddy to the right edge, in the direction it arrived
-        let d = CGPoint(x: px[N - 1] - px[N - 3], y: py[N - 1] - py[N - 3]), l = max(1, hypot(d.x, d.y))
-        p.addLine(to: CGPoint(x: tip.x + d.x / l * 70, y: tip.y + d.y / l * 70))
-        return p
-    }
-}
-
-struct BuddyRope: View {
-    let rig: BuddyRopeRig
-    @Environment(\.accessibilityReduceMotion) private var reduceMotion
-    private static let orange = Color(red: 196 / 255, green: 136 / 255, blue: 48 / 255)   // his mock-up's orange, brighter (his note 11-15)
-
-    var body: some View {
-        // never frozen (his note 11-15: "the rope doesn't move ... a static curve"; his phone has Reduce Motion on, which paused it):
-        // under Reduce Motion it sways at half the swing; every new face kicks the tip, so the rope and his face move together
-        TimelineView(.animation(minimumInterval: 1 / 60)) { tl in
-            let _ = rig.advance(tl.date, still: false, calm: reduceMotion)
-            Canvas { ctx, _ in ctx.stroke(rig.path(), with: .color(Self.orange), style: StrokeStyle(lineWidth: 26, lineCap: .butt, lineJoin: .round)) }
         }
     }
 }

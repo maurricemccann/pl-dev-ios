@@ -443,17 +443,29 @@ struct RisingPanel: View {
     }
 }
 
-/// His head for Buddy (his drawing, 11-25, the red figure from the left-chest embroidery), used as he drew it; the face is
+/// His head for Buddy (his drawing, 11-25, the red figure from the left-chest embroidery), his shape and line as he drew them; the face is
 /// laid on it and the stem's flat foot rests on whatever is under it.
 struct BuddyHead: View {
     let model: BuddyModel
     var side: CGFloat = 144
     var hole = true                     // he comes up out of a scribbled hole (his markup 11-26); Home's stands on the bar
-    private static let art = Bundle.main.url(forResource: "buddy-head", withExtension: "png").flatMap { UIImage(contentsOfFile: $0.path) }
+    private static let art = image("buddy-head")
+    private static let lines = image("buddy-head-lines")   // his outline alone, to lie over the coloured shape
+    private static func image(_ name: String) -> UIImage? {
+        Bundle.main.url(forResource: name, withExtension: "png").flatMap { UIImage(contentsOfFile: $0.path) }
+    }
 
     var body: some View {
         ZStack {
-            if let art = Self.art { Image(uiImage: art).resizable().scaledToFit().accessibilityHidden(true) }
+            // his colour is today's step on the curve (his note 11-26: "he shifts like the emotional scale curve")
+            if let art = Self.art {
+                if let band = RisingScale.shared.current?.band, let lines = Self.lines {
+                    Image(uiImage: art).renderingMode(.template).resizable().scaledToFit().foregroundStyle(RisingScale.tint(band)).accessibilityHidden(true)
+                    Image(uiImage: lines).resizable().scaledToFit().accessibilityHidden(true)
+                } else {
+                    Image(uiImage: art).resizable().scaledToFit().accessibilityHidden(true)
+                }
+            }
             // the big face he ticked (11-25), anchored at his green dot (0.47, 0.36 of the head): face 0.66 of the head wide.
             // pinned = it stays on that spot; every expression and move still plays on it
             BuddyView(model: model, pinned: true)
