@@ -163,6 +163,7 @@ enum RisingAsk {
         // ask again a little later: the second tap is what shows whether the move lifted him
         let content = UNMutableNotificationContent()
         content.title = "And now? Tap how you feel."
+        content.categoryIdentifier = "rising"
         content.sound = .default
         UNUserNotificationCenter.current().add(UNNotificationRequest(identifier: "rising-after", content: content,
                                                                     trigger: UNTimeIntervalNotificationTrigger(timeInterval: 15 * 60, repeats: false)))
@@ -304,6 +305,8 @@ enum RisingAsk {
         for (i, time) in [(16, 15), (0, 30), (4, 30)].enumerated() {
             let content = UNMutableNotificationContent()
             content.title = "Tap how you feel."
+            content.body = "Touch and hold to answer here."
+            content.categoryIdentifier = "rising"
             content.sound = .default
             var when = DateComponents(hour: time.0, minute: time.1)
             when.timeZone = TimeZone(identifier: "America/Los_Angeles")
@@ -475,6 +478,7 @@ struct RisingPanel: View {
                     Spacer()
                     Button("Done") { rising.showWords = false }.frame(minWidth: 44, minHeight: 44)
                 }
+                if tap.band >= .rising { visionStrip }
                 if tap.band >= .stuck {
                     Text("Today's magnet move: " + RisingAsk.magnet()).plFont(.footnote).foregroundStyle(.secondary).padding(.top, 4)
                     weekBars
@@ -499,6 +503,25 @@ struct RisingPanel: View {
         }
         .background {
             if rising.showWords { Color.clear.plGlass(in: RoundedRectangle(cornerRadius: PLRadius.card, style: .continuous)) }
+        }
+    }
+
+    /// Up high, his chosen pieces as a vision strip (the Gate's count), each to be paired with one obstacle and one move.
+    @ViewBuilder private var visionStrip: some View {
+        let _ = GateStore.shared.load()
+        let urls = GateStore.shared.saved.count.compactMap { $0.isEmpty ? nil : URL(string: $0) }
+        if !urls.isEmpty {
+            ScrollView(.horizontal, showsIndicators: false) {
+                HStack(spacing: 6) {
+                    ForEach(urls, id: \.self) { u in
+                        AsyncImage(url: u) { $0.resizable().scaledToFill() } placeholder: { Color.secondary.opacity(0.2) }
+                            .frame(width: 64, height: 64).clipShape(RoundedRectangle(cornerRadius: 8))
+                    }
+                }
+            }
+            .padding(.top, 6)
+            .accessibilityLabel("Your chosen pieces")
+            Text("Hold one picture. Name the one thing in its way, and your move.").plFont(.footnote).foregroundStyle(.secondary)
         }
     }
 

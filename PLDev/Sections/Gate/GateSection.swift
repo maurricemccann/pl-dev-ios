@@ -11,7 +11,13 @@ import UserNotifications
     static func makeRoot(model: AppModel) -> AnyView { AnyView(GateView()) }
     static func probes(model: AppModel) -> [ProbeModel.Item] { [] }
     static func settingsRows(model: AppModel) -> AnyView? { nil }
-    static func notificationCategories() -> Set<UNNotificationCategory> { [] }
+    /// The check-in reminders carry four steps as buttons: touch and hold the notice, tap one, done without opening the app.
+    static func notificationCategories() -> Set<UNNotificationCategory> {
+        let steps: [Band] = [.heavy, .stuck, .steady, .rising]
+        for b in steps { NotificationHub.actions["rising.\(b.key)"] = { RisingScale.shared.tap(b) } }
+        let actions = steps.map { UNNotificationAction(identifier: "rising.\($0.key)", title: $0.title, options: []) }
+        return [UNNotificationCategory(identifier: "rising", actions: actions, intentIdentifiers: [])]
+    }
     static func handle(link: DeepLink, model: AppModel) -> Bool {
         if case .section(_, let path, _) = link, path.first == "breath" { GateStore.shared.breath = .still }
         return true
