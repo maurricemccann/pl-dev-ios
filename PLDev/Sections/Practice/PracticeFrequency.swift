@@ -32,11 +32,31 @@ enum FrequencyTone: String, CaseIterable, Codable {
     }
 }
 
-struct FrequencyRun: Codable { let at: Date; let tone: FrequencyTone; let beats: Bool; let before: Band; let after: Band; let seconds: Int; let feltMinutes: Int }
+struct FrequencyRun: Codable {
+    let at: Date; let tone: FrequencyTone; let beats: Bool; let before: Band; let after: Band; let seconds: Int; let feltMinutes: Int
+    // the Gate (his ask 11-26); optional so earlier runs still read
+    var level: Int? = nil, solid: Bool? = nil, tooMuch: Bool? = nil
+}
+/// A place in his life where he jumped ahead, and the step under it that he is going back to make solid.
+struct FrequencyStep: Codable, Identifiable { var id = UUID(); let jumped: String; let under: String; var reps = 0 }
 struct FrequencyWish: Codable, Identifiable { var id = UUID(); let text: String; let until: Date; var happened: Bool? }
 
 @MainActor @Observable final class FrequencyLog {
-    struct Saved: Codable { var runs: [FrequencyRun] = []; var wishes: [FrequencyWish] = [] }
+    struct Saved: Codable { var runs: [FrequencyRun] = []; var wishes: [FrequencyWish] = []; var steps: [FrequencyStep]? }
+
+    /// How many times a foundation has to be solid before the next thing opens.
+    static let enoughToBuildOn = 5
+
+    /// Solid Relax sessions since the last time one was too much. "Too much" at either stage goes back to the base.
+    var solidSinceFall: Int {
+        var n = 0
+        for run in saved.runs.reversed() {
+            if run.tooMuch == true { break }
+            if run.level == 1 && run.solid == true { n += 1 }
+        }
+        return n
+    }
+    var patternOpen: Bool { solidSinceFall >= Self.enoughToBuildOn }
     private(set) var saved = Saved()
     private(set) var readable = true   // a file that could not be read (locked phone) is never written over
 
@@ -73,6 +93,7 @@ struct FrequencyCard: View {
 
     var body: some View {
         PCard(title: "Frequency Lab", hint: "Tones and the Gateway ideas, tested on you instead of taken on trust.", id: "frequency") {
+            Text(log.patternOpen ? "Pattern is open. Relax stays the base." : "Relax first: \(log.solidSinceFall) of \(FrequencyLog.enoughToBuildOn) solid. Pattern opens after that.").candleHint()
             Button("Start a session") { running = true }.buttonStyle(CandleButton()).disabled(!log.readable)
             if !log.saved.runs.isEmpty {
                 Text(log.line(beats: true)).candleHint()
@@ -80,6 +101,7 @@ struct FrequencyCard: View {
                 Text(log.enough ? "Ten or more of each: compare the two." : "A hint, not a finding, until there are 10 of each.").candleHint()
             }
             if !log.saved.wishes.isEmpty { ledger }
+            skipped
         }
         .onAppear { log.load() }
         .sheet(isPresented: $running) { FrequencySession(log: log) }
@@ -106,6 +128,40 @@ struct FrequencyCard: View {
         }
     }
 
+    @State private var jumped = ""
+    @State private var under = ""
+
+    private var skipped: some View {
+        VStack(alignment: .leading, spacing: 8) {
+            Text("Go back a step").candleH2()
+            Text("Where did you jump ahead, in anything? Name the step under it, then do that step until it holds.").candleHint()
+            ForEach(log.saved.steps ?? []) { step in
+                VStack(alignment: .leading, spacing: 4) {
+                    Text(step.under).font(Font.pl(size: 14)).foregroundStyle(Candle.ink)
+                    Text("Under: \(step.jumped)").candleHint()
+                    if step.reps >= FrequencyLog.enoughToBuildOn {
+                        Label("Solid", systemImage: "checkmark.seal.fill").candleHint()
+                    } else {
+                        Button("Did it · \(step.reps) of \(FrequencyLog.enoughToBuildOn)") {
+                            log.change { s in if let i = s.steps?.firstIndex(where: { $0.id == step.id }) { s.steps?[i].reps += 1 } }
+                        }
+                        .buttonStyle(CandleGhost())
+                    }
+                }
+                .contextMenu { Button("Remove", role: .destructive) { log.change { s in s.steps?.removeAll { $0.id == step.id } } } }
+            }
+            TextField("What I jumped to", text: $jumped, axis: .vertical).textFieldStyle(.roundedBorder)
+            TextField("The step under it", text: $under, axis: .vertical).textFieldStyle(.roundedBorder)
+            Button("Add the step") {
+                let a = jumped.trimmingCharacters(in: .whitespacesAndNewlines), b = under.trimmingCharacters(in: .whitespacesAndNewlines)
+                log.change { s in s.steps = (s.steps ?? []) + [FrequencyStep(jumped: a, under: b)] }
+                jumped = ""; under = ""
+            }
+            .buttonStyle(CandleGhost())
+            .disabled(!log.readable || jumped.trimmingCharacters(in: .whitespaces).isEmpty || under.trimmingCharacters(in: .whitespaces).isEmpty)
+        }
+    }
+
     private func judge(_ id: UUID, _ yes: Bool) {
         log.change { s in if let i = s.wishes.firstIndex(where: { $0.id == id }) { s.wishes[i].happened = yes } }
     }
@@ -129,8 +185,26 @@ struct FrequencySession: View {
     @State private var seconds = 0
     @State private var player: AVAudioPlayer?
     @State private var problem: String?
+    @State private var level = 1
+    @State private var solid = false
+    @State private var tooMuch = false
 
     init(log: FrequencyLog) { self.log = log }
+
+    /// Relax skips the patterning line: nothing is called in until the base holds.
+    private var script: [(String, Double)] {
+        level == 2 ? Self.steps : Self.steps.map { $0.0.hasPrefix("See the thing you want") ? ("Stay here. Nothing to get. Just stay awake while the body rests.", $0.1) : $0 }
+    }
+
+    /// What the released files and the house warn of, in our words.
+    private static let cautions = [
+        "Go in steps. The program says rushing ahead can bring a fear of losing yourself. Stop, and go back to Relax.",
+        "Do not force a pattern to happen faster. The report warns it can disrupt your life hard.",
+        "Old feelings can come up as you relax. This is not therapy; if something is too big to carry, take it to someone qualified.",
+        "Some people made big life changes after deep practice. Decide those slowly, awake, on another day.",
+        "The first handbook is not in the release, and the intermediate one is restricted to people who finished it.",
+        "One theorist in the report warns that long exposure to 4 to 7 Hz can set off strong symptoms in sensitive people. Settle is 6 Hz.",
+        "Never while driving or around machines. Epilepsy or seizures: ask a doctor first."]
 
     /// The session in our words, each line with its share of the time.
     private static let steps: [(String, Double)] = [
@@ -165,12 +239,25 @@ struct FrequencySession: View {
             .toolbar { ToolbarItem(placement: .cancellationAction) { Button("Close") { dismiss() } } }
         }
         .task(id: stage == .live) { if stage == .live { await run() } }
+        .onAppear { level = log.patternOpen ? 2 : 1 }
         .onDisappear { stop() }
     }
 
     @ViewBuilder private var setup: some View {
         Text("Headphones on. Keep it quiet.").candleH2()
         Text("Never while driving, on the floor at work or around machines. If you have epilepsy or seizures, ask a doctor first.").candleHint()
+        if log.patternOpen {
+            Picker("Stage", selection: $level) { Text("Relax").tag(1); Text("Pattern").tag(2) }.pickerStyle(.segmented)
+        } else {
+            Text("Stage 1, Relax. \(log.solidSinceFall) of \(FrequencyLog.enoughToBuildOn) solid.").candleH2()
+        }
+        DisclosureGroup("Read these first") {
+            VStack(alignment: .leading, spacing: 8) {
+                ForEach(Self.cautions, id: \.self) { Text($0).candleHint().frame(maxWidth: .infinity, alignment: .leading) }
+            }
+            .padding(.top, 6)
+        }
+        .tint(Candle.gold)
         Picker("Tone", selection: $tone) { ForEach(FrequencyTone.allCases, id: \.self) { Text($0.title).tag($0) } }.pickerStyle(.segmented)
         Picker("Length", selection: $minutes) { Text("5 minutes").tag(5); Text("10 minutes").tag(10) }.pickerStyle(.segmented)
         bandPicker("Where you are now", $before)
@@ -189,8 +276,13 @@ struct FrequencySession: View {
     @ViewBuilder private var afterward: some View {
         bandPicker("Where you are now", $after)
         Stepper("It felt like \(felt) minute\(felt == 1 ? "" : "s")", value: $felt, in: 1...40)
-        TextField("What you are calling in (optional)", text: $wish, axis: .vertical).textFieldStyle(.roundedBorder)
-        Picker("By", selection: $days) { Text("7 days").tag(7); Text("30 days").tag(30); Text("90 days").tag(90) }.pickerStyle(.segmented)
+        Toggle("That was solid", isOn: Binding(get: { solid }, set: { solid = $0; if $0 { tooMuch = false } })).tint(Candle.gold)
+        Toggle("It felt like too much", isOn: Binding(get: { tooMuch }, set: { tooMuch = $0; if $0 { solid = false } })).tint(Candle.gold)
+        if tooMuch { Text("Back to Relax. Nothing is lost; the base is the work.").candleHint() }
+        if level == 2 {
+            TextField("What you are calling in (optional)", text: $wish, axis: .vertical).textFieldStyle(.roundedBorder)
+            Picker("By", selection: $days) { Text("7 days").tag(7); Text("30 days").tag(30); Text("90 days").tag(90) }.pickerStyle(.segmented)
+        }
         Button("Save") { save() }.buttonStyle(CandleButton())
     }
 
@@ -230,13 +322,13 @@ struct FrequencySession: View {
         started = .now
         after = before
         felt = minutes
-        step = Self.steps[0].0
+        step = script[0].0
         stage = .live
     }
 
     private func run() async {
-        let total = Self.steps.map(\.1).reduce(0, +)
-        for (text, share) in Self.steps {
+        let total = script.map(\.1).reduce(0, +)
+        for (text, share) in script {
             step = text
             do { try await Task.sleep(for: .seconds(Double(minutes * 60) * share / total)) } catch { return }
         }
@@ -259,7 +351,7 @@ struct FrequencySession: View {
     private func save() {
         let text = wish.trimmingCharacters(in: .whitespacesAndNewlines)
         log.change { s in
-            s.runs.append(FrequencyRun(at: .now, tone: tone, beats: beats, before: before, after: after, seconds: seconds, feltMinutes: felt))
+            s.runs.append(FrequencyRun(at: .now, tone: tone, beats: beats, before: before, after: after, seconds: seconds, feltMinutes: felt, level: level, solid: solid, tooMuch: tooMuch))
             if !text.isEmpty {
                 s.wishes.append(FrequencyWish(text: text, until: Calendar.current.date(byAdding: .day, value: days, to: .now) ?? .now))
             }
