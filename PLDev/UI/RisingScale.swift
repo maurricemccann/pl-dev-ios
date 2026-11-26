@@ -50,22 +50,8 @@ struct CheckIn: Codable { let at: Date; let band: Band; var word: String?; var t
         return String(format: "%04d-%02d-%02d", p.year ?? 0, p.month ?? 0, p.day ?? 0)
     }
 
-    /// True while the check-in is up. It comes up only when there is a question: one per slot (4:15 PM, 12:30 AM, 4:30 AM).
+    /// True while the check-in is up: every time the app is opened or come back to (his ruling 11-25).
     var asking = false
-    private static func slot(_ now: Date = .now) -> Date {
-        let today = pacific.startOfDay(for: now)
-        let all = [-1, 0].flatMap { day -> [Date] in
-            guard let base = pacific.date(byAdding: .day, value: day, to: today) else { return [] }
-            return [(0, 30), (4, 30), (16, 15)].compactMap { pacific.date(bySettingHour: $0.0, minute: $0.1, second: 0, of: base) }
-        }
-        return all.filter { $0 <= now }.max() ?? today
-    }
-    func askIfDue() {
-        let slot = Self.slot()
-        if (log.last?.at ?? .distantPast) < slot, d.double(forKey: "pldev.rising.closedSlot") != slot.timeIntervalSince1970 { asking = true }
-    }
-    /// Closed without answering counts too: it does not come back until the next slot.
-    func closed() { d.set(Self.slot().timeIntervalSince1970, forKey: "pldev.rising.closedSlot") }
 
     var current: CheckIn? { log.last.flatMap { Self.shiftDay($0.at) == Self.shiftDay(.now) ? $0 : nil } }
 
@@ -192,30 +178,20 @@ struct CheckIn: Codable { let at: Date; let band: Band; var word: String?; var t
         set { d.set(newValue, forKey: "pldev.rising.remind"); scheduleReminders() }
     }
 
-    /// 4:15 PM, 12:30 AM, 4:30 AM Pacific. Only the next two are set, then two more after a day's gap: if he ignores two in a
-    /// row it goes quiet for a day by itself, and any open or tap sets them afresh.
+    /// 4:15 PM, 12:30 AM, 4:30 AM Pacific, every day, as phone notifications (his ruling 11-25: if he has not opened the app
+    /// in a while it still asks). The Check-in menu's "Three reminders" switch turns them off.
     func scheduleReminders() {
         let center = UNUserNotificationCenter.current()
-        let ids = (0..<4).map { "rising-\($0)" }
-        center.removePendingNotificationRequests(withIdentifiers: ids)
-        guard reminds, d.bool(forKey: "pldev.notify") else { return }
-        let cal = Self.pacific
-        var slots: [Date] = []
-        for day in 0..<5 {
-            guard let base = cal.date(byAdding: .day, value: day, to: cal.startOfDay(for: .now)) else { continue }
-            for (h, m) in [(0, 30), (4, 30), (16, 15)] {
-                if let at = cal.date(bySettingHour: h, minute: m, second: 0, of: base), at > Date().addingTimeInterval(3600) { slots.append(at) }
-            }
-        }
-        guard slots.count > 2 else { return }
-        let later = slots.filter { $0 > slots[1].addingTimeInterval(24 * 3600) }
-        for (i, at) in (Array(slots.prefix(2)) + Array(later.prefix(2))).enumerated() {
+        center.removePendingNotificationRequests(withIdentifiers: (0..<4).map { "rising-\($0)" })
+        guard reminds else { return }
+        for (i, time) in [(16, 15), (0, 30), (4, 30)].enumerated() {
             let content = UNMutableNotificationContent()
             content.title = "Tap how you feel."
             content.sound = .default
-            let when = Calendar.current.dateComponents([.year, .month, .day, .hour, .minute], from: at)
-            center.add(UNNotificationRequest(identifier: ids[i], content: content,
-                                             trigger: UNCalendarNotificationTrigger(dateMatching: when, repeats: false)))
+            var when = DateComponents(hour: time.0, minute: time.1)
+            when.timeZone = TimeZone(identifier: "America/Los_Angeles")
+            center.add(UNNotificationRequest(identifier: "rising-\(i)", content: content,
+                                             trigger: UNCalendarNotificationTrigger(dateMatching: when, repeats: true)))
         }
     }
 
@@ -303,7 +279,6 @@ struct RisingAsk: View {
             .padding(PLSpace.margin)
         }
         .sensoryFeedback(PLHaptic.select, trigger: rising.log.count)
-        .onDisappear { rising.closed() }
     }
 
     private func words(_ tap: CheckIn) -> some View {

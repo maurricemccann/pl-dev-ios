@@ -7,6 +7,7 @@ struct HomeView: View {
     @State private var path: [String] = []
     @State private var showSettings = false
     @State private var rising = RisingScale.shared
+    @State private var left = false
     @Environment(\.scenePhase) private var scenePhase
     @State private var showProbes = false
     @State private var showInbox = false
@@ -159,9 +160,19 @@ struct HomeView: View {
         }
         // the check-in comes up only when there is a question (his ruling 11-25)
         .sheet(isPresented: $rising.asking) { RisingAsk().presentationDragIndicator(.visible) }
-        .task { await rising.firstWear(); rising.scheduleReminders(); rising.askIfDue() }
+        .task {
+            await rising.firstWear()
+            rising.asking = true
+            if rising.reminds { _ = await NotificationHub.shared.authorize() }   // the system asks once; then the three are set
+            rising.scheduleReminders()
+        }
         .onChange(of: scenePhase) { _, phase in
-            if phase == .active { Task { await rising.wearIfDue(); rising.scheduleReminders(); rising.askIfDue() } }
+            if phase == .background { left = true }   // only a real leave counts, not Face ID or a pulled-down notification list
+            if phase == .active, left {
+                left = false
+                rising.asking = true
+                Task { await rising.wearIfDue(); rising.scheduleReminders() }
+            }
         }
         .sheet(isPresented: $showSettings) {
             SettingsView(model: model)
