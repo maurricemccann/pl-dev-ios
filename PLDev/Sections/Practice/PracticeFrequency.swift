@@ -44,20 +44,8 @@ struct FrequencyWish: Codable, Identifiable { var id = UUID(); let text: String;
 @MainActor @Observable final class FrequencyLog {
     struct Saved: Codable { var runs: [FrequencyRun] = []; var wishes: [FrequencyWish] = []; var steps: [FrequencyStep]?; var tapes: [Int]? }
 
-    /// The publisher's Wave I, in its order ("must be used sequentially"). Names only: the audio is theirs and stays with them.
-    static let waveOne = ["Orientation", "Intro Focus 10", "Advanced Focus 10", "Release and Recharge", "Exploration, Sleep", "Focus 10 Free Flow"]
-    /// The orientation once; each exercise after it until it holds. The counts are ours.
-    static func needed(_ i: Int) -> Int { i == 0 ? 1 : enoughToBuildOn }
+    /// The old Wave I tally, kept so the ladder and the Gate's course (which replaced the list, 11-26) can read it.
     func times(_ i: Int) -> Int { let t = saved.tapes ?? []; return i < t.count ? t[i] : 0 }
-    func tapeOpen(_ i: Int) -> Bool { i == 0 || times(i - 1) >= Self.needed(i - 1) }
-    func heard(_ i: Int) {
-        change { s in
-            var t = s.tapes ?? []
-            while t.count <= i { t.append(0) }
-            t[i] += 1
-            s.tapes = t
-        }
-    }
 
     /// How many times a foundation has to be solid before the next thing opens.
     static let enoughToBuildOn = 5
@@ -146,23 +134,9 @@ struct FrequencyCard: View {
 
     private var tapes: some View {
         VStack(alignment: .leading, spacing: 8) {
-            Text("Wave I, in order").candleH2()
-            Text("The publisher's rule: each builds on the one before. Its handbook comes with the album.").candleHint()
-            Link("Open the publisher's playlist", destination: URL(string: "https://www.youtube.com/playlist?list=PL_7gEDco2Edcct0piasYqnDGb5eW1GqfO")!)
-                .font(Font.pl(size: 14)).foregroundStyle(Candle.gold).frame(minHeight: 44)
-            ForEach(FrequencyLog.waveOne.indices, id: \.self) { i in
-                VStack(alignment: .leading, spacing: 4) {
-                    Text("\(i + 1). \(FrequencyLog.waveOne[i])").font(Font.pl(size: 14)).foregroundStyle(Candle.ink.opacity(log.tapeOpen(i) ? 1 : 0.5))
-                    if !log.tapeOpen(i) {
-                        Text("Opens after \(FrequencyLog.waveOne[i - 1])").candleHint()
-                    } else if log.times(i) >= FrequencyLog.needed(i) {
-                        Label("Solid", systemImage: "checkmark.seal.fill").candleHint()
-                    } else {
-                        Button("Listened, and it held · \(log.times(i)) of \(FrequencyLog.needed(i))") { log.heard(i) }
-                            .buttonStyle(CandleGhost()).disabled(!log.readable)
-                    }
-                }
-            }
+            Text("The course").candleH2()
+            Text("All six Waves, in the manual's order, live in the Gate now.").candleHint()
+            Button("Open the Gate") { AppModel.shared.route = .section(id: "gate", path: [], query: [:]) }.buttonStyle(CandleGhost())
         }
     }
 

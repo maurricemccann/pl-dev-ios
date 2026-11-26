@@ -3,8 +3,9 @@ import SwiftUI
 import UserNotifications
 
 /// The Gate (his ask 11-26: "I want all"; the Energy Conversion Box lives here, outside Capture, which "is for other things").
-/// Ten tools drawn from the Gateway Guidance Manual and the house's research, in our own words: one breath, the box, patterning,
-/// missions, the five questions, the answer inbox, a fair viewing game, the body map, his own count, and the ladder with its record.
+/// The course leads (his ask 11-26: "make a course which is the gate app", `GateCourse.swift`): all six Waves in order, each lesson
+/// pointing at the tool below that it uses. The ten tools, in our own words: one breath, the box, patterning, missions, the five
+/// questions, the answer inbox, a fair viewing game, the body map, his own count, and the ladder with its record.
 /// Everything stays on the phone in one protected file.
 @MainActor enum GateSection: PLSection {
     static let manifest = SectionManifest(id: "gate", title: "Gate", symbol: "circle.dotted.circle", needsKeys: [], needsOrigins: [])
@@ -77,6 +78,7 @@ struct GateTrial: Codable, Identifiable { var id = UUID(); var at = Date(); var 
     struct Saved: Codable {
         var box: [GateBoxItem] = []; var patterns: [GatePattern] = []; var missions: [GateMission] = []
         var questions: [GateQuestion] = []; var trials: [GateTrial] = []; var count: [String] = Array(repeating: "", count: 10)
+        var course: GateCourseLog?   // optional so a file saved before the course still reads
     }
     private(set) var saved = Saved()
     private(set) var readable = true
@@ -107,6 +109,11 @@ struct GateTrial: Codable, Identifiable { var id = UUID(); var at = Date(); var 
         load()
         let s = saved
         var out: [String] = []
+        if let c = s.course {
+            let l = currentLesson
+            out.append("Course: \(GateCourse.wave(of: l)), lesson \(l.id) \(l.title), held \(held(l.id)) of \(l.holds); \(c.comfortable.count) of \(GateCourse.all.count) comfortable.")
+            if let last = c.sittings.last, !last.happened.isEmpty { out.append("Last session: \(last.happened)") }
+        }
         let sealed = s.patterns.filter { $0.until > .now }
         if !sealed.isEmpty { out.append("Sealed patterns: \(sealed.count), the next opens \(sealed.map(\.until).min()!.formatted(date: .abbreviated, time: .omitted)).") }
         for p in s.patterns where p.until <= .now { out.append("Pattern \(p.happened == true ? "came in" : p.happened == false ? "did not come this time" : "is due to judge"): \(p.text)") }
@@ -143,43 +150,53 @@ struct GatePiece: Decodable, Identifiable, Hashable {
 struct GateView: View {
     @State private var store = GateStore.shared
     @State private var lab = FrequencyLog()
+    @State private var courseOpen = false
+    @State private var goTo: GateTool?
 
     var body: some View {
-        ScrollView {
-            VStack(spacing: 16) {
-                if !store.readable { Text("Unlock the phone to open the Gate.").candleHint() }
-                GateLadder(lab: lab)
-                GateBreathCard(store: store)
-                GateBoxCard(store: store)
-                GatePatternCard(store: store)
-                GateMissionCard(store: store)
-                GateQuestionsCard(store: store)
-                GateFiveCard()
-                GateViewingCard(store: store)
-                GateBodyCard()
-                GateCountCard(store: store)
-                GateRecordCard(lab: lab)
+        ScrollViewReader { proxy in
+            ScrollView {
+                VStack(spacing: 16) {
+                    if !store.readable { Text("Unlock the phone to open the Gate.").candleHint() }
+                    GateCourseCard(store: store) { courseOpen = true }
+                    GateLadder(lab: lab, store: store)
+                    GateBreathCard(store: store).id(GateTool.breath)
+                    GateBoxCard(store: store).id(GateTool.box)
+                    GatePatternCard(store: store).id(GateTool.pattern)
+                    GateMissionCard(store: store).id(GateTool.mission)
+                    GateQuestionsCard(store: store).id(GateTool.questions)
+                    GateFiveCard().id(GateTool.five)
+                    GateViewingCard(store: store).id(GateTool.viewing)
+                    GateBodyCard().id(GateTool.body)
+                    GateCountCard(store: store).id(GateTool.count)
+                    GateRecordCard(lab: lab, store: store)
+                }
+                .frame(maxWidth: 640).padding(.horizontal, 20).padding(.vertical, 12).frame(maxWidth: .infinity)
             }
-            .frame(maxWidth: 640).padding(.horizontal, 20).padding(.vertical, 12).frame(maxWidth: .infinity)
+            .sheet(isPresented: $courseOpen, onDismiss: {
+                if let t = goTo { withAnimation { proxy.scrollTo(t, anchor: .top) } }
+                goTo = nil
+            }) { GateCourseSheet(store: store) { goTo = $0 } }
         }
         .background { CandleGround() }
         .preferredColorScheme(.dark)
         .tint(Candle.gold)
         .navigationTitle("Gate")
-        .onAppear { store.load(); lab.load() }
+        .onAppear { store.load(); lab.load(); store.seed(fromLab: lab.saved.tapes) }
         .sheet(item: $store.breath) { c in GateBreathSheet(color: c, rounds: c == .still ? 1 : 3) }
     }
 }
 
-// 10. The ladder: where he stands, from the Lab's own record.
+// 10. The ladder: where he stands, from the course and the Lab's own record.
 private struct GateLadder: View {
     let lab: FrequencyLog
+    let store: GateStore
     var body: some View {
         let rungs: [(String, String, Bool)] = [
             ("Awake", "Conscious, everyday", true),
-            ("Focus 3", "Breath and the hum, mind and brain together", lab.times(0) >= 1),
-            ("Focus 10", "Body asleep, mind awake", lab.solidSinceFall >= 1 || lab.times(1) >= 1),
-            ("Focus 12", "Wider. Patterning opens here", lab.patternOpen)]
+            ("Focus 3", "Breath and the hum, mind and brain together", store.held("1.1") >= 1 || lab.times(0) >= 1),
+            ("Focus 10", "Body asleep, mind awake", store.held("1.2") >= 1 || lab.solidSinceFall >= 1 || lab.times(1) >= 1),
+            ("Focus 12", "Wider. Patterning opens here", store.held("2.1") >= 1 || lab.patternOpen)]
         return PCard(title: "The ladder", hint: "Each rung holds before the next. Repetition is the advance.") {
             ForEach(rungs.indices.reversed(), id: \.self) { i in
                 HStack(spacing: 12) {
@@ -693,17 +710,20 @@ private struct GateCountRun: View {
     }
 }
 
-// 10 (cont.). The record sheet, filled in on its own from the Lab's sessions.
+// 10 (cont.). The record sheet, filled in on its own from the course sessions and the Lab's.
 private struct GateRecordCard: View {
     let lab: FrequencyLog
+    let store: GateStore
     var body: some View {
-        let runs = Array(lab.saved.runs.suffix(8).reversed())
-        return PCard(title: "Record", hint: "The workbook's sheet: time, moon, mood before and after. Filled in by each Lab session.") {
-            if runs.isEmpty { Text("No sessions yet. Practice, Today, Frequency Lab.").candleHint() }
-            ForEach(runs.indices, id: \.self) { i in
-                let r = runs[i]
-                Text("\(r.at.formatted(date: .abbreviated, time: .shortened)) · \(Self.moon(r.at)) · \(r.before.title) to \(r.after.title)")
-                    .candleHint()
+        let course = store.course.sittings.map { s in
+            (s.at, "\(s.lesson) · \(Self.moon(s.at)) · \(s.position.lowercased()) · \(s.before.title) to \(s.after.title)\(s.held ? " · held" : "")")
+        }
+        let labRuns = lab.saved.runs.map { r in (r.at, "Lab · \(Self.moon(r.at)) · \(r.before.title) to \(r.after.title)") }
+        let rows = Array((course + labRuns).sorted { $0.0 > $1.0 }.prefix(8))
+        return PCard(title: "Record", hint: "The workbook's sheet: time, moon, position, mood before and after. Filled in by each session.") {
+            if rows.isEmpty { Text("No sessions yet. Start with the course at the top.").candleHint() }
+            ForEach(rows.indices, id: \.self) { i in
+                Text("\(rows[i].0.formatted(date: .abbreviated, time: .shortened)) · \(rows[i].1)").candleHint()
             }
         }
     }
