@@ -84,6 +84,9 @@ struct CheckIn: Codable { let at: Date; let band: Band; var word: String?; var t
 
     // MARK: the look
 
+    /// The feeling's own colour, for the curve and its knob.
+    nonisolated static func tint(_ b: Band) -> Color { Color(hex: hex(0.70, max(b.chroma, 0.03) * 1.6, b.hue)) ?? .orange }
+
     var wearsDaily: Bool { d.string(forKey: "pldev.themeId") == Self.id }
     var followsFeeling: Bool {
         get { d.object(forKey: "pldev.rising.follow") as? Bool ?? true }
@@ -241,16 +244,9 @@ struct CheckIn: Codable { let at: Date; let band: Band; var word: String?; var t
     func snooze(hours: Double) { d.set(Date().addingTimeInterval(hours * 3600).timeIntervalSince1970, forKey: "pldev.rising.snooze") }
 }
 
-/// The check-in is one line of his beside the title (curve-comp-02, his 11-25 "Comp 2 curve 11 ... right next to where it says
-/// pl dev"). The curve is the slider: Heavy at its low left end, Lit at the top right. It glows while there is a question.
-struct RisingCurve: View {
-    @State private var rising = RisingScale.shared
-    @State private var dragging: Band?
-    @Environment(\.accessibilityReduceMotion) private var reduceMotion
-    @State private var pulse = false
-    private static let size = CGSize(width: 190, height: 89)   // his shape's own 2.13 : 1
-
-    private static let shape: [(CGFloat, CGFloat)] = [
+/// His shape (curve-comp-02, path 11), scaled to whatever box it is given.
+private struct HisCurve: Shape {
+    fileprivate static let shape: [(CGFloat, CGFloat)] = [
         (0.0, 0.8623), (0.0, 0.9045), (0.0, 0.9465), (0.0151, 0.9596), (0.0352, 0.9644), (0.0554, 0.9697),
         (0.0756, 0.9745), (0.0957, 0.979), (0.1159, 0.9832), (0.1362, 0.987), (0.1564, 0.9902), (0.1766, 0.9932),
         (0.1969, 0.9955), (0.2172, 0.9975), (0.2375, 0.9989), (0.2578, 0.9997), (0.2781, 1.0), (0.2984, 0.9997),
@@ -272,6 +268,23 @@ struct RisingCurve: View {
         (0.2426, 0.9051), (0.2223, 0.9037), (0.202, 0.9017), (0.1818, 0.8993), (0.1615, 0.8964), (0.1413, 0.893),
         (0.1211, 0.8892), (0.1009, 0.885), (0.0807, 0.8804), (0.0605, 0.8756), (0.0404, 0.8703), (0.0203, 0.8655)
     ]
+    func path(in r: CGRect) -> Path {
+        var p = Path()
+        p.addLines(Self.shape.map { CGPoint(x: r.minX + $0.0 * r.width, y: r.minY + $0.1 * r.height) })
+        p.closeSubpath()
+        return p
+    }
+}
+
+/// The check-in is one line of his beside the title (curve-comp-02, his 11-25 "Comp 2 curve 11 ... right next to where it says
+/// pl dev"). The curve is the slider: Heavy at its low left end, Lit at the top right. It glows while there is a question.
+struct RisingCurve: View {
+    @State private var rising = RisingScale.shared
+    @State private var dragging: Band?
+    @Environment(\.accessibilityReduceMotion) private var reduceMotion
+    @State private var pulse = false
+    private static let size = CGSize(width: 190, height: 89)   // his shape's own 2.13 : 1
+
     /// The middle of his shape, 61 points from the Heavy end; band i sits at point i * 10.
     private static let line: [(CGFloat, CGFloat)] = [
         (0.0, 0.9465), (0.0088, 0.9318), (0.0192, 0.9137), (0.0392, 0.9179), (0.0591, 0.9227), (0.0791, 0.9275),
@@ -295,18 +308,19 @@ struct RisingCurve: View {
     }
 
     var body: some View {
+        // the knob: where the finger is, else his last answer (hidden while a new question waits)
         let shown = dragging ?? (rising.asking ? nil : rising.current?.band)
+        // the colour: the feeling chosen, and it keeps that colour while it asks again (his ruling 11-25)
+        let tint = (dragging ?? rising.current?.band).map(RisingScale.tint) ?? PLTone.accent
         ZStack(alignment: .topLeading) {
-            Path { p in
-                p.addLines(Self.shape.map(Self.at))
-                p.closeSubpath()
-            }
-            .fill(Color.primary.opacity(0.92))
-            .shadow(color: PLTone.accent.opacity(rising.asking ? 0.95 : 0), radius: rising.asking ? (pulse ? 14 : 5) : 0)
+            Color.clear
+                .glassEffect(.regular.tint(tint.opacity(0.85)), in: HisCurve())
+                .shadow(color: tint.opacity(rising.asking ? 1 : 0), radius: rising.asking ? (pulse ? 16 : 5) : 0)
             if let shown {
-                Circle().fill(PLTone.accent).frame(width: 24, height: 24)
-                    .overlay(Circle().stroke(Color.primary, lineWidth: 2))
+                Color.clear.frame(width: 34, height: 34)
+                    .glassEffect(.clear.tint(RisingScale.tint(shown).opacity(0.55)).interactive(), in: Circle())
                     .position(Self.at(Self.line[shown.rawValue * 10]))
+                    .animation(.snappy, value: shown)
             }
             Text(shown?.title ?? "How do you feel")
                 .plFont(.subhead, emphasized: true)
