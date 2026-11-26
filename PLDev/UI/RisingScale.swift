@@ -420,7 +420,7 @@ struct BuddyHead: View {
     }
 }
 
-/// Buddy slides in from the lower corner of Home, says one line, and leaves after eight seconds. Home only, so he never
+/// Buddy slides in from the lower corner of Home, says one line, and leaves 12 seconds after he finishes saying it. Home only, so he never
 /// covers drawing or audio.
 struct RisingBuddy: View {
     @State private var rising = RisingScale.shared
@@ -458,7 +458,9 @@ struct RisingBuddy: View {
             buddy.say(said)
             withAnimation { line = said }
             AccessibilityNotification.Announcement(said).post()
-            try? await Task.sleep(for: .seconds(8))
+            // up while his mouth moves, then time to read it again (his note 11-25: it left too quick)
+            try? await Task.sleep(for: .seconds(Double(BuddyModel.mouthTrack(said).count) * 0.07 + 12))
+            guard !Task.isCancelled else { return }
             withAnimation { line = nil }
         }
     }
