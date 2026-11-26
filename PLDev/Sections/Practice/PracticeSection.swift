@@ -169,8 +169,7 @@ struct PracticeView: View {
     let model: AppModel
     @Bindable var state: PracticeModel
     @State private var started = false
-    @State private var buddy = BuddyModel()   // Buddy lives top-right of Practice (his circle, 11-15), his drawn faces only
-    @State private var rope: BuddyRopeRig?     // his rope, built once the bar item's place on screen is known
+    @State private var rope: BuddyRopeRig?     // the gold rope, built once the bar item's place on screen is known
     @State private var showSettings = false
 
     var body: some View {
@@ -208,32 +207,23 @@ struct PracticeView: View {
                     .accessibilityLabel("Practice settings")
             }
             ToolbarItem(placement: .topBarTrailing) {
-                // a real Button: a bar item's plain tap gesture never fired on his phone (11-15, "Tap didn't play anything")
                 // the bar clips anything drawn past an item (the simulator shot 11-15 showed the rope cut to a box), so the bar item is
-                // only the touch target; the rope and Buddy are drawn in an overlay under the glass bar, from this item's place on screen
-                Button { buddy.playNext() } label: { Color.clear.frame(width: 48, height: 44).contentShape(Rectangle()) }
-                    .buttonStyle(.plain)
+                // only the touch target; the rope is drawn in an overlay under the glass bar, from this item's place on screen
+                Color.clear.frame(width: 48, height: 44).contentShape(Rectangle())
                     .onGeometryChange(for: CGRect.self) { $0.frame(in: .global) } action: { f in
                         let home = CGPoint(x: f.midX, y: f.midY)
                         if rope.map({ hypot($0.home.x - home.x, $0.home.y - home.y) > 2 }) ?? true { rope = BuddyRopeRig(home: home) }
                     }
-                    .simultaneousGesture(DragGesture(minimumDistance: 6, coordinateSpace: .global)
+                    .gesture(DragGesture(minimumDistance: 6, coordinateSpace: .global)
                         .onChanged { v in rope?.grab = v.location }
                         .onEnded { _ in rope?.grab = nil })
-                    .accessibilityHint("Tap for his next move, drag to swing him")
-                    .onAppear { buddy.react(.open); BuddyIsland.start() }
-                    .task {
-                        // his ruling 11-15 "now and then": at rest, every 20-40 s Buddy plays his next move from the shuffled deck
-                        while !Task.isCancelled {
-                            try? await Task.sleep(for: .seconds(Double.random(in: 20...40)))
-                            if !Task.isCancelled && buddy.move == nil && !UIAccessibility.isReduceMotionEnabled { buddy.playNext() }
-                        }
-                    }
+                    .accessibilityHidden(true)
+                    .onAppear { BuddyIsland.start() }
             }
             .sharedBackgroundVisibility(.hidden)
         }
         .toolbar(state.entryDone ? .automatic : .hidden, for: .navigationBar)
-        .overlay { if state.entryDone, let rope { BuddyRope(buddy: buddy, rig: rope).ignoresSafeArea().allowsHitTesting(false) } }
+        .overlay { if state.entryDone, let rope { BuddyRope(rig: rope).ignoresSafeArea().allowsHitTesting(false) } }
         .overlay { if !state.entryDone { PracticeEntry(model: model, state: state).transition(.opacity) } }
         .sensoryFeedback(PLHaptic.commit, trigger: state.tick)
         .sheet(isPresented: $showSettings) { PracticeSettingsSheet() }
@@ -296,8 +286,8 @@ struct PracticeKpis: View {
     }
 }
 
-/// Buddy on his own curve (his mock-up 11-15: "the orange curve then you can play with him like the curve below"): an orange rope from
-/// above the top edge sweeps down to Buddy, who rides its tip. The hero curve's rope physics (FieldRig's spring, damping, spread, the
+/// His orange curve (his mock-up 11-15: "the orange curve then you can play with him like the curve below"): a rope from above the top
+/// edge sweeps down into the corner. Buddy rode its tip until he crossed him out (11-26). The hero curve's rope physics (FieldRig's spring, damping, spread, the
 /// slow breathing drift): dragging Buddy pulls the tip and the rope follows; let go and it swings home. The rope is drawn past the
 /// item's 56x44 frame (the bar does not clip it); only the item takes touches.
 @MainActor final class BuddyRopeRig {
@@ -306,7 +296,6 @@ struct PracticeKpis: View {
     var hx: [Double] = [], hy: [Double] = [], px: [Double] = [], py: [Double] = [], ox: [Double] = [], oy: [Double] = []
     var grab: CGPoint?
     var t = 0.0
-    var trail: [CGPoint] = []   // the tip's last positions, newest last (the ragdoll squish reads it)
     private var acc = 0.0, last: Date?
 
     /// Screen points: the rope hangs from above the top edge, left of Buddy, and sweeps down to his home (his mock-up 11-15).
@@ -321,12 +310,10 @@ struct PracticeKpis: View {
         px = hx; py = hy; ox = hx; oy = hy
     }
 
-    private var lastFace = Date.distantPast
     var swing = 1.0
-    func advance(_ now: Date, still: Bool, calm: Bool = false, faceAt: Date = .distantPast) {
+    func advance(_ now: Date, still: Bool, calm: Bool = false) {
         defer { last = now }
         swing = calm ? 0.5 : 1.0
-        if faceAt != lastFace { lastFace = faceAt; if now.timeIntervalSince(faceAt) < 1 { kick() } }
         guard !still, let last else { return }
         acc += min(0.1, now.timeIntervalSince(last)) * 60
         var g = 0
@@ -344,7 +331,6 @@ struct PracticeKpis: View {
             px[k] += vx + (tx - px[k]) * FieldRig.spring; py[k] += vy + (ty - py[k]) * FieldRig.spring
         }
         if let g = grab { px[N - 1] = g.x; py[N - 1] = g.y }   // the finger holds Buddy; the rope follows
-        trail.append(CGPoint(x: px[N - 1], y: py[N - 1])); if trail.count > 14 { trail.removeFirst() }
         for k in 1..<(N - 1) {
             let dx = (px[k - 1] - hx[k - 1] + px[k + 1] - hx[k + 1]) * 0.5 - (px[k] - hx[k])
             let dy = (py[k - 1] - hy[k - 1] + py[k + 1] - hy[k + 1]) * 0.5 - (py[k] - hy[k])
@@ -353,24 +339,7 @@ struct PracticeKpis: View {
         t += 1
     }
 
-    /// A face starting nudges the rope's end (and the two before it, less), so it bounces and settles through the spring.
-    func kick() {
-        let N = Self.n
-        for (k, f) in [(N - 1, 1.0), (N - 2, 0.6), (N - 3, 0.3)] { ox[k] -= 3 * f * swing; oy[k] += 7 * f * swing }
-    }
-
     var tip: CGPoint { CGPoint(x: px[Self.n - 1], y: py[Self.n - 1]) }
-
-    /// The ragdoll squish fitted to his top curve (spec BUDDY RAGDOLL SQUISH, his ruling 11-15 "Do but fit his top curve"): each piece
-    /// sits where the tip was `lag` frames ago, so as the rope swings his eyes and mouth trail his head by their own delays and settle
-    /// back when the rope rests. Offsets are capped so a hard fling never pulls a piece off his face.
-    func lagOffset(_ lag: Int) -> CGSize {
-        guard trail.count > lag else { return .zero }
-        let then = trail[trail.count - 1 - lag], now = tip
-        let dx = then.x - now.x, dy = then.y - now.y, d = max(1, hypot(dx, dy)), cap: CGFloat = 9
-        let k = min(1, cap / d)
-        return CGSize(width: dx * k, height: dy * k)
-    }
 
     func path() -> Path {
         var p = Path(); let N = Self.n
@@ -385,7 +354,6 @@ struct PracticeKpis: View {
 }
 
 struct BuddyRope: View {
-    let buddy: BuddyModel
     let rig: BuddyRopeRig
     @Environment(\.accessibilityReduceMotion) private var reduceMotion
     private static let orange = Color(red: 196 / 255, green: 136 / 255, blue: 48 / 255)   // his mock-up's orange, brighter (his note 11-15)
@@ -394,13 +362,8 @@ struct BuddyRope: View {
         // never frozen (his note 11-15: "the rope doesn't move ... a static curve"; his phone has Reduce Motion on, which paused it):
         // under Reduce Motion it sways at half the swing; every new face kicks the tip, so the rope and his face move together
         TimelineView(.animation(minimumInterval: 1 / 60)) { tl in
-            let _ = rig.advance(tl.date, still: false, calm: reduceMotion, faceAt: buddy.stateAt)
-            ZStack(alignment: .topLeading) {
-                Canvas { ctx, _ in ctx.stroke(rig.path(), with: .color(Self.orange), style: StrokeStyle(lineWidth: 26, lineCap: .butt, lineJoin: .round)) }
-                // the new head (his 11-25), placed so the face's spot (0.48, 0.31 of the head) stays on the rope's tip
-                BuddyHead(model: buddy, side: 72, trail: ["eyeL": rig.lagOffset(3), "eyeR": rig.lagOffset(5), "mouth": rig.lagOffset(8)])
-                    .position(x: rig.tip.x + 72 * 0.02, y: rig.tip.y + 72 * 0.19)
-            }
+            let _ = rig.advance(tl.date, still: false, calm: reduceMotion)
+            Canvas { ctx, _ in ctx.stroke(rig.path(), with: .color(Self.orange), style: StrokeStyle(lineWidth: 26, lineCap: .butt, lineJoin: .round)) }
         }
     }
 }

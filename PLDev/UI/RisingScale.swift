@@ -448,7 +448,7 @@ struct RisingPanel: View {
 struct BuddyHead: View {
     let model: BuddyModel
     var side: CGFloat = 144
-    var trail: [String: CGSize] = [:]   // per-piece lag when he rides the Practice rope
+    var hole = true                     // he comes up out of a scribbled hole (his markup 11-26); Home's stands on the bar
     private static let art = Bundle.main.url(forResource: "buddy-head", withExtension: "png").flatMap { UIImage(contentsOfFile: $0.path) }
 
     var body: some View {
@@ -456,11 +456,33 @@ struct BuddyHead: View {
             if let art = Self.art { Image(uiImage: art).resizable().scaledToFit().accessibilityHidden(true) }
             // the big face he ticked (11-25), anchored at his green dot (0.47, 0.36 of the head): face 0.66 of the head wide.
             // pinned = it stays on that spot; every expression and move still plays on it
-            BuddyView(model: model, trail: trail, pinned: true)
+            BuddyView(model: model, pinned: true)
                 .frame(width: side * 0.717, height: side * 0.864)   // BuddyView fits 440 x 530 into 0.92 of this box
                 .position(x: side * 0.48, y: side * 0.31)
+            // over the stem's flat foot, which spans 0.55 to 0.91 of the drawing
+            if hole { BuddyHole().frame(width: side * 0.66, height: side * 0.24).position(x: side * 0.73, y: side * 0.97) }
         }
         .frame(width: side, height: side)
+        .padding(.bottom, hole ? side * 0.09 : 0)
+    }
+}
+
+/// A dark scribbled hole, loop over loop. The same every time: the wobble comes from the loop's number, not chance.
+struct BuddyHole: View {
+    var body: some View {
+        Canvas { ctx, size in
+            let ink = GraphicsContext.Shading.color(Color(red: 0.03, green: 0.02, blue: 0.06))
+            let base = CGRect(origin: .zero, size: size).insetBy(dx: size.width * 0.08, dy: size.height * 0.14)
+            ctx.fill(Path(ellipseIn: base), with: ink)
+            for i in 0..<14 {
+                let k = Double(i)
+                let loop = base.offsetBy(dx: sin(k * 2.3) * size.width * 0.045, dy: cos(k * 1.7) * size.height * 0.08)
+                    .insetBy(dx: sin(k * 3.1) * size.width * 0.03, dy: cos(k * 2.9) * size.height * 0.05)
+                ctx.stroke(Path(ellipseIn: loop), with: ink, lineWidth: max(1.5, size.height * 0.09))
+            }
+        }
+        .allowsHitTesting(false)
+        .accessibilityHidden(true)
     }
 }
 
@@ -480,7 +502,7 @@ struct RisingBuddy: View {
                         .padding(12)
                         .plGlass(in: RoundedRectangle(cornerRadius: PLRadius.card, style: .continuous))
                         .padding(.bottom, 44)
-                    BuddyHead(model: buddy, side: rising.current.map { RisingStep.of($0.band).side } ?? 144)
+                    BuddyHead(model: buddy, side: rising.current.map { RisingStep.of($0.band).side } ?? 144, hole: false)
                 }
                 .padding(.horizontal, PLSpace.margin)   // no gap under him: his stem stands on the bar
                 .transition(reduce ? .opacity : .move(edge: .trailing).combined(with: .opacity))

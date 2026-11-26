@@ -280,7 +280,6 @@ struct BuddyGlass {
 /// His face, moved by the rig's numbers (ArtRig.eye + ArtFace's mouth and pupils), in the box it is given.
 struct BuddyView: View {
     let model: BuddyModel
-    var trail: [String: CGSize] = [:]   // per-piece lag on his rope (the ragdoll squish); empty everywhere else
     var pinned = false                  // on his rope: no whole-face drift, so the face never leaves the rope's tip (his note 11-15)
     var lesson = false                  // in a lesson he wears ChatGPT's glossy 3D mouth (his ruling 11-15)
     @State private var centre = CGPoint.zero   // his centre on screen (global), so his eyes know where the finger is
@@ -363,7 +362,7 @@ struct BuddyView: View {
                     .frame(width: e.width, height: e.height, alignment: .topLeading)
                     .scaleEffect(x: Self.cl(1 + r("eye\(s)_sx"), 0.6, 1.08), y: Self.cl(1 + r("eye\(s)_sy"), 0.5, 1.08) * keep, anchor: .center)
                     .rotationEffect(.degrees(r("eye\(s)_rot") + Self.cl(r("eye\(s)_lidU_ang"), -35, 35) * dir * 0.4))
-                    .offset(x: e.minX + r("eye\(s)_x") * e.width + (trail["eye" + s]?.width ?? 0), y: e.minY + r("eye\(s)_y") * e.width + lidShift + (trail["eye" + s]?.height ?? 0))
+                    .offset(x: e.minX + r("eye\(s)_x") * e.width, y: e.minY + r("eye\(s)_y") * e.width + lidShift)
                 }
             }
             if let m = rect("mouth"), let img = mf ?? a.pieces["mouth"] {
@@ -381,7 +380,7 @@ struct BuddyView: View {
                 let fy: CGFloat = mf == nil ? 0 : (m.height - fh) / 2
                 BuddyGlassPiece(glass: img).frame(width: fw, height: fh, alignment: .topLeading)
                     .scaleEffect(x: msx, y: msy, anchor: .center)   // centre, so the frown turns his mouth over in place
-                    .offset(x: m.minX + r("mouth_x") * eyeW + (trail["mouth"]?.width ?? 0), y: m.minY + fy + r("mouth_y") * eyeW - r("mouth_curve") * 6 * k + (trail["mouth"]?.height ?? 0))
+                    .offset(x: m.minX + r("mouth_x") * eyeW, y: m.minY + fy + r("mouth_y") * eyeW - r("mouth_curve") * 6 * k)
             }
           }
         }
