@@ -638,11 +638,15 @@ struct PerformancePage: View {
         }
     }
 
-    /// Reads the board rows. Lines: "pulled <date>", "link <url>", then "YOURS|text" or "CALL|text". A failed read keeps the last one.
     private func loadBoard() async {
+        if let b = await Self.readBoard(model) { board = b }   // a failed read keeps the last one
+    }
+
+    /// Reads the board rows. Lines: "pulled <date>", "link <url>", then "YOURS|text" or "CALL|text". nil = not read. Needs you reads it too.
+    static func readBoard(_ model: AppModel) async -> BoardRows? {
         guard let http = model.http,
               let d = try? await http.send(RequestPlan(origin: "cron", path: "api/widget/note", query: ["t": "board"])),
-              let t = try? JSONDecoder().decode(BoardTail.self, from: d), !t.text.isEmpty else { return }
+              let t = try? JSONDecoder().decode(BoardTail.self, from: d), !t.text.isEmpty else { return nil }
         var pulled = "", link: URL?, rows: [(call: Bool, text: String)] = []
         for line in t.text.split(separator: "\n") {
             if line.hasPrefix("pulled ") { pulled = String(line.dropFirst(7)) }
@@ -650,7 +654,7 @@ struct PerformancePage: View {
             else if line.hasPrefix("YOURS|") { rows.append((false, String(line.dropFirst(6)))) }
             else if line.hasPrefix("CALL|") { rows.append((true, String(line.dropFirst(5)))) }
         }
-        board = BoardRows(pulled: pulled, link: link, rows: rows)
+        return BoardRows(pulled: pulled, link: link, rows: rows)
     }
 
     /// The scouts' suggestions, kept to what he can do: the on-device model checks each against the rules the house sends. A suggestion
