@@ -23,7 +23,51 @@ enum Band: Int, CaseIterable, Codable {
 }
 extension Band: Comparable { static func < (a: Band, b: Band) -> Bool { a.rawValue < b.rawValue } }
 
-struct CheckIn: Codable { let at: Date; let band: Band; var word: String?; var tiredBody = false; var did: Bool? = nil }
+struct CheckIn: Codable {
+    let at: Date; let band: Band; var word: String?; var tiredBody = false; var did: Bool? = nil
+    // the quick questions (his 11-26: "it may need more questions to understand how u feel"); optional, so older taps still read
+    var energy: Int? = nil, control: Int? = nil, about: String? = nil
+}
+
+/// One-tap questions after the curve, and what the answers change. Wording is a working draft, his to rewrite.
+enum RisingAsk {
+    static let questions: [(ask: String, options: [String])] = [
+        ("How much have you got in you?", ["Empty", "Some", "Plenty"]),
+        ("Is it in your hands?", ["No", "Partly", "Yes"]),
+        ("What is it about?", ["Work", "Money", "Body", "People", "My art", "No idea"])]
+
+    /// At the very bottom ask almost nothing.
+    static func count(_ band: Band) -> Int { band == .heavy ? 1 : questions.count }
+
+    /// One sentence from the answers, the strongest need first.
+    static func nudge(_ t: CheckIn) -> String? {
+        if t.energy == 0 { return "Empty tank. Water, then lie down ten minutes. Nothing else is owed." }
+        if t.control == 0 { return "That part is not yours to carry tonight. Pick one thing that is, however small." }
+        return switch t.about {
+        case "Work": "Finish one small thing before the next one starts."
+        case "Money": "Name the next money move, and the one thing in its way."
+        case "Body": "Move for two minutes, then drink water."
+        case "People": "Send one line of thanks to someone. It does not need the right words."
+        case "My art": "Make for ten minutes, then show one person."
+        case "No idea": "It needs no name. Take the one small move below."
+        default: nil
+        }
+    }
+
+    /// One small thing a day that makes a person good to be near. From Stuck up; the feed's `buddy.magnet` replaces the list.
+    static func magnet(_ date: Date = .now) -> String {
+        let own = ["Ask someone one follow-up question and listen to the answer.",
+                   "Tell one person something you appreciate about them.",
+                   "Walk in expecting to be liked. People usually like you more than you think.",
+                   "Say yes to one short talk you would normally skip.",
+                   "Finish one thing you said you would do.",
+                   "Show one piece of your work without explaining it away.",
+                   "Picture it done, then name the obstacle and your move."]
+        let list = ThemeFeed.list(ThemeFeed.feed?.buddy?["magnet"]) ?? own
+        let day = Calendar.current.ordinality(of: .day, in: .era, for: date.addingTimeInterval(-15 * 3600)) ?? 0
+        return list.isEmpty ? "" : list[day % list.count]
+    }
+}
 
 @MainActor @Observable final class RisingScale {
     static let shared = RisingScale()
@@ -62,7 +106,7 @@ struct CheckIn: Codable { let at: Date; let band: Band; var word: String?; var t
         load()
         guard loaded else { return }
         log = []; note = ""; save()
-        for k in ["last", "plan", "saidDay", "said", "turn", "undone", "log", "note"] { d.removeObject(forKey: "pldev.rising." + k) }
+        for k in ["last", "plan", "saidDay", "said", "turn", "undone", "log", "note", "drained"] { d.removeObject(forKey: "pldev.rising." + k) }
         showWords = false
         Task { await wearIfDue() }
     }
@@ -94,12 +138,20 @@ struct CheckIn: Codable { let at: Date; let band: Band; var word: String?; var t
         log.append(CheckIn(at: .now, band: band)); save()
         d.set(Self.shiftDay(.now) + "/\(band.rawValue)", forKey: "pldev.rising.last")
         d.removeObject(forKey: "pldev.rising.undone")
+        d.removeObject(forKey: "pldev.rising.drained")
         scheduleReminders()
-        Task { await wearIfDue() }
+        Task { if followsFeeling && !wearsDaily { await setDaily(true) } else { await wearIfDue() } }
     }
-    func refine(word: String? = nil, tiredBody: Bool? = nil) {
+    func refine(word: String? = nil, tiredBody: Bool? = nil, energy: Int? = nil, control: Int? = nil, about: String? = nil) {
         guard var last = current, !log.isEmpty else { return }
         if let word { last.word = word }
+        if let energy {
+            last.energy = energy
+            d.set(energy == 0, forKey: "pldev.rising.drained")   // an empty tank stills the whole app
+            Task { await wearIfDue() }
+        }
+        if let control { last.control = control }
+        if let about { last.about = about }
         if let tiredBody { last.tiredBody = tiredBody }
         log[log.count - 1] = last; save()
     }
@@ -107,6 +159,13 @@ struct CheckIn: Codable { let at: Date; let band: Band; var word: String?; var t
     func markDone() {
         guard current != nil, !log.isEmpty else { return }
         log[log.count - 1].did = true; save()
+        guard reminds else { return }
+        // ask again a little later: the second tap is what shows whether the move lifted him
+        let content = UNMutableNotificationContent()
+        content.title = "And now? Tap how you feel."
+        content.sound = .default
+        UNUserNotificationCenter.current().add(UNNotificationRequest(identifier: "rising-after", content: content,
+                                                                    trigger: UNTimeIntervalNotificationTrigger(timeInterval: 15 * 60, repeats: false)))
     }
 
     /// Three shift days in a row averaging Heavy.
@@ -187,14 +246,14 @@ struct CheckIn: Codable { let at: Date; let band: Band; var word: String?; var t
                               radius: step?.radius ?? [0.5, 1, 1.5][Int(f[2] * 3)], space: step?.space ?? 1,
                               tile: step?.tile ?? "squircle", look: "glass",
                               wall: step?.wall ?? ["curves", "code|aurora", "code|contour", "code|night"][Int(f[3] * 4)])
-        t.calm = step?.calm ?? false
+        t.calm = (step?.calm ?? false) || UserDefaults.standard.bool(forKey: "pldev.rising.drained")
         t.tint = 0.4
         return t
     }
 
     /// Applies the Daily theme only when its day or band changed, so his own tweaks are not stomped on every launch.
     func wearIfDue(force: Bool = false) async {
-        let stamp = Self.shiftDay(.now) + "/v2/" + (Self.lookBand().map { "\($0.rawValue)" } ?? "-")
+        let stamp = Self.shiftDay(.now) + "/v2/" + (Self.lookBand().map { "\($0.rawValue)" } ?? "-") + (d.bool(forKey: "pldev.rising.drained") ? "/still" : "")
         guard force || (wearsDaily && d.string(forKey: "pldev.rising.stamp") != stamp) else { return }
         d.set(stamp, forKey: "pldev.rising.stamp")
         _ = await Self.preset().apply()
@@ -370,6 +429,7 @@ struct RisingPanel: View {
     @State private var heavyDismissed = UserDefaults.standard.string(forKey: "pldev.rising.heavyShown")
     @State private var named = false
     @State private var confirmErase = false
+    @State private var asked = 0
 
     var body: some View {
         VStack(alignment: .leading, spacing: 0) {
@@ -382,6 +442,10 @@ struct RisingPanel: View {
                     }
                     menu
                 }
+                if asked < RisingAsk.count(tap.band) {
+                    question(RisingAsk.questions[asked], at: asked)
+                } else {
+                if let line = RisingAsk.nudge(tap) { Text(line).plFont(.callout).padding(.vertical, 6) }
                 RisingAction(band: tap.band).id(tap.at)
                 // at the very bottom ask almost nothing: the words wait until he wants them (research, 11-26)
                 if let word = tap.word {
@@ -396,6 +460,10 @@ struct RisingPanel: View {
                     Spacer()
                     Button("Done") { rising.showWords = false }.frame(minWidth: 44, minHeight: 44)
                 }
+                if tap.band >= .stuck {
+                    Text("Today's magnet move: " + RisingAsk.magnet()).plFont(.footnote).foregroundStyle(.secondary).padding(.top, 4)
+                }
+                }
                 if rising.heavyRun, heavyDismissed != RisingScale.shiftDay(.now) {
                     VStack(alignment: .leading, spacing: 4) {
                         Text("Three heavy nights in a row. A good night to reach out to someone you trust.").plFont(.callout)
@@ -408,12 +476,29 @@ struct RisingPanel: View {
             }
         }
         .padding(rising.showWords ? 14 : 0)
-        .onChange(of: rising.current?.at) { named = false }
+        .onChange(of: rising.current?.at) { named = false; asked = 0 }
         .confirmationDialog("Erase every check-in, note and plan on this phone?", isPresented: $confirmErase, titleVisibility: .visible) {
             Button("Erase", role: .destructive) { rising.erase() }
         }
         .background {
             if rising.showWords { Color.clear.plGlass(in: RoundedRectangle(cornerRadius: PLRadius.card, style: .continuous)) }
+        }
+    }
+
+    private func question(_ q: (ask: String, options: [String]), at i: Int) -> some View {
+        VStack(alignment: .leading, spacing: 0) {
+            Text(q.ask).plFont(.callout, emphasized: true).padding(.vertical, 6)
+            ForEach(Array(q.options.enumerated()), id: \.element) { n, option in
+                Button {
+                    switch i {
+                    case 0: rising.refine(energy: n)
+                    case 1: rising.refine(control: n)
+                    default: rising.refine(about: option)
+                    }
+                    asked += 1
+                } label: { Text(option).frame(maxWidth: .infinity, minHeight: 44, alignment: .leading).contentShape(Rectangle()) }
+            }
+            Button("Skip the questions") { asked = RisingAsk.questions.count }.plFont(.footnote).frame(minHeight: 44)
         }
     }
 
@@ -430,7 +515,7 @@ struct RisingPanel: View {
 
     private var menu: some View {
         Menu {
-            Toggle("Daily look", isOn: Binding(get: { rising.wearsDaily }, set: { on in Task { await rising.setDaily(on) } }))
+            Toggle("Daily look", isOn: Binding(get: { rising.wearsDaily }, set: { on in if !on { rising.followsFeeling = false }; Task { await rising.setDaily(on) } }))
             Toggle("Look follows my check-in", isOn: Binding(get: { rising.followsFeeling }, set: { rising.followsFeeling = $0 }))
             Toggle("Three reminders", isOn: Binding(get: { rising.reminds }, set: { rising.reminds = $0 }))
             Toggle("Buddy pops up", isOn: Binding(get: { rising.buddyOn }, set: { rising.buddyOn = $0 }))
