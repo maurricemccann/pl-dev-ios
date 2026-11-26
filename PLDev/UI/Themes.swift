@@ -81,7 +81,10 @@ struct PLThemePreset: Identifiable, Hashable {
     /// The themes as they ship, with the over-the-air file laid over them (ThemeFeed, his 11-24).
     static var all: [PLThemePreset] { ThemeFeed.merge(builtIn) + [RisingScale.preset()] }
 
-    static let builtIn: [PLThemePreset] = [
+    // two lists: one literal of 40 themes was too much for the compiler (S353)
+    static let builtIn: [PLThemePreset] = core + packs
+
+    private static let core: [PLThemePreset] = [
         .init(id: "home", title: "Your Home Screen", palette: "home-screen", face: "v1", text: "jost",
               note: "Your hand, frosted squircles, the curves as you drew them", dark: true,
               card: .frosted, radius: 1, space: 1, tile: "squircle", look: "glass", wall: "curves",
@@ -197,7 +200,9 @@ struct PLThemePreset: Identifiable, Hashable {
               note: "International style: white grid, black rules, one red, square everything", dark: false,
               card: .solid, radius: 0.01, space: 1, tile: "square", look: "flat", wall: "code|swiss",
               calm: true, tint: 0, through: 0, icons: "sf", fun: true),
+    ]
 
+    private static let packs: [PLThemePreset] = [
         // Packs: his 11-25 "Yes you can use them". Their walls say code| or sit in the public bucket.
         .init(id: "pack-see-through", title: "See Through", palette: "th-pack-see-through", face: "bundle:Inter-Regular", text: "bundle:Inter-Regular",
               note: "Glasklart, 2010: bare icons over your drawing, clear panels", dark: true,
@@ -514,6 +519,12 @@ struct CodeGround: View {
         case "pearl": ZStack {
             AngularGradient(colors: [ground, Color(hex: 0xf6dfe8), Color(hex: 0xdcefee), Color(hex: 0xf3ecd2), ground], center: .init(x: 0.7, y: 0.3))
             blob(.white.opacity(0.7), 0.25, 0.65) }
+        default: packGround
+        }
+    }
+
+    @ViewBuilder private var packGround: some View {
+        switch name {
         case "stitch": canvas { c, s in dots(&c, s, every: 5, color: .black.opacity(0.35)) }
         case "candy": ZStack { blob(Color(hex: 0xffc2dc), 0.15, 0.25); blob(Color(hex: 0xbfeee8), 0.9, 0.7) }
         case "sweep": LinearGradient(stops: [.init(color: .clear, location: 0.18), .init(color: .white.opacity(0.1), location: 0.28), .init(color: .clear, location: 0.4)],
@@ -585,6 +596,34 @@ struct CodeGround: View {
 
 // MARK: - The tile look
 
+/// The packs' tile looks, apart from TileLook so neither switch grows past what the compiler can take.
+private struct PackTileLook: View {
+    let look: String, shape: AnyShape, key: Color, accent: Color
+
+    var body: some View {
+        switch look {
+        case "leather":
+            shape.fill(LinearGradient(colors: [accent.mix(with: .white, by: 0.15), accent.mix(with: .black, by: 0.3)], startPoint: .topLeading, endPoint: .bottomTrailing))
+                .shadow(color: .black.opacity(0.45), radius: 4, y: 4)
+            shape.stroke(key, style: StrokeStyle(lineWidth: 1.2, dash: [4, 3])).padding(5)
+        case "wood":
+            shape.fill(LinearGradient(colors: [Color(hex: 0x9a6b35), Color(hex: 0x5c3a1c)], startPoint: .top, endPoint: .bottom)).shadow(color: .black.opacity(0.45), radius: 3, y: 4)
+            shape.stroke(key, lineWidth: 2)
+        case "gloss":
+            shape.fill(LinearGradient(stops: [.init(color: Color(hex: 0x4a515c), location: 0), .init(color: Color(hex: 0x23272e), location: 0.49),
+                                              .init(color: Color(hex: 0x0c0e11), location: 0.5), .init(color: Color(hex: 0x1b1f26), location: 1)], startPoint: .top, endPoint: .bottom))
+            shape.stroke(key, lineWidth: 1)
+        case "longshadow":
+            ForEach(1..<8, id: \.self) { i in shape.fill(Color(hex: 0x141c30)).offset(x: CGFloat(i), y: CGFloat(i)) }
+            shape.fill(key)
+        case "tinted":
+            shape.fill(Color(white: 0.12))
+        default:
+            Color.clear
+        }
+    }
+}
+
 /// What a theme draws over a tile's glass: the key, ring or frame that makes its Home Screen its own. Drawn in code (the Design
 /// Kit's rendered keys carry one app's name baked in, so they cannot sit under every app).
 struct TileLook: View {
@@ -650,24 +689,8 @@ struct TileLook: View {
                     .shadow(color: key.mix(with: .white, by: 0.6), radius: 4, x: -4, y: -4)
             case "flat":
                 shape.fill(key)
-            case "leather":
-                shape.fill(LinearGradient(colors: [accent.mix(with: .white, by: 0.15), accent.mix(with: .black, by: 0.3)], startPoint: .topLeading, endPoint: .bottomTrailing))
-                    .shadow(color: .black.opacity(0.45), radius: 4, y: 4)
-                shape.stroke(key, style: StrokeStyle(lineWidth: 1.2, dash: [4, 3])).padding(5)
-            case "wood":
-                shape.fill(LinearGradient(colors: [Color(hex: 0x9a6b35), Color(hex: 0x5c3a1c)], startPoint: .top, endPoint: .bottom)).shadow(color: .black.opacity(0.45), radius: 3, y: 4)
-                shape.stroke(key, lineWidth: 2)
-            case "gloss":
-                shape.fill(LinearGradient(stops: [.init(color: Color(hex: 0x4a515c), location: 0), .init(color: Color(hex: 0x23272e), location: 0.49),
-                                                  .init(color: Color(hex: 0x0c0e11), location: 0.5), .init(color: Color(hex: 0x1b1f26), location: 1)], startPoint: .top, endPoint: .bottom))
-                shape.stroke(key, lineWidth: 1)
-            case "longshadow":
-                ForEach(1..<8, id: \.self) { i in shape.fill(Color(hex: 0x141c30)).offset(x: CGFloat(i), y: CGFloat(i)) }
-                shape.fill(key)
-            case "tinted":
-                shape.fill(Color(white: 0.12))
             default:
-                Color.clear
+                PackTileLook(look: look, shape: shape, key: key, accent: accent)
             }
         }
         .frame(width: 64, height: 64)

@@ -206,14 +206,11 @@ struct PLSurface<S: Shape>: ViewModifier {
     }
 }
 
-/// A card's edge in its theme, with the values of North-Abyss/ui-themes (MIT, Licences.swift); CSS blur halves to a SwiftUI radius.
-private struct CardEdge: ViewModifier {
-    let on: Bool, look: String, theme: String, shape: AnyShape, key: Color, surface: Color
+private struct PackEdge: ViewModifier {
+    let theme: String, shape: AnyShape, key: Color, surface: Color
 
     func body(content: Content) -> some View {
-        if !on {
-            content
-        } else if theme == "pack-stitched" {   // stitching just inside the leather
+        if theme == "pack-stitched" {   // stitching just inside the leather
             content.overlay(shape.stroke(key.opacity(0.9), style: StrokeStyle(lineWidth: 1.2, dash: [5, 4])).padding(5).allowsHitTesting(false))
                 .background { shape.fill(surface).shadow(color: .black.opacity(0.4), radius: 5, y: 4) }
         } else if theme == "pack-386" {        // DOS double line
@@ -224,8 +221,21 @@ private struct CardEdge: ViewModifier {
                 .overlay(shape.stroke(key, lineWidth: 1.2).padding(4).allowsHitTesting(false))
         } else if theme == "pack-elite" {      // light caught on the top edge
             content.overlay(shape.stroke(LinearGradient(colors: [.white.opacity(0.6), .white.opacity(0.06)], startPoint: .top, endPoint: .center), lineWidth: 1).allowsHitTesting(false))
-        } else if theme.hasPrefix("pack-") {   // a pack's cards never borrow another look's edge
+        } else {
             content
+        }
+    }
+}
+
+/// A card's edge in its theme, with the values of North-Abyss/ui-themes (MIT, Licences.swift); CSS blur halves to a SwiftUI radius.
+private struct CardEdge: ViewModifier {
+    let on: Bool, look: String, theme: String, shape: AnyShape, key: Color, surface: Color
+
+    func body(content: Content) -> some View {
+        if !on {
+            content
+        } else if theme.hasPrefix("pack-") {   // a pack's cards never borrow another look's edge
+            content.modifier(PackEdge(theme: theme, shape: shape, key: key, surface: surface))
         } else if look == "brutal" {        // Neo-Brutalism: border 2.5px solid #000, shadow 4px 4px 0 #000
             content.background { shape.fill(Color.black).offset(x: 4, y: 4) }
                 .overlay(shape.stroke(Color.black, lineWidth: 2.5).allowsHitTesting(false))

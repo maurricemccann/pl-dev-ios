@@ -20,7 +20,7 @@ permissions:
 jobs:
   ios:
     runs-on: xcode-27
-    timeout-minutes: 30
+    timeout-minutes: 50
     env:
       APP: build/Release-iphoneos/PLDev.app
       EXTENSIONS: PLDevWidgets PLDevShare PLDevSafari
@@ -56,6 +56,7 @@ jobs:
             CODE_SIGNING_ALLOWED=NO \
             CODE_SIGNING_REQUIRED=NO \
             CODE_SIGN_IDENTITY="" \
+            OTHER_SWIFT_FLAGS='$(inherited) -Xfrontend -warn-long-function-bodies=500 -Xfrontend -warn-long-expression-type-checking=500' \
             build > xcodebuild.log 2>&1; then
             echo "===== BUILD FAILED: every error in the log, once each ====="
             grep -E "error:|warning: unre|BUILD FAILED" xcodebuild.log | awk '!seen[$0]++' | head -150
@@ -65,6 +66,8 @@ jobs:
           fi
           tail -n 5 xcodebuild.log
           echo "warnings: $(grep -c "warning:" xcodebuild.log || true)"
+          echo "== slowest to type-check"
+          grep -E 'took [0-9]+ms to type-check' xcodebuild.log | sed 's|.*/PLDev/||' | sort -u | awk '{ for (i=1;i<=NF;i++) if ($i ~ /^[0-9]+ms$/) print $i+0, $0 }' | sort -rn | head -25 || true
 
       - name: Keep the full build log
         if: always()
