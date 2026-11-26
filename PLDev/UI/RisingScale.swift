@@ -260,12 +260,13 @@ struct RisingAsk: View {
                     Button { dismiss() } label: { Image(systemName: "xmark").frame(width: 44, height: 44) }
                         .accessibilityLabel("Close")
                 }
-                HStack(alignment: .top, spacing: PLSpace.gap) {
-                    CurveScale(band: answered?.band) { band in rising.tap(band); answered = rising.current }
-                    if let tap = answered { words(tap) }
+                if let tap = answered {
+                    words(tap)
+                    after(tap)
+                } else {
+                    CurveScale(band: rising.current?.band) { band in rising.tap(band); answered = rising.current }
+                        .frame(maxWidth: .infinity)
                 }
-                .frame(maxWidth: .infinity)
-                if let tap = answered { after(tap) }
                 if rising.heavyRun, heavyDismissed != RisingScale.shiftDay(.now) {
                     VStack(alignment: .leading, spacing: 4) {
                         Text("Three heavy nights in a row. A good night to reach out to someone you trust.").plFont(.callout)
@@ -299,6 +300,8 @@ struct RisingAsk: View {
                     rising.refine(tiredBody: rising.current?.tiredBody != true)
                 }.frame(minHeight: 44)
                 Spacer()
+                Button("Change") { answered = nil }.frame(minHeight: 44)
+                Spacer()
                 Button("Done") { dismiss() }.frame(minWidth: 44, minHeight: 44)
             }
             if tap.band >= .rising {
@@ -320,20 +323,36 @@ struct RisingAsk: View {
     }
 }
 
-/// The seven bands up a curve, Heavy at the foot and Lit at the top: drag along it (or tap a name) and let go to log it.
+/// The seven bands up one line of his: the long S through the first piece of the curve library (curve-comp-01, the first
+/// path, his ruling 11-25 "use the best one"). Heavy at the foot, Lit at the top. Drag near the line and let go.
 struct CurveScale: View {
     let band: Band?
     let pick: (Band) -> Void
     @State private var dragging: Band?
-    private static let height: CGFloat = 308, step: CGFloat = 44, foot: CGFloat = 18, bulge: CGFloat = 52
-
-    /// Stop i of 0...6 sits mid-row; x follows a quadratic curve, y stays linear so a finger's height is the band.
-    private static func point(_ t: CGFloat) -> CGPoint {
-        CGPoint(x: foot + 2 * (1 - t) * t * bulge, y: height - step / 2 - t * (height - step))
+    private static let size = CGSize(width: 340, height: 462), box = CGRect(x: 52, y: 30, width: 231, height: 400)
+    /// His line as 61 points, equal steps along it, foot first, in its own 0...1 box. Band i sits at point i * 10.
+    private static let line: [(CGFloat, CGFloat)] = [
+        (1.0, 1.0), (0.9957, 0.9753), (0.9906, 0.9507), (0.9849, 0.9262), (0.9786, 0.9017), (0.9716, 0.8772),
+        (0.9641, 0.8528), (0.9558, 0.8285), (0.9468, 0.8043), (0.937, 0.7801), (0.9263, 0.7561), (0.9146, 0.7323),
+        (0.9017, 0.7087), (0.8875, 0.6853), (0.8717, 0.6622), (0.854, 0.6397), (0.8339, 0.6178), (0.8108, 0.5969),
+        (0.784, 0.5776), (0.7523, 0.561), (0.7152, 0.5487), (0.6737, 0.5431), (0.6311, 0.545), (0.5908, 0.5532),
+        (0.5517, 0.5634), (0.511, 0.5712), (0.469, 0.5758), (0.4262, 0.576), (0.3845, 0.5706), (0.3468, 0.559),
+        (0.3159, 0.542), (0.2933, 0.521), (0.2782, 0.4978), (0.2701, 0.4735), (0.2678, 0.4488), (0.2708, 0.4241),
+        (0.2786, 0.3997), (0.2911, 0.376), (0.3079, 0.3532), (0.3293, 0.3318), (0.3549, 0.312), (0.3838, 0.2936),
+        (0.4109, 0.2744), (0.4343, 0.2537), (0.4521, 0.2312), (0.462, 0.2071), (0.4617, 0.1824), (0.4509, 0.1585),
+        (0.4322, 0.1363), (0.4077, 0.1159), (0.3798, 0.0971), (0.3495, 0.0796), (0.3176, 0.0631), (0.2843, 0.0475),
+        (0.248, 0.0343), (0.2093, 0.0238), (0.1688, 0.0156), (0.1274, 0.0094), (0.0853, 0.0048), (0.0427, 0.0018),
+        (0.0, 0.0)
+    ]
+    private static func point(_ i: Int) -> CGPoint {
+        CGPoint(x: box.minX + line[i].0 * box.width, y: box.minY + line[i].1 * box.height)
     }
-    private static func band(at y: CGFloat) -> Band {
-        let i = ((height - step / 2 - y) / (height - step) * 6).rounded()
-        return Band(rawValue: Int(min(6, max(0, i)))) ?? .stuck
+    /// The finger takes the band of the nearest spot on the line.
+    private static func band(at p: CGPoint) -> Band {
+        let i = line.indices.min { a, b in
+            hypot(point(a).x - p.x, point(a).y - p.y) < hypot(point(b).x - p.x, point(b).y - p.y)
+        } ?? 30
+        return Band(rawValue: Int((Double(i) / 10).rounded())) ?? .stuck
     }
 
     var body: some View {
@@ -341,28 +360,24 @@ struct CurveScale: View {
         ZStack(alignment: .topLeading) {
             Path { p in
                 p.move(to: Self.point(0))
-                for i in 1...48 { p.addLine(to: Self.point(CGFloat(i) / 48)) }
+                for i in 1..<Self.line.count { p.addLine(to: Self.point(i)) }
             }
-            .stroke(Color.primary.opacity(0.35), style: StrokeStyle(lineWidth: 6, lineCap: .round))
+            .stroke(Color.primary.opacity(0.9), style: StrokeStyle(lineWidth: 10, lineCap: .round, lineJoin: .round))
             ForEach(Band.allCases, id: \.self) { b in
-                let at = Self.point(CGFloat(b.rawValue) / 6)
-                Text(b.title).fontWeight(shown == b ? .bold : .regular).opacity(shown == b ? 1 : 0.65)
-                    .frame(width: 84, height: Self.step, alignment: .leading)
-                    .offset(x: at.x + 20, y: at.y - Self.step / 2)
-            }
-            if let shown {
-                let at = Self.point(CGFloat(shown.rawValue) / 6)
-                Circle().fill(PLTone.accent).frame(width: 30, height: 30)
-                    .overlay(Circle().stroke(Color.primary.opacity(0.9), lineWidth: 2))
-                    .offset(x: at.x - 15, y: at.y - 15)
-                    .animation(.snappy, value: shown)
+                let at = Self.point(b.rawValue * 10), left = b == .stuck || b == .lit   // the two names the line would cross
+                Circle().fill(PLTone.accent).frame(width: shown == b ? 32 : 14, height: shown == b ? 32 : 14)
+                    .position(at)
+                Text(b.title).fontWeight(shown == b ? .bold : .regular).opacity(shown == b ? 1 : 0.7)
+                    .lineLimit(1).minimumScaleFactor(0.7)
+                    .frame(width: left ? 60 : 80, height: 44, alignment: left ? .trailing : .leading)
+                    .position(x: at.x + (left ? -50 : 62), y: at.y)
             }
         }
-        .frame(width: 150, height: Self.height, alignment: .topLeading)
+        .frame(width: Self.size.width, height: Self.size.height)
         .contentShape(Rectangle())
-        .highPriorityGesture(DragGesture(minimumDistance: 0)   // the slider keeps the finger; the page does not scroll under it
-            .onChanged { dragging = Self.band(at: $0.location.y) }
-            .onEnded { v in dragging = nil; pick(Self.band(at: v.location.y)) })
+        .highPriorityGesture(DragGesture(minimumDistance: 0)   // the slider keeps the finger; the sheet does not scroll under it
+            .onChanged { dragging = Self.band(at: $0.location) }
+            .onEnded { v in dragging = nil; pick(Self.band(at: v.location)) })
         .sensoryFeedback(PLHaptic.select, trigger: dragging)
         .accessibilityElement()
         .accessibilityLabel("How you feel")
