@@ -542,6 +542,7 @@ struct CodeGround: View {
         case "ruled": canvas { c, s in
             for y in stride(from: 27.0, to: s.height, by: 28) { c.fill(Path(CGRect(x: 0, y: y, width: s.width, height: 1)), with: .color(ink.opacity(0.14))) } }
         case "soft": ZStack { blob(Color(hex: 0xd8c7ad), 0.8, 0.15); blob(Color(hex: 0xc6cdba), 0.1, 0.8) }
+        case "rise-lamp", "rise-water", "rise-path", "rise-table", "rise-window": RiseGround(name: name, key: key, accent: accent)
         default: Color.clear   // "flat" and "dos": the palette's ground alone
         }
     }

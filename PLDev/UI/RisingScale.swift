@@ -3,7 +3,7 @@ import SwiftUI
 import UserNotifications
 
 // The Rising Scale (his ask 11-25, S353·7b1e; spec: "PL DEV RISING SCALE" in the vault): one tap says how he feels, the look
-// leads one band up, Buddy says one line, and a new look is drawn from each date. Everything he taps stays on this phone.
+// follows what he tapped and aims one step up (RisingSteps.swift), and a new look is drawn from each date. Everything he taps stays on this phone.
 
 /// Seven bands over the 22 steps, lowest first.
 enum Band: Int, CaseIterable, Codable {
@@ -18,15 +18,12 @@ enum Band: Int, CaseIterable, Codable {
          ["belief", "expectation", "enthusiasm", "happiness"],
          ["joy", "appreciation", "love", "passion", "empowered"]][rawValue]
     }
-    /// OKLCH hue and chroma of the look.
-    var hue: Double { [250, 20, 215, 175, 145, 85, 78][rawValue] }
-    var chroma: Double { [0.02, 0.05, 0.05, 0.06, 0.07, 0.10, 0.13][rawValue] }
+    var key: String { title.lowercased() }
     var oneUp: Band { Band(rawValue: rawValue + 1) ?? .lit }
-    var group: String { self <= .low ? "low" : self <= .steady ? "middle" : "high" }
 }
 extension Band: Comparable { static func < (a: Band, b: Band) -> Bool { a.rawValue < b.rawValue } }
 
-struct CheckIn: Codable { let at: Date; let band: Band; var word: String?; var tiredBody = false }
+struct CheckIn: Codable { let at: Date; let band: Band; var word: String?; var tiredBody = false; var did: Bool? = nil }
 
 @MainActor @Observable final class RisingScale {
     static let shared = RisingScale()
@@ -72,6 +69,11 @@ struct CheckIn: Codable { let at: Date; let band: Band; var word: String?; var t
         log[log.count - 1] = last; save()
     }
 
+    func markDone() {
+        guard current != nil, !log.isEmpty else { return }
+        log[log.count - 1].did = true; save()
+    }
+
     /// Three shift days in a row averaging Heavy.
     var heavyRun: Bool {
         let days = Dictionary(grouping: log, by: { Self.shiftDay($0.at) })
@@ -97,13 +99,13 @@ struct CheckIn: Codable { let at: Date; let band: Band; var word: String?; var t
     /// "Undo": today's date look without the feeling, until the next tap.
     func undoFeeling() { d.set(true, forKey: "pldev.rising.undone"); Task { await wearIfDue() } }
 
-    /// The band the look wears: one up from his tap, never more.
+    /// The answer the look follows: what he tapped (its step aims one up). nil = today's date look alone.
     nonisolated static func lookBand() -> Band? {
         let d = UserDefaults.standard
         guard d.object(forKey: "pldev.rising.follow") as? Bool ?? true, !d.bool(forKey: "pldev.rising.undone"),
               let last = d.string(forKey: "pldev.rising.last")?.split(separator: "/"), last.count == 2, String(last[0]) == shiftDay(.now)
         else { return nil }
-        return Int(last[1]).flatMap(Band.init(rawValue:))?.oneUp
+        return Int(last[1]).flatMap(Band.init(rawValue:))
     }
 
     private nonisolated static func seed() -> [Double] {
@@ -132,30 +134,32 @@ struct CheckIn: Codable { let at: Date; let band: Band; var word: String?; var t
         }
     }
 
-    /// Today's colours. Lightness is fixed per role (dark ground, light text), so every hue reads.
+    /// Today's colours. The ground stays dark and the text light, so every hue reads.
     nonisolated static func palette() -> HousePalette {
-        let f = seed(), band = lookBand()
-        let h = band.map { $0.hue + (f[0] - 0.5) * 24 } ?? f[0] * 360
-        let c = band?.chroma ?? 0.05 + f[1] * 0.07
-        return HousePalette(name: "th-daily", ground: hex(0.19, c * 0.5, h), text: hex(0.94, 0.015, h),
-                            key: hex(0.70, c * 1.2, h + (band == .steady ? -60 : 0)), accent: hex(0.82, c, h + 40),
-                            surface: hex(0.25, c * 0.5, h))
+        let f = seed(), step = lookBand().map(RisingStep.of)
+        let h = step?.hue.map { $0 + (f[0] - 0.5) * 12 } ?? f[0] * 360
+        let c = step?.chroma ?? 0.05 + f[1] * 0.07
+        let light = step?.light ?? 0.19
+        return HousePalette(name: "th-daily", ground: hex(light, c * 0.5, h), text: hex(0.94, 0.015, h),
+                            key: hex(0.70, c * 1.2, h), accent: hex(0.82, c, h + (step?.turn ?? 40)),
+                            surface: hex(light + 0.06, c * 0.5, h))
     }
 
     nonisolated static func preset() -> PLThemePreset {
-        let f = seed(), band = lookBand()
+        let f = seed(), step = lookBand().map(RisingStep.of)
         var t = PLThemePreset(id: id, title: "Daily", palette: "th-daily", face: "v1", text: "jost",
                               note: "A new look each day; your check-in leads it one step up", dark: true, card: .frosted,
-                              radius: [0.5, 1, 1.5][Int(f[2] * 3)], space: 1, tile: "squircle", look: "glass",
-                              wall: ["curves", "code|aurora", "code|contour", "code|night"][Int(f[3] * 4)])
-        t.calm = band.map { $0 <= .low } ?? false
+                              radius: step?.radius ?? [0.5, 1, 1.5][Int(f[2] * 3)], space: step?.space ?? 1,
+                              tile: step?.tile ?? "squircle", look: "glass",
+                              wall: step?.wall ?? ["curves", "code|aurora", "code|contour", "code|night"][Int(f[3] * 4)])
+        t.calm = step?.calm ?? false
         t.tint = 0.4
         return t
     }
 
     /// Applies the Daily theme only when its day or band changed, so his own tweaks are not stomped on every launch.
     func wearIfDue(force: Bool = false) async {
-        let stamp = Self.shiftDay(.now) + "/" + (Self.lookBand().map { "\($0.rawValue)" } ?? "-")
+        let stamp = Self.shiftDay(.now) + "/v2/" + (Self.lookBand().map { "\($0.rawValue)" } ?? "-")
         guard force || (wearsDaily && d.string(forKey: "pldev.rising.stamp") != stamp) else { return }
         d.set(stamp, forKey: "pldev.rising.stamp")
         _ = await Self.preset().apply()
@@ -203,22 +207,7 @@ struct CheckIn: Codable { let at: Date; let band: Band; var word: String?; var t
 
     // MARK: Buddy's lines
 
-    /// Working drafts from the research, for him to rewrite; the feed's `buddy` block replaces them without a reinstall.
-    private static let drafts: [String: [String]] = [
-        "low": ["Heavy is allowed here. Name it, breathe once, and the practice will wait for you.",
-                "Abundance does not ask you to feel good first. It starts with one honest breath.",
-                "Even on a hard night, something small is working for you. One thing is enough to notice.",
-                "Prosperity is built from small steady moves. Tonight, one small move counts as a full step."],
-        "middle": ["Boredom is a quiet doorway. Picture one room of the life you want, down to the light.",
-                   "Luxury is attention. Your coffee, your music, your gloves: choose each one on purpose tonight.",
-                   "The practice is simple: notice what is already good, then let it grow a little.",
-                   "Hope is a real step up. Write one line about the version of you who has plenty."],
-        "high": ["This feeling is the practice working. Stay with it a moment and let it settle in.",
-                 "Abundance follows appreciation. Name three things you enjoy right now, and mean each one.",
-                 "Luxury living is a way of standing in the world. You are standing in it now.",
-                 "Good nights add up. Keep this one as a marker for the next."],
-        "body": ["Water, food or sleep first. The rest can wait."],
-    ]
+    private static let body = ["Water, food or sleep first. The rest can wait."]
 
     var buddyOn: Bool {
         get { d.object(forKey: "pldev.rising.buddy") as? Bool ?? true }
@@ -232,8 +221,8 @@ struct CheckIn: Codable { let at: Date; let band: Band; var word: String?; var t
         let today = Self.shiftDay(.now)
         var said = d.string(forKey: "pldev.rising.saidDay") == today ? d.integer(forKey: "pldev.rising.said") : 0
         guard said < 3 else { return nil }
-        let key = tap.tiredBody ? "body" : tap.band.group
-        let pool = ThemeFeed.list(ThemeFeed.feed?.buddy?[key]) ?? Self.drafts[key] ?? []
+        let key = tap.tiredBody ? "body" : tap.band.key
+        let pool = ThemeFeed.list(ThemeFeed.feed?.buddy?[key]) ?? (tap.tiredBody ? Self.body : RisingStep.of(tap.band).lines)
         guard !pool.isEmpty else { return nil }
         let turn = d.integer(forKey: "pldev.rising.turn")
         var line = pool[turn % pool.count]
@@ -339,35 +328,37 @@ struct RisingCurve: View {
     }
 }
 
-/// The words for where he is, stacked; up only after he answers the curve, and gone on a word or Done.
+/// The one action for his answer, then the words for where he is, stacked; up only after he answers the curve. The words leave
+/// on a pick; Done closes the panel.
 struct RisingPanel: View {
     @State private var rising = RisingScale.shared
     @State private var heavyDismissed = UserDefaults.standard.string(forKey: "pldev.rising.heavyShown")
+    @State private var named = false
 
     var body: some View {
         VStack(alignment: .leading, spacing: 0) {
             if rising.showWords, let tap = rising.current {
                 HStack {
-                    Text("Look: \(tap.band.oneUp.title)").plFont(.subhead, emphasized: true)
+                    Text(RisingStep.of(tap.band).title).plFont(.subhead, emphasized: true)
                     Spacer()
                     if rising.wearsDaily, RisingScale.lookBand() != nil {
                         Button("Undo") { rising.undoFeeling() }.frame(minWidth: 44, minHeight: 44)
                     }
                     menu
                 }
-                ForEach(tap.band.words, id: \.self) { w in
-                    Button { rising.refine(word: w); rising.showWords = false } label: {
-                        Text(w).fontWeight(tap.word == w ? .bold : .regular)
-                            .frame(maxWidth: .infinity, minHeight: 44, alignment: .leading).contentShape(Rectangle())
-                    }
+                RisingAction(band: tap.band).id(tap.at)
+                // at the very bottom ask almost nothing: the words wait until he wants them (research, 11-26)
+                if let word = tap.word {
+                    Text(word).plFont(.callout, emphasized: true).frame(minHeight: 44)
+                } else if tap.band == .heavy && !named {
+                    Button("Name it") { named = true }.frame(minHeight: 44)
+                } else {
+                    words(tap)
                 }
                 HStack {
                     Button(tap.tiredBody ? "Tired body: on" : "Tired body") { rising.refine(tiredBody: !tap.tiredBody) }.frame(minHeight: 44)
                     Spacer()
                     Button("Done") { rising.showWords = false }.frame(minWidth: 44, minHeight: 44)
-                }
-                if tap.band >= .rising {
-                    TextField("A note for your low self", text: $rising.note, axis: .vertical).textFieldStyle(.roundedBorder)
                 }
                 if rising.heavyRun, heavyDismissed != RisingScale.shiftDay(.now) {
                     VStack(alignment: .leading, spacing: 4) {
@@ -381,8 +372,20 @@ struct RisingPanel: View {
             }
         }
         .padding(rising.showWords ? 14 : 0)
+        .onChange(of: rising.current?.at) { named = false }
         .background {
             if rising.showWords { Color.clear.plGlass(in: RoundedRectangle(cornerRadius: PLRadius.card, style: .continuous)) }
+        }
+    }
+
+    private func words(_ tap: CheckIn) -> some View {
+        VStack(alignment: .leading, spacing: 0) {
+            ForEach(tap.band.words, id: \.self) { w in
+                Button { rising.refine(word: w) } label: {
+                    Text(w)
+                        .frame(maxWidth: .infinity, minHeight: 44, alignment: .leading).contentShape(Rectangle())
+                }
+            }
         }
     }
 
@@ -436,7 +439,7 @@ struct RisingBuddy: View {
                         .padding(12)
                         .plGlass(in: RoundedRectangle(cornerRadius: PLRadius.card, style: .continuous))
                         .padding(.bottom, 44)
-                    BuddyHead(model: buddy)
+                    BuddyHead(model: buddy, side: rising.current.map { RisingStep.of($0.band).side } ?? 144)
                 }
                 .padding(.horizontal, PLSpace.margin)   // no gap under him: his stem stands on the bar
                 .transition(reduce ? .opacity : .move(edge: .trailing).combined(with: .opacity))
@@ -453,8 +456,8 @@ struct RisingBuddy: View {
             try? await Task.sleep(for: .seconds(3))
             guard !Task.isCancelled, let said = rising.buddyLine() else { return }
             buddy.react(.open)
-            // and the face that matches where he is: calm when low, happy in the middle, excited when high
-            if let band = rising.current?.band { buddy.playState(band <= .low ? "calm" : band <= .steady ? "happy" : "excited") }
+            // and the step's face: calm when low, happy in the middle, excited when high
+            if let band = rising.current?.band { buddy.playState(RisingStep.of(band).face) }
             buddy.say(said)
             withAnimation { line = said }
             AccessibilityNotification.Announcement(said).post()
