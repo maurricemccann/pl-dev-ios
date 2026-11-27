@@ -107,6 +107,8 @@ enum OriginReach: Equatable {
         if !order.contains("gate") { order.insert("gate", at: min(2, order.count)) }   // the Gate (his ask 11-26)
         // Composer is back in the registry, off Home by default; the feed's home.hidden turns it on (config over the air, S353·7b1e)
         if !order.contains("composer") { order.append("composer") }
+        if !order.contains("prog") { order.insert("prog", at: order.firstIndex(of: "school").map { $0 + 1 } ?? order.count) }   // PL Prog shows without a new config (his 11-27 screenshot)
+        if !order.contains("binder") { order.insert("binder", at: order.firstIndex(of: "prog").map { $0 + 1 } ?? order.count) }   // PL Binder (his ask 11-27)
         var listed = config
         listed.sections = order   // the readiness check counts the added Calendar as listed (his 11-24 screenshot: "does not list this section")
         for id in ThemeFeed.homeOrder(order) where seen.insert(id).inserted {

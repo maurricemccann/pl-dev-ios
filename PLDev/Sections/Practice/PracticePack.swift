@@ -153,6 +153,27 @@ struct PackOpening: View {
     }
 }
 
+/// A finished lesson in any app earns a pack (his ask 11-27: "no matter what app it is"). Set the key and the pack opens; a key
+/// already opened on this phone does not pop again (the Worker keeps one pack per key for good, so nothing is lost).
+struct PackKey: Identifiable, Equatable { let id: String }
+
+enum PackEarn {
+    private static let seen = "packs.opened"
+    /// The key to open, or nil when this phone already opened it.
+    static func fresh(_ key: String) -> PackKey? {
+        var s = Set(UserDefaults.standard.stringArray(forKey: seen) ?? [])
+        guard s.insert(key).inserted else { return nil }
+        UserDefaults.standard.set(Array(s), forKey: seen)
+        return PackKey(id: key)
+    }
+}
+
+extension View {
+    func earnsPack(_ key: Binding<PackKey?>) -> some View {
+        background { Color.clear.fullScreenCover(item: key) { k in PackScreen(model: AppModel.shared, key: k.id) { key.wrappedValue = nil } } }
+    }
+}
+
 /// A gold unit's pack, opened from the Path. The close button, and Done, both leave.
 struct PackScreen: View {
     let model: AppModel

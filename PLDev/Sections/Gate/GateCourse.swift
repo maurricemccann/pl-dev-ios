@@ -612,6 +612,7 @@ struct GateSittingView: View {
     @State private var seconds = 0
     @State private var player: AVAudioPlayer?
     @State private var problem: String?
+    @State private var cardPack: PackKey?   // a saved sitting earns a card pack, once per lesson (his ask 11-27)
 
     private var beat: Double { lesson.level == 20 ? 2 : 4 }   // 4 Hz: the beat the 1982 Army trip report gives for the Gateway week
 
@@ -635,6 +636,7 @@ struct GateSittingView: View {
         .task(id: stage == .live) { if stage == .live { await run() } }
         .onAppear { minutes = lesson.minutes }
         .onDisappear { stop() }
+        .earnsPack($cardPack)
     }
 
     @ViewBuilder private var setup: some View {
@@ -783,5 +785,6 @@ struct GateSittingView: View {
             if tooMuch { c.held[lesson.id] = 0 }
         }
         stage = .done
+        cardPack = PackEarn.fresh("gate-\(lesson.id.lowercased())")
     }
 }

@@ -8,7 +8,8 @@ struct PracticeEarned: Decodable, Sendable, Identifiable, Equatable {
     let date: String
     let piece: String
     let earned_at: String
-    var id: String { date }
+    let from: String?   // the pack key that dealt it, or "evening" (PL Binder groups by it)
+    var id: String { earned_at + piece }   // several cards can share a day now
 }
 
 struct PracticeCollection: Decodable, Sendable {

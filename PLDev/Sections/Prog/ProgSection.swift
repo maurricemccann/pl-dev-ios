@@ -100,6 +100,7 @@ struct ProgLessonView: View {
     @Bindable var state: ProgModel
     let lesson: ProgLesson
     @State private var copied = 0
+    @State private var cardPack: PackKey?   // a lesson first marked done earns a card pack (his ask 11-27)
 
     var body: some View {
         ScrollView {
@@ -136,7 +137,10 @@ struct ProgLessonView: View {
                         .background(Color.black.opacity(0.35), in: RoundedRectangle(cornerRadius: 10))
                     }
                 }
-                Button { state.toggle(lesson.id) } label: {
+                Button {
+                    state.toggle(lesson.id)
+                    if state.done.contains(lesson.id) { cardPack = PackEarn.fresh("prog-\(lesson.id)") }
+                } label: {
                     Label(state.done.contains(lesson.id) ? "Done" : "Mark done",
                           systemImage: state.done.contains(lesson.id) ? "checkmark.circle.fill" : "circle")
                         .frame(maxWidth: .infinity, minHeight: 44)
@@ -147,6 +151,7 @@ struct ProgLessonView: View {
         }
         .plScreenTitle(lesson.title)
         .sensoryFeedback(PLHaptic.select, trigger: copied)
+        .earnsPack($cardPack)
     }
 
     private func copyRow(_ cmd: String) -> some View {

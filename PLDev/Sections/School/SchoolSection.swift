@@ -250,6 +250,7 @@ struct TrackView: View {
     @State private var packLoading = false
     @State private var packNote: String?
     @State private var share: CodeArtShareItem?
+    @State private var cardPack: PackKey?   // the beat's last step earns a card pack (his ask 11-27)
 
     var body: some View {
         TabView(selection: $page) {
@@ -288,7 +289,11 @@ struct TrackView: View {
         }
         .onAppear { page = state.page(track); UIApplication.shared.isIdleTimerDisabled = true; PLOrientation.allow(.allButUpsideDown) }
         .onDisappear { state.player.stop(); UIApplication.shared.isIdleTimerDisabled = false; PLOrientation.allow(.portrait) }   // turns like a Paint canvas, upright again on the way out
-        .onChange(of: page) { _, p in state.setPage(track, p); state.player.stop() }
+        .onChange(of: page) { _, p in
+            state.setPage(track, p); state.player.stop()
+            if p == track.slides.count, p > 0 { cardPack = PackEarn.fresh("prod-\(track.id)") }
+        }
+        .earnsPack($cardPack)
         .sensoryFeedback(PLHaptic.select, trigger: page)
     }
 
