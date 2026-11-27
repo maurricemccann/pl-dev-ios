@@ -172,6 +172,14 @@ struct RisingAction: View {
     }
 
     @ViewBuilder private var offer: some View {
+        // the note he left on a good night comes back on the hard ones (his "I don't get what I do here", 11-26: it was saved, never shown)
+        if band <= .low, !rising.note.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty {
+            VStack(alignment: .leading, spacing: 4) {
+                Text("From you, on a good night").plFont(.caption).foregroundStyle(.secondary)
+                Text(rising.note).plFont(.callout)
+            }
+            .frame(maxWidth: .infinity, alignment: .leading)
+        }
         switch band {
         case .heavy:
             if breathing { BreathRing(rounds: 3, done: { finish("Breathe with me") }, stop: { breathing = false }) } else {
@@ -234,15 +242,15 @@ struct RisingAction: View {
                 } else { moreMoves }
             }
         case .rising:
-            button("Made it and showed one person", "paintbrush") { finish("Made it and showed one person") }
-            TextField("A note for your low self", text: $rising.note, axis: .vertical).textFieldStyle(.roundedBorder)
+            button("Done: I made something and showed one person", "paintbrush") { finish("Made it and showed one person") }
+            noteField
             nightScene
             if more {
                 practice("Savour 20 seconds", "sparkles", RisingAction.savour, "Savoured")
                 if rising.aweDue { practice("Awe minute", "sun.horizon", RisingAction.awe, "Saw it") }
             } else { moreMoves }
         case .lit:
-            TextField("A note for a heavy night", text: $rising.note, axis: .vertical).textFieldStyle(.roundedBorder)
+            noteField
             button("Keep it", "bookmark") { finish("Keep it") }
             button("Vision board", "square.grid.2x2") { board = true }
                 .sheet(isPresented: $board) { RisingVisionBoard { board = false; finish("Vision board") } }
@@ -348,6 +356,16 @@ struct RisingAction: View {
     }
 
     /// The move that has lifted him most shows at once; the rest fade in. Nothing changes place.
+    /// A line to himself on a good night; it shows on his next Heavy, Hot or Low tap.
+    private var noteField: some View {
+        VStack(alignment: .leading, spacing: 6) {
+            Text("Write a line to yourself for a hard night. It shows up when you next tap Heavy, Hot or Low.").plFont(.footnote).foregroundStyle(.secondary)
+            TextField("Like: you got through the last one", text: $rising.note, axis: .vertical)
+                .textFieldStyle(.plain).padding(12).frame(minHeight: 44)
+                .background(RoundedRectangle(cornerRadius: 12, style: .continuous).fill(.primary.opacity(0.08)))
+        }
+    }
+
     private func button(_ title: String, _ symbol: String, _ act: @escaping () -> Void) -> some View {
         Button(action: act) { Label(title, systemImage: symbol).frame(maxWidth: .infinity, minHeight: 44, alignment: .leading) }
             .buttonStyle(.bordered)
