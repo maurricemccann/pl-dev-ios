@@ -23,6 +23,8 @@ jobs:
         run: swift test --package-path PLDevCore
       - name: Check the project file
         run: python3 scripts/check_pbxproj.py
+      - name: Check the Daily look contrast (3,650 days)
+        run: python3 scripts/check_contrast.py
       - name: Check the toolkit data shape
         run: python3 scripts/check_toolkit.py
       - name: Hygiene scan

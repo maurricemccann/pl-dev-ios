@@ -40,6 +40,8 @@ jobs:
 
       - name: Check the project file
         run: python3 scripts/check_pbxproj.py
+      - name: Check the Daily look contrast (3,650 days)
+        run: python3 scripts/check_contrast.py
 
       # Building the PLDev target also builds the three extensions and embeds them.
       # On failure the errors are printed here, so `gh run view --log-failed` shows them without the noise.

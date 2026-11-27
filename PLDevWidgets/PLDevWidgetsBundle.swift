@@ -45,12 +45,14 @@ struct PLDevLiveActivities: WidgetBundle {
         RehearsalLiveActivity()
         BuddyLiveActivity()
         SittingLiveActivity()
+        RisingLiveActivity()
     }
 }
 
 /// The second group: the first is at the builder's ten (11-13).
 struct PLDevMoreWidgets: WidgetBundle {
     var body: some Widget {
+        RisingWidget()
         AppleActionsWidget()   // ComposerWidget dropped with the Composer section (his ruling 11-14)
     }
 }
