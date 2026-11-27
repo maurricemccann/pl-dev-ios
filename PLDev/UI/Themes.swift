@@ -372,6 +372,8 @@ struct ThemeGround: View {
     @AppStorage("pldev.styleWall") private var wall = ""
     @AppStorage("pldev.tileStrength") private var strength = 0.5
     @AppStorage("pldev.styleRepeat") private var repeatSize = 300.0
+    @AppStorage("pldev.themeId") private var themeId = ""
+    @Environment(\.accessibilityReduceMotion) private var still
     @State private var tile: UIImage?
 
     init(spec: String? = nil, quiet: Bool = true) {
@@ -403,7 +405,7 @@ struct ThemeGround: View {
                             }
                         default:
                             if let s = Wallpaper.stencil {
-                                Image(uiImage: s).renderingMode(.template).resizable(resizingMode: .tile).foregroundStyle(ink)
+                                CurvesTile(stencil: s, ink: ink, drift: !still && themeId == RisingScale.id)
                                     .opacity(strength <= 0 ? 0 : min(1, 0.15 + strength * 1.7))
                             }
                         }
@@ -417,6 +419,28 @@ struct ThemeGround: View {
         .ignoresSafeArea()
         .accessibilityHidden(true)
         .task(id: kind + arg + String(repeatSize)) { if kind == "kit" { tile = await KitPattern.load(arg, size: repeatSize) } }
+    }
+}
+
+/// His curve tile. While the Daily look is worn it drifts slowly upward (his ruling 11-26: "Your curves, alive"): slow and cool
+/// low on the scale, quicker toward Lit, at the theme's pace. One repeat spare on every side, so the drift never shows an edge.
+private struct CurvesTile: View {
+    let stencil: UIImage, ink: Color, drift: Bool
+
+    var body: some View {
+        if drift {
+            TimelineView(.animation(minimumInterval: 1.0 / 20)) { ctx in tiled(ctx.date.timeIntervalSinceReferenceDate) }
+        } else {
+            tiled(0)
+        }
+    }
+
+    private func tiled(_ t: Double) -> some View {
+        let r = max(1, stencil.size.width)   // one repeat, in points
+        let speed = 6 / max(0.5, PLStyle.pace)   // points a second
+        return Image(uiImage: stencil).renderingMode(.template).resizable(resizingMode: .tile).foregroundStyle(ink)
+            .padding(-r)
+            .offset(x: sin(t / 23) * r * 0.08, y: -(t * speed).truncatingRemainder(dividingBy: r))
     }
 }
 
@@ -545,7 +569,6 @@ struct CodeGround: View {
         case "ruled": canvas { c, s in
             for y in stride(from: 27.0, to: s.height, by: 28) { c.fill(Path(CGRect(x: 0, y: y, width: s.width, height: 1)), with: .color(ink.opacity(0.14))) } }
         case "soft": ZStack { blob(Color(hex: 0xd8c7ad), 0.8, 0.15); blob(Color(hex: 0xc6cdba), 0.1, 0.8) }
-        case "rise-lamp", "rise-water", "rise-path", "rise-table", "rise-window": RiseGround(name: name, key: key, accent: accent)
         default: Color.clear   // "flat" and "dos": the palette's ground alone
         }
     }

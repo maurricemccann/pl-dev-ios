@@ -39,3 +39,20 @@ static float pr_caustic(float2 uv, float t) {
     col += float3(1.0, 0.0, -1.0) * edge * 1.4 * (0.6 + 0.6 * breath);
     return half4(half3(clamp(col, 0.0, 1.0)), 1.0h);
 }
+
+// The card pack's molten burn, in 2D, for the check-in reveal (his note 11-26: it must look like the pack, not squares): his
+// glyph field with a smooth noise alpha, eaten by a rising threshold, a glowing gold edge where it burns, a charred rim behind
+// it and a few sparks in the edge. progress 0 = whole, 1 = gone.
+[[ stitchable ]] half4 moltenBurn(float2 position, half4 color, float progress, float seed, half4 edge) {
+    float n = pr_fbm(position / 140.0 + seed);
+    float t = progress * 1.3 - 0.15;
+    if (n < t) { return half4(0.0h); }
+    float d = n - t;
+    if (d < 0.035) {
+        float spark = step(0.97, pr_hash(floor(position / 3.0) + floor(progress * 24.0)));
+        half3 hot = mix(edge.rgb, half3(1.0h, 0.96h, 0.85h), half(1.0 - d / 0.035));
+        return half4(mix(hot, half3(1.0h), half(spark)), 1.0h);
+    }
+    if (d < 0.08) { return half4(color.rgb * half(0.45 + 0.55 * (d - 0.035) / 0.045), color.a); }
+    return color;
+}

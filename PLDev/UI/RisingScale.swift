@@ -425,7 +425,7 @@ enum RisingAsk {
         let c = step?.chroma ?? 0.05 + f[1] * 0.07
         let light = step?.light ?? 0.19
         return HousePalette(name: "th-daily", ground: hex(light, c * 0.5, h), text: hex(0.94, 0.015, h),
-                            key: hex(0.70, c * 1.2, h), accent: hex(0.82, step?.pop ?? c, h + (step?.turn ?? 40)),
+                            key: hex(0.78, c * 1.2, h), accent: hex(0.82, step?.pop ?? c, h + (step?.turn ?? 40)),
                             surface: hex(light + 0.06, c * 0.5, h))
     }
 
@@ -451,7 +451,7 @@ enum RisingAsk {
 
     /// Applies the Daily theme only when its day or band changed, so his own tweaks are not stomped on every launch.
     func wearIfDue(force: Bool = false) async {
-        let stamp = Self.shiftDay(.now) + "/v3/" + (Self.lookBand().map { "\($0.rawValue)" } ?? "-") + (d.bool(forKey: "pldev.rising.drained") ? "/still" : "")
+        let stamp = Self.shiftDay(.now) + "/v4/" + (Self.lookBand().map { "\($0.rawValue)" } ?? "-") + (d.bool(forKey: "pldev.rising.drained") ? "/still" : "")
         guard force || (wearsDaily && d.string(forKey: "pldev.rising.stamp") != stamp) else { return }
         d.set(stamp, forKey: "pldev.rising.stamp")
         _ = await Self.preset().apply()
@@ -654,56 +654,32 @@ struct RisingPanel: View {
         VStack(alignment: .leading, spacing: 0) {
             if rising.showWords, let tap = rising.current {
                 HStack {
-                    Text(RisingStep.of(tap.band).title).plFont(.subhead, emphasized: true)
-                    Text("Hawkins: " + RisingStep.of(tap.band).hawkins).plFont(.caption2).foregroundStyle(.secondary)
-                        .accessibilityLabel("Hawkins's number for this band: " + RisingStep.of(tap.band).hawkins + ". His muscle-testing number, not a measurement.")
+                    Text(RisingStep.of(tap.band).title).plFont(.subhead, emphasized: true).lineLimit(1)
                     Spacer()
                     if rising.wearsDaily, RisingScale.lookBand() != nil {
                         Button("Undo") { rising.undoFeeling() }.frame(minWidth: 44, minHeight: 44)
                     }
                     menu
                 }
+                Text("Hawkins: " + RisingStep.of(tap.band).hawkins).plFont(.caption2).foregroundStyle(.secondary).lineLimit(1)
+                    .accessibilityLabel("Hawkins's number for this band: " + RisingStep.of(tap.band).hawkins + ". His muscle-testing number, not a measurement.")
                 if asked < RisingAsk.count(tap.band) {
                     question(RisingAsk.questions[asked], at: asked)
                 } else {
                 if let line = RisingAsk.nudge(tap) { Text(line).plFont(.callout).padding(.vertical, 6) }
-                if tap.band >= .rising {
-                    visionStrip
-                    Text("Today's magnet move: " + RisingAsk.magnet()).plFont(.footnote).foregroundStyle(.secondary).padding(.vertical, 4)
-                }
-                if tap.band >= .stuck, let lift = rising.liftLine { Text("What lifts you: " + lift).plFont(.footnote).foregroundStyle(.secondary).padding(.bottom, 4) }
                 RisingAction(band: tap.band).id(tap.at)
-                if tap.band < .stuck, let lift = rising.liftLine { Text("What lifts you: " + lift).plFont(.footnote).foregroundStyle(.secondary).padding(.top, 4) }
-                // at the very bottom ask almost nothing: the words wait until he wants them (research, 11-26)
-                if let word = tap.word {
-                    Text(word).plFont(.callout, emphasized: true).frame(minHeight: 44)
-                } else if tap.band <= .low && !named {
-                    Button("Name it") { named = true }.frame(minHeight: 44)
-                } else {
-                    words(tap)
-                }
+                if let lift = rising.liftLine { Text("What lifts you: " + lift).plFont(.footnote).foregroundStyle(.secondary).padding(.top, 4) }
                 HStack {
                     Button(tap.tiredBody ? "Tired body: on" : "Tired body") { rising.refine(tiredBody: !tap.tiredBody) }.frame(minHeight: 44)
                     Button("Body map") { showBody = true }.frame(minHeight: 44).padding(.leading, 12)
                     Spacer()
                     Button("Done") { rising.showWords = false }.frame(minWidth: 44, minHeight: 44)
                 }
-                tags(tap)
-                Text("Nights you showed up: \(rising.nightsShown)").plFont(.caption2).foregroundStyle(.secondary).padding(.top, 4)
-                if tap.band > .heavy, let fresh = rising.freshStart {
-                    Text("Fresh start, " + fresh + ". One intention for this week, if you want one.").plFont(.footnote).padding(.top, 4)
-                    TextField("This week I will", text: $intention, axis: .vertical).textFieldStyle(.roundedBorder)
-                        .onSubmit { UserDefaults.standard.set(intention, forKey: "pldev.rising.intention") }
-                        .onChange(of: intention) { UserDefaults.standard.set(intention, forKey: "pldev.rising.intention") }
-                }
-                if rising.wearsDaily { rateLook }
-                if tap.band >= .stuck {
-                    if tap.band == .steady { Text("Today's magnet move: " + RisingAsk.magnet()).plFont(.footnote).foregroundStyle(.secondary).padding(.top, 4) }
-                    if tap.band >= .steady {
-                        Text("What you keep in mind changes what you notice, how hard you work and how you treat people.")
-                            .plFont(.footnote).foregroundStyle(.secondary).padding(.top, 4)
-                    }
-                    weekBars
+                // everything else waits behind one More (his screenshots 11-26: the panel was a wall); one question at a time
+                DisclosureGroup(isExpanded: $more) {
+                    VStack(alignment: .leading, spacing: 6) { extra(tap) }.padding(.top, 6)
+                } label: {
+                    Text("More").plFont(.footnote).frame(minHeight: 44)
                 }
                 }
                 if rising.heavyRun, heavyDismissed != RisingScale.shiftDay(.now) {
@@ -718,7 +694,7 @@ struct RisingPanel: View {
             }
         }
         .padding(rising.showWords ? 14 : 0)
-        .onChange(of: rising.current?.at) { named = false; asked = 0 }
+        .onChange(of: rising.current?.at) { named = false; asked = 0; more = false }
         .sheet(isPresented: $showBody) { GateBodyMap() }
         .confirmationDialog("Erase every check-in, note and plan on this phone?", isPresented: $confirmErase, titleVisibility: .visible) {
             Button("Erase", role: .destructive) { rising.erase() }
@@ -726,6 +702,46 @@ struct RisingPanel: View {
         .background {
             if rising.showWords { Color.clear.plGlass(in: RoundedRectangle(cornerRadius: PLRadius.card, style: .continuous)) }
         }
+    }
+
+    @State private var more = false
+
+    /// What sits behind More: the words, the vision strip, the day's tags, a fresh start, today's look, the magnet, the teaching
+    /// line, the count that only grows, and the bars.
+    @ViewBuilder private func extra(_ tap: CheckIn) -> some View {
+        // at the very bottom ask almost nothing: the words wait until he wants them (research, 11-26)
+        if let word = tap.word {
+            Text(word).plFont(.callout, emphasized: true).frame(minHeight: 44)
+        } else if tap.band <= .low && !named {
+            Button("Name it") { named = true }.frame(minHeight: 44)
+        } else {
+            words(tap)
+        }
+        if tap.band >= .rising { visionStrip }
+        if tap.band >= .steady { Text("Today's magnet move: " + RisingAsk.magnet()).plFont(.footnote).foregroundStyle(.secondary) }
+        if tap.band >= .steady {
+            Text("What you keep in mind changes what you notice, how hard you work and how you treat people.").plFont(.footnote).foregroundStyle(.secondary)
+        }
+        tags(tap)
+        if tap.band > .heavy, let fresh = rising.freshStart {
+            Text("Fresh start, " + fresh + ". One intention for this week, if you want one.").plFont(.footnote)
+            TextField("This week I will", text: $intention, axis: .vertical).textFieldStyle(.roundedBorder)
+                .onSubmit { UserDefaults.standard.set(intention, forKey: "pldev.rising.intention") }
+                .onChange(of: intention) { UserDefaults.standard.set(intention, forKey: "pldev.rising.intention") }
+        }
+        if rising.wearsDaily { rateLook }
+        Text("Nights you showed up: \(rising.nightsShown)").plFont(.caption2).foregroundStyle(.secondary)
+        if tap.band >= .stuck { weekBars }
+    }
+
+    /// A chip that never breaks a word.
+    private func chip(_ title: String, _ symbol: String? = nil, on: Bool, _ act: @escaping () -> Void) -> some View {
+        Button(action: act) {
+            Group { if let symbol { Label(title, systemImage: symbol) } else { Text(title) } }
+                .plFont(.footnote).lineLimit(1).minimumScaleFactor(0.8).fixedSize(horizontal: true, vertical: false)
+        }
+        .buttonStyle(.bordered).tint(on ? PLTone.accent : .secondary).frame(minHeight: 44)
+        .accessibilityAddTraits(on ? .isSelected : [])
     }
 
     /// Up high, his chosen pieces as a vision strip (the Gate's count), each to be paired with one obstacle and one move.
@@ -753,38 +769,40 @@ struct RisingPanel: View {
             HStack(spacing: 6) {
                 ForEach(RisingAsk.tags, id: \.self) { t in
                     let on = tap.tags?.contains(t) == true
-                    Button { rising.toggle(tag: t) } label: { Label(t, systemImage: on ? "checkmark" : "plus").plFont(.footnote) }
-                        .buttonStyle(.bordered).tint(on ? PLTone.accent : .secondary).frame(minHeight: 44)
-                        .accessibilityAddTraits(on ? .isSelected : [])
+                    chip(t, on ? "checkmark" : "plus", on: on) { rising.toggle(tag: t) }
                 }
             }
         }
+        .contentMargins(.horizontal, 14, for: .scrollContent)
+        .mask(LinearGradient(stops: [.init(color: .clear, location: 0), .init(color: .black, location: 0.06),
+                                     .init(color: .black, location: 0.94), .init(color: .clear, location: 1)],
+                             startPoint: .leading, endPoint: .trailing))
     }
 
     /// Three taps on today's look; the Daily generator keeps the wallpapers that score well.
     private var rateLook: some View {
-        HStack(spacing: 6) {
+        VStack(alignment: .leading, spacing: 4) {
             Text("Today's look").plFont(.footnote).foregroundStyle(.secondary)
-            ForEach(Array(RisingScale.lookAsks.enumerated()), id: \.offset) { i, ask in
-                let on = rising.lookRated.contains(i)
-                Button(ask) { rising.rateLook(i) }.plFont(.footnote).buttonStyle(.bordered).tint(on ? PLTone.accent : .secondary)
-                    .frame(minHeight: 44).accessibilityAddTraits(on ? .isSelected : [])
+            CongregationWrapLayout(spacing: 6) {
+                ForEach(Array(RisingScale.lookAsks.enumerated()), id: \.offset) { i, ask in
+                    chip(ask, on: rising.lookRated.contains(i)) { rising.rateLook(i) }
+                }
             }
         }
     }
 
     @State private var month = false
 
-    /// Seven days (or thirty) as bars: height is the step, so it reads without the colour. The missed count sits beside the
-    /// average, because bad nights are the ones that go untapped.
+    /// Seven days (or thirty) as bars: height is the step, so it reads without the colour. How many check-ins of how many shows
+    /// only in the Month view (the diagnostic one), in plain words, never as "missed" (the ship test: progress only adds up).
     private var weekBars: some View {
         let days = rising.days(month ? 30 : 7)
         let stepped = days.compactMap(\.step)
-        let missed = days.reduce(0) { $0 + max(0, 3 - $1.taps) }
+        let tapped = days.reduce(0) { $0 + min(3, $1.taps) }
         let average = stepped.isEmpty ? "No taps" : "Average " + (Band(rawValue: Int((stepped.reduce(0, +) / Double(stepped.count)).rounded()))?.title ?? "")
         return VStack(alignment: .leading, spacing: 4) {
             HStack {
-                Text(average + ", \(missed) of \(days.count * 3) check-ins missed").plFont(.caption2).foregroundStyle(.secondary)
+                Text(average + (month ? ", \(tapped) check-ins of \(days.count * 3)" : "")).plFont(.caption2).foregroundStyle(.secondary)
                 Spacer()
                 Button(month ? "Week" : "Month") { month.toggle() }.plFont(.footnote).frame(minWidth: 44, minHeight: 44)
             }
@@ -823,14 +841,11 @@ struct RisingPanel: View {
     }
 
     private func words(_ tap: CheckIn) -> some View {
-        VStack(alignment: .leading, spacing: 0) {
-            let top = rising.topWord(tap.band)
+        let top = rising.topWord(tap.band)
+        return CongregationWrapLayout(spacing: 6) {
             ForEach(tap.band.words, id: \.self) { w in
-                Button { rising.refine(word: w) } label: {
-                    Text(w)
-                        .frame(maxWidth: .infinity, minHeight: 44, alignment: .leading).contentShape(Rectangle())
-                }
-                .modifier(RisingLate(late: top.map { $0 != w } ?? false))   // his usual word first, the rest fade in; nothing moves
+                chip(w, on: false) { rising.refine(word: w) }
+                    .modifier(RisingLate(late: top.map { $0 != w } ?? false))   // his usual word first, the rest fade in; nothing moves
             }
         }
     }
@@ -854,8 +869,9 @@ struct RisingPanel: View {
     }
 }
 
-/// The reveal after a check-in: the pack's glyph field over the whole app, burnt away in patches (BurnMask) over 1.4 seconds once
-/// the new look is in place. Reduce Motion skips it. Never blocks a tap.
+/// The reveal after a check-in: the pack's glyph field over the whole app, burnt away like the pack's cards (the moltenBurn shader:
+/// smooth noise, a glowing gold edge, sparks) over 1.4 seconds once the new look is in place. Reduce Motion skips it. Never
+/// blocks a tap.
 struct LookReveal: View {
     @State private var rising = RisingScale.shared
     @Environment(\.accessibilityReduceMotion) private var reduce
@@ -866,7 +882,7 @@ struct LookReveal: View {
                 TimelineView(.animation) { ctx in
                     let p = rising.revealAt.map { min(1, ctx.date.timeIntervalSince($0) / 1.4) } ?? 0
                     GlyphField(strength: 0.6, tint: Color(hex: rising.revealTint) ?? Candle.gold)
-                        .mask(BurnMask(progress: p, seed: 2.3))
+                        .colorEffect(ShaderLibrary.moltenBurn(.float(p), .float(2.3), .color(Color(red: 1, green: 0.78, blue: 0.36))))
                         .onChange(of: p >= 1) { _, done in if done { rising.revealing = false } }
                 }
                 .transition(.opacity)
@@ -972,6 +988,8 @@ struct BuddyHead: View {
 
     var body: some View {
         ZStack {
+            // the hole first, so he stands in front of it (his note 11-26), over the stem's flat foot (0.55 to 0.91 of the drawing)
+            if hole { BuddyHole().frame(width: side * 0.66, height: side * 0.24).position(x: side * 0.73, y: side * 0.97) }
             // his colour is today's step on the curve (his note 11-26: "he shifts like the emotional scale curve")
             if let art = Self.art {
                 if let band = RisingScale.shared.current?.band, let lines = Self.lines {
@@ -986,8 +1004,6 @@ struct BuddyHead: View {
             BuddyView(model: model, pinned: true)
                 .frame(width: side * 0.717, height: side * 0.864)   // BuddyView fits 440 x 530 into 0.92 of this box
                 .position(x: side * 0.48, y: side * 0.31)
-            // over the stem's flat foot, which spans 0.55 to 0.91 of the drawing
-            if hole { BuddyHole().frame(width: side * 0.66, height: side * 0.24).position(x: side * 0.73, y: side * 0.97) }
         }
         .frame(width: side, height: side)
         .padding(.bottom, hole ? side * 0.09 : 0)
@@ -1052,7 +1068,7 @@ struct RisingBuddy: View {
             withAnimation { line = said }
             AccessibilityNotification.Announcement(said).post()
             // up while his mouth moves, then time to read it again (his note 11-25: it left too quick)
-            try? await Task.sleep(for: .seconds(Double(BuddyModel.mouthTrack(said).count) * 0.07 + 12))
+            try? await Task.sleep(for: .seconds(Double(BuddyModel.mouthTrack(said).count) * BuddyModel.slot + 12))
             guard !Task.isCancelled else { return }
             withAnimation { line = nil }
         }

@@ -7,6 +7,7 @@ with the app instead of copying it. hex() (OKLCH to sRGB) is the one part re-don
 check fails if it changes until this file is updated to match.
 
 Text on ground and on surface: 4.5:1. Accent on ground and surface: 4.5:1 (it is used for words). Key: 3:1 (controls and icons).
+Button text on the bordered button's fill (the app tint, which is the key, laid over the surface at BUTTON_FILL): 4.5:1.
 Exits 1 on any miss, or if a formula has a shape this reader does not know.
 """
 import datetime, hashlib, json, math, re, sys
@@ -173,16 +174,25 @@ def palette(day, step):
     return {r: hexcolor(*[eval(a, env) for a in args]) for r, args in roles.items()}
 
 
+BUTTON_FILL = 0.22   # shortcut: SwiftUI's .bordered fill is the tint at roughly this alpha in dark mode; measure on device if it changes
+
+
+def with_button(p):
+    p = dict(p)
+    p["button"] = [round(s * (1 - BUTTON_FILL) + k * BUTTON_FILL) for s, k in zip(p["surface"], p["key"])]
+    return p
+
+
 assert abs(ratio([255] * 3, [0] * 3) - 21) < 1e-9 and hexcolor(1, 0, 0) == [255] * 3   # the maths itself
 
 NEEDS = [("text", "ground", 4.5), ("text", "surface", 4.5), ("accent", "ground", 4.5), ("accent", "surface", 4.5),
-         ("key", "ground", 3.0), ("key", "surface", 3.0)]
+         ("key", "ground", 3.0), ("key", "surface", 3.0), ("key", "button", 4.5)]
 start = datetime.date(2026, 11, 1)
 misses, worst = [], {}
 for n in range(3650):
     day = (start + datetime.timedelta(days=n)).isoformat()
     for band, step in [("none", None)] + list(bands.items()):
-        p = palette(day, step)
+        p = with_button(palette(day, step))
         for fg, bg, need in NEEDS:
             r = ratio(p[fg], p[bg])
             k = (band, fg, bg)

@@ -130,8 +130,8 @@ final class BuddyRig: @unchecked Sendable {
     }
 
     // Silent lip sync (his ask 11-25: "make Buddy lip sync without a audio"): a line's letters become a mouth track, one slot
-    // per 70 ms, played through his own mouth drawings.
-    private static let slot = 0.07
+    // per 110 ms (his note 11-26: 70 ms was too quick), played through his own mouth drawings.
+    static let slot = 0.11
     private var saidAt = Date.distantPast
     @ObservationIgnored private var track: [Double] = []
 
