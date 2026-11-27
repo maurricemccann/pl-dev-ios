@@ -150,7 +150,7 @@ enum RisingAsk {
         let reveals = followsFeeling || wearsDaily
         if reveals { revealTint = Self.stepHex(from: Self.lookBand(), to: band); revealAt = nil; revealing = true }
         ring(band)
-        log.append(CheckIn(at: .now, band: band)); save()
+        log.append(CheckIn(at: .now, band: band)); save(); RisingShare.tapped(band)   // the widget and the shift Live Activity
         d.set(Self.shiftDay(.now) + "/\(band.rawValue)", forKey: "pldev.rising.last")
         d.removeObject(forKey: "pldev.rising.undone")
         d.removeObject(forKey: "pldev.rising.drained")
