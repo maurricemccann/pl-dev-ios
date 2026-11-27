@@ -137,14 +137,24 @@ enum RisingAsk {
         return (try? data.write(to: Self.file, options: [.atomic, .completeFileProtection])) != nil
     }
 
+    /// The new look is revealed like a pack card (his ask 11-26): the glyph field covers the app the moment he answers, the look
+    /// changes underneath, then the field burns away. `revealAt` is when the burn starts (nil while the look is still applying).
+    var revealing = false
+    var revealAt: Date?
+
     func tap(_ band: Band) {
         load()
+        let reveals = followsFeeling || wearsDaily
+        if reveals { revealAt = nil; revealing = true }
         log.append(CheckIn(at: .now, band: band)); save()
         d.set(Self.shiftDay(.now) + "/\(band.rawValue)", forKey: "pldev.rising.last")
         d.removeObject(forKey: "pldev.rising.undone")
         d.removeObject(forKey: "pldev.rising.drained")
         scheduleReminders()
-        Task { if followsFeeling && !wearsDaily { await setDaily(true) } else { await wearIfDue() } }
+        Task {
+            if followsFeeling && !wearsDaily { await setDaily(true) } else { await wearIfDue() }
+            if reveals { revealAt = .now }
+        }
     }
     func refine(word: String? = nil, tiredBody: Bool? = nil, energy: Int? = nil, control: Int? = nil, about: String? = nil) {
         guard var last = current, !log.isEmpty else { return }
@@ -785,6 +795,37 @@ struct RisingPanel: View {
 
 /// Dark grounds are not enough before his daytime sleep: brightness is what moves the body clock (Duet job 71, section 1), so
 /// the whole app dims about 30% from 4 AM until 3 PM Pacific. A toggle in the check-in menu turns it off.
+/// The reveal after a check-in: the pack's glyph field over the whole app, burnt away in patches (BurnMask) over 1.4 seconds once
+/// the new look is in place. Reduce Motion skips it. Never blocks a tap.
+struct LookReveal: View {
+    @State private var rising = RisingScale.shared
+    @Environment(\.accessibilityReduceMotion) private var reduce
+
+    var body: some View {
+        ZStack {
+            if rising.revealing && !reduce {
+                TimelineView(.animation) { ctx in
+                    let p = rising.revealAt.map { min(1, ctx.date.timeIntervalSince($0) / 1.4) } ?? 0
+                    GlyphField(strength: 0.6)
+                        .mask(BurnMask(progress: p, seed: 2.3))
+                        .onChange(of: p >= 1) { _, done in if done { rising.revealing = false } }
+                }
+                .transition(.opacity)
+            }
+        }
+        .ignoresSafeArea()
+        .allowsHitTesting(false)
+        .accessibilityHidden(true)
+        .sensoryFeedback(PLHaptic.success, trigger: rising.revealAt)
+        .onChange(of: rising.revealAt) { if reduce { rising.revealing = false } }
+        .task(id: rising.revealing) {   // never left covering: if the look has not landed in 4 seconds, burn anyway
+            guard rising.revealing else { return }
+            try? await Task.sleep(for: .seconds(4))
+            if rising.revealing && rising.revealAt == nil { rising.revealAt = .now }
+        }
+    }
+}
+
 struct NightDim: View {
     @AppStorage("pldev.rising.dim") private var on = true
     private static let la: Calendar = {
