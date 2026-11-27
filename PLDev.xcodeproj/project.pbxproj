@@ -7,6 +7,10 @@
 	objects = {
 
 /* Begin PBXBuildFile section */
+		D1000000000000000000A011 /* NIOSSH in Frameworks */ = {isa = PBXBuildFile; productRef = D1000000000000000000A021 /* NIOSSH */; };
+		D1000000000000000000A012 /* NIOCore in Frameworks */ = {isa = PBXBuildFile; productRef = D1000000000000000000A022 /* NIOCore */; };
+		D1000000000000000000A013 /* NIOPosix in Frameworks */ = {isa = PBXBuildFile; productRef = D1000000000000000000A023 /* NIOPosix */; };
+		D1000000000000000000A014 /* SwiftTerm in Frameworks */ = {isa = PBXBuildFile; productRef = D1000000000000000000A024 /* SwiftTerm */; };
 		D10000000000000000000040 /* PLDevWidgets.appex in Embed Foundation Extensions */ = {isa = PBXBuildFile; fileRef = D10000000000000000000031 /* PLDevWidgets.appex */; settings = {ATTRIBUTES = (RemoveHeadersOnCopy, ); }; };
 		D10000000000000000000041 /* PLDevShare.appex in Embed Foundation Extensions */ = {isa = PBXBuildFile; fileRef = D10000000000000000000032 /* PLDevShare.appex */; settings = {ATTRIBUTES = (RemoveHeadersOnCopy, ); }; };
 		D10000000000000000000042 /* PLDevSafari.appex in Embed Foundation Extensions */ = {isa = PBXBuildFile; fileRef = D10000000000000000000033 /* PLDevSafari.appex */; settings = {ATTRIBUTES = (RemoveHeadersOnCopy, ); }; };
@@ -171,6 +175,10 @@
 			isa = PBXFrameworksBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
+				D1000000000000000000A011 /* NIOSSH in Frameworks */,
+				D1000000000000000000A012 /* NIOCore in Frameworks */,
+				D1000000000000000000A013 /* NIOPosix in Frameworks */,
+				D1000000000000000000A014 /* SwiftTerm in Frameworks */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -256,6 +264,12 @@
 				D10000000000000000000012 /* PLDevCore */,
 			);
 			name = PLDev;
+			packageProductDependencies = (
+				D1000000000000000000A021 /* NIOSSH */,
+				D1000000000000000000A022 /* NIOCore */,
+				D1000000000000000000A023 /* NIOPosix */,
+				D1000000000000000000A024 /* SwiftTerm */,
+			);
 			productName = PLDev;
 			productReference = D10000000000000000000030 /* PLDev.app */;
 			productType = "com.apple.product-type.application";
@@ -360,6 +374,11 @@
 			);
 			mainGroup = D10000000000000000000002;
 			minimizedProjectReferenceProxies = 1;
+			packageReferences = (
+				D1000000000000000000A001 /* XCRemoteSwiftPackageReference "swift-nio-ssh" */,
+				D1000000000000000000A002 /* XCRemoteSwiftPackageReference "swift-nio" */,
+				D1000000000000000000A003 /* XCRemoteSwiftPackageReference "SwiftTerm" */,
+			);
 			preferredProjectObjectVersion = 77;
 			productRefGroup = D10000000000000000000003 /* Products */;
 			projectDirPath = "";
@@ -742,6 +761,56 @@
 			defaultConfigurationName = Release;
 		};
 /* End XCConfigurationList section */
+/* Begin XCRemoteSwiftPackageReference section */
+		D1000000000000000000A001 /* XCRemoteSwiftPackageReference "swift-nio-ssh" */ = {
+			isa = XCRemoteSwiftPackageReference;
+			repositoryURL = "https://github.com/apple/swift-nio-ssh.git";
+			requirement = {
+				kind = exactVersion;
+				version = 0.15.2;
+			};
+		};
+		D1000000000000000000A002 /* XCRemoteSwiftPackageReference "swift-nio" */ = {
+			isa = XCRemoteSwiftPackageReference;
+			repositoryURL = "https://github.com/apple/swift-nio.git";
+			requirement = {
+				kind = upToNextMajorVersion;
+				minimumVersion = 2.81.0;
+			};
+		};
+		D1000000000000000000A003 /* XCRemoteSwiftPackageReference "SwiftTerm" */ = {
+			isa = XCRemoteSwiftPackageReference;
+			repositoryURL = "https://github.com/migueldeicaza/SwiftTerm.git";
+			requirement = {
+				kind = exactVersion;
+				version = 1.18.0;
+			};
+		};
+/* End XCRemoteSwiftPackageReference section */
+
+/* Begin XCSwiftPackageProductDependency section */
+		D1000000000000000000A021 /* NIOSSH */ = {
+			isa = XCSwiftPackageProductDependency;
+			package = D1000000000000000000A001 /* XCRemoteSwiftPackageReference "swift-nio-ssh" */;
+			productName = NIOSSH;
+		};
+		D1000000000000000000A022 /* NIOCore */ = {
+			isa = XCSwiftPackageProductDependency;
+			package = D1000000000000000000A002 /* XCRemoteSwiftPackageReference "swift-nio" */;
+			productName = NIOCore;
+		};
+		D1000000000000000000A023 /* NIOPosix */ = {
+			isa = XCSwiftPackageProductDependency;
+			package = D1000000000000000000A002 /* XCRemoteSwiftPackageReference "swift-nio" */;
+			productName = NIOPosix;
+		};
+		D1000000000000000000A024 /* SwiftTerm */ = {
+			isa = XCSwiftPackageProductDependency;
+			package = D1000000000000000000A003 /* XCRemoteSwiftPackageReference "SwiftTerm" */;
+			productName = SwiftTerm;
+		};
+/* End XCSwiftPackageProductDependency section */
+
 	};
 	rootObject = D10000000000000000000001 /* Project object */;
 }

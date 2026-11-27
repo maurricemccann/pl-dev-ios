@@ -100,9 +100,29 @@ struct ProgLessonView: View {
     @Bindable var state: ProgModel
     let lesson: ProgLesson
     @State private var copied = 0
+    @State private var terminal = false
+    @State private var term = ProgTerm.shared
     @State private var cardPack: PackKey?   // a lesson first marked done earns a card pack (his ask 11-27)
 
     var body: some View {
+        GeometryReader { geo in
+            VStack(spacing: 0) {
+                lessonBody
+                if terminal {
+                    Divider()
+                    ProgTerminalPane().frame(height: max(220, geo.size.height * 0.55))
+                }
+            }
+        }
+        .plScreenTitle(lesson.title)
+        .toolbar {
+            Button { terminal.toggle() } label: { Label(terminal ? "Hide terminal" : "Terminal", systemImage: "terminal") }
+        }
+        .sensoryFeedback(PLHaptic.select, trigger: copied)
+        .earnsPack($cardPack)
+    }
+
+    private var lessonBody: some View {
         ScrollView {
             VStack(alignment: .leading, spacing: 18) {
                 Text(lesson.title).font(Font.pl(.title2).bold())
@@ -149,22 +169,20 @@ struct ProgLessonView: View {
             }
             .padding()
         }
-        .plScreenTitle(lesson.title)
-        .sensoryFeedback(PLHaptic.select, trigger: copied)
-        .earnsPack($cardPack)
     }
 
     private func copyRow(_ cmd: String) -> some View {
-        Button { copy(cmd) } label: {
+        let live = terminal && term.state == .connected
+        return Button { copy(cmd); if live { term.type(cmd) } } label: {
             HStack {
                 Text(cmd).font(.system(.callout, design: .monospaced)).foregroundStyle(.primary).lineLimit(2)
                 Spacer()
-                Image(systemName: "doc.on.doc").foregroundStyle(.secondary)
+                Image(systemName: live ? "arrow.down.to.line" : "doc.on.doc").foregroundStyle(.secondary)
             }
             .padding(.horizontal, 12).frame(minHeight: 44)
             .background(Color.black.opacity(0.35), in: RoundedRectangle(cornerRadius: 10))
         }
-        .accessibilityLabel("Copy \(cmd)")
+        .accessibilityLabel(live ? "Type \(cmd) in the terminal" : "Copy \(cmd)")
     }
 
     private func copy(_ s: String) { UIPasteboard.general.string = s; copied += 1 }

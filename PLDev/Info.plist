@@ -100,5 +100,7 @@
 	</array>
 	<key>UILaunchScreen</key>
 	<dict/>
+	<key>NSLocalNetworkUsageDescription</key>
+	<string>PL Prog’s terminal connects to your own computer on this network.</string>
 </dict>
 </plist>
