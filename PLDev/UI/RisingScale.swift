@@ -133,7 +133,8 @@ enum RisingAsk {
     var current: CheckIn? { log.last.flatMap { Self.shiftDay($0.at) == Self.shiftDay(.now) ? $0 : nil } }
 
     @discardableResult private func save() -> Bool {
-        guard loaded, let data = try? JSONEncoder().encode(Store(log: Array(log.suffix(2000)), note: note)) else { return false }
+        let real = log.filter { !previewAts.contains($0.at) }   // the cable tour's shown check-ins are never written
+        guard loaded, let data = try? JSONEncoder().encode(Store(log: Array(real.suffix(2000)), note: note)) else { return false }
         try? FileManager.default.createDirectory(at: Self.file.deletingLastPathComponent(), withIntermediateDirectories: true)
         return (try? data.write(to: Self.file, options: [.atomic, .completeFileProtection])) != nil
     }
@@ -146,8 +147,9 @@ enum RisingAsk {
     var revealTint: String?
 
     /// The cable tour (PhoneTour.swift): a band shown as if tapped, held in memory only, never saved; endPreview reads his log back.
-    func previewTap(_ band: Band) { log.append(CheckIn(at: .now, band: band)) }
-    func endPreview() { loaded = false; load() }
+    @ObservationIgnored private var previewAts: Set<Date> = []
+    func previewTap(_ band: Band) { let c = CheckIn(at: .now, band: band); previewAts.insert(c.at); log.append(c) }
+    func endPreview() { previewAts = []; loaded = false; load() }
 
     func tap(_ band: Band) {
         load()
