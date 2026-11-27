@@ -15,6 +15,18 @@ import SwiftUI
     private var composed: GenScreen?
     private var resetFor: Date?
     @ObservationIgnored private var busy: Date?
+    @ObservationIgnored private(set) var pack: PLThemePreset?
+    @ObservationIgnored private(set) var wallPack: PLThemePreset?
+
+    /// The theme packs lending this screen its layers: Heavy and Hot borrow only from the quiet ones.
+    private func borrow(_ screen: GenScreen, calm: Bool) {
+        let all = PLThemePreset.all.filter { $0.id != "daily" }
+        let quiet = all.filter { $0.calm || $0.pace > 1 }
+        let packs = calm && !quiet.isEmpty ? quiet : all
+        pack = packs.isEmpty ? nil : packs[screen.pack % packs.count]
+        let walls = packs.filter { $0.wall.hasPrefix("mask|") || $0.wall.hasPrefix("invert|") }
+        wallPack = walls.isEmpty ? nil : walls[screen.pack % walls.count]
+    }
 
     /// Still waiting on the model for this tap (at most 3 seconds).
     func pending(_ tap: CheckIn) -> Bool { on && PLIntelligence.isReady && decided != tap.at }
@@ -54,6 +66,7 @@ import SwiftUI
         let seed = GenVariety.seed("\(RisingScale.shiftDay(tap.at))/\(Int(tap.at.timeIntervalSince1970))/\(band)")
         let screen = GenVariety.distinct(fitted, band: band, seed: seed, recent: history)
         d.set(Array((history + [GenVariety.signature(screen)]).suffix(8)), forKey: "pldev.rising.genHistory")
+        borrow(screen, calm: tap.band <= .hot)
         composed = screen
         decided = tap.at
         resetFor = nil
@@ -92,17 +105,9 @@ struct RisingGenView: View {
 
     private var calm: Bool { tap.band <= .hot }
 
-    /// The packs that may lend a layer: Heavy and Hot borrow only from the quiet ones.
-    private var packs: [PLThemePreset] {
-        let all = PLThemePreset.all.filter { $0.id != "daily" }
-        let quiet = all.filter { $0.calm || $0.pace > 1 }
-        return calm && !quiet.isEmpty ? quiet : all
-    }
-    private var pack: PLThemePreset? { packs.isEmpty ? nil : packs[screen.pack % packs.count] }
-    private var wallPack: PLThemePreset? {
-        let walls = packs.filter { $0.wall.hasPrefix("mask|") || $0.wall.hasPrefix("invert|") }
-        return walls.isEmpty ? nil : walls[screen.pack % walls.count]
-    }
+    // picked once when the screen is composed: building the pack list is far too dear to repeat on every redraw
+    private var pack: PLThemePreset? { RisingGen.shared.pack }
+    private var wallPack: PLThemePreset? { RisingGen.shared.wallPack }
 
     private var colors: [Color] { rising.genColors(tap.band) }
     private var surface: Color { colors.count > 4 ? colors[1] : Color(.secondarySystemBackground) }
