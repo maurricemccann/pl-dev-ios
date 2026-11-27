@@ -30,6 +30,8 @@ struct CheckIn: Codable {
     var energy: Int? = nil, control: Int? = nil, about: String? = nil
     // what he did and when (for "what lifts you"), and one-tap tags (his rulings 11-26 afternoon); optional, so older taps still read
     var move: String? = nil, doneAt: Date? = nil, tags: [String]? = nil
+    // which screen he got ("generated" or "rules") and what the phone wrote on it (S355)
+    var screen: String? = nil, written: String? = nil
 }
 
 /// One-tap questions after the curve, and what the answers change. Wording is a working draft, his to rewrite.
@@ -111,7 +113,7 @@ enum RisingAsk {
         load()
         guard loaded else { return }
         log = []; note = ""; save()
-        for k in ["last", "plan", "saidDay", "said", "turn", "undone", "log", "note", "drained", "looks", "firstSaid", "returned"] { d.removeObject(forKey: "pldev.rising." + k) }
+        for k in ["last", "plan", "saidDay", "said", "turn", "undone", "log", "note", "drained", "looks", "firstSaid", "returned", "genHistory"] { d.removeObject(forKey: "pldev.rising." + k) }
         showWords = false
         Task { await wearIfDue() }
     }
@@ -690,6 +692,11 @@ struct RisingPanel: View {
                 HStack {
                     Text(RisingStep.of(tap.band).title).plFont(.subhead, emphasized: true).lineLimit(1)
                     Spacer()
+                    // on a composed screen Reset, Done and the menu sit here, drawn by the app and never moved
+                    if gen.screen(for: tap) != nil {
+                        Button("Reset") { gen.reset(tap) }.frame(minWidth: 44, minHeight: 44)
+                        Button("Done") { rising.showWords = false }.frame(minWidth: 44, minHeight: 44)
+                    }
                     if rising.wearsDaily, RisingScale.lookBand() != nil {
                         Button("Undo") { rising.undoFeeling() }.frame(minWidth: 44, minHeight: 44)
                     }
@@ -700,14 +707,20 @@ struct RisingPanel: View {
                 if asked < RisingAsk.count(tap.band) && !rising.previewing {
                     question(RisingAsk.questions[asked], at: asked)
                 } else {
-                if let line = RisingAsk.nudge(tap) { Text(line).plFont(.callout).padding(.vertical, 6) }
-                RisingAction(band: tap.band).id(tap.at)
+                if gen.pending(tap) && !rising.previewing {
+                    ProgressView("Composing").frame(maxWidth: .infinity, minHeight: 88)
+                } else if let screen = gen.screen(for: tap) {
+                    RisingGenView(screen: screen, tap: tap).id(tap.at)
+                } else {
+                    if let line = RisingAsk.nudge(tap) { Text(line).plFont(.callout).padding(.vertical, 6) }
+                    RisingAction(band: tap.band).id(tap.at)
+                }
                 if let lift = rising.liftLine { Text("What lifts you: " + lift).plFont(.footnote).foregroundStyle(.secondary).padding(.top, 4) }
                 HStack {
                     Button(tap.tiredBody ? "Tired body: on" : "Tired body") { rising.refine(tiredBody: !tap.tiredBody) }.frame(minHeight: 44)
                     Button("Body map") { showBody = true }.frame(minHeight: 44).padding(.leading, 12)
                     Spacer()
-                    Button("Done") { rising.showWords = false }.frame(minWidth: 44, minHeight: 44)
+                    if gen.screen(for: tap) == nil { Button("Done") { rising.showWords = false }.frame(minWidth: 44, minHeight: 44) }
                 }
                 // everything else waits behind one More (his screenshots 11-26: the panel was a wall); one question at a time
                 DisclosureGroup(isExpanded: $more) {
@@ -728,7 +741,12 @@ struct RisingPanel: View {
             }
         }
         .padding(rising.showWords ? 14 : 0)
-        .onChange(of: rising.current?.at) { named = false; asked = 0; more = false }
+        .onChange(of: rising.current?.at) { named = false; asked = 0; more = false; PLIntelligence.warmComposer() }
+        // composed once the quick questions are answered, so the answers are in it
+        .task(id: "\(rising.current?.at.timeIntervalSince1970 ?? 0)/\(rising.showWords)/\(asked)") {
+            guard rising.showWords, !rising.previewing, let tap = rising.current, asked >= RisingAsk.count(tap.band) else { return }
+            await gen.compose(tap)
+        }
         .sheet(isPresented: $showBody) { GateBodyMap() }
         .confirmationDialog("Erase every check-in, note and plan on this phone?", isPresented: $confirmErase, titleVisibility: .visible) {
             Button("Erase", role: .destructive) { rising.erase() }
@@ -739,6 +757,7 @@ struct RisingPanel: View {
     }
 
     @State private var more = false
+    @State private var gen = RisingGen.shared
 
     /// What sits behind More: the words, the vision strip, the day's tags, a fresh start, today's look, the magnet, the teaching
     /// line, the count that only grows, and the bars.
@@ -890,6 +909,7 @@ struct RisingPanel: View {
             Toggle("Daily look", isOn: Binding(get: { rising.wearsDaily }, set: { on in if !on { rising.followsFeeling = false }; Task { await rising.setDaily(on) } }))
             Toggle("Look follows my check-in", isOn: Binding(get: { rising.followsFeeling }, set: { rising.followsFeeling = $0 }))
             Toggle("Three reminders", isOn: Binding(get: { rising.reminds }, set: { rising.reminds = $0 }))
+            Toggle("Phone composes the screen", isOn: Binding(get: { gen.on }, set: { gen.on = $0 }))
             Toggle("Buddy pops up", isOn: Binding(get: { rising.buddyOn }, set: { rising.buddyOn = $0 }))
             Toggle("No notices 6 AM to 3 PM", isOn: Binding(get: { rising.quietDay }, set: { rising.quietDay = $0 }))
             Toggle("Home follows my mood", isOn: Binding(get: { rising.homeFollows }, set: { rising.homeFollows = $0 }))
@@ -1078,7 +1098,7 @@ struct RisingBuddy: View {
 
     var body: some View {
         Group {
-            if let line {
+            if let line, !RisingGen.shared.showsBuddy {   // never two of him
                 HStack(alignment: .bottom, spacing: 8) {
                     Text(line).plFont(.callout)
                         .padding(12)
@@ -1111,5 +1131,20 @@ struct RisingBuddy: View {
             guard !Task.isCancelled else { return }
             withAnimation { line = nil }
         }
+    }
+}
+
+extension RisingScale {
+    /// Duet job 71's tested colours for a band, as ground, surface, text, muted, accent.
+    func genColors(_ b: Band) -> [Color] {
+        RisingStep.of(b).oklch.map { Color(hex: Self.hex($0[0], $0[1], $0[2])) ?? .gray }
+    }
+
+    /// Notes on the latest tap which screen he got, for the export and the later comparison.
+    func markScreen(_ kind: String, written: String?) {
+        guard current != nil, !log.isEmpty else { return }
+        log[log.count - 1].screen = kind
+        log[log.count - 1].written = written
+        save()
     }
 }

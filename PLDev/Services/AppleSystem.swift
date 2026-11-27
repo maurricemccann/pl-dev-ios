@@ -57,6 +57,62 @@ import FoundationModels
         #endif
     }
 
+    /// The check-in screen's composer (S355): which parts, how big, the shape, the motion, and a heading and one line, proposed on
+    /// this phone only. GenRules holds the proposal to the band's limits; nothing here reaches the screen unchecked.
+    static func warmComposer() {
+        #if canImport(FoundationModels)
+        guard isReady else { return }
+        let session = LanguageModelSession(instructions: composeRules)
+        session.prewarm()
+        composer = session
+        #endif
+    }
+
+    /// nil when the model is off, fails or takes more than 3 seconds; the caller then draws the rule screen.
+    static func compose(_ summary: String) async -> GenScreen? {
+        #if canImport(FoundationModels)
+        guard isReady else { return nil }
+        let session = composer ?? LanguageModelSession(instructions: composeRules)
+        composer = nil   // one session per tap: its window is small
+        let once = Once()
+        return await withCheckedContinuation { (c: CheckedContinuation<GenScreen?, Never>) in
+            once.waiting = c
+            let work = Task { @MainActor in
+                let reply = try? await session.respond(to: summary, generating: GenProposal.self, options: GenerationOptions(temperature: 0.9)).content
+                once.finish(reply.map { r in
+                    GenScreen(blocks: r.parts.compactMap { p in GenPart(rawValue: p.part).map { GenBlock($0, size: p.size) } },
+                              shape: r.shape, motion: r.motion, heading: r.heading, line: r.line)
+                })
+            }
+            Task { @MainActor in
+                try? await Task.sleep(for: .seconds(3))
+                work.cancel()
+                once.finish(nil)   // not awaited inside a group: a group would wait for the slow model anyway
+            }
+        }
+        #else
+        return nil
+        #endif
+    }
+
+    static var composeBanned: [String] { banned }
+
+    #if canImport(FoundationModels)
+    private static var composer: LanguageModelSession?
+
+    @MainActor private final class Once {
+        var waiting: CheckedContinuation<GenScreen?, Never>?
+        func finish(_ v: GenScreen?) {
+            waiting?.resume(returning: v)
+            waiting = nil
+        }
+    }
+
+    private static var composeRules: String {
+        "You compose one small phone screen that helps a person take the next step up from how they feel. Choose parts and their order; the first part leads. Vary the screen from the last ones named. Write a heading of at most four words and one line of at most twelve words. Declarative and plain. No questions, no exclamation marks, no numbers, no promises, no advice about health. Never use: " + banned.joined(separator: ", ") + "."
+    }
+    #endif
+
     /// Apostle Layer (practice games, wave 3): one sentence of reflection from which games he played and their scores only; a draft he
     /// accepts or lets go, never canon. Nil without Apple Intelligence.
     static func apostle(facts: [String]) async -> String? {
@@ -411,3 +467,25 @@ enum PLFocus {
         return true
     }
 }
+
+#if canImport(FoundationModels)
+@Generable struct GenProposalPart {
+    @Guide(description: "Which part", .anyOf(["move", "breath", "walk", "plan", "buddy", "wall", "week", "vision", "note", "text"]))
+    var part: String
+    @Guide(description: "0 small, 1 middle, 2 large", .range(0...2))
+    var size: Int
+}
+
+@Generable struct GenProposal {
+    @Guide(description: "The parts, the leading one first", .count(3...6))
+    var parts: [GenProposalPart]
+    @Guide(description: "Corner shape, 0 sharp to 3 round", .range(0...3))
+    var shape: Int
+    @Guide(description: "0 still, 1 gentle, 2 lively", .range(0...2))
+    var motion: Int
+    @Guide(description: "A heading of at most four words")
+    var heading: String
+    @Guide(description: "One line of at most twelve words")
+    var line: String
+}
+#endif

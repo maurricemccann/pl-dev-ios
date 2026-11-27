@@ -402,7 +402,7 @@ struct RisingLate: ViewModifier {
 }
 
 /// A few short lines, then Done. Kept on the phone until the next one.
-private struct RisingPlan: View {
+struct RisingPlan: View {
     let fields: [String]
     let done: () -> Void
     @State private var text: [String: String] = UserDefaults.standard.dictionary(forKey: "pldev.rising.plan") as? [String: String] ?? [:]
@@ -455,7 +455,7 @@ private struct RisingVisionBoard: View {
     }
 }
 
-private struct BreathRing: View {
+struct BreathRing: View {
     let rounds: Int
     let box: Bool   // 4 in, 4 hold, 4 out, 4 hold
     let inS: Double, outS: Double   // 0 = not the pacer

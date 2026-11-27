@@ -9,7 +9,6 @@ final class GenScreenTests: XCTestCase {
             let s = GenRules.fit(all, band: band, hasNote: true, hasVision: true)
             XCTAssertLessThanOrEqual(s.blocks.count, band == 0 ? 3 : 6)
             XCTAssertTrue(s.blocks.contains { $0.part.acts }, "band \(band) lost its move")
-            XCTAssertEqual(s.blocks.contains { $0.part == .vision }, false == (band < 5) && s.blocks.contains { $0.part == .vision })
             if band < 5 { XCTAssertFalse(s.blocks.contains { $0.part == .vision }) }
             if band <= 1 { XCTAssertEqual(s.motion, 0) }
             XCTAssertTrue(s.blocks.allSatisfy { (0...2).contains($0.size) && (0...2).contains($0.variant) })
