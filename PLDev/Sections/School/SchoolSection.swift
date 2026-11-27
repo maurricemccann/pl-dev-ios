@@ -430,7 +430,10 @@ struct PlaylistView: View {
     var body: some View {
         let unit = max(10.0, 520.0 / Double(max(total, 1)))   // width of one bar
         VStack(alignment: .leading, spacing: 6) {
-            Text("THE SONG · \(total) BARS · LEFT TO RIGHT").font(Font.pl(.caption)).foregroundStyle(Color.accentColor)
+            Text("WHO PLAYS WHEN · \(total) BARS").font(Font.pl(.caption)).foregroundStyle(Color.accentColor)
+            // his question 11-27 "what's this": the view did not say what it was
+            Text("Like FL's Playlist: time runs left to right, one row per sound. Gold means that sound plays in that part.")
+                .font(Font.pl(.footnote)).foregroundStyle(.secondary)
             ScrollView(.horizontal, showsIndicators: false) {
                 VStack(alignment: .leading, spacing: 4) {
                     HStack(spacing: 0) {
