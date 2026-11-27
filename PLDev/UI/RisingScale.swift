@@ -36,16 +36,47 @@ struct CheckIn: Codable {
 
 /// One-tap questions after the curve, and what the answers change. Wording is a working draft, his to rewrite.
 enum RisingAsk {
-    static let questions: [(ask: String, options: [String])] = [
-        ("How much have you got in you?", ["Empty", "Some", "Plenty"]),
-        ("Is it in your hands?", ["No", "Partly", "Yes"]),
-        ("What is it about?", ["Work", "Money", "Body", "People", "My art", "No idea"])]
+    // His ask 11-27: "the questions ... should be different for each mood". Each band asks its own three. The answers keep one
+    // meaning by position (energy, then control: low to high), and the third's words are what the nudge below reads.
+    static func questions(_ band: Band) -> [(ask: String, options: [String])] {
+        switch band {
+        case .heavy: [
+            ("Anything left in you?", ["Nothing", "A little", "Enough for one thing"]),
+            ("Is any of it in your hands?", ["No", "A corner of it", "Yes"]),
+            ("Where does it sit?", ["Body", "People", "Money", "Work", "My art", "No idea"])]
+        case .hot: [
+            ("What is left under the heat?", ["Spent", "Some", "A lot"]),
+            ("Can you act on it tonight?", ["No", "Partly", "Yes"]),
+            ("What lit it?", ["People", "Work", "Money", "Body", "My art", "No idea"])]
+        case .low: [
+            ("How tired is the body?", ["Drained", "Some left", "It is fine"]),
+            ("Can any of it be changed?", ["No", "Some of it", "Yes"]),
+            ("What keeps coming back?", ["Money", "Work", "People", "Body", "My art", "No idea"])]
+        case .stuck: [
+            ("What have you got for one step?", ["Nothing", "Ten minutes", "An hour"]),
+            ("Is the first step yours to take?", ["No", "Partly", "Yes"]),
+            ("What is stuck?", ["My art", "Work", "Money", "Body", "People", "No idea"])]
+        case .steady: [
+            ("How much do you want to spend tonight?", ["Very little", "Some", "Plenty"]),
+            ("Is the next move in your hands?", ["No", "Partly", "Yes"]),
+            ("What gets the next move?", ["My art", "Money", "Work", "Body", "People", "No idea"])]
+        case .rising: [
+            ("How long will this run?", ["Running out", "A while", "All night"]),
+            ("Can you finish something tonight?", ["Not tonight", "A part", "All of it"]),
+            ("What gets this?", ["My art", "Money", "People", "Work", "Body", "No idea"])]
+        case .lit: [
+            ("Anything left to give?", ["Spent", "Some", "Plenty"]),
+            ("Can someone see it tonight?", ["No", "Maybe", "Yes"]),
+            ("What lit you?", ["My art", "People", "Money", "Work", "Body", "No idea"])]
+        }
+    }
+    static let total = 3
 
     /// One-tap context for a tap, so the month can be read against what the day held.
     static let tags = ["Slept short", "Drew", "Posted", "Sale", "Day off"]
 
     /// At the very bottom ask almost nothing.
-    static func count(_ band: Band) -> Int { band == .heavy ? 1 : questions.count }
+    static func count(_ band: Band) -> Int { band == .heavy ? 1 : total }
 
     /// One sentence from the answers, the strongest need first.
     static func nudge(_ t: CheckIn) -> String? {
@@ -705,7 +736,7 @@ struct RisingPanel: View {
                 Text("Hawkins: " + RisingStep.of(tap.band).hawkins).plFont(.caption2).foregroundStyle(.secondary).lineLimit(1)
                     .accessibilityLabel("Hawkins's number for this band: " + RisingStep.of(tap.band).hawkins + ". His muscle-testing number, not a measurement.")
                 if asked < RisingAsk.count(tap.band) && !rising.previewing {
-                    question(RisingAsk.questions[asked], at: asked)
+                    question(RisingAsk.questions(tap.band)[asked], at: asked)
                 } else {
                 if gen.pending(tap) && !rising.previewing {
                     ProgressView("Composing").frame(maxWidth: .infinity, minHeight: 88)
@@ -890,7 +921,7 @@ struct RisingPanel: View {
                 } label: { Text(option).frame(maxWidth: .infinity, minHeight: 44, alignment: .leading).contentShape(Rectangle()) }
                 .buttonStyle(.bordered).tint(PLTone.accent).padding(.vertical, 2)
             }
-            Button("Skip the questions") { asked = RisingAsk.questions.count }.plFont(.footnote).frame(minHeight: 44)
+            Button("Skip the questions") { asked = RisingAsk.total }.plFont(.footnote).frame(minHeight: 44)
         }
     }
 
