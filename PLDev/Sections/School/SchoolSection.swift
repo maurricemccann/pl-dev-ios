@@ -135,6 +135,17 @@ struct PadRow: Hashable { let heading: String; let label: String; let steps: [Bo
         try data.write(to: file, options: .atomic)
         return file
     }
+
+    /// The beat's iPad pack (S354, his ask: download it, AirDrop it to the iPad): pack-b<N>.zip through the PL DEV key,
+    /// saved under the name the iPad folder uses ("PL Prod - Beat N - Name.zip").
+    func packFile(_ t: SchoolTrack, model: AppModel) async throws -> URL {
+        guard let http = model.http else { throw Console.Problem.notSetUp }
+        let data = try await http.send(RequestPlan(origin: "console", path: "api/pldev/school/pack-\(t.id).zip"), timeout: 300)
+        guard data.count > 1000, data.starts(with: [0x50, 0x4B]) else { throw Console.Problem.refused("The pack did not come down whole.") }
+        let file = FileManager.default.temporaryDirectory.appending(path: "PL Prod - " + t.title.replacingOccurrences(of: " · ", with: " - ") + ".zip")
+        try data.write(to: file, options: .atomic)
+        return file
+    }
 }
 
 /// One clip at a time, as the R1's single Audio element: press plays, press again pauses, a new clip starts from the top.
@@ -223,10 +234,13 @@ struct TrackView: View {
     let track: SchoolTrack
     @State private var page = 0
     @State private var notes = false
+    @State private var packLoading = false
+    @State private var packNote: String?
+    @State private var share: CodeArtShareItem?
 
     var body: some View {
         TabView(selection: $page) {
-            ScrollView { PadsPage(rows: state.padRows(track)).padding() }.tag(0)
+            ScrollView { VStack(alignment: .leading, spacing: 16) { packButton; PadsPage(rows: state.padRows(track)) }.padding() }.tag(0)
             ForEach(Array(track.slides.enumerated()), id: \.offset) { i, sid in
                 ScrollView { if let l = state.lesson(sid) { StepPage(lesson: l).padding() } }.tag(i + 1)
             }
@@ -249,6 +263,31 @@ struct TrackView: View {
     }
 
     private var currentNotes: String { page > 0 ? (state.lesson(track.slides[page - 1])?.notes ?? "") : "" }
+
+    /// One tap: this beat's sounds and MIDI come down, then Share opens (AirDrop to the iPad, or Save to Files).
+    @ViewBuilder private var packButton: some View {
+        if track.id.hasPrefix("b") {
+            VStack(alignment: .leading, spacing: 6) {
+                Button { Task { await getPack() } } label: {
+                    HStack(spacing: 8) {
+                        if packLoading { ProgressView() } else { Image(systemName: "square.and.arrow.down") }
+                        Text("Get the pack for the iPad")
+                    }
+                    .frame(maxWidth: .infinity, minHeight: 44)
+                }
+                .buttonStyle(.bordered).disabled(packLoading)
+                .accessibilityHint("Downloads this beat's sounds and MIDI, then opens Share so you can AirDrop it")
+                ResultLine(text: packNote)
+            }
+            .sheet(item: $share) { CodeArtShareSheet(items: $0.items) }
+        }
+    }
+
+    private func getPack() async {
+        packLoading = true; defer { packLoading = false }
+        do { share = CodeArtShareItem(items: [try await state.packFile(track, model: model)]); packNote = nil }
+        catch { packNote = "Not downloaded. \(error.localizedDescription)" }
+    }
 
     /// The R1's bottom bar: play this step's clip, its name, the notes, a thin progress line.
     private var bar: some View {

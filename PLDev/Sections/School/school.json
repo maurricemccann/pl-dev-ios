@@ -368,6 +368,113 @@
      "stage 4, all in"
     ]
    }
+  },
+  {
+   "id": "b10",
+   "title": "Beat 10 · Six Breaths",
+   "sub": "C major · 72 · a beat that breathes",
+   "slides": [
+    "ch10-cover",
+    "ch10-pad",
+    "ch10-bells",
+    "ch10-clap",
+    "ch10-all",
+    "ch10-check"
+   ],
+   "ref": "b10-ref",
+   "refName": "finished beat 10",
+   "color": "blue",
+   "clips": {
+    "ch10-pad": [
+     "b10-s1",
+     "stage 1, the pad breathing"
+    ],
+    "ch10-bells": [
+     "b10-s2",
+     "stage 2, plus the bells"
+    ],
+    "ch10-clap": [
+     "b10-s3",
+     "stage 3, plus snare and clap"
+    ],
+    "ch10-all": [
+     "b10-s4",
+     "stage 4, all in"
+    ]
+   }
+  },
+  {
+   "id": "b11",
+   "title": "Beat 11 · One Step",
+   "sub": "E minor to G major · 88 · four parts",
+   "slides": [
+    "ch11-cover",
+    "ch11-low",
+    "ch11-stuck",
+    "ch11-steady",
+    "ch11-rising",
+    "ch11-check"
+   ],
+   "ref": "b11-ref",
+   "refName": "finished beat 11",
+   "color": "both",
+   "clips": {
+    "ch11-low": [
+     "b11-s1",
+     "stage 1, low"
+    ],
+    "ch11-stuck": [
+     "b11-s2",
+     "stage 2, stuck"
+    ],
+    "ch11-steady": [
+     "b11-s3",
+     "stage 3, steady"
+    ],
+    "ch11-rising": [
+     "b11-s4",
+     "stage 4, rising"
+    ]
+   }
+  },
+  {
+   "id": "b12",
+   "title": "Beat 12 · Ten",
+   "sub": "D minor · 140, feels 70 · headphones",
+   "slides": [
+    "ch12-cover",
+    "ch12-check",
+    "ch12-tones",
+    "ch12-pad",
+    "ch12-guitar",
+    "ch12-heart",
+    "ch12-sit"
+   ],
+   "ref": "b12-ref",
+   "refName": "finished beat 12",
+   "color": "red",
+   "clips": {
+    "ch12-check": [
+     "b12-s1",
+     "stage 1, the same tone"
+    ],
+    "ch12-tones": [
+     "b12-s2",
+     "stage 2, the 4 hertz beat"
+    ],
+    "ch12-pad": [
+     "b12-s3",
+     "stage 3, plus the pad"
+    ],
+    "ch12-guitar": [
+     "b12-s4",
+     "stage 4, plus the guitar"
+    ],
+    "ch12-heart": [
+     "b12-s5",
+     "stage 5, all in"
+    ]
+   }
   }
  ],
  "his": [
@@ -4265,6 +4372,736 @@
     {
      "head": "",
      "text": "Beat 9 · Road · C minor · FL at 94"
+    }
+   ],
+   "table": [],
+   "notes": ""
+  },
+  {
+   "id": "ch10-cover",
+   "eyebrow": "Psyched Luxuries · PL Prod · Beat 10",
+   "title": "Six Breaths",
+   "chips": [],
+   "grids": [],
+   "blocks": [
+    {
+     "head": "",
+     "text": "C major · FL at 72, straight · 24 bars = 8 breaths of 10 seconds"
+    },
+    {
+     "head": "Load",
+     "text": "From the Beat 10 download: Pad.wav, Bell.wav, Kick.wav, Snare.wav, Hat.wav, Clap.wav, 808.wav, pad chords.mid, drums.mid, 808.mid."
+    },
+    {
+     "head": "Hear it first",
+     "text": "Play Finished beat 10 and breathe with the pad: in while it rises, out while it falls."
+    },
+    {
+     "head": "The lesson",
+     "text": "A beat that breathes at six breaths a minute, out twice as long as in. Sparse, warm, major."
+    },
+    {
+     "head": "",
+     "text": "Beat 10 · Six Breaths · C major · FL at 72"
+    }
+   ],
+   "table": [],
+   "notes": "Beat 10 (S354, his ask 11-26). the reference side: major, a feel near 72, snare and clap first, a reverb-filled clap. Files: Music/PL Kits/_school/Beat 10 - C major 72/."
+  },
+  {
+   "id": "ch10-pad",
+   "eyebrow": "Step 1 · the breath",
+   "title": "The pad breathes",
+   "chips": [],
+   "grids": [],
+   "blocks": [
+    {
+     "head": "",
+     "text": "Pad.wav (sampled at C), one chord a breath: C, A minor, F, G. At 72 a breath is 12 beats, 3 bars. Draw a volume automation: up over the first 4 beats, down over the next 8."
+    },
+    {
+     "head": "",
+     "text": "Import pad chords.mid, then the automation. Play Stage 1."
+    },
+    {
+     "head": "",
+     "text": "Beat 10 · Six Breaths · C major · FL at 72"
+    }
+   ],
+   "table": [],
+   "notes": "About 6 breaths a minute with a longer out-breath is the breathing with real evidence (Duet job 71)."
+  },
+  {
+   "id": "ch10-bells",
+   "eyebrow": "Step 2 · the cues",
+   "title": "In and out",
+   "chips": [],
+   "grids": [],
+   "blocks": [
+    {
+     "head": "",
+     "text": "Bell.wav, high C at the start of each in-breath, and a lower G where the out-breath starts, 4 beats later."
+    },
+    {
+     "head": "",
+     "text": "Play Stage 2."
+    },
+    {
+     "head": "",
+     "text": "Beat 10 · Six Breaths · C major · FL at 72"
+    }
+   ],
+   "table": [],
+   "notes": "The bells are the cue you can follow with eyes closed."
+  },
+  {
+   "id": "ch10-clap",
+   "eyebrow": "Step 3 · head bob first",
+   "title": "Snare and clap",
+   "chips": [],
+   "grids": [
+    {
+     "label": "SNARE · Snare.wav",
+     "steps": [
+      false,
+      false,
+      false,
+      false,
+      true,
+      false,
+      false,
+      false,
+      false,
+      false,
+      false,
+      false,
+      false,
+      false,
+      false,
+      false
+     ],
+     "color": "#c9a84c"
+    },
+    {
+     "label": "CLAP · Clap.wav",
+     "steps": [
+      false,
+      false,
+      false,
+      false,
+      false,
+      false,
+      false,
+      false,
+      false,
+      false,
+      false,
+      false,
+      true,
+      false,
+      false,
+      false
+     ],
+     "color": "#c9a84c"
+    }
+   ],
+   "blocks": [
+    {
+     "head": "",
+     "text": "Snare.wav on box 5, Clap.wav on box 13, and a long reverb on the clap so it fills the space."
+    },
+    {
+     "head": "",
+     "text": "Snares and claps first, then everything else. Play Stage 3."
+    },
+    {
+     "head": "",
+     "text": "Beat 10 · Six Breaths · C major · FL at 72"
+    }
+   ],
+   "table": [],
+   "notes": ""
+  },
+  {
+   "id": "ch10-all",
+   "eyebrow": "Step 4 · all in",
+   "title": "Kick, hats, 808",
+   "chips": [],
+   "grids": [
+    {
+     "label": "KICK · Kick.wav",
+     "steps": [
+      true,
+      false,
+      false,
+      false,
+      false,
+      false,
+      false,
+      false,
+      false,
+      false,
+      false,
+      false,
+      false,
+      false,
+      false,
+      false
+     ],
+     "color": "#c9a84c"
+    },
+    {
+     "label": "KICK, 3rd bar",
+     "steps": [
+      true,
+      false,
+      false,
+      false,
+      false,
+      false,
+      false,
+      false,
+      false,
+      false,
+      true,
+      false,
+      false,
+      false,
+      false,
+      false
+     ],
+     "color": "#c9a84c"
+    },
+    {
+     "label": "HAT · Hat.wav",
+     "steps": [
+      false,
+      false,
+      true,
+      false,
+      false,
+      false,
+      true,
+      false,
+      false,
+      false,
+      true,
+      false,
+      false,
+      false,
+      true,
+      false
+     ],
+     "color": "#c9a84c"
+    }
+   ],
+   "blocks": [
+    {
+     "head": "",
+     "text": "Kick.wav on box 1 (and box 11 on the last bar of each breath), Hat.wav on the off-beats, 808.wav on each breath's root: C, A, F, G. Import drums.mid and 808.mid."
+    },
+    {
+     "head": "",
+     "text": "Play Stage 4."
+    },
+    {
+     "head": "",
+     "text": "Beat 10 · Six Breaths · C major · FL at 72"
+    }
+   ],
+   "table": [],
+   "notes": ""
+  },
+  {
+   "id": "ch10-check",
+   "eyebrow": "Check",
+   "title": "Can you breathe to it?",
+   "chips": [],
+   "grids": [],
+   "blocks": [
+    {
+     "head": "",
+     "text": "Close your eyes and breathe with it for one minute. If you lose the breath, make the pad's rise and fall bigger, not louder drums."
+    },
+    {
+     "head": "",
+     "text": "Then play your loop next to Finished beat 10."
+    },
+    {
+     "head": "",
+     "text": "Beat 10 · Six Breaths · C major · FL at 72"
+    }
+   ],
+   "table": [],
+   "notes": "From an app, expect a small effect: the beat is a cue, not a treatment."
+  },
+  {
+   "id": "ch11-cover",
+   "eyebrow": "Psyched Luxuries · PL Prod · Beat 11",
+   "title": "One Step",
+   "chips": [],
+   "grids": [],
+   "blocks": [
+    {
+     "head": "",
+     "text": "E minor to G major · FL at 88 · 32 bars: Low 8, Stuck 8, Steady 8, Rising 8"
+    },
+    {
+     "head": "Load",
+     "text": "From the Beat 11 download: Keys.wav, Strings.wav, Kick.wav, Snare.wav, Hat.wav, Clap.wav, 808.wav, keys chords.mid, drums.mid, 808.mid."
+    },
+    {
+     "head": "Hear it first",
+     "text": "Play Finished beat 11. Count the four parts and name the one thing that changes at each."
+    },
+    {
+     "head": "The lesson",
+     "text": "A song that climbs one step at a time. Each part turns one dial, never two."
+    },
+    {
+     "head": "",
+     "text": "Beat 11 · One Step · E minor to G major · FL at 88"
+    }
+   ],
+   "table": [],
+   "notes": "Beat 11 (S354, his ask 11-26). storyteller side: quiet to heavy, a story arc. the reference side: the underwater filter that opens, the bounce. Files: Music/PL Kits/_school/Beat 11 - E minor to G major 88/."
+  },
+  {
+   "id": "ch11-low",
+   "eyebrow": "Step 1 · Low",
+   "title": "Underwater",
+   "chips": [],
+   "grids": [],
+   "blocks": [
+    {
+     "head": "",
+     "text": "Keys.wav (a felt piano, sampled at C): E minor, C, A minor, B. A low-pass on the keys at about 700 Hz. Nothing else."
+    },
+    {
+     "head": "",
+     "text": "Import keys chords.mid. Play Stage 1."
+    },
+    {
+     "head": "",
+     "text": "Beat 11 · One Step · E minor to G major · FL at 88"
+    }
+   ],
+   "table": [],
+   "notes": "Low: the bottom of the scale is quiet and closed."
+  },
+  {
+   "id": "ch11-stuck",
+   "eyebrow": "Step 2 · Stuck",
+   "title": "A steady pulse",
+   "chips": [],
+   "grids": [
+    {
+     "label": "KICK · Kick.wav",
+     "steps": [
+      true,
+      false,
+      false,
+      false,
+      false,
+      false,
+      false,
+      false,
+      true,
+      false,
+      false,
+      false,
+      false,
+      false,
+      false,
+      false
+     ],
+     "color": "#c9a84c"
+    },
+    {
+     "label": "HAT · Hat.wav",
+     "steps": [
+      true,
+      false,
+      false,
+      false,
+      true,
+      false,
+      false,
+      false,
+      true,
+      false,
+      false,
+      false,
+      true,
+      false,
+      false,
+      false
+     ],
+     "color": "#c9a84c"
+    }
+   ],
+   "blocks": [
+    {
+     "head": "",
+     "text": "Kick.wav on boxes 1 and 9, Hat.wav on every beat. Same chords, same filter. The only new thing is something you can count on."
+    },
+    {
+     "head": "",
+     "text": "Play Stage 2."
+    },
+    {
+     "head": "",
+     "text": "Beat 11 · One Step · E minor to G major · FL at 88"
+    }
+   ],
+   "table": [],
+   "notes": "At the bottom the lever is control: one steady thing."
+  },
+  {
+   "id": "ch11-steady",
+   "eyebrow": "Step 3 · Steady",
+   "title": "The turn",
+   "chips": [],
+   "grids": [],
+   "blocks": [
+    {
+     "head": "",
+     "text": "Chords move to G major: G, D, E minor, C. The filter opens all the way. The drums stay exactly the same."
+    },
+    {
+     "head": "",
+     "text": "Write the hook here: this is where the song turns. Play Stage 3."
+    },
+    {
+     "head": "",
+     "text": "Beat 11 · One Step · E minor to G major · FL at 88"
+    }
+   ],
+   "table": [],
+   "notes": "Stuck to Steady is the turn from unpleasant to pleasant (Duet job 70)."
+  },
+  {
+   "id": "ch11-rising",
+   "eyebrow": "Step 4 · Rising",
+   "title": "Add the energy",
+   "chips": [],
+   "grids": [
+    {
+     "label": "KICK",
+     "steps": [
+      true,
+      false,
+      false,
+      false,
+      false,
+      false,
+      false,
+      true,
+      false,
+      false,
+      true,
+      false,
+      false,
+      false,
+      false,
+      false
+     ],
+     "color": "#c9a84c"
+    },
+    {
+     "label": "SNARE + CLAP",
+     "steps": [
+      false,
+      false,
+      false,
+      false,
+      true,
+      false,
+      false,
+      false,
+      false,
+      false,
+      false,
+      false,
+      true,
+      false,
+      false,
+      false
+     ],
+     "color": "#c9a84c"
+    },
+    {
+     "label": "HAT, galloped",
+     "steps": [
+      true,
+      false,
+      true,
+      true,
+      true,
+      false,
+      true,
+      true,
+      true,
+      false,
+      true,
+      true,
+      true,
+      false,
+      true,
+      true
+     ],
+     "color": "#c9a84c"
+    },
+    {
+     "label": "808 starts",
+     "steps": [
+      true,
+      false,
+      false,
+      false,
+      false,
+      false,
+      false,
+      false,
+      false,
+      false,
+      true,
+      false,
+      false,
+      false,
+      false,
+      false
+     ],
+     "color": "#c9a84c"
+    }
+   ],
+   "blocks": [
+    {
+     "head": "",
+     "text": "Clap.wav and Snare.wav on 5 and 13, galloped hats, Strings.wav an octave up on the chords, 808.wav on the roots at boxes 1 and 11. Import drums.mid and 808.mid."
+    },
+    {
+     "head": "",
+     "text": "Play Stage 4."
+    },
+    {
+     "head": "",
+     "text": "Beat 11 · One Step · E minor to G major · FL at 88"
+    }
+   ],
+   "table": [],
+   "notes": "Rising adds energy, nothing else."
+  },
+  {
+   "id": "ch11-check",
+   "eyebrow": "Check",
+   "title": "One dial each?",
+   "chips": [],
+   "grids": [],
+   "blocks": [
+    {
+     "head": "",
+     "text": "Play the four parts back to back. If two things change at once anywhere, take one out and save it for the next part."
+    },
+    {
+     "head": "",
+     "text": "Then play your loop next to Finished beat 11."
+    },
+    {
+     "head": "",
+     "text": "Beat 11 · One Step · E minor to G major · FL at 88"
+    }
+   ],
+   "table": [],
+   "notes": "Small steps beat big jumps."
+  },
+  {
+   "id": "ch12-cover",
+   "eyebrow": "Psyched Luxuries · PL Prod · Beat 12",
+   "title": "Ten",
+   "chips": [],
+   "grids": [],
+   "blocks": [
+    {
+     "head": "",
+     "text": "D minor · FL at 140, feels 70 · 32 bars: 4 tones, 4 pad, 8 guitar, 16 heartbeat"
+    },
+    {
+     "head": "Load",
+     "text": "From the Beat 12 download: Tone 200.wav, Tone 204.wav, Pad.wav, Guitar.wav, Heartbeat.wav, pad chords.mid, heartbeat.mid."
+    },
+    {
+     "head": "Hear it first",
+     "text": "Headphones on. Play Stage 1, then Stage 2. Stage 2 has a slow pulse that neither ear has alone."
+    },
+    {
+     "head": "The lesson",
+     "text": "A bed for the Gate sittings: a 4 Hz beat between the ears, under a dark pad, a guitar and a heartbeat."
+    },
+    {
+     "head": "",
+     "text": "Beat 12 · Ten · D minor · FL at 140, feels 70 · headphones"
+    }
+   ],
+   "table": [],
+   "notes": "Beat 12 (S354, his ask 11-26). storyteller side: dark minor, the guitar at the centre, quiet to full. Files: Music/PL Kits/_school/Beat 12 - D minor 140 (70 feel)/."
+  },
+  {
+   "id": "ch12-check",
+   "eyebrow": "Step 1 · the check",
+   "title": "Same tone",
+   "chips": [],
+   "grids": [],
+   "blocks": [
+    {
+     "head": "",
+     "text": "Tone 200.wav on two channels, one hard left, one hard right. No beat: this is the plain tone to compare against."
+    },
+    {
+     "head": "",
+     "text": "Play Stage 1."
+    },
+    {
+     "head": "",
+     "text": "Beat 12 · Ten · D minor · FL at 140, feels 70 · headphones"
+    }
+   ],
+   "table": [],
+   "notes": "The Frequency Lab's coin flip, as a stage."
+  },
+  {
+   "id": "ch12-tones",
+   "eyebrow": "Step 2 · the beat",
+   "title": "200 and 204",
+   "chips": [],
+   "grids": [],
+   "blocks": [
+    {
+     "head": "",
+     "text": "Swap the right channel to Tone 204.wav. Your ears make a 4 Hz pulse from the two. Keep both quiet under the music."
+    },
+    {
+     "head": "",
+     "text": "Headphones only: on a speaker it is gone. Play Stage 2."
+    },
+    {
+     "head": "",
+     "text": "Beat 12 · Ten · D minor · FL at 140, feels 70 · headphones"
+    }
+   ],
+   "table": [],
+   "notes": "The 1982 Gateway report gives 4 Hz. Studies of beats like this are mostly inconsistent."
+  },
+  {
+   "id": "ch12-pad",
+   "eyebrow": "Step 3 · the dark",
+   "title": "The pad",
+   "chips": [],
+   "grids": [],
+   "blocks": [
+    {
+     "head": "",
+     "text": "Pad.wav (sampled at C): D minor, then B flat, two bars each. Import pad chords.mid. Long reverb."
+    },
+    {
+     "head": "",
+     "text": "Play Stage 3."
+    },
+    {
+     "head": "",
+     "text": "Beat 12 · Ten · D minor · FL at 140, feels 70 · headphones"
+    }
+   ],
+   "table": [],
+   "notes": ""
+  },
+  {
+   "id": "ch12-guitar",
+   "eyebrow": "Step 4 · the guitar",
+   "title": "The figure",
+   "chips": [],
+   "grids": [],
+   "blocks": [
+    {
+     "head": "",
+     "text": "Guitar.wav: 8 bars, already 140 in D minor. In the middle, under the tones."
+    },
+    {
+     "head": "",
+     "text": "Play Stage 4."
+    },
+    {
+     "head": "",
+     "text": "Beat 12 · Ten · D minor · FL at 140, feels 70 · headphones"
+    }
+   ],
+   "table": [],
+   "notes": "the reference's guitar at the centre."
+  },
+  {
+   "id": "ch12-heart",
+   "eyebrow": "Step 5 · the heartbeat",
+   "title": "Lub-dub",
+   "chips": [],
+   "grids": [
+    {
+     "label": "HEART · Heartbeat.wav",
+     "steps": [
+      true,
+      false,
+      true,
+      false,
+      false,
+      false,
+      false,
+      false,
+      true,
+      false,
+      true,
+      false,
+      false,
+      false,
+      false,
+      false
+     ],
+     "color": "#c9a84c"
+    }
+   ],
+   "blocks": [
+    {
+     "head": "",
+     "text": "Heartbeat.wav on boxes 1 and 3, then 9 and 11: two lub-dubs a bar, about 70 a minute. Soft."
+    },
+    {
+     "head": "",
+     "text": "Import heartbeat.mid. Play Finished beat 12."
+    },
+    {
+     "head": "",
+     "text": "Beat 12 · Ten · D minor · FL at 140, feels 70 · headphones"
+    }
+   ],
+   "table": [],
+   "notes": ""
+  },
+  {
+   "id": "ch12-sit",
+   "eyebrow": "Check",
+   "title": "Which felt deeper?",
+   "chips": [],
+   "grids": [],
+   "blocks": [
+    {
+     "head": "",
+     "text": "Sit once on Stage 1 and once on the finished bed, a coin picks the order. Mark which felt deeper before you look which was which."
+    },
+    {
+     "head": "",
+     "text": "Not while driving or around machines. Epilepsy or seizures: ask a doctor first."
+    },
+    {
+     "head": "",
+     "text": "Beat 12 · Ten · D minor · FL at 140, feels 70 · headphones"
     }
    ],
    "table": [],
