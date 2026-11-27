@@ -1,19 +1,20 @@
 #!/usr/bin/env python3
 """The Daily look's contrast, every day for ten years and every band (his pick 11-26, item 90).
 
-Reads the colour formulas straight out of RisingScale.palette() and the band numbers out of RisingSteps.swift, so the check moves
+Reads the colour formulas and the band-table mapping straight out of RisingScale.palette(), and the band numbers and Duet
+job 71 oklch tables out of RisingSteps.swift, so the check moves
 with the app instead of copying it. hex() (OKLCH to sRGB) is the one part re-done here; its source is fingerprinted, and the
 check fails if it changes until this file is updated to match.
 
 Text on ground and on surface: 4.5:1. Accent on ground and surface: 4.5:1 (it is used for words). Key: 3:1 (controls and icons).
 Exits 1 on any miss, or if a formula has a shape this reader does not know.
 """
-import datetime, hashlib, math, re, sys
+import datetime, hashlib, json, math, re, sys
 from pathlib import Path
 
 ROOT = Path(__file__).resolve().parent.parent
-scale = (ROOT / "PLDev/UI/RisingScale.swift").read_text(encoding="utf-8")
-steps = (ROOT / "PLDev/UI/RisingSteps.swift").read_text(encoding="utf-8")
+scale = (ROOT / "PLDev/UI/RisingScale.swift").read_text(encoding="utf-8").replace("\r\n", "\n")
+steps = (ROOT / "PLDev/UI/RisingSteps.swift").read_text(encoding="utf-8").replace("\r\n", "\n")
 
 HEX_FINGERPRINT = "bba2897ec3ff"   # first 12 of sha256 over hex()'s source with whitespace removed
 
@@ -32,7 +33,10 @@ def block(src, start, end):
 
 
 # hex() must be the code this file re-does
-hex_src = block(scale, "private nonisolated static func hex(", "/// Today's colours")
+m = re.search(r"private nonisolated static func hex\(.*?\n    \}\n", scale, re.S)
+if not m:
+    fail("cannot find RisingScale.hex()")
+hex_src = m[0]
 fp = hashlib.sha256(re.sub(r"\s+", "", hex_src).encode()).hexdigest()[:12]
 if fp != HEX_FINGERPRINT:
     fail(f"RisingScale.hex() changed (fingerprint {fp}); update hex() and HEX_FINGERPRINT here to match it")
@@ -130,6 +134,8 @@ for name in ("heavy", "hot", "low", "stuck", "steady", "rising", "lit"):
     for k in ("hue", "chroma", "light", "turn", "pop"):
         m = re.search(rf"\b{k}: (-?[\d.]+|nil)", args)
         vals[k] = None if (m is None or m[1] == "nil") else float(m[1])
+    m = re.search(r"\boklch: (\[\[[-\d., \[\]]*\]\])", args)
+    vals["oklch"] = json.loads(m[1]) if m else []
     bands[name] = vals
 
 
@@ -151,7 +157,15 @@ def seed(day):
     return [int.from_bytes(d[i * 4:i * 4 + 4], "big") / 4294967296 for i in range(8)]
 
 
+table = re.search(r'HousePalette\(name: "th-daily", ground: x\[(\d)\], text: x\[(\d)\], key: x\[(\d)\], accent: x\[(\d)\], surface: x\[(\d)\]\)', pal)
+if not table or "o.count == 5" not in pal:
+    fail("palette() no longer maps a band's oklch table the way this check reads it")
+table_roles = dict(zip(("ground", "text", "key", "accent", "surface"), map(int, table.groups())))
+
+
 def palette(day, step):
+    if step is not None and len(step["oklch"]) == 5:   # the band's own table wins, as in palette()
+        return {r: hexcolor(*step["oklch"][i]) for r, i in table_roles.items()}
     env = {"f": seed(day), "S": lambda k: None if step is None else step[k],
            "_nc": lambda a, b: a if a is not None else b, "_map": lambda a, fn: None if a is None else fn(a)}
     for k in ("h", "c", "light"):
