@@ -1,0 +1,346 @@
+{
+ "v": 1,
+ "tracks": [
+  {
+   "id": "in",
+   "title": "Get in",
+   "sub": "the R1, the iPhone, the iPad",
+   "lessons": [
+    {
+     "id": "in-r1",
+     "title": "On the R1, no other device",
+     "text": "Open Termux from the R1's app list. It opens straight into your Linux at the r1@localhost prompt.\nThe key row above the keyboard: Esc, Ctrl, Tab, Up, Down. Up and Down bring back your last commands. Slash and dash are under ?123.\nPinch the text to resize it. Type exit to leave Linux and land in plain Termux.",
+     "code": "",
+     "run": [
+      "learn",
+      "piece"
+     ],
+     "image": ""
+    },
+    {
+     "id": "in-phone",
+     "title": "From the iPhone or iPad: a terminal",
+     "text": "In Easy SSH: host = the R1's address (home Wi-Fi, or the Router address when on the PL R1 hotspot), port 2222, user r1, your password from your notes.\nRestoration: tmux, so a dropped connection comes back to where you were.\nCtrl is the ^ key in Easy SSH's row: tap ^ then c to stop a program.",
+     "code": "",
+     "run": [],
+     "image": ""
+    },
+    {
+     "id": "in-desk",
+     "title": "From the iPad: the full desktop",
+     "text": "In RealVNC: R1 Linux appears by name, or type the R1's address with :5901. Your desktop password is in your notes.\nScaling: Fit to screen. Leave 'resize remote screen' off.\nPictures you make are in Home > Pictures > pieces.",
+     "code": "",
+     "run": [],
+     "image": ""
+    },
+    {
+     "id": "in-away",
+     "title": "Away from home",
+     "text": "On the R1, swipe down and tap Hotspot (the first tile). Join PL R1 on the iPad or iPhone.\nUse the Router address from the iPad's Wi-Fi details in Easy SSH or RealVNC.\nThe hotspot turns itself off after 10 minutes with nobody on it. Installing new things needs internet (home Wi-Fi or your phone's hotspot).",
+     "code": "",
+     "run": [],
+     "image": ""
+    }
+   ]
+  },
+  {
+   "id": "linux",
+   "title": "Linux",
+   "sub": "seven nights in the terminal",
+   "lessons": [
+    {
+     "id": "night-1",
+     "title": "Night 1: where am I",
+     "text": "pwd: the folder you are in\nls -la: what is in it, hidden files too\ncd / ; ls: the top of the whole system\ncd ~: back home\nman ls: the manual, offline",
+     "code": "",
+     "run": [
+      "pwd",
+      "ls -la",
+      "cd / ; ls",
+      "cd ~",
+      "man ls"
+     ],
+     "image": ""
+    },
+    {
+     "id": "night-2",
+     "title": "Night 2: files",
+     "text": "nano notes.txt: write a line, Ctrl+O Enter to save, Ctrl+X to leave",
+     "code": "",
+     "run": [
+      "mkdir practice && cd practice",
+      "nano notes.txt",
+      "cat notes.txt",
+      "cp notes.txt copy.txt ; mv copy.txt renamed.txt ; rm renamed.txt",
+      "tree ~"
+     ],
+     "image": ""
+    },
+    {
+     "id": "night-3",
+     "title": "Night 3: who and what",
+     "text": "whoami ; id: you, and your groups\nls -l notes.txt: the rwx letters are permissions\nhtop: live view of what is running (q to quit)\ndf -h ; free -h: disk and memory",
+     "code": "",
+     "run": [
+      "whoami ; id",
+      "ls -l notes.txt",
+      "chmod 600 notes.txt ; ls -l notes.txt",
+      "htop",
+      "df -h ; free -h"
+     ],
+     "image": ""
+    },
+    {
+     "id": "night-4",
+     "title": "Night 4: installing (needs internet)",
+     "text": "Type each line, press Enter, read what comes back.",
+     "code": "",
+     "run": [
+      "sudo apt update",
+      "apt search cowsay",
+      "sudo apt install cowsay ; /usr/games/cowsay hello",
+      "sudo apt remove cowsay"
+     ],
+     "image": ""
+    },
+    {
+     "id": "night-5",
+     "title": "Night 5: scripts",
+     "text": "nano hello.sh: write:  #!/bin/bash",
+     "code": "",
+     "run": [
+      "nano hello.sh",
+      "echo \"Watch this. $(date)\"",
+      "chmod +x hello.sh ; ./hello.sh"
+     ],
+     "image": ""
+    },
+    {
+     "id": "night-6",
+     "title": "Night 6: git",
+     "text": "Type each line, press Enter, read what comes back.",
+     "code": "",
+     "run": [
+      "git config --global user.name \"you\" ; git config --global user.email \"you@example.com\"",
+      "git init journal && cd journal",
+      "echo \"day one\" > log.txt ; git add log.txt ; git commit -m \"first\"",
+      "git log"
+     ],
+     "image": ""
+    },
+    {
+     "id": "night-7",
+     "title": "Night 7: a tiny server",
+     "text": "On your iPhone (same Wi-Fi or the PL R1 hotspot), open Safari:: http://<R1 address>:8000",
+     "code": "",
+     "run": [
+      "cd ~/practice ; python3 -m http.server 8000",
+      "On your iPhone (same Wi-Fi or the PL R1 hotspot), open Safari:",
+      "Ctrl+C to stop. That is what a cloud server does, in your pocket."
+     ],
+     "image": ""
+    }
+   ]
+  },
+  {
+   "id": "code",
+   "title": "Code",
+   "sub": "twelve lessons, print to generative art",
+   "lessons": [
+    {
+     "id": "code-01",
+     "title": "1. Your first program",
+     "text": "A program is a list of instructions the computer follows top to bottom.\nDO\n  learn run          runs this lesson's code\n  learn edit         opens it in nano. Change the words, Ctrl+O Enter to save, Ctrl+X to leave\n  learn run          again: your change is on screen\nTRY\n  Change the line of ~ to a line of = . Make it longer.\nNEXT: learn next",
+     "code": "# Lesson 1: print puts text on the screen.\nGOLD, RESET = \"\\033[38;2;201;168;76m\", \"\\033[0m\"\nprint(GOLD + \"~\" * 30)\nprint(\"Watch this.\")\nprint(\"~\" * 30 + RESET)\n",
+     "run": [
+      "learn 1",
+      "learn run"
+     ],
+     "image": ""
+    },
+    {
+     "id": "code-02",
+     "title": "2. Loops: doing a thing many times",
+     "text": "A loop repeats. range(10) counts 0 to 9.\nDO\n  learn run , then learn edit\nTRY\n  Change 10 to 20. Change \"*\" to \"o\". Make the triangle point the other way (hint: 10 - i).\nNEXT: learn next",
+     "code": "# Lesson 2: a for loop draws a triangle, one row per turn.\nGOLD, RESET = \"\\033[38;2;201;168;76m\", \"\\033[0m\"\nfor i in range(10):\n    print(GOLD + \"*\" * (i + 1) + RESET)\n",
+     "run": [
+      "learn 2",
+      "learn run"
+     ],
+     "image": ""
+    },
+    {
+     "id": "code-03",
+     "title": "3. A curve made of text",
+     "text": "math.sin goes smoothly up and down between -1 and 1: the shape behind every curve you draw.\nHere each row's position comes from sin, so the stars trace a wave.\nTRY\n  Change 15 (how wide it swings) and 3 (how stretched it is). Change range(40) to range(80).\nNEXT: learn next",
+     "code": "# Lesson 3: math.sin turns a row number into a sideways position.\nimport math\nGOLD, RESET = \"\\033[38;2;201;168;76m\", \"\\033[0m\"\nfor y in range(40):\n    x = int(20 + 15 * math.sin(y / 3))\n    print(GOLD + \" \" * x + \"*\" + RESET)\n",
+     "run": [
+      "learn 3",
+      "learn run"
+     ],
+     "image": ""
+    },
+    {
+     "id": "code-04",
+     "title": "4. Make it move",
+     "text": "Animation is the same picture drawn again, a little different, many times a second.\ntime.sleep waits between frames. \\033[H moves the cursor home so each frame draws over the last.\nCtrl+C stops it (on Easy SSH: tap ^ then c).\nTRY\n  Change 0.05 (speed). Change the * to a word.\nNEXT: learn next",
+     "code": "# Lesson 4: a wave that moves. Ctrl+C to stop.\nimport math, time\nGOLD, RESET = \"\\033[38;2;201;168;76m\", \"\\033[0m\"\nt = 0\ntry:\n    while True:\n        lines = []\n        for y in range(20):\n            x = int(20 + 15 * math.sin(y / 3 + t))\n            lines.append(\" \" * x + \"*\" + \" \" * (40 - x))\n        print(\"\\033[H\" + GOLD + \"\\n\".join(lines) + RESET)\n        t += 0.2\n        time.sleep(0.05)\nexcept KeyboardInterrupt:\n    print(RESET)\n",
+     "run": [
+      "learn 4",
+      "learn run"
+     ],
+     "image": ""
+    },
+    {
+     "id": "code-05",
+     "title": "5. Functions: name a thing so you can reuse it",
+     "text": "def makes a function: a named recipe. Call it with different numbers and get different results.\nTRY\n  Add a third call: wave(width=50, rows=8, char=\"~\")\n  Add an argument for the swing size.\nNEXT: learn next",
+     "code": "# Lesson 5: one function, three different waves.\nimport math\nGOLD, RESET = \"\\033[38;2;201;168;76m\", \"\\033[0m\"\n\ndef wave(width, rows, char):\n    for y in range(rows):\n        x = int(width / 2 + (width / 2 - 1) * math.sin(y / 2))\n        print(GOLD + \" \" * x + char + RESET)\n\nwave(width=30, rows=10, char=\"*\")\nwave(width=60, rows=6, char=\"o\")\n",
+     "run": [
+      "learn 5",
+      "learn run"
+     ],
+     "image": ""
+    },
+    {
+     "id": "code-06",
+     "title": "6. Randomness: a different result every time",
+     "text": "random.random() gives a number between 0 and 1. random.seed(7) makes it repeat the same way:\nthe seed is how a generative artist gets the SAME piece back.\nTRY\n  Run it three times: different each time. Then remove the # before random.seed(7): now it repeats.\nNEXT: learn next",
+     "code": "# Lesson 6: a random walk, one step left or right per row.\nimport random\nGOLD, RESET = \"\\033[38;2;201;168;76m\", \"\\033[0m\"\n# random.seed(7)\nx = 20\nfor y in range(25):\n    x += random.choice([-2, -1, 0, 1, 2])\n    x = max(0, min(40, x))\n    print(GOLD + \" \" * x + \"o\" + RESET)\n",
+     "run": [
+      "learn 6",
+      "learn run"
+     ],
+     "image": ""
+    },
+    {
+     "id": "code-07",
+     "title": "7. Pictures: from text to pixels",
+     "text": "Pillow (PIL) draws real images. This saves a PNG to ~/Pictures/pieces.\nSEE IT: on the iPad desktop, Home > Pictures > pieces, double-click the file.\nTRY\n  Change the colour (red, green, blue, each 0 to 255). Change width=4 to width=12.\nNEXT: learn next",
+     "code": "# Lesson 7: draw a sine curve into a picture file.\nimport math, os\nfrom PIL import Image, ImageDraw\nimg = Image.new(\"RGB\", (1200, 600), (14, 12, 8))\nd = ImageDraw.Draw(img)\npts = [(x, 300 + 200 * math.sin(x / 80)) for x in range(1200)]\nd.line(pts, fill=(201, 168, 76), width=4)\nout = os.path.expanduser(\"~/Pictures/pieces/lesson7.png\")\nos.makedirs(os.path.dirname(out), exist_ok=True)\nimg.save(out)\nprint(\"Saved\", out)\n",
+     "run": [
+      "learn 7",
+      "learn run"
+     ],
+     "image": ""
+    },
+    {
+     "id": "code-08",
+     "title": "8. Parametric curves: two sines at once",
+     "text": "Feed one sine into x and another into y and you get loops (Lissajous curves).\nThe ratio of a to b decides the shape. This is the family your own curve work lives near.\nTRY\n  a, b = 3, 2  then 5, 4  then 7, 6. Then compare with the finished piece: piece lissajous 5 4\nNEXT: learn next",
+     "code": "# Lesson 8: x and y each follow their own sine.\nimport math, os\nfrom PIL import Image, ImageDraw\na, b = 3, 2\nS = 1000\nimg = Image.new(\"RGB\", (S, S), (14, 12, 8))\nd = ImageDraw.Draw(img)\npts = []\nfor i in range(3001):\n    t = i / 3000 * 2 * math.pi\n    pts.append((S / 2 + math.sin(a * t) * 400, S / 2 + math.sin(b * t) * 400))\nd.line(pts, fill=(201, 168, 76), width=3)\nout = os.path.expanduser(f\"~/Pictures/pieces/lesson8-{a}-{b}.png\")\nos.makedirs(os.path.dirname(out), exist_ok=True)\nimg.save(out)\nprint(\"Saved\", out)\n",
+     "run": [
+      "learn 8",
+      "learn run"
+     ],
+     "image": ""
+    },
+    {
+     "id": "code-09",
+     "title": "9. Your own command (like the house's slash commands)",
+     "text": "A command is just a program in a folder the shell searches (~/bin) with permission to run.\nDO, one line at a time:\n  cp ~/learn/code/09_command.py ~/bin/curve\n  chmod +x ~/bin/curve\n  curve\nThe first line of the file (#!/usr/bin/env python3) tells Linux which language runs it.\nYou just made a command. Type curve from any folder, on the R1, the iPhone or the iPad.\nNEXT: learn next",
+     "code": "#!/usr/bin/env python3\n# Lesson 9: this file becomes your own command, `curve`.\nimport math, random\nGOLD, RESET = \"\\033[38;2;201;168;76m\", \"\\033[0m\"\nk = random.uniform(2, 5)\nfor y in range(18):\n    x = int(20 + 18 * math.sin(y / k))\n    print(GOLD + \" \" * x + \"*\" + RESET)\n",
+     "run": [
+      "learn 9",
+      "learn run"
+     ],
+     "image": ""
+    },
+    {
+     "id": "code-10",
+     "title": "10. Commands that take options",
+     "text": "sys.argv holds the words typed after the command: `curve 30 4` gives [\"30\", \"4\"].\nDO\n  cp ~/learn/code/10_arguments.py ~/bin/curve     (replaces your lesson 9 version)\n  curve            curve 40         curve 40 6\nTRY\n  Add a third option for the character, so `curve 40 6 o` draws with o.\nNEXT: learn next",
+     "code": "#!/usr/bin/env python3\n# Lesson 10: curve [rows] [stretch]\nimport math, sys\nGOLD, RESET = \"\\033[38;2;201;168;76m\", \"\\033[0m\"\nrows = int(sys.argv[1]) if len(sys.argv) > 1 else 18\nk = float(sys.argv[2]) if len(sys.argv) > 2 else 3\nfor y in range(rows):\n    x = int(20 + 18 * math.sin(y / k))\n    print(GOLD + \" \" * x + \"*\" + RESET)\n",
+     "run": [
+      "learn 10",
+      "learn run"
+     ],
+     "image": ""
+    },
+    {
+     "id": "code-11",
+     "title": "11. Shortcuts: aliases in your shell",
+     "text": "An alias is a nickname for a longer command. They live in ~/.bashrc, read at every login.\nDO\n  nano ~/.bashrc     and add at the bottom:\n      alias pics='ls -t ~/Pictures/pieces | head'\n      alias again='piece flowfield'\n  save, then:  source ~/.bashrc\n  pics       again       pics\nSmall tools you make for yourself are how a terminal becomes yours.\nNEXT: learn next",
+     "code": "",
+     "run": [
+      "learn 11"
+     ],
+     "image": ""
+    },
+    {
+     "id": "code-12",
+     "title": "12. Your first generative series",
+     "text": "A series: the same rules, many seeds, you keep the best. This makes 5 at once.\nDO\n  learn run         then look at them on the iPad (Home > Pictures > pieces)\n  learn edit        and change the rules: the number of lines, the step size, the colours\nKeep the seed of the one you like: the same seed always makes the same picture.\nYou are now writing generative art. Read the finished pieces next:  piece   then   piece flowfield -c\nThis is the last lesson. More come when you ask.",
+     "code": "# Lesson 12: five pieces from five seeds.\nimport math, os, random\nfrom PIL import Image, ImageDraw\nos.makedirs(os.path.expanduser(\"~/Pictures/pieces\"), exist_ok=True)\nfor seed in range(1, 6):\n    random.seed(seed)\n    W, H = 1000, 700\n    img = Image.new(\"RGB\", (W, H), (14, 12, 8))\n    d = ImageDraw.Draw(img)\n    f = random.uniform(0.003, 0.01)\n    for _ in range(250):\n        x, y = random.uniform(0, W), random.uniform(0, H)\n        pts = [(x, y)]\n        for _ in range(60):\n            a = math.sin(x * f) * 3 + math.cos(y * f) * 3\n            x, y = x + math.cos(a) * 5, y + math.sin(a) * 5\n            pts.append((x, y))\n        d.line(pts, fill=(201, 168, 76), width=1)\n    out = os.path.expanduser(f\"~/Pictures/pieces/series-{seed}.png\")\n    img.save(out)\n    print(\"Saved\", out)\n",
+     "run": [
+      "learn 12",
+      "learn run"
+     ],
+     "image": ""
+    }
+   ]
+  },
+  {
+   "id": "pieces",
+   "title": "Pieces",
+   "sub": "finished creative coding to follow",
+   "lessons": [
+    {
+     "id": "piece-wave",
+     "title": "Wave",
+     "text": "Three gold sine waves breathing across the terminal. Ctrl+C stops it.\nRun it, then open its code and change one number.",
+     "code": "#!/usr/bin/env python3\n# Three gold sine waves breathing across the terminal. Ctrl+C stops it.\nimport math, os, shutil, sys, time\n\nGOLD = \"\\033[38;2;201;168;76m\"   # the house gold, #c9a84c\nDIM = \"\\033[38;2;110;92;42m\"\nRESET = \"\\033[0m\"\nframes = int(os.environ.get(\"FRAMES\", \"0\"))   # 0 = forever (FRAMES=5 is how the setup tests it)\n\nt, n = 0.0, 0\ntry:\n    print(\"\\033[?25l\", end=\"\")   # hide the cursor\n    while True:\n        w, h = shutil.get_terminal_size()\n        h = max(6, h - 1)\n        rows = [[\" \"] * w for _ in range(h)]\n        for k, (amp, speed, char) in enumerate([(0.42, 1.0, \"~\"), (0.30, 1.6, \".\"), (0.18, 2.3, \"o\")]):\n            for x in range(w):\n                y = int(h / 2 + math.sin(x / 7 + t * speed + k) * h * amp)\n                if 0 <= y < h:\n                    rows[y][x] = char\n        out = \"\\033[H\" + \"\\n\".join((GOLD if i % 2 else DIM) + \"\".join(r) for i, r in enumerate(rows)) + RESET\n        sys.stdout.write(out); sys.stdout.flush()\n        t += 0.12; n += 1\n        if frames and n >= frames:\n            break\n        time.sleep(0.05)\nexcept KeyboardInterrupt:\n    pass\nfinally:\n    print(\"\\033[?25h\" + RESET)\n",
+     "run": [
+      "piece wave",
+      "piece wave -c"
+     ],
+     "image": ""
+    },
+    {
+     "id": "piece-spiral",
+     "title": "Spiral",
+     "text": "A golden-angle spiral of points, drawn once in the terminal.\nRun it, then open its code and change one number.",
+     "code": "#!/usr/bin/env python3\n# A golden-angle spiral of points, drawn once in the terminal.\nimport math, shutil\n\nGOLD, RESET = \"\\033[38;2;201;168;76m\", \"\\033[0m\"\nw, h = shutil.get_terminal_size()\nh = max(10, h - 2)\ngrid = [[\" \"] * w for _ in range(h)]\ngolden = math.pi * (3 - math.sqrt(5))          # about 137.5 degrees: how sunflower seeds pack\nfor i in range(1, 400):\n    r = math.sqrt(i) / math.sqrt(400) * min(w / 2, h)   # terminal cells are twice as tall as wide\n    a = i * golden\n    x, y = int(w / 2 + r * math.cos(a)), int(h / 2 + r * math.sin(a) / 2)\n    if 0 <= x < w and 0 <= y < h:\n        grid[y][x] = \"*\" if i % 13 == 0 else \".\"\nprint(GOLD + \"\\n\".join(\"\".join(r) for r in grid) + RESET)\nprint(\"Change 400 or the 13, run it again: piece spiral\")\n",
+     "run": [
+      "piece spiral",
+      "piece spiral -c"
+     ],
+     "image": ""
+    },
+    {
+     "id": "piece-lissajous",
+     "title": "Lissajous",
+     "text": "A Lissajous curve saved as a picture. Try: piece lissajous 5 4\nRun it, then open its code and change one number.",
+     "code": "#!/usr/bin/env python3\n# A Lissajous curve saved as a picture. Try: piece lissajous 5 4\nimport math, os, sys\nfrom PIL import Image, ImageDraw\n\na = int(sys.argv[1]) if len(sys.argv) > 1 else 3\nb = int(sys.argv[2]) if len(sys.argv) > 2 else 2\nsize = 1200\nimg = Image.new(\"RGB\", (size, size), (14, 12, 8))          # the house's dark ground\nd = ImageDraw.Draw(img)\npts = []\nfor i in range(4001):\n    t = i / 4000 * 2 * math.pi\n    pts.append((size / 2 + math.sin(a * t + math.pi / 2) * size * 0.42, size / 2 + math.sin(b * t) * size * 0.42))\nd.line(pts, fill=(201, 168, 76), width=3)                  # the house gold\nout = os.path.expanduser(f\"~/Pictures/pieces/lissajous-{a}-{b}.png\")\nos.makedirs(os.path.dirname(out), exist_ok=True)\nimg.save(out)\nprint(\"Saved\", out)\nprint(\"See it on the desktop: open Home > Pictures > pieces\")\n",
+     "run": [
+      "piece lissajous",
+      "piece lissajous -c"
+     ],
+     "image": "https://pub-4420dc4349624d6bbed7eb9555f42661.r2.dev/pldev/prog/lissajous.png"
+    },
+    {
+     "id": "piece-flowfield",
+     "title": "Flow field",
+     "text": "A flow field: 600 lines follow invisible currents. Different every run. Try: piece flowfield 7 (a seed)\nRun it, then open its code and change one number.",
+     "code": "#!/usr/bin/env python3\n# A flow field: 600 lines follow invisible currents. Different every run. Try: piece flowfield 7 (a seed)\nimport math, os, random, sys, time\nfrom PIL import Image, ImageDraw\n\nseed = int(sys.argv[1]) if len(sys.argv) > 1 else int(time.time())\nrandom.seed(seed)\nW, H = 1600, 1100\nimg = Image.new(\"RGB\", (W, H), (14, 12, 8))\nd = ImageDraw.Draw(img)\nf1, f2, f3 = random.uniform(0.002, 0.006), random.uniform(0.002, 0.006), random.uniform(0, 6.28)\n\ndef angle(x, y):\n    return math.sin(x * f1 + f3) * 2.2 + math.cos(y * f2) * 2.2\n\nfor _ in range(600):\n    x, y = random.uniform(0, W), random.uniform(0, H)\n    pts = [(x, y)]\n    for _ in range(80):\n        a = angle(x, y)\n        x, y = x + math.cos(a) * 4, y + math.sin(a) * 4\n        if not (0 <= x < W and 0 <= y < H):\n            break\n        pts.append((x, y))\n    g = random.randint(120, 201)\n    if len(pts) > 2:\n        d.line(pts, fill=(g, int(g * 0.84), int(g * 0.38)), width=1)\nout = os.path.expanduser(f\"~/Pictures/pieces/flowfield-{seed}.png\")\nos.makedirs(os.path.dirname(out), exist_ok=True)\nimg.save(out)\nprint(\"Saved\", out, \"(seed\", str(seed) + \": the same seed makes the same picture)\")\n",
+     "run": [
+      "piece flowfield",
+      "piece flowfield -c"
+     ],
+     "image": "https://pub-4420dc4349624d6bbed7eb9555f42661.r2.dev/pldev/prog/flowfield.png"
+    },
+    {
+     "id": "piece-harmonograph",
+     "title": "Harmonograph",
+     "text": "A harmonograph: two swinging pendulums with friction draw a fading spiral. Different every run.\nRun it, then open its code and change one number.",
+     "code": "#!/usr/bin/env python3\n# A harmonograph: two swinging pendulums with friction draw a fading spiral. Different every run.\nimport math, os, random, time\nfrom PIL import Image, ImageDraw\n\nseed = int(time.time()); random.seed(seed)\nS = 1200\nimg = Image.new(\"RGB\", (S, S), (14, 12, 8))\nd = ImageDraw.Draw(img)\nf = [random.choice([2, 3, 4]) + random.uniform(-0.02, 0.02) for _ in range(4)]   # near-whole ratios make the loops\np = [random.uniform(0, math.pi) for _ in range(4)]\ndamp = 0.0025\npts = []\nfor i in range(30000):\n    t = i * 0.02\n    e = math.exp(-damp * t)\n    x = math.sin(f[0] * t + p[0]) * e + math.sin(f[1] * t + p[1]) * e\n    y = math.sin(f[2] * t + p[2]) * e + math.sin(f[3] * t + p[3]) * e\n    pts.append((S / 2 + x * S * 0.22, S / 2 + y * S * 0.22))\nfor i in range(0, len(pts) - 1, 50):                      # fade from gold to dark as the swing dies\n    k = 1 - i / len(pts)\n    d.line(pts[i:i + 51], fill=(int(40 + 161 * k), int(34 + 134 * k), int(16 + 60 * k)), width=2)\nout = os.path.expanduser(f\"~/Pictures/pieces/harmonograph-{seed}.png\")\nos.makedirs(os.path.dirname(out), exist_ok=True)\nimg.save(out)\nprint(\"Saved\", out)\n",
+     "run": [
+      "piece harmonograph",
+      "piece harmonograph -c"
+     ],
+     "image": "https://pub-4420dc4349624d6bbed7eb9555f42661.r2.dev/pldev/prog/harmonograph.png"
+    }
+   ]
+  }
+ ]
+}

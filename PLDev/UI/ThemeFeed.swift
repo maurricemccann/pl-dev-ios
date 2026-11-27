@@ -305,7 +305,7 @@ enum ThemeFeed {
 
     /// Each file is kept only when it reads as the bundled shape; a 404 removes the copy (back to the bundle); offline keeps it.
     @MainActor private static func fetchExtras() async {
-        let files: [(String, (Data) -> Bool)] = [("school.json", SchoolModel.valid), ("handbook.json", { !NativeHandbook.parse($0).isEmpty })]
+        let files: [(String, (Data) -> Bool)] = [("school.json", SchoolModel.valid), ("prog.json", ProgModel.valid), ("handbook.json", { !NativeHandbook.parse($0).isEmpty })]
         for (name, valid) in files {
             guard let u = URL(string: r2 + "pldev/" + name) else { continue }
             var req = URLRequest(url: u, cachePolicy: .reloadIgnoringLocalCacheData, timeoutInterval: 20)
