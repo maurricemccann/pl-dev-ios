@@ -510,10 +510,10 @@ private struct GateViewingCard: View {
     var body: some View {
         let done = store.saved.trials.filter { $0.picked != nil }
         let hits = done.filter { $0.picked == $0.target }.count
-        return PCard(title: "Viewing game", hint: "The app seals one of your pieces before you start. Describe or sketch it, then pick it from four. Chance is one in four.") {
+        return PCard(title: "Viewing game", hint: "The app seals one of your pieces. Five quiet minutes, then raw impressions only: shape, colour, texture, material, never a name. About 15 minutes, never past 30. Pick it from four; chance is one in four.") {
             if let trial = current {
                 Text("Sealed at \(trial.at.formatted(date: .omitted, time: .shortened)).").candleHint()
-                TextField("Shapes, colours, textures, feelings", text: $notes, axis: .vertical).textFieldStyle(.roundedBorder)
+                TextField("Shapes, colours, textures, materials. No names.", text: $notes, axis: .vertical).textFieldStyle(.roundedBorder)
                 Button("Show the four") { store.change { s in if let i = s.trials.firstIndex(where: { $0.id == trial.id }) { s.trials[i].notes = notes } }; choosing = true }
                     .buttonStyle(CandleButton())
             } else {
@@ -562,6 +562,9 @@ private struct GateChoose: View {
                     .buttonStyle(.plain)
                     .accessibilityLabel(byId[cr]?.title ?? cr)
                 }
+            }
+            if picked != nil {
+                Text("Read your notes back. Cross out anything that was a memory, a name, a guess or a belief; what is left is the signal to trust next time.").candleHint()
             }
             Button("Done") { done() }.buttonStyle(CandleGhost())
         }

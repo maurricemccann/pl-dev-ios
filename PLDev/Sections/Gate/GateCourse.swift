@@ -56,8 +56,15 @@ enum GateCourse {
                            "Count one to twenty into light, easy sleep.",
                            "Sleep.",
                            "Rising now. Slowly. Ten, down to one. Move your fingers, open your eyes."],
-                   minutes: 30, holds: 1, level: 20)]
-    static let extraOpensAfter = ["one": "1.2", "nap": "1.5"]
+                   minutes: 30, holds: 1, level: 20), three]
+    static let extraOpensAfter = ["one": "1.2", "nap": "1.5", "three": "2.1"]
+    static let three = GateLesson(id: "three", title: "One Question, Three Answers",
+                   why: "An artist's way from the 1977 accounts: one real question into twelve, three short answers back, worked with like oracle lines for weeks.",
+                   steps: ["Write the one question you most want answered before you start.",
+                           "In twelve, put it at your centre and let it go.",
+                           "Take the first short answer that comes, then ask again for a second, and a third.",
+                           "Write all three the moment you are back. Live with them; do not explain them away."],
+                   minutes: 20, holds: 1, level: 12)
 
     static let discovery: [GateLesson] = [
         GateLesson(id: "1.1", title: "Orientation",
@@ -93,7 +100,7 @@ enum GateCourse {
                            "Find the feeling the fear was covering. Let it rise away the same way.",
                            "Under both is something clean: a memory, or how you were before this. Pull that energy back in.",
                            "Do it three times. If you find nothing, let nothing float away and still pull the clean energy in. Close the lid and rest in ten."],
-                   tool: .box, holds: 3),
+                   signals: ["letgo", "lift"], tool: .box, holds: 3),
         GateLesson(id: "1.5", title: "Exploration, Sleep",
                    why: "Sleep as a door: rehearse floating out, then count into real sleep. Lie the way you sleep.",
                    steps: ["In ten, remember how it feels to float, the way you do in sleep.",
@@ -117,6 +124,7 @@ enum GateCourse {
                    steps: ["From a deep, steady ten, wait for the mind to wake in a different way.",
                            "When it starts, say eleven. As it grows, twelve. Let it carry you; effort gets in the way.",
                            "Do not study it now. Study it afterwards.",
+                           "Sometimes an unpleasant side of you surfaces here. It is part of the work: ground yourself, and stop if it is too much.",
                            "Come back from twelve to ten, then ten to one."],
                    signals: ["twelve"], holds: 5, level: 12),
         GateLesson(id: "2.2", title: "Problem Solving",
@@ -125,7 +133,7 @@ enum GateCourse {
                            "Push it out through all of your awareness, then let it go.",
                            "Notice images, words, sensations, a sudden knowing. Simple answers count; so do jokes.",
                            "If you are not sure what to ask, ask what you most need to know right now. Thanks seals it."],
-                   signals: ["ask"], tool: .questions, holds: 3, level: 12),
+                   signals: ["ask", "clear"], tool: .questions, holds: 3, level: 12),
         GateLesson(id: "2.3", title: "One-Month Patterning",
                    why: "What you think in a deep state takes shape around you. Write the pattern before you start; the patterning card checks it.",
                    steps: ["In twelve, build what you want in detail: you in it, now, with feeling.",
@@ -209,6 +217,7 @@ enum GateCourse {
                            "Back away: slowly, down through whatever you are lying on.",
                            "Out of the top of your head like mist, re-forming outside.",
                            "Float up like a cloud, on the pleasure of floating.",
+                           "Try less. In the Army's 1982 report, effort blocked it and the tired, loose sessions went furthest.",
                            "Excitement pulls you back in, so stay patient. To return, think of a hand and move it; walking or cold water finishes it."],
                    holds: 3)]
 
@@ -237,7 +246,7 @@ enum GateCourse {
                            "It may come as vibration, light, motion or feeling.",
                            "Afterwards, translate it into words, knowing some of it will not fit.",
                            "Give familiar sensations new meanings. That becomes your vocabulary."],
-                   holds: 3, level: 12),
+                   signals: ["speak"], holds: 3, level: 12),
         GateLesson(id: "4.5", title: "Non-Verbal Communication II",
                    why: "More practice translating whole impressions into words and pictures.",
                    steps: ["In twelve, receive a whole impression.",
@@ -327,6 +336,10 @@ enum GateCourse {
         GateSignal(key: "white", title: "Fresh energy", how: "Palms up. Breathe in white from above into your hands and through you."),
         GateSignal(key: "purple", title: "Balance a place", how: "Breathe in, hold, think purple, send it to the place: heal, balance."),
         GateSignal(key: "relax", title: "Relax", how: "Think ten. Breathe out as if blowing out a candle."),
+        GateSignal(key: "letgo", title: "Let a feeling go", how: "Breathe in, name the feeling, and let it float off on the out-breath like a bubble."),
+        GateSignal(key: "lift", title: "Lift when low", how: "Breathe in bright energy through the top of your head; on the out-breath let it fill your chest."),
+        GateSignal(key: "clear", title: "Think clearly", how: "Think twelve, hold the question, breathe out, and take the first plain answer."),
+        GateSignal(key: "speak", title: "Speak smoothly", how: "Think ten, drop the shoulders, and let the first sentence come slower than feels natural."),
         GateSignal(key: "pain", title: "Turn pain down", how: "The workbook's: look at the place with your eyes closed and repeat 55515 in your mind.")]
 
     static let before = [
@@ -334,6 +347,8 @@ enum GateCourse {
         "Bathroom first. Loosen your clothes; shoes and glasses off. A blanket close: the body can go cold, then warm.",
         "Somewhere dark and quiet, phone on Do Not Disturb. A noise you cannot stop takes you deeper: let it.",
         "Headphones on, volume just loud enough to hear.",
+        "Dim the room and give it five quiet minutes before Begin, with no clock in view.",
+        "Old or unpleasant feelings can surface, mostly in twelve and beyond. Ground, and stop if it is too much; it passes.",
         "Never while driving, on the floor at work or around machines. Epilepsy or seizures: ask a doctor first."]
 
     static let grounding = [
@@ -587,6 +602,10 @@ struct GateSittingView: View {
     @State private var held = false
     @State private var tooMuch = false
     @State private var clickedOut = false
+    @State private var sensed = ""
+    @State private var felt = ""
+    @State private var symbol = ""
+    @State private var made = ""
     @State private var fading: AVAudioPlayer?
     @State private var line = ""
     @State private var started = Date()
@@ -594,7 +613,7 @@ struct GateSittingView: View {
     @State private var player: AVAudioPlayer?
     @State private var problem: String?
 
-    private var beat: Double { lesson.level == 20 ? 2 : lesson.level == 12 ? 10 : 6 }
+    private var beat: Double { lesson.level == 20 ? 2 : 4 }   // 4 Hz: the beat the 1982 Army trip report gives for the Gateway week
 
     var body: some View {
         NavigationStack {
@@ -634,6 +653,9 @@ struct GateSittingView: View {
             .pickerStyle(.segmented)
         Toggle("Tone in the headphones (\(Int(beat)) Hz between the ears)", isOn: $tone).tint(Candle.gold).frame(minHeight: 44)
         if let problem { Text(problem).candleHint() }
+        if store.course.sittings.filter({ $0.at > Date.now.addingTimeInterval(-7 * 86400) }).count >= 20 {
+            Text("Twenty sittings this week. The Army's trainers stopped at twenty; rest is part of it.").candleHint()
+        }
         Button("Begin") { begin() }.buttonStyle(CandleButton()).disabled(lesson.quiet && plan.trimmingCharacters(in: .whitespaces).isEmpty)
     }
 
@@ -646,7 +668,12 @@ struct GateSittingView: View {
 
     @ViewBuilder private var afterward: some View {
         Text("Write it down now, before it fades.").candleH2()
-        TextField("What happened: anything at all", text: $happened, axis: .vertical).textFieldStyle(.roundedBorder)
+        Text("If you can, make one thing first: a ten-minute sketch or one line, while the state is still on you.").candleHint()
+        TextField("What I made", text: $made, axis: .vertical).textFieldStyle(.roundedBorder)
+        TextField("What you sensed", text: $sensed, axis: .vertical).textFieldStyle(.roundedBorder)
+        TextField("What the body felt", text: $felt, axis: .vertical).textFieldStyle(.roundedBorder)
+        TextField("Any symbol or picture", text: $symbol, axis: .vertical).textFieldStyle(.roundedBorder)
+        TextField("Anything else", text: $happened, axis: .vertical).textFieldStyle(.roundedBorder)
         band("Mood now", $after)
         Toggle("It held", isOn: Binding(get: { held }, set: { held = $0; if $0 { tooMuch = false } })).tint(Candle.gold).frame(minHeight: 44)
         Toggle("It was too much", isOn: Binding(get: { tooMuch }, set: { tooMuch = $0; if $0 { held = false } })).tint(Candle.gold).frame(minHeight: 44)
@@ -660,6 +687,7 @@ struct GateSittingView: View {
         Text("Held \(store.held(lesson.id)) of \(lesson.holds).").candleH2()
         Text("It ran \(seconds / 60) minutes. \(before.title) to \(after.title).").candleHint()
         if tooMuch { ForEach(GateCourse.grounding, id: \.self) { Text($0).candleHint() } }
+        if clickedOut, lesson.level == 12 { Text("Clicking out in twelve usually means ten needs more time. A few sittings of Advanced Focus 10 first.").candleHint() }
         Button("Done") { dismiss() }.buttonStyle(CandleButton())
     }
 
@@ -737,9 +765,18 @@ struct GateSittingView: View {
         UIApplication.shared.isIdleTimerDisabled = false
     }
 
+    /// The talk-through, kept as one text so old records read the same.
+    private var debrief: String {
+        [("Made", made), ("Sensed", sensed), ("Body", felt), ("Symbol", symbol), ("", happened)]
+            .map { ($0.0, $0.1.trimmingCharacters(in: .whitespacesAndNewlines)) }
+            .filter { !$0.1.isEmpty }
+            .map { $0.0.isEmpty ? $0.1 : "\($0.0): \($0.1)" }
+            .joined(separator: "\n")
+    }
+
     private func save() {
         let s = GateSitting(lesson: lesson.id, at: started, plan: plan, position: position, warmth: warmth, energy: energy, mealHours: mealHours,
-                            before: before, after: after, happened: happened.trimmingCharacters(in: .whitespacesAndNewlines), held: held, tooMuch: tooMuch, seconds: seconds, clickedOut: clickedOut ? true : nil)
+                            before: before, after: after, happened: debrief, held: held, tooMuch: tooMuch, seconds: seconds, clickedOut: clickedOut ? true : nil)
         store.editCourse { c in
             c.sittings.append(s)
             if held, GateCourse.extraOpensAfter[lesson.id] == nil { c.held[lesson.id, default: 0] += 1 }
