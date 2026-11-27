@@ -110,6 +110,10 @@ struct RisingGenView: View {
     private var muted: Color { colors.count > 4 ? colors[3] : .secondary }
     private var accent: Color { colors.count > 4 ? colors[4] : PLTone.accent }
 
+    private var drafted: Bool { screen.heading != nil || screen.line != RisingStep.of(tap.band).lines.first }
+    /// His crowned lines for this band, less the one already at the top.
+    private var spare: [String] { RisingStep.of(tap.band).lines.filter { $0 != screen.line } }
+
     private var corner: CGFloat { max(6, CGFloat(pack?.radius ?? 1) * [10, 14, 18, 22][screen.shape % 4]) }
     private var gap: CGFloat { [6, 10, 16][screen.spacing % 3] }
 
@@ -124,7 +128,8 @@ struct RisingGenView: View {
                 VStack(alignment: .leading, spacing: 4) {
                     if let h = screen.heading { Text(h).font(headingFont()) }
                     if let l = screen.line { Text(l).plFont(.callout) }
-                    Text("phone's draft").plFont(.caption2).foregroundStyle(muted)
+                    // marked only when the phone wrote it: a rejected line falls back to his own
+                    if drafted { Text("phone's draft").plFont(.caption2).foregroundStyle(muted) }
                 }
             }
             ForEach(Array(screen.blocks.enumerated()), id: \.offset) { i, block in
@@ -177,8 +182,7 @@ struct RisingGenView: View {
                 Text(rising.note).plFont(.callout)
             }
         case .text:
-            let lines = RisingStep.of(tap.band).lines
-            Text(RisingAsk.nudge(tap) ?? (lines.isEmpty ? "" : lines[block.variant % lines.count]))
+            Text(RisingAsk.nudge(tap) ?? (spare.isEmpty ? "Take the one small move." : spare[block.variant % spare.count]))
                 .plFont(block.size == 2 ? .headline : .callout)
         case .wall: EmptyView()
         }
@@ -203,9 +207,9 @@ struct RisingGenView: View {
 
     /// Buddy with one of his crowned lines; the variant moves him left or right and in or out of his hole.
     private func buddyPart(_ block: GenBlock) -> some View {
-        let lines = RisingStep.of(tap.band).lines
         let head = BuddyHead(model: buddy, side: [84, 110, 140][block.size % 3], hole: block.variant == 0)
-        let said = Text(lines.isEmpty ? "" : lines[block.variant % lines.count]).plFont(.callout).frame(maxWidth: .infinity, alignment: .leading)
+        // no second copy of the line at the top: then he is simply there
+        let said = Text(spare.isEmpty ? "" : spare[block.variant % spare.count]).plFont(.callout).frame(maxWidth: .infinity, alignment: .leading)
         return HStack(alignment: .center, spacing: 8) {
             if block.variant == 1 { head; said } else { said; head }
         }
