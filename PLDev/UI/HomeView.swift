@@ -92,6 +92,9 @@ struct HomeView: View {
         }
         .onAppear { homeOrder = RisingScale.homeOrder() }
         .onChange(of: homeFollows) { homeOrder = RisingScale.homeOrder() }
+        // the cable tour shows each band's order as its stop comes up, and his own order once it ends (never in normal use)
+        .onChange(of: RisingScale.shared.current?.band) { if PhoneTour.shared.label != nil { homeOrder = RisingScale.homeOrder() } }
+        .onChange(of: PhoneTour.shared.label == nil) { homeOrder = RisingScale.homeOrder() }
         .padding(.horizontal, PLSpace.margin).padding(.top, PLSpace.gap).padding(.bottom, PLSpace.block)
     }
 
@@ -132,6 +135,7 @@ struct HomeView: View {
         HStack(spacing: 8) {
             ForEach(0..<3, id: \.self) { i in   // named, not dots (Codex 11-14, his pick N6)
                 Text(Self.pageNames[i]).font(Font.pl(.footnote).weight(page == i ? .bold : .regular))
+                    .lineLimit(1).minimumScaleFactor(0.7)   // never "To..." under a band's larger type (cable tour, 11-26)
                     .foregroundStyle(Color.primary.opacity(page == i ? 0.95 : 0.5))
                     .frame(minHeight: 32).contentShape(Rectangle())
                     .onTapGesture { withAnimation(.snappy) { page = i } }
@@ -285,6 +289,7 @@ struct HomeView: View {
                 } label: {
                     Label("Settings", systemImage: "gearshape")
                         .plFont(.callout, emphasized: true)
+                        .lineLimit(1).minimumScaleFactor(0.7)
                         .foregroundStyle(IOS27.LabelsLiquidGlass.primary)
                         .padding(.horizontal, PLSpace.pad)
                         .frame(minHeight: 44)

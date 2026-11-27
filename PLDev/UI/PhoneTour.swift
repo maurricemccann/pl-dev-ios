@@ -82,7 +82,7 @@ struct PhoneTourOverlay: View {
     @Environment(\.scenePhase) private var phase
 
     var body: some View {
-        ZStack(alignment: .topLeading) {
+        ZStack(alignment: .bottom) {
             if let label = tour.label {
                 HStack(spacing: 8) {
                     Text(label).font(.caption2.monospacedDigit()).foregroundStyle(.white).lineLimit(1)
@@ -90,12 +90,12 @@ struct PhoneTourOverlay: View {
                 }
                 .padding(.horizontal, 10)
                 .background(.black.opacity(0.6), in: Capsule())
-                .padding(.leading, 8)
+                .padding(.bottom, 92)   // just above the bottom bar, clear of the wordmark and titles
                 .accessibilityElement(children: .contain)
                 .accessibilityLabel("Tour, \(label)")
             }
         }
-        .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .topLeading)
+        .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .bottom)
         .onChange(of: phase) { _, p in if p != .active { tour.stop() } }
     }
 }

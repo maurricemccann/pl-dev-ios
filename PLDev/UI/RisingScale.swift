@@ -147,9 +147,11 @@ enum RisingAsk {
     var revealTint: String?
 
     /// The cable tour (PhoneTour.swift): a band shown as if tapped, held in memory only, never saved; endPreview reads his log back.
-    @ObservationIgnored private var previewAts: Set<Date> = []
-    func previewTap(_ band: Band) { let c = CheckIn(at: .now, band: band); previewAts.insert(c.at); log.append(c) }
-    func endPreview() { previewAts = []; loaded = false; load() }
+    private var previewAts: Set<Date> = []
+    /// The tour is showing a band: the panel opens answered, past the questions, as after a real tap.
+    var previewing: Bool { !previewAts.isEmpty }
+    func previewTap(_ band: Band) { let c = CheckIn(at: .now, band: band); previewAts.insert(c.at); log.append(c); showWords = true }
+    func endPreview() { previewAts = []; showWords = false; loaded = false; load() }
 
     func tap(_ band: Band) {
         load()
@@ -695,7 +697,7 @@ struct RisingPanel: View {
                 }
                 Text("Hawkins: " + RisingStep.of(tap.band).hawkins).plFont(.caption2).foregroundStyle(.secondary).lineLimit(1)
                     .accessibilityLabel("Hawkins's number for this band: " + RisingStep.of(tap.band).hawkins + ". His muscle-testing number, not a measurement.")
-                if asked < RisingAsk.count(tap.band) {
+                if asked < RisingAsk.count(tap.band) && !rising.previewing {
                     question(RisingAsk.questions[asked], at: asked)
                 } else {
                 if let line = RisingAsk.nudge(tap) { Text(line).plFont(.callout).padding(.vertical, 6) }
