@@ -70,18 +70,18 @@
      "name": "before the drop",
      "bars": 4,
      "parts": [
-      "Keys"
+      "Keys · PL Felt Piano.sf2 + chords.mid"
      ]
     },
     {
      "name": "drop",
      "bars": 4,
      "parts": [
-      "Keys",
-      "Clap + Snare",
-      "Kick",
-      "Hats",
-      "808"
+      "Keys · PL Felt Piano.sf2 + chords.mid",
+      "Clap + Snare · PL clap.wav + PL snare.wav",
+      "Kick · PL kick.wav",
+      "Hats · PL hat.wav + PL hat-open.wav",
+      "808 · PL 808.sf2 + 808.mid"
      ]
     }
    ]
@@ -131,30 +131,30 @@
      "name": "intro",
      "bars": 4,
      "parts": [
-      "Keys"
+      "Keys · PL Keys.sf2 + chords.mid"
      ]
     },
     {
      "name": "verse",
      "bars": 8,
      "parts": [
-      "Keys",
-      "Snare",
-      "Kick",
-      "Hats",
-      "808"
+      "Keys · PL Keys.sf2 + chords.mid",
+      "Clap + Snare · PL clap.wav + PL snare.wav",
+      "Kick · PL kick.wav",
+      "Hats · PL hat.wav + PL shaker.wav",
+      "808 · PL 808.sf2 + 808.mid"
      ]
     },
     {
      "name": "hook",
      "bars": 8,
      "parts": [
-      "Keys",
-      "Snare",
-      "Kick",
-      "Hats",
-      "808",
-      "Hook"
+      "Keys · PL Keys.sf2 + chords.mid",
+      "Clap + Snare · PL clap.wav + PL snare.wav",
+      "Kick · PL kick.wav",
+      "Hats · PL hat.wav + PL shaker.wav",
+      "808 · PL 808.sf2 + 808.mid",
+      "Hook · PL Nylon Guitar.sf2 + hook.mid"
      ]
     }
    ]
@@ -193,28 +193,32 @@
      "name": "guitar alone",
      "bars": 8,
      "parts": [
-      "Guitar",
-      "Strings"
+      "Guitar · PL Nylon Guitar.sf2 + guitar.mid",
+      "Strings · PL Strings.sf2"
      ]
     },
     {
      "name": "drop",
      "bars": 8,
      "parts": [
-      "Guitar",
-      "Strings",
-      "Drums",
-      "808"
+      "Guitar · PL Nylon Guitar.sf2 + guitar.mid",
+      "Strings · PL Strings.sf2",
+      "Clap + Snare · PL clap.wav + PL snare.wav",
+      "Kick · PL kick.wav",
+      "Hats · PL hat.wav",
+      "808 · PL 808.sf2 + 808.mid"
      ]
     },
     {
      "name": "long form",
      "bars": 8,
      "parts": [
-      "Guitar",
-      "Strings",
-      "Drums",
-      "808"
+      "Guitar · PL Nylon Guitar.sf2 + guitar.mid",
+      "Strings · PL Strings.sf2",
+      "Clap + Snare · PL clap.wav + PL snare.wav",
+      "Kick · PL kick.wav",
+      "Hats · PL hat.wav",
+      "808 · PL 808.sf2 + 808.mid"
      ]
     }
    ]
@@ -267,28 +271,28 @@
      "name": "sample",
      "bars": 4,
      "parts": [
-      "Sample"
+      "Sample · Sample.wav + chops.mid"
      ]
     },
     {
      "name": "beat",
      "bars": 8,
      "parts": [
-      "Sample",
-      "Snare",
-      "Clap",
-      "Kick"
+      "Sample · Sample.wav + chops.mid",
+      "Snare · Snare.wav",
+      "Clap · Clap.wav",
+      "Kick · Kick.wav"
      ]
     },
     {
      "name": "with hats",
      "bars": 8,
      "parts": [
-      "Sample",
-      "Snare",
-      "Clap",
-      "Kick",
-      "Hats"
+      "Sample · Sample.wav + chops.mid",
+      "Snare · Snare.wav",
+      "Clap · Clap.wav",
+      "Kick · Kick.wav",
+      "Hats · Hat.wav"
      ]
     }
    ]
@@ -346,39 +350,39 @@
      "name": "arp",
      "bars": 4,
      "parts": [
-      "Arp"
+      "Arp · Pluck.wav + chords.mid"
      ]
     },
     {
      "name": "verse",
      "bars": 8,
      "parts": [
-      "Arp",
-      "Strings",
-      "Snare",
-      "Kick",
-      "Hats",
-      "808"
+      "Arp · Pluck.wav + chords.mid",
+      "Strings · Strings C#m7.wav + Strings Amaj7.wav",
+      "Clap + Snare · Clap.wav + Snare.wav",
+      "Kick · Kick.wav",
+      "Hats · Hat.wav + Open Hat.wav",
+      "808 · 808 C#.wav + 808 A.wav + 808.mid"
      ]
     },
     {
      "name": "hook",
      "bars": 8,
      "parts": [
-      "Arp",
-      "Strings",
-      "Snare",
-      "Kick",
-      "Hats",
-      "808",
-      "Hook"
+      "Arp · Pluck.wav + chords.mid",
+      "Strings · Strings C#m7.wav + Strings Amaj7.wav",
+      "Clap + Snare · Clap.wav + Snare.wav",
+      "Kick · Kick.wav",
+      "Hats · Hat.wav + Open Hat.wav",
+      "808 · 808 C#.wav + 808 A.wav + 808.mid",
+      "Faster hats · Hat.wav"
      ]
     },
     {
      "name": "arp",
      "bars": 4,
      "parts": [
-      "Arp"
+      "Arp · Pluck.wav + chords.mid"
      ]
     }
    ]
@@ -426,38 +430,38 @@
      "name": "keys",
      "bars": 4,
      "parts": [
-      "Keys",
-      "Bass"
+      "Keys · Keys.wav",
+      "Bass · Bass.wav"
      ]
     },
     {
      "name": "beat",
      "bars": 8,
      "parts": [
-      "Keys",
-      "Bass",
-      "Kick",
-      "Snare",
-      "Open hat"
+      "Keys · Keys.wav",
+      "Bass · Bass.wav",
+      "Kick · Kick.wav",
+      "Snare · Snare.wav",
+      "Open hat · Open Hat.wav"
      ]
     },
     {
      "name": "drop",
      "bars": 4,
      "parts": [
-      "Keys",
-      "Bass"
+      "Keys · Keys.wav",
+      "Bass · Bass.wav"
      ]
     },
     {
      "name": "beat",
      "bars": 4,
      "parts": [
-      "Keys",
-      "Bass",
-      "Kick",
-      "Snare",
-      "Open hat"
+      "Keys · Keys.wav",
+      "Bass · Bass.wav",
+      "Kick · Kick.wav",
+      "Snare · Snare.wav",
+      "Open hat · Open Hat.wav"
      ]
     }
    ]
@@ -496,58 +500,65 @@
      "name": "intro",
      "bars": 8,
      "parts": [
-      "Guitar"
+      "Guitar · Guitar.wav"
      ]
     },
     {
      "name": "verse",
      "bars": 16,
      "parts": [
-      "Guitar",
-      "Soft drums"
+      "Guitar · Guitar.wav",
+      "Kick · Kick.wav",
+      "Snare · Snare.wav"
      ]
     },
     {
      "name": "hook",
      "bars": 8,
      "parts": [
-      "Guitar",
-      "Drums",
-      "808"
+      "Guitar · Guitar.wav",
+      "Kick · Kick.wav",
+      "Snare · Snare.wav",
+      "Clap · Clap.wav",
+      "808 · 808 A.wav + 808 C.wav + 808 E.wav + 808.mid"
      ]
     },
     {
      "name": "verse 2",
      "bars": 16,
      "parts": [
-      "Guitar",
-      "Soft drums",
-      "Hats"
+      "Guitar · Guitar.wav",
+      "Kick · Kick.wav",
+      "Snare · Snare.wav",
+      "Hats · Hat.wav"
      ]
     },
     {
      "name": "hook",
      "bars": 8,
      "parts": [
-      "Guitar",
-      "Drums",
-      "808"
+      "Guitar · Guitar.wav",
+      "Kick · Kick.wav",
+      "Snare · Snare.wav",
+      "Clap · Clap.wav",
+      "808 · 808 A.wav + 808 C.wav + 808 E.wav + 808.mid"
      ]
     },
     {
      "name": "bridge",
      "bars": 4,
      "parts": [
-      "Guitar"
+      "Guitar · Guitar.wav"
      ]
     },
     {
      "name": "outro",
      "bars": 4,
      "parts": [
-      "Guitar",
-      "Soft drums",
-      "808"
+      "Guitar · Guitar.wav",
+      "Kick · Kick.wav",
+      "Snare · Snare.wav",
+      "808 · 808 A.wav + 808 C.wav + 808 E.wav + 808.mid"
      ]
     }
    ]
@@ -588,42 +599,44 @@
    },
    "form": [
     {
-     "name": "intro 100",
+     "name": "intro, 100",
      "bars": 4,
      "parts": [
-      "Guitar"
+      "Guitar · Guitar 100.wav, 88.wav, 104.wav"
      ]
     },
     {
-     "name": "rap 100",
+     "name": "rap verse, 100",
      "bars": 8,
      "parts": [
-      "Guitar",
-      "Kick",
-      "Snare",
-      "Hats",
-      "808"
+      "Guitar · Guitar 100.wav, 88.wav, 104.wav",
+      "Kick · Kick.wav",
+      "Snare · Snare.wav",
+      "Hats · Hat.wav",
+      "808 · 808 G.wav + 808 D.wav + 808 Eb.wav"
      ]
     },
     {
-     "name": "sung 88",
+     "name": "sung part, 88",
      "bars": 8,
      "parts": [
-      "Guitar",
-      "Snare + Snap"
+      "Guitar · Guitar 100.wav, 88.wav, 104.wav",
+      "Kick · Kick.wav",
+      "Snare · Snare.wav",
+      "Snap · Snap.wav"
      ]
     },
     {
-     "name": "heavier 104",
+     "name": "heavier, 104",
      "bars": 8,
      "parts": [
-      "Guitar",
-      "Kick",
-      "Snare",
-      "Clap",
-      "Hats",
-      "Open hat",
-      "808"
+      "Guitar · Guitar 100.wav, 88.wav, 104.wav",
+      "Kick · Kick.wav",
+      "Snare · Snare.wav",
+      "Clap · Clap.wav",
+      "Hats · Hat.wav",
+      "Open hat · Open Hat.wav",
+      "808 · 808 G.wav + 808 D.wav + 808 Eb.wav"
      ]
     }
    ]
@@ -667,46 +680,46 @@
      "name": "guitar",
      "bars": 4,
      "parts": [
-      "Guitar"
+      "Guitar · Guitar.wav"
      ]
     },
     {
      "name": "groove",
      "bars": 8,
      "parts": [
-      "Guitar",
-      "Stomp",
-      "Clap"
+      "Guitar · Guitar.wav",
+      "Stomp · Stomp.wav",
+      "Clap · Clap.wav"
      ]
     },
     {
      "name": "full",
      "bars": 8,
      "parts": [
-      "Guitar",
-      "Stomp",
-      "Clap",
-      "Shaker",
-      "808"
+      "Guitar · Guitar.wav",
+      "Stomp · Stomp.wav",
+      "Clap · Clap.wav",
+      "Shaker · Shaker.wav",
+      "808 · 808 C.wav + 808 G.wav + 808 Ab.wav + 808.mid"
      ]
     },
     {
      "name": "break",
      "bars": 4,
      "parts": [
-      "Guitar",
-      "Clap"
+      "Guitar · Guitar.wav",
+      "Clap · Clap.wav"
      ]
     },
     {
      "name": "full",
      "bars": 8,
      "parts": [
-      "Guitar",
-      "Stomp",
-      "Clap",
-      "Shaker",
-      "808"
+      "Guitar · Guitar.wav",
+      "Stomp · Stomp.wav",
+      "Clap · Clap.wav",
+      "Shaker · Shaker.wav",
+      "808 · 808 C.wav + 808 G.wav + 808 Ab.wav + 808.mid"
      ]
     }
    ]
@@ -749,13 +762,13 @@
      "name": "8 breaths",
      "bars": 24,
      "parts": [
-      "Pad",
-      "Bells",
-      "Snare",
-      "Clap",
-      "Kick",
-      "Hats",
-      "808"
+      "Pad · Pad.wav + pad chords.mid",
+      "Bells · Bell.wav",
+      "Snare · Snare.wav",
+      "Clap · Clap.wav",
+      "Kick · Kick.wav",
+      "Hats · Hat.wav",
+      "808 · 808.wav + 808.mid"
      ]
     }
    ]
@@ -798,38 +811,38 @@
      "name": "Low",
      "bars": 8,
      "parts": [
-      "Keys"
+      "Keys · Keys.wav + keys chords.mid"
      ]
     },
     {
      "name": "Stuck",
      "bars": 8,
      "parts": [
-      "Keys",
-      "Kick",
-      "Hats"
+      "Keys · Keys.wav + keys chords.mid",
+      "Kick · Kick.wav",
+      "Hats · Hat.wav"
      ]
     },
     {
      "name": "Steady",
      "bars": 8,
      "parts": [
-      "Keys",
-      "Kick",
-      "Hats"
+      "Keys · Keys.wav + keys chords.mid",
+      "Kick · Kick.wav",
+      "Hats · Hat.wav"
      ]
     },
     {
      "name": "Rising",
      "bars": 8,
      "parts": [
-      "Keys",
-      "Kick",
-      "Hats",
-      "Snare",
-      "Clap",
-      "Strings",
-      "808"
+      "Keys · Keys.wav + keys chords.mid",
+      "Kick · Kick.wav",
+      "Hats · Hat.wav",
+      "Snare · Snare.wav",
+      "Clap · Clap.wav",
+      "Strings · Strings.wav",
+      "808 · 808.wav + 808.mid"
      ]
     }
    ]
@@ -877,34 +890,34 @@
      "name": "tones",
      "bars": 4,
      "parts": [
-      "Tones"
+      "Tones · Tone 200.wav + Tone 204.wav"
      ]
     },
     {
      "name": "pad",
      "bars": 4,
      "parts": [
-      "Tones",
-      "Pad"
+      "Tones · Tone 200.wav + Tone 204.wav",
+      "Pad · Pad.wav + pad chords.mid"
      ]
     },
     {
      "name": "guitar",
      "bars": 8,
      "parts": [
-      "Tones",
-      "Pad",
-      "Guitar"
+      "Tones · Tone 200.wav + Tone 204.wav",
+      "Pad · Pad.wav + pad chords.mid",
+      "Guitar · Guitar.wav"
      ]
     },
     {
      "name": "heartbeat",
      "bars": 16,
      "parts": [
-      "Tones",
-      "Pad",
-      "Guitar",
-      "Heartbeat"
+      "Tones · Tone 200.wav + Tone 204.wav",
+      "Pad · Pad.wav + pad chords.mid",
+      "Guitar · Guitar.wav",
+      "Heartbeat · Heartbeat.wav + heartbeat.mid"
      ]
     }
    ]

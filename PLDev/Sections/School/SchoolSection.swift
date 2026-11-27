@@ -446,7 +446,7 @@ struct PlaylistView: View {
     var body: some View {
         let cell = total <= 16 ? 30.0 : (total <= 32 ? 18.0 : 11.0)          // width of one bar
         let every = total <= 16 ? 1 : 4                                       // which bar numbers to print
-        let label = 120.0
+        let label = 170.0
         VStack(alignment: .leading, spacing: 6) {
             Text("WHO PLAYS WHEN · \(total) BARS").font(Font.pl(.caption)).foregroundStyle(Color.accentColor)
             Text("Like FL's Playlist: time runs left to right, one square per bar. Gold means that sound plays in that bar.")
@@ -475,11 +475,15 @@ struct PlaylistView: View {
                     }
                     ForEach(parts, id: \.self) { p in
                         HStack(spacing: 0) {
+                            // "Kick · Kick.wav": the sound's name, then the file you load (the same names as the pads and the pack)
+                            let bits = p.components(separatedBy: " · ")
                             VStack(alignment: .leading, spacing: 0) {
-                                Text(p).font(Font.pl(size: 12)).lineLimit(1)
-                                Text(span(p)).font(Font.pl(size: 9.5).monospacedDigit()).foregroundStyle(.secondary).lineLimit(1)
+                                Text(bits[0]).font(Font.pl(size: 12, weight: .semibold)).lineLimit(1)
+                                if bits.count > 1 { Text(bits[1]).font(Font.pl(size: 9.5)).foregroundStyle(.secondary).lineLimit(2) }
+                                Text(span(p)).font(Font.pl(size: 9.5).monospacedDigit()).foregroundStyle(Color.accentColor.opacity(0.8)).lineLimit(1)
                             }
                             .frame(width: label, alignment: .leading)
+                            .padding(.vertical, 3)
                             ForEach(1...max(total, 1), id: \.self) { b in
                                 RoundedRectangle(cornerRadius: 2, style: .continuous)
                                     .fill(section(of: b)?.parts.contains(p) == true ? Color.accentColor : Color.secondary.opacity((b - 1) / 4 % 2 == 0 ? 0.16 : 0.09))
@@ -488,7 +492,7 @@ struct PlaylistView: View {
                             }
                         }
                         .accessibilityElement(children: .ignore)
-                        .accessibilityLabel("\(p): \(span(p))")
+                        .accessibilityLabel("\(p.replacingOccurrences(of: " · ", with: ", ")): \(span(p))")
                     }
                 }
             }
