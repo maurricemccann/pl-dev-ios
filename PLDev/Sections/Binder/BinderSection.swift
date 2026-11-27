@@ -1,5 +1,6 @@
 import SwiftUI
 import UserNotifications
+import WebKit
 
 /// PL Binder (his ask 11-27: "all my cards should be saved into a display PL BINDER"): every card he has earned, from the
 /// Practice evening, Practice lessons, PL Prod beats, PL Prog lessons and Gate sittings, kept by the practice Worker
@@ -73,13 +74,7 @@ struct BinderView: View {
         .plScreenTitle("PL Binder")
         .refreshable { await load() }
         .task { await load() }
-        .sheet(item: $open) { card in
-            NavigationStack {
-                ScrollView { EarnedCardFace(model: model, card: card).padding() }
-                    .navigationTitle(BinderSection.shelf(card.from)).navigationBarTitleDisplayMode(.inline)
-                    .toolbar { ToolbarItem(placement: .confirmationAction) { Button("Done") { open = nil } } }
-            }
-        }
+        .fullScreenCover(item: $open) { card in BinderSlab(model: model, card: card) { open = nil } }
     }
 
     private func load() async {
@@ -87,4 +82,56 @@ struct BinderView: View {
         collection = await PracticeCards.load(model: model)
         failed = collection == nil
     }
+}
+
+/// One card in its graded slab, to turn with a finger (his ask 11-27: "the pl binder should hold the spinnable graded card"): the pack
+/// page's own three.js slab (`/pack/?binder`), so the case, label and back are the ones the pack deals. Close leaves.
+struct BinderSlab: View {
+    let model: AppModel
+    let card: PracticeEarned
+    let close: () -> Void
+    @State private var url: URL?
+    @State private var failed = false
+
+    var body: some View {
+        ZStack(alignment: .topLeading) {
+            Color.black.ignoresSafeArea()
+            if let url { SlabWeb(url: url).ignoresSafeArea() }
+            else if failed { Text("This card has no picture to put in the slab.").font(Font.pl(.body)).foregroundStyle(.secondary).frame(maxWidth: .infinity, maxHeight: .infinity) }
+            else { ProgressView().frame(maxWidth: .infinity, maxHeight: .infinity) }
+            Button(action: close) { Image(systemName: "xmark").font(Font.pl(size: 17, weight: .semibold)).foregroundStyle(.white).frame(width: 44, height: 44).background(.black.opacity(0.4), in: Circle()) }
+                .accessibilityLabel("Close").padding(.leading, 16).padding(.top, 8)
+        }
+        .task { await build() }
+    }
+
+    /// Evening cards are graded Obsidian, lesson cards Champagne, a gold unit's card Prism: the grade says how it was earned.
+    private var tier: String {
+        let f = card.from ?? ""
+        return f == "evening" ? "common" : f.hasPrefix("gold-") ? "exclusive" : "legendary"
+    }
+
+    private func build() async {
+        let base = LibraryData.shared.base(model)
+        guard let still = await PracticeCards.still(for: card.piece, model: model), var c = URLComponents(string: base + "/pack/") else { failed = true; return }
+        c.queryItems = [URLQueryItem(name: "binder", value: "1"), URLQueryItem(name: "img", value: still.path(percentEncoded: false)),
+                        URLQueryItem(name: "name", value: (card.from ?? "practice").replacingOccurrences(of: "-", with: " ")),
+                        URLQueryItem(name: "tier", value: tier), URLQueryItem(name: "date", value: card.date)]
+        url = c.url
+        failed = url == nil
+    }
+}
+
+private struct SlabWeb: UIViewRepresentable {
+    let url: URL
+    func makeUIView(context: Context) -> WKWebView {
+        let web = WKWebView(frame: .zero)
+        web.isOpaque = false
+        web.backgroundColor = .black
+        web.scrollView.isScrollEnabled = false
+        web.scrollView.contentInsetAdjustmentBehavior = .never
+        web.load(URLRequest(url: url))
+        return web
+    }
+    func updateUIView(_ view: WKWebView, context: Context) {}
 }
