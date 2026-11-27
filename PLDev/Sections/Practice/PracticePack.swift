@@ -31,11 +31,12 @@ enum Packs {
 /// The glyph field, as a card back and as the ground under the pack.
 struct GlyphField: View {
     var strength = 0.5
+    var tint = Candle.gold   // the check-in reveal tints it with the step colour between bands
     var body: some View {
         ZStack {
             Candle.card
             if let t = Packs.tile {
-                Image(uiImage: t).renderingMode(.template).resizable(resizingMode: .tile).foregroundStyle(Candle.gold.opacity(strength))
+                Image(uiImage: t).renderingMode(.template).resizable(resizingMode: .tile).foregroundStyle(tint.opacity(strength))
             }
         }
         .accessibilityHidden(true)

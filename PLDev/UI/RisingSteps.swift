@@ -21,6 +21,8 @@ struct RisingStep {
     var hawkins = ""
     /// The accent's chroma (Duet job 71, section 1: chroma carries energy, so it rises up the bands); nil = the ground's.
     var pop: Double? = nil
+    /// Duet job 71's exact colours (section 1 table), OKLCH L C H: ground, surface, text, muted, accent. Every pair clears 4.5:1.
+    var oklch: [[Double]] = []
 
     static func of(_ b: Band) -> RisingStep {
         switch b {
@@ -40,44 +42,51 @@ struct RisingStep {
         lines: ["Heavy is allowed. One small thing, then rest."],
         card: .solid, look: "flat", titleFace: "bundle:Literata-Regular", textFace: "bundle:Literata-Regular",
         textScale: 1.12, columns: 2, repeatSize: 420, curves: 0.2, pace: 1.6,
-        lifts: ["gate", "practice", "companion", "paint"], hawkins: "Grief, 75", pop: 0.05)
+        lifts: ["gate", "practice", "companion", "paint"], hawkins: "Grief, 75", pop: 0.05,
+        oklch: [[0.17, 0.012, 50], [0.22, 0.016, 50], [0.86, 0.012, 60], [0.68, 0.012, 60], [0.62, 0.050, 48]])
     private static let hot = RisingStep(hue: 45, chroma: 0.020, light: 0.18, turn: 190, radius: 1.5, space: 1.2, tile: "circle", calm: true,
         wall: "code|rise-water", title: "Cool it first", face: "calm", side: 112,
         lines: ["Anger means something matters. Cool it first, then decide."],
         card: .solid, look: "flat", titleFace: "bundle:Literata-Regular", textFace: "bundle:Literata-Regular",
         textScale: 1.08, columns: 2, repeatSize: 400, curves: 0.2, pace: 1.6,
-        lifts: ["gate", "practice", "paint", "companion"], hawkins: "Anger, 150", pop: 0.035)
+        lifts: ["gate", "practice", "paint", "companion"], hawkins: "Anger, 150", pop: 0.035,
+        oklch: [[0.18, 0.010, 45], [0.23, 0.008, 60], [0.87, 0.008, 240], [0.69, 0.008, 240], [0.64, 0.035, 235]])
     private static let low = RisingStep(hue: 235, chroma: 0.040, light: 0.19, turn: -25, radius: 1.5, space: 1.1, tile: "squircle", calm: true,
         wall: "code|rise-path", title: "Let it loosen", face: "calm", side: 144,
         lines: ["Worry is a forecast, not a fact. Walk ten minutes, then look again."],
         titleFace: "v1", textFace: "bundle:Literata-Regular",
         textScale: 1.05, repeatSize: 360, curves: 0.35, pace: 1.3,
-        lifts: ["practice", "gate", "paint", "companion", "library"], hawkins: "Fear, 100", pop: 0.05)
+        lifts: ["practice", "gate", "paint", "companion", "library"], hawkins: "Fear, 100", pop: 0.05,
+        oklch: [[0.19, 0.020, 235], [0.24, 0.025, 225], [0.88, 0.015, 220], [0.70, 0.015, 220], [0.68, 0.050, 210]])
     private static let stuck = RisingStep(hue: 195, chroma: 0.044, light: 0.20, turn: -25, radius: 1, space: 1, tile: "squircle", calm: false,
         wall: "code|rise-table", title: "One step", face: "happy", side: 144,
         lines: ["Stuck asks for one small move. Pick the first step and stop there.",
                 "Boredom is a quiet doorway. Picture one room of the life you want, down to the light."],
         card: .outline, look: "flat",
-        lifts: ["paint", "practice", "composer", "school", "capture"], hawkins: "Neutrality, 250", pop: 0.06)
+        lifts: ["paint", "practice", "composer", "school", "capture"], hawkins: "Neutrality, 250", pop: 0.06,
+        oklch: [[0.20, 0.022, 195], [0.25, 0.028, 185], [0.89, 0.015, 180], [0.71, 0.015, 180], [0.71, 0.060, 170]])
     private static let steady = RisingStep(hue: 155, chroma: 0.050, light: 0.21, turn: -65, radius: 1, space: 1, tile: "squircle", calm: false,
         wall: "code|rise-window", title: "Add a little", face: "happy", side: 144,
         lines: ["Steady is a good base. Add one thing that moves the work forward.",
                 "Hope is a real step up. Write one line about the version of you who has plenty."],
         titleFace: "bundle:AvenirNext-Bold", textFace: "bundle:AvenirNext-Regular", pace: 0.9,
-        lifts: ["paint", "practice", "capture", "composer", "shop", "school"], hawkins: "Willingness, 310", pop: 0.08)
+        lifts: ["paint", "practice", "capture", "composer", "shop", "school"], hawkins: "Willingness, 310", pop: 0.08,
+        oklch: [[0.21, 0.025, 155], [0.26, 0.032, 150], [0.90, 0.020, 110], [0.72, 0.020, 110], [0.76, 0.080, 90]])
     private static let rising = RisingStep(hue: 80, chroma: 0.060, light: 0.23, turn: 2, radius: 1, space: 1, tile: "squircle", calm: false,
         wall: "curves", title: "Make something", face: "excited", side: 144,
         lines: ["This is the practice working. Put it into one thing you make tonight.",
                 "Luxury living is a way of standing in the world. You are standing in it now."],
         card: .clear, titleFace: "bundle:Futura-Bold", textFace: "bundle:Futura-Medium", repeatSize: 240, curves: 0.7, pace: 0.8,
-        lifts: ["paint", "capture", "composer", "shop", "curate", "congregation"], hawkins: "Love, 500", pop: 0.11)
+        lifts: ["paint", "capture", "composer", "shop", "curate", "congregation"], hawkins: "Love, 500", pop: 0.11,
+        oklch: [[0.23, 0.030, 80], [0.29, 0.040, 80], [0.92, 0.030, 85], [0.74, 0.030, 85], [0.80, 0.110, 82]])
     private static let lit = RisingStep(hue: 60, chroma: 0.090, light: 0.25, turn: 20, radius: 1, space: 1, tile: "squircle", calm: false,
         wall: nil, title: "Keep this", face: "excited", side: 144,
         lines: ["Remember this. Leave yourself a note for a harder night.",
                 "Good nights add up. Keep this one as a marker for the next."],
         card: .clear, look: "aurora", titleFace: "bundle:Futura-Bold", textFace: "bundle:Futura-Medium",
         textScale: 0.97, repeatSize: 200, curves: 0.85, pace: 0.75,
-        lifts: ["paint", "capture", "shop", "curate", "congregation", "composer"], hawkins: "Joy, 540", pop: 0.14)
+        lifts: ["paint", "capture", "shop", "curate", "congregation", "composer"], hawkins: "Joy, 540", pop: 0.14,
+        oklch: [[0.25, 0.045, 60], [0.32, 0.060, 65], [0.94, 0.035, 85], [0.76, 0.035, 85], [0.84, 0.140, 80]])
 }
 
 /// The grounds for the lower five answers, drawn in code in the palette's own colours.
@@ -173,6 +182,7 @@ struct RisingAction: View {
     @State private var kind = ""
     @State private var song = UserDefaults.standard.string(forKey: "pldev.rising.song") ?? ""
     @State private var songDraft = ""
+    @State private var board = false
     @Environment(\.openURL) private var openURL
 
     init(band: Band) { self.band = band }
@@ -233,6 +243,7 @@ struct RisingAction: View {
                 button("Walk 10 minutes, past trees", "figure.walk") { startTimer("Walk 10 minutes, past trees", "Look again.") }
                 practice("Listen", "ear", RisingAction.stayThenReplace, "Listened, then replaced")
                 practice("Can I wonder", "sparkles", "Ask: can I wonder how it would feel if this went right? Wonder only. No need to believe it yet.", "Wondered")
+                if let past = RisingAction.kindLines.last { Text("A line you wrote to yourself: " + past).plFont(.footnote).foregroundStyle(.secondary) }
                 values
                 practice("Talk to yourself as you", "person.wave.2", RisingAction.selfTalk, "Said it")
                 practice("Call it excitement", "bolt", RisingAction.excited, "Called it")
@@ -263,6 +274,8 @@ struct RisingAction: View {
         case .lit:
             TextField("A note for a heavy night", text: $rising.note, axis: .vertical).textFieldStyle(.roundedBorder)
             button("Keep it", "bookmark") { finish("Keep it") }
+            button("Vision board", "square.grid.2x2") { board = true }
+                .sheet(isPresented: $board) { RisingVisionBoard { board = false; finish("Vision board") } }
             nightScene
             practice("Savour 20 seconds", "sparkles", RisingAction.savour, "Savoured")
         }
@@ -314,10 +327,18 @@ struct RisingAction: View {
             }
             if let value { Text("One small thing for " + value.lowercased() + " tonight.").plFont(.footnote) }
             TextField("One kind line to yourself, as to a friend", text: $kind, axis: .vertical).textFieldStyle(.roundedBorder)
-            button("Said it", "heart") { finish("Values and a kind line") }
+            button("Said it", "heart") { RisingAction.keep(kind: kind, value: value); finish("Values and a kind line") }
         } else {
             button("Values and a kind line", "heart") { open = "Values" }
         }
+    }
+
+    /// His kind lines, kept on the phone with the value he picked, so a later Low tap can show him one.
+    static var kindLines: [String] { UserDefaults.standard.stringArray(forKey: "pldev.rising.kindLines") ?? [] }
+    static func keep(kind: String, value: String?) {
+        let line = kind.trimmingCharacters(in: .whitespacesAndNewlines)
+        guard !line.isEmpty else { return }
+        UserDefaults.standard.set(Array((kindLines + [(value.map { $0 + ": " } ?? "") + line]).suffix(30)), forKey: "pldev.rising.kindLines")
     }
 
     /// A song picked ahead, for a heavy night.
@@ -332,7 +353,10 @@ struct RisingAction: View {
         } else {
             button("Play your song: " + song, "music.note") {
                 let term = song.addingPercentEncoding(withAllowedCharacters: .urlQueryAllowed) ?? ""
-                if let u = URL(string: "https://music.apple.com/search?term=" + term) { openURL(u) }
+                let web = URL(string: "https://music.apple.com/search?term=" + term)
+                if let app = URL(string: "music://music.apple.com/search?term=" + term) {
+                    openURL(app) { opened in if !opened, let web { openURL(web) } }
+                } else if let web { openURL(web) }
                 finish("Your song")
             }
             .contextMenu { Button("Change the song") { song = ""; songDraft = ""; UserDefaults.standard.removeObject(forKey: "pldev.rising.song") } }
@@ -401,6 +425,41 @@ private struct RisingPlan: View {
 
 /// Two breaths in, one long breath out (2 s, 1 s, 6 s), a box (4 s each side), or a slow pacer (inS in, outS out; about
 /// 6 a minute with the longer breath out, Duet job 71), with a tap as each breath out starts. It grows 12% at most.
+/// Lit's vision board (spec: "a vision board on Lit"): his chosen pieces from the Gate's count, full size, with the step under them.
+private struct RisingVisionBoard: View {
+    let done: () -> Void
+    @Environment(\.dismiss) private var dismiss
+    @State private var urls: [URL] = []
+
+    var body: some View {
+        NavigationStack {
+            ScrollView {
+                VStack(alignment: .leading, spacing: 12) {
+                    if urls.isEmpty {
+                        Text("Pick pieces in the Gate's count and they show here.").plFont(.callout).foregroundStyle(.secondary)
+                    }
+                    LazyVGrid(columns: [GridItem(.flexible()), GridItem(.flexible())], spacing: 8) {
+                        ForEach(urls, id: \.self) { u in
+                            AsyncImage(url: u) { $0.resizable().scaledToFill() } placeholder: { Color.secondary.opacity(0.2) }
+                                .frame(height: 160).frame(maxWidth: .infinity).clipShape(RoundedRectangle(cornerRadius: 10))
+                        }
+                    }
+                    .accessibilityLabel("Your chosen pieces")
+                    Text("See it. Name the one thing in its way. Plan the step.").plFont(.callout)
+                    RisingPlan(fields: ["The one thing in its way", "My step"]) { done() }
+                }
+                .padding(16)
+            }
+            .navigationTitle("Vision board").navigationBarTitleDisplayMode(.inline)
+            .toolbar { ToolbarItem(placement: .cancellationAction) { Button("Close") { dismiss() } } }
+        }
+        .task {
+            _ = GateStore.shared.load()
+            urls = GateStore.shared.saved.count.compactMap { $0.isEmpty ? nil : URL(string: $0) }
+        }
+    }
+}
+
 private struct BreathRing: View {
     let rounds: Int
     let box: Bool   // 4 in, 4 hold, 4 out, 4 hold

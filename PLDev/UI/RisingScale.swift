@@ -1,3 +1,4 @@
+import AVFoundation
 import CryptoKit
 import SwiftUI
 import UserNotifications
@@ -141,11 +142,14 @@ enum RisingAsk {
     /// changes underneath, then the field burns away. `revealAt` is when the burn starts (nil while the look is still applying).
     var revealing = false
     var revealAt: Date?
+    /// The step colour between the old band and the new (Duet job 71: OKLab midpoint), tinting the glyph field as it burns.
+    var revealTint: String?
 
     func tap(_ band: Band) {
         load()
         let reveals = followsFeeling || wearsDaily
-        if reveals { revealAt = nil; revealing = true }
+        if reveals { revealTint = Self.stepHex(from: Self.lookBand(), to: band); revealAt = nil; revealing = true }
+        ring(band)
         log.append(CheckIn(at: .now, band: band)); save()
         d.set(Self.shiftDay(.now) + "/\(band.rawValue)", forKey: "pldev.rising.last")
         d.removeObject(forKey: "pldev.rising.undone")
@@ -270,10 +274,52 @@ enum RisingAsk {
         get { d.object(forKey: "pldev.rising.homeFollows") as? Bool ?? true }
         set { d.set(newValue, forKey: "pldev.rising.homeFollows") }
     }
-    /// The section ids to bring forward now; empty = the config's order.
-    nonisolated static func homeOrder() -> [String] {
+    /// The section ids to bring forward now; empty = the config's order. Moves that lifted him (an early signal or better, up more
+    /// often than not) bring their section first; the band's own list fills the rest.
+    static func homeOrder() -> [String] {
         guard UserDefaults.standard.object(forKey: "pldev.rising.homeFollows") as? Bool ?? true, let b = lookBand() else { return [] }
-        return RisingStep.of(b).lifts
+        let lifted = shared.lifts.filter { $0.up * 2 > $0.of }.compactMap { l in moveSection.first { l.move.hasPrefix($0.0) }?.1 }
+        var seen = Set<String>()
+        return (lifted + RisingStep.of(b).lifts).filter { seen.insert($0).inserted }
+    }
+    /// Which Home section a done move belongs to, where it is obvious.
+    static let moveSection: [(String, String)] = [
+        ("Make something", "paint"), ("Made it", "paint"), ("Night scene", "paint"), ("Vision board", "paint"),
+        ("Listen", "practice"), ("Breathe", "practice"), ("Box breathing", "practice"), ("Cool down", "practice"),
+        ("Savour", "practice"), ("Awe minute", "gate"), ("Brisk walk with music", "composer")]
+
+    /// One soft tone per band on the check-in (item 92), off until he turns it on; the ambient category obeys the ringer switch.
+    var bandSounds: Bool {
+        get { d.bool(forKey: "pldev.rising.sounds") }
+        set { d.set(newValue, forKey: "pldev.rising.sounds") }
+    }
+    @ObservationIgnored private var chime: AVAudioPlayer?
+    private func ring(_ band: Band) {
+        guard bandSounds else { return }
+        try? AVAudioSession.sharedInstance().setCategory(.ambient)
+        chime = try? AVAudioPlayer(data: Self.tone(band))
+        chime?.play()
+    }
+    /// Lower and longer at Heavy, higher and brighter toward Lit: a sine with a soft attack and a falling tail, quiet.
+    nonisolated static func tone(_ band: Band) -> Data {
+        let rate = 44_100, n = band.rawValue
+        let freq = [196.0, 208, 233, 262, 294, 349, 392][n], seconds = 0.55 - Double(n) * 0.04, bright = Double(n) / 6 * 0.35
+        let frames = Int(Double(rate) * seconds)
+        var pcm = [Int16](repeating: 0, count: frames)
+        for i in 0..<frames {
+            let t = Double(i) / Double(rate)
+            let env = min(1, t / 0.02) * exp(-4 * t / seconds)
+            let wave = sin(2 * .pi * freq * t) + bright * sin(2 * .pi * freq * 2 * t)
+            pcm[i] = Int16(wave / (1 + bright) * env * 3_000)
+        }
+        var d = Data()
+        func word<T: FixedWidthInteger>(_ v: T) { withUnsafeBytes(of: v.littleEndian) { d.append(contentsOf: $0) } }
+        let bytes = UInt32(frames * 2)
+        d.append(contentsOf: Array("RIFF".utf8)); word(UInt32(36) + bytes); d.append(contentsOf: Array("WAVEfmt ".utf8))
+        word(UInt32(16)); word(UInt16(1)); word(UInt16(1)); word(UInt32(rate)); word(UInt32(rate * 2)); word(UInt16(2)); word(UInt16(16))
+        d.append(contentsOf: Array("data".utf8)); word(bytes)
+        pcm.withUnsafeBytes { d.append(contentsOf: $0) }
+        return d
     }
 
     var quietDay: Bool {
@@ -358,8 +404,22 @@ enum RisingAsk {
         }
     }
 
+    /// The step colour from one band's accent to the next, mixed in OKLab so warm-to-cool passes through grey, not magenta.
+    nonisolated static func stepHex(from: Band?, to: Band) -> String? {
+        let b = RisingStep.of(to).oklch, a = from.map { RisingStep.of($0).oklch } ?? b
+        guard a.count == 5, b.count == 5 else { return nil }
+        func lab(_ p: [Double]) -> (Double, Double, Double) { (p[0], p[1] * cos(p[2] * .pi / 180), p[1] * sin(p[2] * .pi / 180)) }
+        let x = lab(a[4]), y = lab(b[4])
+        let L = (x.0 + y.0) / 2, A = (x.1 + y.1) / 2, B = (x.2 + y.2) / 2
+        return hex(L, (A * A + B * B).squareRoot(), atan2(B, A) * 180 / .pi)
+    }
+
     /// Today's colours. The ground stays dark and the text light, so every hue reads.
     nonisolated static func palette() -> HousePalette {
+        if let o = lookBand().map({ RisingStep.of($0).oklch }), o.count == 5 {   // Duet job 71's exact table, contrast computed there
+            let x = o.map { hex($0[0], $0[1], $0[2]) }
+            return HousePalette(name: "th-daily", ground: x[0], text: x[2], key: x[4], accent: x[4], surface: x[1])
+        }
         let f = seed(), step = lookBand().map(RisingStep.of)
         let h = step?.hue.map { $0 + (f[0] - 0.5) * 12 } ?? f[0] * 360
         let c = step?.chroma ?? 0.05 + f[1] * 0.07
@@ -784,6 +844,7 @@ struct RisingPanel: View {
             Toggle("No notices 6 AM to 3 PM", isOn: Binding(get: { rising.quietDay }, set: { rising.quietDay = $0 }))
             Toggle("Home follows my mood", isOn: Binding(get: { rising.homeFollows }, set: { rising.homeFollows = $0 }))
             Toggle("Dim the app 4 AM to 3 PM", isOn: Binding(get: { rising.dims }, set: { rising.dims = $0 }))
+            Toggle("Band sounds", isOn: Binding(get: { rising.bandSounds }, set: { rising.bandSounds = $0 }))
             ShareLink("Export my check-ins", item: RisingScale.file)
             Button("Erase my check-ins", role: .destructive) { confirmErase = true }
         } label: {
@@ -793,8 +854,6 @@ struct RisingPanel: View {
     }
 }
 
-/// Dark grounds are not enough before his daytime sleep: brightness is what moves the body clock (Duet job 71, section 1), so
-/// the whole app dims about 30% from 4 AM until 3 PM Pacific. A toggle in the check-in menu turns it off.
 /// The reveal after a check-in: the pack's glyph field over the whole app, burnt away in patches (BurnMask) over 1.4 seconds once
 /// the new look is in place. Reduce Motion skips it. Never blocks a tap.
 struct LookReveal: View {
@@ -806,7 +865,7 @@ struct LookReveal: View {
             if rising.revealing && !reduce {
                 TimelineView(.animation) { ctx in
                     let p = rising.revealAt.map { min(1, ctx.date.timeIntervalSince($0) / 1.4) } ?? 0
-                    GlyphField(strength: 0.6)
+                    GlyphField(strength: 0.6, tint: Color(hex: rising.revealTint) ?? Candle.gold)
                         .mask(BurnMask(progress: p, seed: 2.3))
                         .onChange(of: p >= 1) { _, done in if done { rising.revealing = false } }
                 }
@@ -826,6 +885,63 @@ struct LookReveal: View {
     }
 }
 
+/// Duet job 71's motion table (section 2), behind Home: Low an upward shimmer, Stuck soft particles, Steady gold motes, Rising
+/// motes and a slow warm sweep, Lit motes and glints. Heavy and Hot keep only the breathing ring. Everything rises, nothing
+/// pulses faster than once a second, at most 20 particles. Reduce Motion leaves the still ground.
+struct RisingMotion: View {
+    @State private var rising = RisingScale.shared
+    @Environment(\.accessibilityReduceMotion) private var reduce
+
+    var body: some View {
+        let _ = rising.current   // redraw when he taps
+        if !reduce, rising.wearsDaily, let band = RisingScale.lookBand(), band >= .low {
+            TimelineView(.animation(minimumInterval: 1.0 / 30)) { ctx in
+                Canvas { g, size in Self.draw(band, t: ctx.date.timeIntervalSinceReferenceDate, g: &g, size: size) }
+            }
+            .ignoresSafeArea()
+            .allowsHitTesting(false)
+            .accessibilityHidden(true)
+        }
+    }
+
+    private static func draw(_ band: Band, t: Double, g: inout GraphicsContext, size: CGSize) {
+        let w = size.width, h = size.height
+        let gold = Color(red: 0.98, green: 0.80, blue: 0.45)
+        if band == .low {   // three soft bands drifting up 3 pt a second
+            for i in 0..<3 {
+                let y = h - (t * 3 + Double(i) * h / 3).truncatingRemainder(dividingBy: h + 160) + 80
+                g.fill(Path(ellipseIn: CGRect(x: -w * 0.2, y: y - 60, width: w * 1.4, height: 120)), with: .color(.white.opacity(0.035)))
+            }
+            return
+        }
+        let (count, speed, color, radius): (Int, Double, Color, Double) = switch band {
+        case .stuck: (8, 7, Color.white, 2)
+        case .steady: (10, 8, gold, 2.5)
+        case .rising: (14, 13, gold, 2.5)
+        default: (20, 19, gold, 2.2)
+        }
+        if band == .rising {   // a warm sweep, bottom to top every 8 seconds
+            let y = h - (t / 8).truncatingRemainder(dividingBy: 1) * (h + 240) + 120
+            g.fill(Path(CGRect(x: 0, y: y - 120, width: w, height: 240)),
+                   with: .linearGradient(Gradient(colors: [.clear, gold.opacity(0.06), .clear]), startPoint: CGPoint(x: 0, y: y - 120), endPoint: CGPoint(x: 0, y: y + 120)))
+        }
+        for i in 0..<count {
+            let r1 = (sin(Double(i) * 12.9898) * 43758.5453).truncatingRemainder(dividingBy: 1).magnitude
+            let r2 = (sin(Double(i) * 78.233) * 12543.123).truncatingRemainder(dividingBy: 1).magnitude
+            let travel = (t * speed * (0.8 + 0.4 * r2) + r2 * (h + 40)).truncatingRemainder(dividingBy: h + 40)
+            let y = h + 20 - travel
+            let x = (r1 * w + (band == .stuck ? travel * 0.3 : 0)).truncatingRemainder(dividingBy: w)
+            let fade = min(1, travel / 60) * min(1, (h + 40 - travel) / 60)   // fade in at the bottom, out at the top
+            // Lit's glint: one mote brightens for 0.4 s every 5 s
+            let glint = band == .lit && i == Int(t / 5) % count && (t.truncatingRemainder(dividingBy: 5)) < 0.4
+            let r = glint ? radius * 2.2 : radius
+            g.fill(Path(ellipseIn: CGRect(x: x - r, y: y - r, width: r * 2, height: r * 2)), with: .color(color.opacity((glint ? 0.8 : 0.3) * fade)))
+        }
+    }
+}
+
+/// Dark grounds are not enough before his daytime sleep: brightness is what moves the body clock (Duet job 71, section 1), so
+/// the whole app dims about 30% from 4 AM until 3 PM Pacific. A toggle in the check-in menu turns it off.
 struct NightDim: View {
     @AppStorage("pldev.rising.dim") private var on = true
     private static let la: Calendar = {

@@ -159,6 +159,7 @@ struct HomeView: View {
             .background {
                 ZStack {
                     Wallpaper(model: model)
+                    RisingMotion()   // Duet job 71's per-band motion, only while the Daily look is worn
                     if page == 2 { MoneyGround().transition(.opacity) }   // Pulse wears his money-goes-up glyph field (11-14)
                 }
                 .animation(.easeInOut(duration: 0.35), value: page)
