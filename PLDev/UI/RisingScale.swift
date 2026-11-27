@@ -145,6 +145,10 @@ enum RisingAsk {
     /// The step colour between the old band and the new (Duet job 71: OKLab midpoint), tinting the glyph field as it burns.
     var revealTint: String?
 
+    /// The cable tour (PhoneTour.swift): a band shown as if tapped, held in memory only, never saved; endPreview reads his log back.
+    func previewTap(_ band: Band) { log.append(CheckIn(at: .now, band: band)) }
+    func endPreview() { loaded = false; load() }
+
     func tap(_ band: Band) {
         load()
         let reveals = followsFeeling || wearsDaily

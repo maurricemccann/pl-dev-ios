@@ -279,10 +279,15 @@ struct SettingsView: View {
             } label: {
                 SettingsLabel("Probes", "stethoscope", IOS27.SystemColors.mint)
             }
+            Button {
+                PhoneTour.shared.start(model: model)
+            } label: {
+                SettingsLabel("Run the tour", "play.rectangle", IOS27.SystemColors.mint)
+            }
         } header: {
             Text("Debug").plFont(.footnote)
         } footer: {
-            Text("The log keeps the last 40 lines on this iPhone whether Debug is on or off. The probes try each thing this install may or may not be allowed to do, and say why when one fails.")
+            Text("The log keeps the last 40 lines on this iPhone whether Debug is on or off. The probes try each thing this install may or may not be allowed to do, and say why when one fails. Run the tour walks every mood's look and the main rooms, 6 seconds each, for the PC to screenshot over the cable; nothing is saved and your look comes back after.")
                 .plFont(.footnote)
         }
     }

@@ -28,6 +28,7 @@ struct PLDevApp: App {
     var body: some Scene {
         WindowGroup {
             RootView(model: AppModel.shared)
+                .overlay { PhoneTourOverlay() }   // the cable tour's corner label and Stop (his pick 11-26)
                 .overlay { LookReveal() }   // the new look revealed like a pack card after a check-in (his ask 11-26)
                 .overlay { NightDim() }   // the 4 AM to 3 PM dim before his daytime sleep (Duet job 71)
                 .toolbar {   // every keyboard gets a way out, typed in or not (his report 11-14)
