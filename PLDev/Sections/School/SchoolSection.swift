@@ -65,6 +65,17 @@ struct SchoolLesson: Decodable, Identifiable, Hashable {
     let grids: [GridRow]
     let blocks: [Block]
     let table: [[String]]
+    // S354 (his ask 11-27 "each track needs to tell me exactly how to create it and visually show me"): from pl_school_guide.py
+    let fl: [String]?                      // numbered FL Studio Mobile actions for this page
+    let rolls: [Roll]?                     // the notes of each MIDI this page imports, drawn as a piano roll
+    let playlist: Bool?                    // the arrange page: draws the song layout
+    struct Roll: Decodable, Hashable {
+        let label: String
+        let from_bar: Int
+        let bars: Int
+        let notes: [[Int]]                 // [start step, length in steps, MIDI pitch], 16 steps a bar
+        let names: [String: String]        // pitch -> "C#3"
+    }
 }
 private struct SchoolFile: Decodable { let v: Int; let tracks: [SchoolTrack]; let his: [SchoolBeat]; let lessons: [SchoolLesson] }
 
@@ -261,7 +272,7 @@ struct TrackView: View {
             }
             .tag(0)
             ForEach(Array(track.slides.enumerated()), id: \.offset) { i, sid in
-                ScrollView { if let l = state.lesson(sid) { StepPage(lesson: l).padding() } }.tag(i + 1)
+                ScrollView { if let l = state.lesson(sid) { StepPage(lesson: l, form: track.form).padding() } }.tag(i + 1)
             }
         }
         .tabViewStyle(.page(indexDisplayMode: .never))
@@ -534,8 +545,82 @@ struct PlaylistView: View {
     }
 }
 
+/// The notes of one MIDI file as FL's piano roll draws them (S354): note names down the side, bars across, gold notes.
+struct PianoRollView: View {
+    let roll: SchoolLesson.Roll
+    var body: some View {
+        let pitches = roll.notes.map { $0[2] }.reduce(into: [Int]()) { if !$0.contains($1) { $0.append($1) } }.sorted(by: >)
+        let steps = roll.bars * 16, cell = 7.0, rowH = 15.0, label = 40.0
+        VStack(alignment: .leading, spacing: 6) {
+            Text("PIANO ROLL · \(roll.label) · BARS \(roll.from_bar)-\(roll.from_bar + roll.bars - 1)")
+                .font(Font.pl(.caption)).foregroundStyle(Color.accentColor)
+            ScrollView(.horizontal, showsIndicators: false) {
+                HStack(alignment: .top, spacing: 0) {
+                    VStack(alignment: .trailing, spacing: 0) {
+                        ForEach(pitches, id: \.self) { p in
+                            Text(roll.names[String(p)] ?? "").font(Font.pl(size: 10).monospacedDigit()).foregroundStyle(.secondary)
+                                .frame(width: label - 4, height: rowH, alignment: .trailing)
+                        }
+                        Text("bar").font(Font.pl(size: 9)).foregroundStyle(.secondary).frame(width: label - 4, height: 14, alignment: .trailing)
+                    }
+                    .padding(.trailing, 4)
+                    VStack(alignment: .leading, spacing: 0) {
+                        ZStack(alignment: .topLeading) {
+                            ForEach(0...steps, id: \.self) { s in             // beat lines every 4, bar lines every 16
+                                Rectangle().fill(Color.secondary.opacity(s % 16 == 0 ? 0.45 : (s % 4 == 0 ? 0.18 : 0.06)))
+                                    .frame(width: s % 16 == 0 ? 1.5 : 1, height: CGFloat(pitches.count) * rowH)
+                                    .offset(x: CGFloat(Double(s) * cell))
+                            }
+                            ForEach(Array(pitches.enumerated()), id: \.offset) { i, _ in
+                                Rectangle().fill(Color.secondary.opacity(i % 2 == 0 ? 0.07 : 0.03))
+                                    .frame(width: CGFloat(Double(steps) * cell), height: rowH).offset(y: CGFloat(Double(i) * rowH))
+                            }
+                            ForEach(Array(roll.notes.enumerated()), id: \.offset) { _, n in
+                                if n.count == 3, let row = pitches.firstIndex(of: n[2]) {
+                                    RoundedRectangle(cornerRadius: 2, style: .continuous).fill(Color.accentColor)
+                                        .frame(width: max(3, CGFloat(Double(n[1]) * cell) - 1), height: rowH - 3)
+                                        .offset(x: CGFloat(Double(n[0]) * cell) + 0.5, y: CGFloat(Double(row) * rowH) + 1.5)
+                                }
+                            }
+                        }
+                        .frame(width: CGFloat(Double(steps) * cell), height: CGFloat(pitches.count) * rowH, alignment: .topLeading)
+                        HStack(spacing: 0) {
+                            ForEach(0..<roll.bars, id: \.self) { b in
+                                Text("\(roll.from_bar + b)").font(Font.pl(size: 9).monospacedDigit()).foregroundStyle(.secondary)
+                                    .frame(width: CGFloat(16 * cell), height: 14, alignment: .leading)
+                            }
+                        }
+                    }
+                }
+            }
+            .accessibilityElement(children: .ignore)
+            .accessibilityLabel("Piano roll for \(roll.label): \(roll.notes.count) notes over \(roll.bars) bars")
+        }
+    }
+}
+
+/// "In FL": the page's actions, numbered, in FL Studio Mobile's own words (S354).
+struct FLSteps: View {
+    let steps: [String]
+    var body: some View {
+        VStack(alignment: .leading, spacing: 8) {
+            Text("IN FL STUDIO MOBILE").font(Font.pl(.caption)).foregroundStyle(Color.accentColor)
+            ForEach(Array(steps.enumerated()), id: \.offset) { i, s in
+                HStack(alignment: .firstTextBaseline, spacing: 10) {
+                    Text("\(i + 1)").font(Font.pl(.subheadline).monospacedDigit().weight(.bold)).foregroundStyle(Color.accentColor)
+                        .frame(width: 22, alignment: .trailing)
+                    Text(s).font(Font.pl(.body)).fixedSize(horizontal: false, vertical: true)
+                }
+            }
+        }
+        .padding(12)
+        .background(Color.accentColor.opacity(0.08), in: RoundedRectangle(cornerRadius: 10, style: .continuous))
+    }
+}
+
 struct StepPage: View {
     let lesson: SchoolLesson
+    var form: [FormPart]? = nil
     var body: some View {
         VStack(alignment: .leading, spacing: 14) {
             if !lesson.eyebrow.isEmpty { Text(lesson.eyebrow.uppercased()).font(Font.pl(.caption)).foregroundStyle(Color.accentColor) }
@@ -560,6 +645,9 @@ struct StepPage: View {
                     }
                 }
             }
+            if let fl = lesson.fl, !fl.isEmpty { FLSteps(steps: fl) }
+            ForEach(lesson.rolls ?? [], id: \.self) { PianoRollView(roll: $0) }
+            if lesson.playlist == true, let f = form, !f.isEmpty { PlaylistView(form: f) }
         }
         .frame(maxWidth: .infinity, alignment: .leading)
     }

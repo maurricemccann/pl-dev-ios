@@ -99,6 +99,7 @@
     "ch2-hook",
     "ch2-weight",
     "ch2-flow",
+    "ch2-playlist",
     "ch2-check"
    ],
    "ref": "b2-ref",
@@ -173,6 +174,7 @@
     "ch3-voice",
     "ch3-mix",
     "ch3-master",
+    "ch3-playlist",
     "ch3-check"
    ],
    "ref": "b3-ref",
@@ -235,6 +237,7 @@
     "ch4-snare",
     "ch4-clap",
     "ch4-kick",
+    "ch4-playlist",
     "ch4-check"
    ],
    "ref": "b4-ref",
@@ -310,6 +313,7 @@
     "ch5-hats",
     "ch5-808",
     "ch5-hook",
+    "ch5-playlist",
     "ch5-check"
    ],
    "ref": "b5-ref",
@@ -398,6 +402,7 @@
     "ch6-kick",
     "ch6-snare",
     "ch6-offbeat",
+    "ch6-playlist",
     "ch6-check"
    ],
    "ref": "b6-ref",
@@ -574,6 +579,7 @@
     "ch8-switch",
     "ch8-heavy",
     "ch8-tempo",
+    "ch8-playlist",
     "ch8-check"
    ],
    "ref": "b8-ref",
@@ -652,6 +658,7 @@
     "ch9-clap",
     "ch9-all",
     "ch9-feel",
+    "ch9-playlist",
     "ch9-check"
    ],
    "ref": "b9-ref",
@@ -734,6 +741,7 @@
     "ch10-bells",
     "ch10-clap",
     "ch10-all",
+    "ch10-playlist",
     "ch10-check"
    ],
    "ref": "b10-ref",
@@ -783,6 +791,7 @@
     "ch11-stuck",
     "ch11-steady",
     "ch11-rising",
+    "ch11-playlist",
     "ch11-check"
    ],
    "ref": "b11-ref",
@@ -858,6 +867,7 @@
     "ch12-pad",
     "ch12-guitar",
     "ch12-heart",
+    "ch12-playlist",
     "ch12-sit"
    ],
    "ref": "b12-ref",
@@ -976,7 +986,10 @@
     }
    ],
    "table": [],
-   "notes": "The loop is built from curve.kit, the kit he kept in FL Studio Mobile. Each slide is one row of FL's step grid, drawn the way it should look when it is right."
+   "notes": "The loop is built from curve.kit, the kit he kept in FL Studio Mobile. Each slide is one row of FL's step grid, drawn the way it should look when it is right.",
+   "fl": [
+    "Put this beat's files where FL sees them: the sounds (.wav, .sf2) in My Samples, the .mid files in My MIDI. Then close FL completely and open it again, or they will not show."
+   ]
   },
   {
    "id": "setup",
@@ -999,7 +1012,8 @@
     }
    ],
    "table": [],
-   "notes": "Tempo first, every time: a pattern tapped at the wrong tempo feels wrong even when every box is right."
+   "notes": "Tempo first, every time: a pattern tapped at the wrong tempo feels wrong even when every box is right.",
+   "fl": []
   },
   {
    "id": "kick",
@@ -1043,7 +1057,10 @@
     }
    ],
    "table": [],
-   "notes": "Box 8 is a sixteenth before beat 3. It is what makes this loop bounce instead of march."
+   "notes": "Box 8 is a sixteenth before beat 3. It is what makes this loop bounce instead of march.",
+   "fl": [
+    "Tap the steps that are lit in the grid above. One square is one step; a bar is 16."
+   ]
   },
   {
    "id": "snare",
@@ -1107,7 +1124,10 @@
     }
    ],
    "table": [],
-   "notes": "The slide used to show one grid with two file names, which read as one row. It is two rows in FL with the same boxes."
+   "notes": "The slide used to show one grid with two file names, which read as one row. It is two rows in FL with the same boxes.",
+   "fl": [
+    "Tap the steps that are lit in the grid above. One square is one step; a bar is 16."
+   ]
   },
   {
    "id": "hat",
@@ -1151,7 +1171,10 @@
     }
    ],
    "table": [],
-   "notes": "Eight hats a bar. If it feels too busy later, drop boxes 3, 7, 11 and 15 and it halves without losing the pulse."
+   "notes": "Eight hats a bar. If it feels too busy later, drop boxes 3, 7, 11 and 15 and it halves without losing the pulse.",
+   "fl": [
+    "Tap the steps that are lit in the grid above. One square is one step; a bar is 16."
+   ]
   },
   {
    "id": "e808",
@@ -1195,7 +1218,10 @@
     }
    ],
    "table": [],
-   "notes": "808-Cs1 is the note C-sharp, the same note as D-flat, one octave down from the keys. The 's' in the file name means sharp."
+   "notes": "808-Cs1 is the note C-sharp, the same note as D-flat, one octave down from the keys. The 's' in the file name means sharp.",
+   "fl": [
+    "Tap the steps that are lit in the grid above. One square is one step; a bar is 16."
+   ]
   },
   {
    "id": "keys",
@@ -1239,7 +1265,10 @@
     }
    ],
    "table": [],
-   "notes": "Each chord file is cut to one bar at 91 BPM. Change the tempo and the chords stop lining up; that is why the tempo came first."
+   "notes": "Each chord file is cut to one bar at 91 BPM. Change the tempo and the chords stop lining up; that is why the tempo came first.",
+   "fl": [
+    "Tap the steps that are lit in the grid above. One square is one step; a bar is 16."
+   ]
   },
   {
    "id": "bar",
@@ -1387,7 +1416,10 @@
     }
    ],
    "table": [],
-   "notes": "This is the picture to match against FL's screen, row by row. Send a screenshot and it gets checked box by box."
+   "notes": "This is the picture to match against FL's screen, row by row. Send a screenshot and it gets checked box by box.",
+   "fl": [
+    "Tap the steps that are lit in the grid above. One square is one step; a bar is 16."
+   ]
   },
   {
    "id": "bars",
@@ -1437,7 +1469,8 @@
      "PL 808-Gs0.wav"
     ]
    ],
-   "notes": "The letters in the file names: s means sharp. Cs1 is C-sharp, the same note as D-flat. Fs0 is G-flat, Gs0 is A-flat, As0 is B-flat."
+   "notes": "The letters in the file names: s means sharp. Cs1 is C-sharp, the same note as D-flat. Fs0 is G-flat, Gs0 is A-flat, As0 is B-flat.",
+   "fl": []
   },
   {
    "id": "moves",
@@ -1464,7 +1497,8 @@
     }
    ],
    "table": [],
-   "notes": "The drop is the house move: the Starter Kit demo opens the same way, two bars of pads before the drums."
+   "notes": "The drop is the house move: the Starter Kit demo opens the same way, two bars of pads before the drums.",
+   "fl": []
   },
   {
    "id": "ch1-cover",
@@ -1495,7 +1529,11 @@
     }
    ],
    "table": [],
-   "notes": "Chapter 1 of the Production School. The crowned beat 1 (11-07), matched to the weight of the references. Files: Music/PL Kits/_school/Beat 1 - Cs minor 144 (72 feel)/."
+   "notes": "Chapter 1 of the Production School. The crowned beat 1 (11-07), matched to the weight of the references. Files: Music/PL Kits/_school/Beat 1 - Cs minor 144 (72 feel)/.",
+   "fl": [
+    "Put this beat's files where FL sees them: the sounds (.wav, .sf2) in My Samples, the .mid files in My MIDI. Then close FL completely and open it again, or they will not show.",
+    "New song: Home > SONGS > New. Set the tempo to 144: tap TMP and drag the BPM dial (or +1 / -1)."
+   ]
   },
   {
    "id": "ch1-halftime",
@@ -1563,7 +1601,10 @@
     }
    ],
    "table": [],
-   "notes": "Teach the counting, not just the button. Box 9 is beat 3. The normal row is shown only for contrast; do not tap it."
+   "notes": "Teach the counting, not just the button. Box 9 is beat 3. The normal row is shown only for contrast; do not tap it.",
+   "fl": [
+    "Tap the steps that are lit in the grid above. One square is one step; a bar is 16."
+   ]
   },
   {
    "id": "ch1-clap",
@@ -1631,7 +1672,13 @@
     }
    ],
    "table": [],
-   "notes": "From the study: snares and claps first; a clap filled out with reverb; layer parts so the whole works, not each part."
+   "notes": "From the study: snares and claps first; a clap filled out with reverb; layer parts so the whole works, not each part.",
+   "fl": [
+    "Tap + (Add Track) > Drum Sequencer. Long-tap the track header > Load sample > My Samples > PL clap.wav.",
+    "Tap + (Add Track) > Drum Sequencer. Long-tap the track header > Load sample > My Samples > PL snare.wav.",
+    "Tap the steps that are lit in the grid above. One square is one step; a bar is 16.",
+    "Reverb: select the track, open the Rack (right of the Playlist), tap (+) Add Module > Reverb, raise the wet."
+   ]
   },
   {
    "id": "ch1-kick",
@@ -1699,7 +1746,11 @@
     }
    ],
    "table": [],
-   "notes": "Bars 4 and 8 are the fill bars across the whole chapter: the kick thins out and the hats gallop."
+   "notes": "Bars 4 and 8 are the fill bars across the whole chapter: the kick thins out and the hats gallop.",
+   "fl": [
+    "Tap + (Add Track) > Drum Sequencer. Long-tap the track header > Load sample > My Samples > PL kick.wav.",
+    "Tap the steps that are lit in the grid above. One square is one step; a bar is 16."
+   ]
   },
   {
    "id": "ch1-hats",
@@ -1789,7 +1840,12 @@
     }
    ],
    "table": [],
-   "notes": "Galloped hats are a trait from the study."
+   "notes": "Galloped hats are a trait from the study.",
+   "fl": [
+    "Tap + (Add Track) > Drum Sequencer. Long-tap the track header > Load sample > My Samples > PL hat.wav.",
+    "Tap + (Add Track) > Drum Sequencer. Long-tap the track header > Load sample > My Samples > PL hat-open.wav.",
+    "Tap the steps that are lit in the grid above. One square is one step; a bar is 16."
+   ]
   },
   {
    "id": "ch1-808",
@@ -1828,7 +1884,88 @@
     }
    ],
    "table": [],
-   "notes": "Roots: C#1 A0 F#1 G#0. Lengths: 10 boxes. Pickups an octave up on box 11 of bars 2, 4, 6 and 8."
+   "notes": "Roots: C#1 A0 F#1 G#0. Lengths: 10 boxes. Pickups an octave up on box 11 of bars 2, 4, 6 and 8.",
+   "fl": [
+    "Add the SoundFont Player instrument and load PL 808.sf2 from My Samples. Prev / Next steps through its patches.",
+    "Long-tap that track's icon > Import MIDI Tracks > My MIDI > 808.mid. Double-tap the clip to see it in the Piano roll (drawn below)."
+   ],
+   "rolls": [
+    {
+     "label": "808.mid",
+     "from_bar": 1,
+     "bars": 8,
+     "notes": [
+      [
+       0,
+       10,
+       25
+      ],
+      [
+       16,
+       10,
+       21
+      ],
+      [
+       26,
+       4,
+       33
+      ],
+      [
+       32,
+       10,
+       30
+      ],
+      [
+       48,
+       10,
+       20
+      ],
+      [
+       58,
+       4,
+       32
+      ],
+      [
+       64,
+       10,
+       25
+      ],
+      [
+       80,
+       10,
+       21
+      ],
+      [
+       90,
+       4,
+       33
+      ],
+      [
+       96,
+       10,
+       30
+      ],
+      [
+       112,
+       10,
+       20
+      ],
+      [
+       122,
+       4,
+       32
+      ]
+     ],
+     "names": {
+      "20": "G#0",
+      "21": "A0",
+      "25": "C#1",
+      "30": "F#1",
+      "32": "G#1",
+      "33": "A1"
+     }
+    }
+   ]
   },
   {
    "id": "ch1-keys",
@@ -1867,7 +2004,213 @@
     }
    ],
    "table": [],
-   "notes": "Every chord is original to this course. B# is the same key as C: it pulls the last bar home to C#m."
+   "notes": "Every chord is original to this course. B# is the same key as C: it pulls the last bar home to C#m.",
+   "fl": [
+    "Add the SoundFont Player instrument and load PL Felt Piano.sf2 from My Samples. Prev / Next steps through its patches.",
+    "Long-tap that track's icon > Import MIDI Tracks > My MIDI > chords.mid. Double-tap the clip to see it in the Piano roll (drawn below).",
+    "Reverb: select the track, open the Rack (right of the Playlist), tap (+) Add Module > Reverb, raise the wet.",
+    "Underwater: in the same Rack tap (+) Add Module > Filter, and sweep the cutoff down until the highs are gone."
+   ],
+   "rolls": [
+    {
+     "label": "chords.mid",
+     "from_bar": 1,
+     "bars": 8,
+     "notes": [
+      [
+       0,
+       16,
+       56
+      ],
+      [
+       0,
+       16,
+       59
+      ],
+      [
+       0,
+       16,
+       63
+      ],
+      [
+       0,
+       16,
+       64
+      ],
+      [
+       0,
+       16,
+       68
+      ],
+      [
+       16,
+       16,
+       56
+      ],
+      [
+       16,
+       16,
+       59
+      ],
+      [
+       16,
+       16,
+       61
+      ],
+      [
+       16,
+       16,
+       64
+      ],
+      [
+       16,
+       16,
+       68
+      ],
+      [
+       32,
+       16,
+       57
+      ],
+      [
+       32,
+       16,
+       61
+      ],
+      [
+       32,
+       16,
+       64
+      ],
+      [
+       32,
+       16,
+       68
+      ],
+      [
+       48,
+       16,
+       54
+      ],
+      [
+       48,
+       16,
+       61
+      ],
+      [
+       48,
+       16,
+       63
+      ],
+      [
+       48,
+       16,
+       68
+      ],
+      [
+       64,
+       16,
+       56
+      ],
+      [
+       64,
+       16,
+       59
+      ],
+      [
+       64,
+       16,
+       63
+      ],
+      [
+       64,
+       16,
+       64
+      ],
+      [
+       64,
+       16,
+       68
+      ],
+      [
+       80,
+       16,
+       56
+      ],
+      [
+       80,
+       16,
+       59
+      ],
+      [
+       80,
+       16,
+       61
+      ],
+      [
+       80,
+       16,
+       64
+      ],
+      [
+       80,
+       16,
+       68
+      ],
+      [
+       96,
+       16,
+       57
+      ],
+      [
+       96,
+       16,
+       61
+      ],
+      [
+       96,
+       16,
+       64
+      ],
+      [
+       96,
+       16,
+       68
+      ],
+      [
+       112,
+       16,
+       54
+      ],
+      [
+       112,
+       16,
+       60
+      ],
+      [
+       112,
+       16,
+       63
+      ],
+      [
+       112,
+       16,
+       68
+      ]
+     ],
+     "names": {
+      "54": "F#3",
+      "56": "G#3",
+      "57": "A3",
+      "59": "B3",
+      "60": "C4",
+      "61": "C#4",
+      "63": "D#4",
+      "64": "E4",
+      "68": "G#4"
+     }
+    }
+   ]
   },
   {
    "id": "ch1-weight",
@@ -1902,7 +2245,8 @@
     }
    ],
    "table": [],
-   "notes": "Measured 11-07. Take 1 is kept in the code history as the light route."
+   "notes": "Measured 11-07. Take 1 is kept in the code history as the light route.",
+   "fl": []
   },
   {
    "id": "ch1-intro",
@@ -1937,7 +2281,18 @@
     }
    ],
    "table": [],
-   "notes": "From the study: long intros on 3 of 5 reference beats; the house move of pads before drums."
+   "notes": "From the study: long intros on 3 of 5 reference beats; the house move of pads before drums.",
+   "fl": [
+    "In the Playlist each sound is its own track. Tap a clip > Copy, then long-tap the bar where it should start and paste.",
+    "Repeat until every track matches the picture below:",
+    "Keys: bars 1-8",
+    "Clap + Snare: bars 5-8",
+    "Kick: bars 5-8",
+    "Hats: bars 5-8",
+    "808: bars 5-8",
+    "Play it from bar 1. The parts come in exactly where the gold starts."
+   ],
+   "playlist": true
   },
   {
    "id": "ch1-mumble",
@@ -1972,7 +2327,8 @@
     }
    ],
    "table": [],
-   "notes": "Study 3b. Practise on his own lines only."
+   "notes": "Study 3b. Practise on his own lines only.",
+   "fl": []
   },
   {
    "id": "ch1-check",
@@ -2003,7 +2359,8 @@
     }
    ],
    "table": [],
-   "notes": "Acceptance tests from the spec: the Acapella Drop and the Transfer test. No loudness target (his ruling 11-07)."
+   "notes": "Acceptance tests from the spec: the Acapella Drop and the Transfer test. No loudness target (his ruling 11-07).",
+   "fl": []
   },
   {
    "id": "ch2-cover",
@@ -2034,7 +2391,11 @@
     }
    ],
    "table": [],
-   "notes": "Chapter 2 of the Production School. Beat 2, crowned 11-07. Built on the weight line from the study: sub about 80%, a melody and hats that read on a phone speaker. Files: Music/PL Kits/_school/Beat 2 - Db major 85/."
+   "notes": "Chapter 2 of the Production School. Beat 2, crowned 11-07. Built on the weight line from the study: sub about 80%, a melody and hats that read on a phone speaker. Files: Music/PL Kits/_school/Beat 2 - Db major 85/.",
+   "fl": [
+    "Put this beat's files where FL sees them: the sounds (.wav, .sf2) in My Samples, the .mid files in My MIDI. Then close FL completely and open it again, or they will not show.",
+    "New song: Home > SONGS > New. Set the tempo to 85: tap TMP and drag the BPM dial (or +1 / -1)."
+   ]
   },
   {
    "id": "ch2-straight",
@@ -2102,7 +2463,13 @@
     }
    ],
    "table": [],
-   "notes": "The tempo of his most-played (85 feel). The clap gets Reverb 2 as in chapter 1, a little less wet."
+   "notes": "The tempo of his most-played (85 feel). The clap gets Reverb 2 as in chapter 1, a little less wet.",
+   "fl": [
+    "Tap + (Add Track) > Drum Sequencer. Long-tap the track header > Load sample > My Samples > PL clap.wav.",
+    "Tap + (Add Track) > Drum Sequencer. Long-tap the track header > Load sample > My Samples > PL snare.wav.",
+    "Tap the steps that are lit in the grid above. One square is one step; a bar is 16.",
+    "Reverb: select the track, open the Rack (right of the Playlist), tap (+) Add Module > Reverb, raise the wet."
+   ]
   },
   {
    "id": "ch2-drums",
@@ -2236,7 +2603,14 @@
     }
    ],
    "table": [],
-   "notes": "Shaker and open hat belong to the hook: they are what makes the hook feel bigger without a new melody."
+   "notes": "Shaker and open hat belong to the hook: they are what makes the hook feel bigger without a new melody.",
+   "fl": [
+    "Tap + (Add Track) > Drum Sequencer. Long-tap the track header > Load sample > My Samples > PL kick.wav.",
+    "Tap + (Add Track) > Drum Sequencer. Long-tap the track header > Load sample > My Samples > PL hat.wav.",
+    "Tap + (Add Track) > Drum Sequencer. Long-tap the track header > Load sample > My Samples > PL hat-open.wav.",
+    "Tap + (Add Track) > Drum Sequencer. Long-tap the track header > Load sample > My Samples > PL shaker.wav.",
+    "Tap the steps that are lit in the grid above. One square is one step; a bar is 16."
+   ]
   },
   {
    "id": "ch2-808",
@@ -2275,7 +2649,66 @@
     }
    ],
    "table": [],
-   "notes": "Roots: Db1=25, Bb0=22, Gb1=30, Ab0=20 in MIDI. The hook's pickup note alternates octave / root."
+   "notes": "Roots: Db1=25, Bb0=22, Gb1=30, Ab0=20 in MIDI. The hook's pickup note alternates octave / root.",
+   "fl": [
+    "Add the SoundFont Player instrument and load PL 808.sf2 from My Samples. Prev / Next steps through its patches.",
+    "Long-tap that track's icon > Import MIDI Tracks > My MIDI > 808.mid. Double-tap the clip to see it in the Piano roll (drawn below)."
+   ],
+   "rolls": [
+    {
+     "label": "808.mid",
+     "from_bar": 5,
+     "bars": 8,
+     "notes": [
+      [
+       0,
+       12,
+       25
+      ],
+      [
+       16,
+       12,
+       22
+      ],
+      [
+       32,
+       12,
+       30
+      ],
+      [
+       48,
+       12,
+       20
+      ],
+      [
+       64,
+       12,
+       25
+      ],
+      [
+       80,
+       12,
+       22
+      ],
+      [
+       96,
+       12,
+       30
+      ],
+      [
+       112,
+       12,
+       20
+      ]
+     ],
+     "names": {
+      "20": "G#0",
+      "22": "A#0",
+      "25": "C#1",
+      "30": "F#1"
+     }
+    }
+   ]
   },
   {
    "id": "ch2-keys",
@@ -2314,7 +2747,191 @@
     }
    ],
    "table": [],
-   "notes": "Every chord is original to the course. The intro (bars 1-4) is the keys alone, filter even lower (600 Hz) and quieter."
+   "notes": "Every chord is original to the course. The intro (bars 1-4) is the keys alone, filter even lower (600 Hz) and quieter.",
+   "fl": [
+    "Add the SoundFont Player instrument and load PL Keys.sf2 from My Samples. Prev / Next steps through its patches.",
+    "Long-tap that track's icon > Import MIDI Tracks > My MIDI > chords.mid. Double-tap the clip to see it in the Piano roll (drawn below).",
+    "Reverb: select the track, open the Rack (right of the Playlist), tap (+) Add Module > Reverb, raise the wet.",
+    "Underwater: in the same Rack tap (+) Add Module > Filter, and sweep the cutoff down until the highs are gone."
+   ],
+   "rolls": [
+    {
+     "label": "chords.mid",
+     "from_bar": 1,
+     "bars": 8,
+     "notes": [
+      [
+       0,
+       16,
+       65
+      ],
+      [
+       0,
+       16,
+       68
+      ],
+      [
+       0,
+       16,
+       72
+      ],
+      [
+       0,
+       16,
+       75
+      ],
+      [
+       16,
+       16,
+       65
+      ],
+      [
+       16,
+       16,
+       68
+      ],
+      [
+       16,
+       16,
+       72
+      ],
+      [
+       16,
+       16,
+       73
+      ],
+      [
+       32,
+       16,
+       65
+      ],
+      [
+       32,
+       16,
+       70
+      ],
+      [
+       32,
+       16,
+       72
+      ],
+      [
+       32,
+       16,
+       73
+      ],
+      [
+       48,
+       16,
+       70
+      ],
+      [
+       48,
+       16,
+       73
+      ],
+      [
+       48,
+       16,
+       75
+      ],
+      [
+       48,
+       16,
+       78
+      ],
+      [
+       64,
+       16,
+       65
+      ],
+      [
+       64,
+       16,
+       68
+      ],
+      [
+       64,
+       16,
+       72
+      ],
+      [
+       64,
+       16,
+       75
+      ],
+      [
+       80,
+       16,
+       65
+      ],
+      [
+       80,
+       16,
+       68
+      ],
+      [
+       80,
+       16,
+       72
+      ],
+      [
+       80,
+       16,
+       73
+      ],
+      [
+       96,
+       16,
+       65
+      ],
+      [
+       96,
+       16,
+       70
+      ],
+      [
+       96,
+       16,
+       72
+      ],
+      [
+       96,
+       16,
+       73
+      ],
+      [
+       112,
+       16,
+       70
+      ],
+      [
+       112,
+       16,
+       73
+      ],
+      [
+       112,
+       16,
+       75
+      ],
+      [
+       112,
+       16,
+       78
+      ]
+     ],
+     "names": {
+      "65": "F4",
+      "68": "G#4",
+      "70": "A#4",
+      "72": "C5",
+      "73": "C#5",
+      "75": "D#5",
+      "78": "F#5"
+     }
+    }
+   ]
   },
   {
    "id": "ch2-hook",
@@ -2349,7 +2966,170 @@
     }
    ],
    "table": [],
-   "notes": "The guitar motif is written fresh for this course (hook.mid). Strings on the two lowest chord tones only, voiced down an octave."
+   "notes": "The guitar motif is written fresh for this course (hook.mid). Strings on the two lowest chord tones only, voiced down an octave.",
+   "fl": [
+    "Add the SoundFont Player instrument and load PL Nylon Guitar.sf2 from My Samples. Prev / Next steps through its patches.",
+    "Long-tap that track's icon > Import MIDI Tracks > My MIDI > hook.mid. Double-tap the clip to see it in the Piano roll (drawn below).",
+    "Reverb: select the track, open the Rack (right of the Playlist), tap (+) Add Module > Reverb, raise the wet.",
+    "Open it up: on that track's Filter, sweep the cutoff back up so the highs return."
+   ],
+   "rolls": [
+    {
+     "label": "hook.mid",
+     "from_bar": 13,
+     "bars": 8,
+     "notes": [
+      [
+       0,
+       3,
+       68
+      ],
+      [
+       3,
+       3,
+       65
+      ],
+      [
+       6,
+       4,
+       63
+      ],
+      [
+       10,
+       6,
+       61
+      ],
+      [
+       16,
+       3,
+       65
+      ],
+      [
+       19,
+       3,
+       63
+      ],
+      [
+       22,
+       10,
+       60
+      ],
+      [
+       32,
+       3,
+       68
+      ],
+      [
+       35,
+       3,
+       70
+      ],
+      [
+       38,
+       4,
+       68
+      ],
+      [
+       42,
+       6,
+       65
+      ],
+      [
+       48,
+       4,
+       63
+      ],
+      [
+       52,
+       4,
+       61
+      ],
+      [
+       56,
+       8,
+       61
+      ],
+      [
+       64,
+       3,
+       68
+      ],
+      [
+       67,
+       3,
+       65
+      ],
+      [
+       70,
+       4,
+       63
+      ],
+      [
+       74,
+       6,
+       61
+      ],
+      [
+       80,
+       3,
+       65
+      ],
+      [
+       83,
+       3,
+       63
+      ],
+      [
+       86,
+       10,
+       60
+      ],
+      [
+       96,
+       3,
+       68
+      ],
+      [
+       99,
+       3,
+       70
+      ],
+      [
+       102,
+       4,
+       68
+      ],
+      [
+       106,
+       6,
+       65
+      ],
+      [
+       112,
+       4,
+       63
+      ],
+      [
+       116,
+       4,
+       61
+      ],
+      [
+       120,
+       8,
+       61
+      ]
+     ],
+     "names": {
+      "60": "C4",
+      "61": "C#4",
+      "63": "D#4",
+      "65": "F4",
+      "68": "G#4",
+      "70": "A#4"
+     }
+    }
+   ]
   },
   {
    "id": "ch2-weight",
@@ -2384,7 +3164,8 @@
     }
    ],
    "table": [],
-   "notes": "Study 3c holds both lines. Beat 3 (Flex, 94) will sit on the phone line too."
+   "notes": "Study 3c holds both lines. Beat 3 (Flex, 94) will sit on the phone line too.",
+   "fl": []
   },
   {
    "id": "ch2-flow",
@@ -2419,7 +3200,8 @@
     }
    ],
    "table": [],
-   "notes": "Study 3b: rap and sung side by side. Practise on his own lines only."
+   "notes": "Study 3b: rap and sung side by side. Practise on his own lines only.",
+   "fl": []
   },
   {
    "id": "ch2-check",
@@ -2450,7 +3232,8 @@
     }
    ],
    "table": [],
-   "notes": "Acceptance tests from the spec: the Acapella Drop, the Transfer test, no loudness target by his ruling."
+   "notes": "Acceptance tests from the spec: the Acapella Drop, the Transfer test, no loudness target by his ruling.",
+   "fl": []
   },
   {
    "id": "ch3-cover",
@@ -2481,7 +3264,11 @@
     }
    ],
    "table": [],
-   "notes": "Chapter 3. Beat 3 crowned 11-07: the dark heavy blend of the two references' traits, every note original. Files: Music/PL Kits/_school/Beat 3 - Bb minor 94/."
+   "notes": "Chapter 3. Beat 3 crowned 11-07: the dark heavy blend of the two references' traits, every note original. Files: Music/PL Kits/_school/Beat 3 - Bb minor 94/.",
+   "fl": [
+    "Put this beat's files where FL sees them: the sounds (.wav, .sf2) in My Samples, the .mid files in My MIDI. Then close FL completely and open it again, or they will not show.",
+    "New song: Home > SONGS > New. Set the tempo to 94: tap TMP and drag the BPM dial (or +1 / -1)."
+   ]
   },
   {
    "id": "ch3-guitar",
@@ -2527,7 +3314,273 @@
     }
    ],
    "table": [],
-   "notes": "Chord tones per bar: Bbm9 F Ab C Db · Gbmaj7 Gb Bb Db F · Ebm9 Gb Bb Db Eb · F7sus4 F Bb C Eb · F7 F A C Eb. The figure's order of tones is 1 3 2 4 3 1."
+   "notes": "Chord tones per bar: Bbm9 F Ab C Db · Gbmaj7 Gb Bb Db F · Ebm9 Gb Bb Db Eb · F7sus4 F Bb C Eb · F7 F A C Eb. The figure's order of tones is 1 3 2 4 3 1.",
+   "fl": [
+    "Add the SoundFont Player instrument and load PL Nylon Guitar.sf2 from My Samples. Prev / Next steps through its patches.",
+    "Long-tap that track's icon > Import MIDI Tracks > My MIDI > guitar.mid. Double-tap the clip to see it in the Piano roll (drawn below).",
+    "Reverb: select the track, open the Rack (right of the Playlist), tap (+) Add Module > Reverb, raise the wet.",
+    "Underwater: in the same Rack tap (+) Add Module > Filter, and sweep the cutoff down until the highs are gone."
+   ],
+   "rolls": [
+    {
+     "label": "guitar.mid",
+     "from_bar": 1,
+     "bars": 8,
+     "notes": [
+      [
+       0,
+       3,
+       65
+      ],
+      [
+       3,
+       2,
+       72
+      ],
+      [
+       5,
+       3,
+       68
+      ],
+      [
+       8,
+       2,
+       73
+      ],
+      [
+       10,
+       3,
+       72
+      ],
+      [
+       13,
+       3,
+       65
+      ],
+      [
+       16,
+       3,
+       66
+      ],
+      [
+       19,
+       2,
+       73
+      ],
+      [
+       21,
+       3,
+       70
+      ],
+      [
+       24,
+       2,
+       77
+      ],
+      [
+       26,
+       3,
+       73
+      ],
+      [
+       29,
+       3,
+       66
+      ],
+      [
+       32,
+       3,
+       66
+      ],
+      [
+       35,
+       2,
+       73
+      ],
+      [
+       37,
+       3,
+       70
+      ],
+      [
+       40,
+       2,
+       75
+      ],
+      [
+       42,
+       3,
+       73
+      ],
+      [
+       45,
+       3,
+       66
+      ],
+      [
+       48,
+       3,
+       65
+      ],
+      [
+       51,
+       2,
+       72
+      ],
+      [
+       53,
+       3,
+       69
+      ],
+      [
+       56,
+       2,
+       75
+      ],
+      [
+       58,
+       3,
+       72
+      ],
+      [
+       61,
+       3,
+       65
+      ],
+      [
+       64,
+       3,
+       65
+      ],
+      [
+       67,
+       2,
+       72
+      ],
+      [
+       69,
+       3,
+       68
+      ],
+      [
+       72,
+       2,
+       73
+      ],
+      [
+       74,
+       3,
+       72
+      ],
+      [
+       77,
+       3,
+       65
+      ],
+      [
+       80,
+       3,
+       66
+      ],
+      [
+       83,
+       2,
+       73
+      ],
+      [
+       85,
+       3,
+       70
+      ],
+      [
+       88,
+       2,
+       77
+      ],
+      [
+       90,
+       3,
+       73
+      ],
+      [
+       93,
+       3,
+       66
+      ],
+      [
+       96,
+       3,
+       66
+      ],
+      [
+       99,
+       2,
+       73
+      ],
+      [
+       101,
+       3,
+       70
+      ],
+      [
+       104,
+       2,
+       75
+      ],
+      [
+       106,
+       3,
+       73
+      ],
+      [
+       109,
+       3,
+       66
+      ],
+      [
+       112,
+       3,
+       65
+      ],
+      [
+       115,
+       2,
+       72
+      ],
+      [
+       117,
+       3,
+       69
+      ],
+      [
+       120,
+       2,
+       75
+      ],
+      [
+       122,
+       3,
+       72
+      ],
+      [
+       125,
+       3,
+       65
+      ]
+     ],
+     "names": {
+      "65": "F4",
+      "66": "F#4",
+      "68": "G#4",
+      "69": "A4",
+      "70": "A#4",
+      "72": "C5",
+      "73": "C#5",
+      "75": "D#5",
+      "77": "F5"
+     }
+    }
+   ]
   },
   {
    "id": "ch3-strings",
@@ -2562,7 +3615,10 @@
     }
    ],
    "table": [],
-   "notes": "Study 5: his ear on the reference was the build and the guitar and chords."
+   "notes": "Study 5: his ear on the reference was the build and the guitar and chords.",
+   "fl": [
+    "Reverb: select the track, open the Rack (right of the Playlist), tap (+) Add Module > Reverb, raise the wet."
+   ]
   },
   {
    "id": "ch3-drop",
@@ -2696,7 +3752,15 @@
     }
    ],
    "table": [],
-   "notes": "Straight time at 94: the bounce side. Same drum grammar as chapter 2, new tempo."
+   "notes": "Straight time at 94: the bounce side. Same drum grammar as chapter 2, new tempo.",
+   "fl": [
+    "Tap + (Add Track) > Drum Sequencer. Long-tap the track header > Load sample > My Samples > PL clap.wav.",
+    "Tap + (Add Track) > Drum Sequencer. Long-tap the track header > Load sample > My Samples > PL snare.wav.",
+    "Tap + (Add Track) > Drum Sequencer. Long-tap the track header > Load sample > My Samples > PL kick.wav.",
+    "Tap + (Add Track) > Drum Sequencer. Long-tap the track header > Load sample > My Samples > PL hat.wav.",
+    "Tap the steps that are lit in the grid above. One square is one step; a bar is 16.",
+    "Reverb: select the track, open the Rack (right of the Playlist), tap (+) Add Module > Reverb, raise the wet."
+   ]
   },
   {
    "id": "ch3-808",
@@ -2735,7 +3799,66 @@
     }
    ],
    "table": [],
-   "notes": "Gate: sub >= 80%, guitar mids >= 1% on the drop. Measured 92% / 4.5%."
+   "notes": "Gate: sub >= 80%, guitar mids >= 1% on the drop. Measured 92% / 4.5%.",
+   "fl": [
+    "Add the SoundFont Player instrument and load PL 808.sf2 from My Samples. Prev / Next steps through its patches.",
+    "Long-tap that track's icon > Import MIDI Tracks > My MIDI > 808.mid. Double-tap the clip to see it in the Piano roll (drawn below)."
+   ],
+   "rolls": [
+    {
+     "label": "808.mid",
+     "from_bar": 9,
+     "bars": 8,
+     "notes": [
+      [
+       0,
+       10,
+       22
+      ],
+      [
+       16,
+       10,
+       18
+      ],
+      [
+       32,
+       10,
+       27
+      ],
+      [
+       48,
+       10,
+       29
+      ],
+      [
+       64,
+       10,
+       22
+      ],
+      [
+       80,
+       10,
+       18
+      ],
+      [
+       96,
+       10,
+       27
+      ],
+      [
+       112,
+       10,
+       29
+      ]
+     ],
+     "names": {
+      "18": "F#0",
+      "22": "A#0",
+      "27": "D#1",
+      "29": "F1"
+     }
+    }
+   ]
   },
   {
    "id": "ch3-long",
@@ -2770,7 +3893,10 @@
     }
    ],
    "table": [],
-   "notes": "The story side: long-form over hook-form. The chords never change; the register and the bounce do."
+   "notes": "The story side: long-form over hook-form. The chords never change; the register and the bounce do.",
+   "fl": [
+    "Tap + (Add Track) > Drum Sequencer. Long-tap the track header > Load sample > My Samples > PL hat-open.wav."
+   ]
   },
   {
    "id": "ch3-voice",
@@ -2805,7 +3931,8 @@
     }
    ],
    "table": [],
-   "notes": "Study 3b and 5: rap and sung side by side; one voice carrying a whole story."
+   "notes": "Study 3b and 5: rap and sung side by side; one voice carrying a whole story.",
+   "fl": []
   },
   {
    "id": "ch3-mix",
@@ -2840,7 +3967,10 @@
     }
    ],
    "table": [],
-   "notes": "Codex's mix pass: recording distance, room noise, clipping, take selection, kick and 808 masking, restrained effects."
+   "notes": "Codex's mix pass: recording distance, room noise, clipping, take selection, kick and 808 masking, restrained effects.",
+   "fl": [
+    "Reverb: select the track, open the Rack (right of the Playlist), tap (+) Add Module > Reverb, raise the wet."
+   ]
   },
   {
    "id": "ch3-master",
@@ -2875,7 +4005,8 @@
     }
    ],
    "table": [],
-   "notes": "Codex's master pass; his ruling 11-07, no target."
+   "notes": "Codex's master pass; his ruling 11-07, no target.",
+   "fl": []
   },
   {
    "id": "ch3-check",
@@ -2906,7 +4037,8 @@
     }
    ],
    "table": [],
-   "notes": "Acceptance tests from the spec. The Transfer test is the pass; a loudness number alone earns nothing."
+   "notes": "Acceptance tests from the spec. The Transfer test is the pass; a loudness number alone earns nothing.",
+   "fl": []
   },
   {
    "id": "ch4-cover",
@@ -2937,7 +4069,11 @@
     }
    ],
    "table": [],
-   "notes": "Beat 4 crowned 11-25. Music first, drums after. Files: Music/PL Kits/_school/Beat 4 - B minor 83/."
+   "notes": "Beat 4 crowned 11-25. Music first, drums after. Files: Music/PL Kits/_school/Beat 4 - B minor 83/.",
+   "fl": [
+    "Put this beat's files where FL sees them: the sounds (.wav, .sf2) in My Samples, the .mid files in My MIDI. Then close FL completely and open it again, or they will not show.",
+    "New song: Home > SONGS > New. Set the tempo to 83: tap TMP and drag the BPM dial (or +1 / -1)."
+   ]
   },
   {
    "id": "ch4-sample",
@@ -2960,7 +4096,10 @@
     }
    ],
    "table": [],
-   "notes": "The loop is a Cymatics free-licence loop, slowed and pitched."
+   "notes": "The loop is a Cymatics free-licence loop, slowed and pitched.",
+   "fl": [
+    "Tap + (Add Track) > Audio Clip and pick Sample.wav from My Samples; place it on the bars this page names."
+   ]
   },
   {
    "id": "ch4-chop",
@@ -2983,7 +4122,188 @@
     }
    ],
    "table": [],
-   "notes": "chops.mid carries the order."
+   "notes": "chops.mid carries the order.",
+   "fl": [
+    "Add the Slicer: open the Rack (the control on the right of the Playlist), tap (+) Add Module, choose Slicer, load Sample.wav.",
+    "Long-tap that track's icon > Import MIDI Tracks > My MIDI > chops.mid. Double-tap the clip to see it in the Piano roll (drawn below)."
+   ],
+   "rolls": [
+    {
+     "label": "chops.mid",
+     "from_bar": 1,
+     "bars": 8,
+     "notes": [
+      [
+       0,
+       4,
+       60
+      ],
+      [
+       4,
+       4,
+       61
+      ],
+      [
+       8,
+       4,
+       62
+      ],
+      [
+       12,
+       4,
+       63
+      ],
+      [
+       16,
+       4,
+       60
+      ],
+      [
+       20,
+       4,
+       61
+      ],
+      [
+       24,
+       4,
+       66
+      ],
+      [
+       28,
+       4,
+       67
+      ],
+      [
+       32,
+       4,
+       60
+      ],
+      [
+       36,
+       4,
+       61
+      ],
+      [
+       40,
+       4,
+       62
+      ],
+      [
+       44,
+       4,
+       63
+      ],
+      [
+       48,
+       4,
+       60
+      ],
+      [
+       52,
+       4,
+       61
+      ],
+      [
+       56,
+       4,
+       66
+      ],
+      [
+       60,
+       4,
+       67
+      ],
+      [
+       64,
+       4,
+       60
+      ],
+      [
+       68,
+       4,
+       61
+      ],
+      [
+       72,
+       4,
+       62
+      ],
+      [
+       76,
+       4,
+       63
+      ],
+      [
+       80,
+       4,
+       60
+      ],
+      [
+       84,
+       4,
+       61
+      ],
+      [
+       88,
+       4,
+       66
+      ],
+      [
+       92,
+       4,
+       67
+      ],
+      [
+       96,
+       4,
+       60
+      ],
+      [
+       100,
+       4,
+       61
+      ],
+      [
+       104,
+       4,
+       62
+      ],
+      [
+       108,
+       4,
+       63
+      ],
+      [
+       112,
+       4,
+       60
+      ],
+      [
+       116,
+       4,
+       61
+      ],
+      [
+       120,
+       4,
+       66
+      ],
+      [
+       124,
+       4,
+       67
+      ]
+     ],
+     "names": {
+      "60": "C4",
+      "61": "C#4",
+      "62": "D4",
+      "63": "D#4",
+      "66": "F#4",
+      "67": "G4"
+     }
+    }
+   ]
   },
   {
    "id": "ch4-water",
@@ -3006,7 +4326,10 @@
     }
    ],
    "table": [],
-   "notes": "Underwater = low-pass. The voice gets the top of the spectrum."
+   "notes": "Underwater = low-pass. The voice gets the top of the spectrum.",
+   "fl": [
+    "Underwater: in the same Rack tap (+) Add Module > Filter, and sweep the cutoff down until the highs are gone."
+   ]
   },
   {
    "id": "ch4-snare",
@@ -3052,7 +4375,11 @@
     }
    ],
    "table": [],
-   "notes": "From bar 5."
+   "notes": "From bar 5.",
+   "fl": [
+    "Tap + (Add Track) > Drum Sequencer. Long-tap the track header > Load sample > My Samples > Snare.wav.",
+    "Tap the steps that are lit in the grid above. One square is one step; a bar is 16."
+   ]
   },
   {
    "id": "ch4-clap",
@@ -3120,7 +4447,13 @@
     }
    ],
    "table": [],
-   "notes": "Clap + snare layer."
+   "notes": "Clap + snare layer.",
+   "fl": [
+    "Tap + (Add Track) > Drum Sequencer. Long-tap the track header > Load sample > My Samples > Clap.wav.",
+    "Tap + (Add Track) > Drum Sequencer. Long-tap the track header > Load sample > My Samples > Snare.wav.",
+    "Tap the steps that are lit in the grid above. One square is one step; a bar is 16.",
+    "Reverb: select the track, open the Rack (right of the Playlist), tap (+) Add Module > Reverb, raise the wet."
+   ]
   },
   {
    "id": "ch4-kick",
@@ -3210,7 +4543,12 @@
     }
    ],
    "table": [],
-   "notes": "Kick on the one only."
+   "notes": "Kick on the one only.",
+   "fl": [
+    "Tap + (Add Track) > Drum Sequencer. Long-tap the track header > Load sample > My Samples > Kick.wav.",
+    "Tap + (Add Track) > Drum Sequencer. Long-tap the track header > Load sample > My Samples > Hat.wav.",
+    "Tap the steps that are lit in the grid above. One square is one step; a bar is 16."
+   ]
   },
   {
    "id": "ch4-check",
@@ -3233,7 +4571,8 @@
     }
    ],
    "table": [],
-   "notes": "The space check."
+   "notes": "The space check.",
+   "fl": []
   },
   {
    "id": "ch5-cover",
@@ -3264,7 +4603,11 @@
     }
    ],
    "table": [],
-   "notes": "Beat 5 crowned 11-25. Files: Music/PL Kits/_school/Beat 5 - Cs minor 140 (70 feel)/."
+   "notes": "Beat 5 crowned 11-25. Files: Music/PL Kits/_school/Beat 5 - Cs minor 140 (70 feel)/.",
+   "fl": [
+    "Put this beat's files where FL sees them: the sounds (.wav, .sf2) in My Samples, the .mid files in My MIDI. Then close FL completely and open it again, or they will not show.",
+    "New song: Home > SONGS > New. Set the tempo to 140: tap TMP and drag the BPM dial (or +1 / -1)."
+   ]
   },
   {
    "id": "ch5-arp",
@@ -3287,7 +4630,107 @@
     }
    ],
    "table": [],
-   "notes": "Arpeggios are tricky: quantize them."
+   "notes": "Arpeggios are tricky: quantize them.",
+   "fl": [
+    "Tap + (Add Track) > DirectWave (the sample player) and load Pluck.wav.",
+    "Long-tap that track's icon > Import MIDI Tracks > My MIDI > chords.mid. Double-tap the clip to see it in the Piano roll (drawn below)."
+   ],
+   "rolls": [
+    {
+     "label": "chords.mid",
+     "from_bar": 1,
+     "bars": 8,
+     "notes": [
+      [
+       0,
+       32,
+       61
+      ],
+      [
+       0,
+       32,
+       64
+      ],
+      [
+       0,
+       32,
+       68
+      ],
+      [
+       0,
+       32,
+       71
+      ],
+      [
+       32,
+       32,
+       57
+      ],
+      [
+       32,
+       32,
+       61
+      ],
+      [
+       32,
+       32,
+       64
+      ],
+      [
+       32,
+       32,
+       68
+      ],
+      [
+       64,
+       32,
+       61
+      ],
+      [
+       64,
+       32,
+       64
+      ],
+      [
+       64,
+       32,
+       68
+      ],
+      [
+       64,
+       32,
+       71
+      ],
+      [
+       96,
+       32,
+       57
+      ],
+      [
+       96,
+       32,
+       61
+      ],
+      [
+       96,
+       32,
+       64
+      ],
+      [
+       96,
+       32,
+       68
+      ]
+     ],
+     "names": {
+      "57": "A3",
+      "61": "C#4",
+      "64": "E4",
+      "68": "G#4",
+      "71": "B4"
+     }
+    }
+   ]
   },
   {
    "id": "ch5-strings",
@@ -3310,7 +4753,11 @@
     }
    ],
    "table": [],
-   "notes": "The tremolo strings carry the hook later."
+   "notes": "The tremolo strings carry the hook later.",
+   "fl": [
+    "Tap + (Add Track) > Audio Clip and pick Strings C#m7.wav from My Samples; place it on the bars this page names.",
+    "Tap + (Add Track) > Audio Clip and pick Strings Amaj7.wav from My Samples; place it on the bars this page names."
+   ]
   },
   {
    "id": "ch5-snare",
@@ -3378,7 +4825,13 @@
     }
    ],
    "table": [],
-   "notes": "Half-time."
+   "notes": "Half-time.",
+   "fl": [
+    "Tap + (Add Track) > Drum Sequencer. Long-tap the track header > Load sample > My Samples > Clap.wav.",
+    "Tap + (Add Track) > Drum Sequencer. Long-tap the track header > Load sample > My Samples > Snare.wav.",
+    "Tap the steps that are lit in the grid above. One square is one step; a bar is 16.",
+    "Reverb: select the track, open the Rack (right of the Playlist), tap (+) Add Module > Reverb, raise the wet."
+   ]
   },
   {
    "id": "ch5-kick",
@@ -3446,7 +4899,11 @@
     }
    ],
    "table": [],
-   "notes": ""
+   "notes": "",
+   "fl": [
+    "Tap + (Add Track) > Drum Sequencer. Long-tap the track header > Load sample > My Samples > Kick.wav.",
+    "Tap the steps that are lit in the grid above. One square is one step; a bar is 16."
+   ]
   },
   {
    "id": "ch5-hats",
@@ -3514,7 +4971,12 @@
     }
    ],
    "table": [],
-   "notes": "Galloping hats with a delay."
+   "notes": "Galloping hats with a delay.",
+   "fl": [
+    "Tap + (Add Track) > Drum Sequencer. Long-tap the track header > Load sample > My Samples > Hat.wav.",
+    "Tap + (Add Track) > Drum Sequencer. Long-tap the track header > Load sample > My Samples > Open Hat.wav.",
+    "Tap the steps that are lit in the grid above. One square is one step; a bar is 16."
+   ]
   },
   {
    "id": "ch5-808",
@@ -3560,7 +5022,64 @@
     }
    ],
    "table": [],
-   "notes": "Obnoxious 808, tucked behind the drums."
+   "notes": "Obnoxious 808, tucked behind the drums.",
+   "fl": [
+    "808, one Drum Sequencer track per note (808 C#.wav, 808 A.wav): Tap + (Add Track) > Drum Sequencer, long-tap the header > Load sample. Put each note's hit on the bars where the piano roll below shows that note.",
+    "Tap the steps that are lit in the grid above. One square is one step; a bar is 16."
+   ],
+   "rolls": [
+    {
+     "label": "808.mid",
+     "from_bar": 5,
+     "bars": 8,
+     "notes": [
+      [
+       0,
+       14,
+       25
+      ],
+      [
+       26,
+       6,
+       25
+      ],
+      [
+       32,
+       14,
+       33
+      ],
+      [
+       58,
+       6,
+       33
+      ],
+      [
+       64,
+       14,
+       25
+      ],
+      [
+       90,
+       6,
+       25
+      ],
+      [
+       96,
+       14,
+       33
+      ],
+      [
+       122,
+       6,
+       33
+      ]
+     ],
+     "names": {
+      "25": "C#1",
+      "33": "A1"
+     }
+    }
+   ]
   },
   {
    "id": "ch5-hook",
@@ -3606,7 +5125,11 @@
     }
    ],
    "table": [],
-   "notes": "A faster hat for the hook."
+   "notes": "A faster hat for the hook.",
+   "fl": [
+    "Tap + (Add Track) > Drum Sequencer. Long-tap the track header > Load sample > My Samples > Hat.wav.",
+    "Tap the steps that are lit in the grid above. One square is one step; a bar is 16."
+   ]
   },
   {
    "id": "ch5-check",
@@ -3629,7 +5152,8 @@
     }
    ],
    "table": [],
-   "notes": "The space check."
+   "notes": "The space check.",
+   "fl": []
   },
   {
    "id": "ch6-cover",
@@ -3660,7 +5184,11 @@
     }
    ],
    "table": [],
-   "notes": "Beat 6 crowned 11-25. Files: Music/PL Kits/_school/Beat 6 - G minor 68/."
+   "notes": "Beat 6 crowned 11-25. Files: Music/PL Kits/_school/Beat 6 - G minor 68/.",
+   "fl": [
+    "Put this beat's files where FL sees them: the sounds (.wav, .sf2) in My Samples, the .mid files in My MIDI. Then close FL completely and open it again, or they will not show.",
+    "New song: Home > SONGS > New. Set the tempo to 68: tap TMP and drag the BPM dial (or +1 / -1)."
+   ]
   },
   {
    "id": "ch6-keys",
@@ -3683,7 +5211,11 @@
     }
    ],
    "table": [],
-   "notes": "Room for the voice."
+   "notes": "Room for the voice.",
+   "fl": [
+    "Tap + (Add Track) > Audio Clip and pick Keys.wav from My Samples; place it on the bars this page names.",
+    "Underwater: in the same Rack tap (+) Add Module > Filter, and sweep the cutoff down until the highs are gone."
+   ]
   },
   {
    "id": "ch6-bass",
@@ -3706,7 +5238,10 @@
     }
    ],
    "table": [],
-   "notes": ""
+   "notes": "",
+   "fl": [
+    "Tap + (Add Track) > Audio Clip and pick Bass.wav from My Samples; place it on the bars this page names."
+   ]
   },
   {
    "id": "ch6-kick",
@@ -3752,7 +5287,11 @@
     }
    ],
    "table": [],
-   "notes": ""
+   "notes": "",
+   "fl": [
+    "Tap + (Add Track) > Drum Sequencer. Long-tap the track header > Load sample > My Samples > Kick.wav.",
+    "Tap the steps that are lit in the grid above. One square is one step; a bar is 16."
+   ]
   },
   {
    "id": "ch6-snare",
@@ -3798,7 +5337,11 @@
     }
    ],
    "table": [],
-   "notes": ""
+   "notes": "",
+   "fl": [
+    "Tap + (Add Track) > Drum Sequencer. Long-tap the track header > Load sample > My Samples > Snare.wav.",
+    "Tap the steps that are lit in the grid above. One square is one step; a bar is 16."
+   ]
   },
   {
    "id": "ch6-offbeat",
@@ -3866,7 +5409,12 @@
     }
    ],
    "table": [],
-   "notes": "Offbeat snare, open hat."
+   "notes": "Offbeat snare, open hat.",
+   "fl": [
+    "Tap + (Add Track) > Drum Sequencer. Long-tap the track header > Load sample > My Samples > Snare.wav.",
+    "Tap + (Add Track) > Drum Sequencer. Long-tap the track header > Load sample > My Samples > Open Hat.wav.",
+    "Tap the steps that are lit in the grid above. One square is one step; a bar is 16."
+   ]
   },
   {
    "id": "ch6-check",
@@ -3889,7 +5437,8 @@
     }
    ],
    "table": [],
-   "notes": "The space check."
+   "notes": "The space check.",
+   "fl": []
   },
   {
    "id": "ch7-cover",
@@ -3920,7 +5469,11 @@
     }
    ],
    "table": [],
-   "notes": "Beat 7 crowned 11-25. Files: Music/PL Kits/_school/Beat 7 - A minor 84/."
+   "notes": "Beat 7 crowned 11-25. Files: Music/PL Kits/_school/Beat 7 - A minor 84/.",
+   "fl": [
+    "Put this beat's files where FL sees them: the sounds (.wav, .sf2) in My Samples, the .mid files in My MIDI. Then close FL completely and open it again, or they will not show.",
+    "New song: Home > SONGS > New. Set the tempo to 84: tap TMP and drag the BPM dial (or +1 / -1)."
+   ]
   },
   {
    "id": "ch7-guitar",
@@ -3943,7 +5496,10 @@
     }
    ],
    "table": [],
-   "notes": "Guitar and voice space first."
+   "notes": "Guitar and voice space first.",
+   "fl": [
+    "Tap + (Add Track) > Audio Clip and pick Guitar.wav from My Samples; place it on the bars this page names."
+   ]
   },
   {
    "id": "ch7-verse",
@@ -4011,7 +5567,13 @@
     }
    ],
    "table": [],
-   "notes": "Played feel."
+   "notes": "Played feel.",
+   "fl": [
+    "Tap + (Add Track) > Drum Sequencer. Long-tap the track header > Load sample > My Samples > Kick.wav.",
+    "Tap + (Add Track) > Drum Sequencer. Long-tap the track header > Load sample > My Samples > Snare.wav.",
+    "Tap + (Add Track) > Drum Sequencer. Long-tap the track header > Load sample > My Samples > Hat.wav.",
+    "Tap the steps that are lit in the grid above. One square is one step; a bar is 16."
+   ]
   },
   {
    "id": "ch7-hook",
@@ -4123,7 +5685,67 @@
     }
    ],
    "table": [],
-   "notes": ""
+   "notes": "",
+   "fl": [
+    "Tap + (Add Track) > Drum Sequencer. Long-tap the track header > Load sample > My Samples > Clap.wav.",
+    "Tap + (Add Track) > Drum Sequencer. Long-tap the track header > Load sample > My Samples > Hat.wav.",
+    "808, one Drum Sequencer track per note (808 A.wav, 808 C.wav, 808 E.wav): Tap + (Add Track) > Drum Sequencer, long-tap the header > Load sample. Put each note's hit on the bars where the piano roll below shows that note.",
+    "Tap the steps that are lit in the grid above. One square is one step; a bar is 16."
+   ],
+   "rolls": [
+    {
+     "label": "808.mid",
+     "from_bar": 25,
+     "bars": 8,
+     "notes": [
+      [
+       0,
+       14,
+       33
+      ],
+      [
+       16,
+       14,
+       36
+      ],
+      [
+       32,
+       14,
+       28
+      ],
+      [
+       48,
+       14,
+       36
+      ],
+      [
+       64,
+       14,
+       33
+      ],
+      [
+       80,
+       14,
+       36
+      ],
+      [
+       96,
+       14,
+       28
+      ],
+      [
+       112,
+       14,
+       36
+      ]
+     ],
+     "names": {
+      "28": "E1",
+      "33": "A1",
+      "36": "C2"
+     }
+    }
+   ]
   },
   {
    "id": "ch7-long",
@@ -4146,7 +5768,19 @@
     }
    ],
    "table": [],
-   "notes": "Long form over hook form."
+   "notes": "Long form over hook form.",
+   "fl": [
+    "In the Playlist each sound is its own track. Tap a clip > Copy, then long-tap the bar where it should start and paste.",
+    "Repeat until every track matches the picture below:",
+    "Guitar: bars 1-64",
+    "Kick: bars 9-56, 61-64",
+    "Snare: bars 9-56, 61-64",
+    "Clap: bars 25-32, 49-56",
+    "808: bars 25-32, 49-56, 61-64",
+    "Hats: bars 33-48",
+    "Play it from bar 1. The parts come in exactly where the gold starts."
+   ],
+   "playlist": true
   },
   {
    "id": "ch7-check",
@@ -4169,7 +5803,8 @@
     }
    ],
    "table": [],
-   "notes": "The space check."
+   "notes": "The space check.",
+   "fl": []
   },
   {
    "id": "ch8-cover",
@@ -4200,7 +5835,11 @@
     }
    ],
    "table": [],
-   "notes": "Beat 8 crowned 11-25. Files: Music/PL Kits/_school/Beat 8 - G minor 100 88 104/."
+   "notes": "Beat 8 crowned 11-25. Files: Music/PL Kits/_school/Beat 8 - G minor 100 88 104/.",
+   "fl": [
+    "Put this beat's files where FL sees them: the sounds (.wav, .sf2) in My Samples, the .mid files in My MIDI. Then close FL completely and open it again, or they will not show.",
+    "New song: Home > SONGS > New. Set the tempo to 100: tap TMP and drag the BPM dial (or +1 / -1)."
+   ]
   },
   {
    "id": "ch8-guitar",
@@ -4223,7 +5862,10 @@
     }
    ],
    "table": [],
-   "notes": ""
+   "notes": "",
+   "fl": [
+    "Tap + (Add Track) > Audio Clip and pick Guitar 100.wav from My Samples; place it on the bars this page names."
+   ]
   },
   {
    "id": "ch8-rap",
@@ -4313,7 +5955,14 @@
     }
    ],
    "table": [],
-   "notes": ""
+   "notes": "",
+   "fl": [
+    "Tap + (Add Track) > Drum Sequencer. Long-tap the track header > Load sample > My Samples > Kick.wav.",
+    "Tap + (Add Track) > Drum Sequencer. Long-tap the track header > Load sample > My Samples > Snare.wav.",
+    "Tap + (Add Track) > Drum Sequencer. Long-tap the track header > Load sample > My Samples > Hat.wav.",
+    "808, one Drum Sequencer track per note (808 G.wav, 808 D.wav, 808 Eb.wav): Tap + (Add Track) > Drum Sequencer, long-tap the header > Load sample. Put each note's hit on the bars this page names.",
+    "Tap the steps that are lit in the grid above. One square is one step; a bar is 16."
+   ]
   },
   {
    "id": "ch8-switch",
@@ -4381,7 +6030,14 @@
     }
    ],
    "table": [],
-   "notes": "The feel changes mid-song."
+   "notes": "The feel changes mid-song.",
+   "fl": [
+    "Tap + (Add Track) > Audio Clip and pick Guitar 88.wav from My Samples; place it on the bars this page names.",
+    "Tap + (Add Track) > Drum Sequencer. Long-tap the track header > Load sample > My Samples > Snare.wav.",
+    "Tap + (Add Track) > Drum Sequencer. Long-tap the track header > Load sample > My Samples > Snap.wav.",
+    "Tap the steps that are lit in the grid above. One square is one step; a bar is 16.",
+    "Tempo change: tap TMP and set the BPM dial to 88 where this part starts."
+   ]
   },
   {
    "id": "ch8-heavy",
@@ -4493,7 +6149,14 @@
     }
    ],
    "table": [],
-   "notes": ""
+   "notes": "",
+   "fl": [
+    "Tap + (Add Track) > Audio Clip and pick Guitar 104.wav from My Samples; place it on the bars this page names.",
+    "Tap + (Add Track) > Drum Sequencer. Long-tap the track header > Load sample > My Samples > Clap.wav.",
+    "Tap + (Add Track) > Drum Sequencer. Long-tap the track header > Load sample > My Samples > Open Hat.wav.",
+    "Tap the steps that are lit in the grid above. One square is one step; a bar is 16.",
+    "Tempo change: tap TMP and set the BPM dial to 104 where this part starts."
+   ]
   },
   {
    "id": "ch8-tempo",
@@ -4516,7 +6179,12 @@
     }
    ],
    "table": [],
-   "notes": ""
+   "notes": "",
+   "fl": [
+    "Tap + (Add Track) > Audio Clip and pick Guitar 100.wav from My Samples; place it on the bars this page names.",
+    "Tap + (Add Track) > Audio Clip and pick Guitar 88.wav from My Samples; place it on the bars this page names.",
+    "Tap + (Add Track) > Audio Clip and pick Guitar 104.wav from My Samples; place it on the bars this page names."
+   ]
   },
   {
    "id": "ch8-check",
@@ -4539,7 +6207,8 @@
     }
    ],
    "table": [],
-   "notes": "The switch lives in the playing and the delivery, not only the drums (confirmed trait, 11-25 research)."
+   "notes": "The switch lives in the playing and the delivery, not only the drums (confirmed trait, 11-25 research).",
+   "fl": []
   },
   {
    "id": "ch9-cover",
@@ -4570,7 +6239,11 @@
     }
    ],
    "table": [],
-   "notes": "Beat 9 crowned 11-25. Files: Music/PL Kits/_school/Beat 9 - C minor 94/."
+   "notes": "Beat 9 crowned 11-25. Files: Music/PL Kits/_school/Beat 9 - C minor 94/.",
+   "fl": [
+    "Put this beat's files where FL sees them: the sounds (.wav, .sf2) in My Samples, the .mid files in My MIDI. Then close FL completely and open it again, or they will not show.",
+    "New song: Home > SONGS > New. Set the tempo to 94: tap TMP and drag the BPM dial (or +1 / -1)."
+   ]
   },
   {
    "id": "ch9-guitar",
@@ -4593,7 +6266,10 @@
     }
    ],
    "table": [],
-   "notes": ""
+   "notes": "",
+   "fl": [
+    "Tap + (Add Track) > Audio Clip and pick Guitar.wav from My Samples; place it on the bars this page names."
+   ]
   },
   {
    "id": "ch9-stomp",
@@ -4661,7 +6337,11 @@
     }
    ],
    "table": [],
-   "notes": ""
+   "notes": "",
+   "fl": [
+    "Tap + (Add Track) > Drum Sequencer. Long-tap the track header > Load sample > My Samples > Stomp.wav.",
+    "Tap the steps that are lit in the grid above. One square is one step; a bar is 16."
+   ]
   },
   {
    "id": "ch9-clap",
@@ -4707,7 +6387,11 @@
     }
    ],
    "table": [],
-   "notes": "Stomp-clap."
+   "notes": "Stomp-clap.",
+   "fl": [
+    "Tap + (Add Track) > Drum Sequencer. Long-tap the track header > Load sample > My Samples > Clap.wav.",
+    "Tap the steps that are lit in the grid above. One square is one step; a bar is 16."
+   ]
   },
   {
    "id": "ch9-all",
@@ -4775,7 +6459,106 @@
     }
    ],
    "table": [],
-   "notes": ""
+   "notes": "",
+   "fl": [
+    "Tap + (Add Track) > Drum Sequencer. Long-tap the track header > Load sample > My Samples > Shaker.wav.",
+    "808, one Drum Sequencer track per note (808 C.wav, 808 G.wav, 808 Ab.wav): Tap + (Add Track) > Drum Sequencer, long-tap the header > Load sample. Put each note's hit on the bars where the piano roll below shows that note.",
+    "Tap the steps that are lit in the grid above. One square is one step; a bar is 16."
+   ],
+   "rolls": [
+    {
+     "label": "808.mid",
+     "from_bar": 13,
+     "bars": 8,
+     "notes": [
+      [
+       0,
+       6,
+       36
+      ],
+      [
+       8,
+       4,
+       36
+      ],
+      [
+       16,
+       6,
+       31
+      ],
+      [
+       24,
+       4,
+       31
+      ],
+      [
+       32,
+       6,
+       32
+      ],
+      [
+       40,
+       4,
+       32
+      ],
+      [
+       48,
+       6,
+       32
+      ],
+      [
+       56,
+       4,
+       32
+      ],
+      [
+       64,
+       6,
+       36
+      ],
+      [
+       72,
+       4,
+       36
+      ],
+      [
+       80,
+       6,
+       31
+      ],
+      [
+       88,
+       4,
+       31
+      ],
+      [
+       96,
+       6,
+       32
+      ],
+      [
+       104,
+       4,
+       32
+      ],
+      [
+       112,
+       6,
+       32
+      ],
+      [
+       120,
+       4,
+       32
+      ]
+     ],
+     "names": {
+      "31": "G1",
+      "32": "G#1",
+      "36": "C2"
+     }
+    }
+   ]
   },
   {
    "id": "ch9-feel",
@@ -4798,7 +6581,8 @@
     }
    ],
    "table": [],
-   "notes": "Played live feel."
+   "notes": "Played live feel.",
+   "fl": []
   },
   {
    "id": "ch9-check",
@@ -4821,7 +6605,8 @@
     }
    ],
    "table": [],
-   "notes": ""
+   "notes": "",
+   "fl": []
   },
   {
    "id": "ch10-cover",
@@ -4852,7 +6637,11 @@
     }
    ],
    "table": [],
-   "notes": "Beat 10 (S354, his ask 11-26). the reference side: major, a feel near 72, snare and clap first, a reverb-filled clap. Files: Music/PL Kits/_school/Beat 10 - C major 72/."
+   "notes": "Beat 10 (S354, his ask 11-26). the reference side: major, a feel near 72, snare and clap first, a reverb-filled clap. Files: Music/PL Kits/_school/Beat 10 - C major 72/.",
+   "fl": [
+    "Put this beat's files where FL sees them: the sounds (.wav, .sf2) in My Samples, the .mid files in My MIDI. Then close FL completely and open it again, or they will not show.",
+    "New song: Home > SONGS > New. Set the tempo to 72: tap TMP and drag the BPM dial (or +1 / -1)."
+   ]
   },
   {
    "id": "ch10-pad",
@@ -4875,7 +6664,88 @@
     }
    ],
    "table": [],
-   "notes": "About 6 breaths a minute with a longer out-breath is the breathing with real evidence (Duet job 71)."
+   "notes": "About 6 breaths a minute with a longer out-breath is the breathing with real evidence (Duet job 71).",
+   "fl": [
+    "Tap + (Add Track) > DirectWave (the sample player) and load Pad.wav.",
+    "Long-tap that track's icon > Import MIDI Tracks > My MIDI > pad chords.mid. Double-tap the clip to see it in the Piano roll (drawn below)."
+   ],
+   "rolls": [
+    {
+     "label": "pad chords.mid",
+     "from_bar": 1,
+     "bars": 8,
+     "notes": [
+      [
+       0,
+       48,
+       48
+      ],
+      [
+       0,
+       48,
+       52
+      ],
+      [
+       0,
+       48,
+       55
+      ],
+      [
+       0,
+       48,
+       59
+      ],
+      [
+       48,
+       48,
+       45
+      ],
+      [
+       48,
+       48,
+       48
+      ],
+      [
+       48,
+       48,
+       52
+      ],
+      [
+       48,
+       48,
+       55
+      ],
+      [
+       96,
+       32,
+       41
+      ],
+      [
+       96,
+       32,
+       45
+      ],
+      [
+       96,
+       32,
+       48
+      ],
+      [
+       96,
+       32,
+       52
+      ]
+     ],
+     "names": {
+      "41": "F2",
+      "45": "A2",
+      "48": "C3",
+      "52": "E3",
+      "55": "G3",
+      "59": "B3"
+     }
+    }
+   ]
   },
   {
    "id": "ch10-bells",
@@ -4898,7 +6768,10 @@
     }
    ],
    "table": [],
-   "notes": "The bells are the cue you can follow with eyes closed."
+   "notes": "The bells are the cue you can follow with eyes closed.",
+   "fl": [
+    "Tap + (Add Track) > DirectWave (the sample player) and load Bell.wav; then in its Piano roll tap the notes this page names."
+   ]
   },
   {
    "id": "ch10-clap",
@@ -4966,7 +6839,13 @@
     }
    ],
    "table": [],
-   "notes": ""
+   "notes": "",
+   "fl": [
+    "Tap + (Add Track) > Drum Sequencer. Long-tap the track header > Load sample > My Samples > Snare.wav.",
+    "Tap + (Add Track) > Drum Sequencer. Long-tap the track header > Load sample > My Samples > Clap.wav.",
+    "Tap the steps that are lit in the grid above. One square is one step; a bar is 16.",
+    "Reverb: select the track, open the Rack (right of the Playlist), tap (+) Add Module > Reverb, raise the wet."
+   ]
   },
   {
    "id": "ch10-all",
@@ -5056,7 +6935,43 @@
     }
    ],
    "table": [],
-   "notes": ""
+   "notes": "",
+   "fl": [
+    "Tap + (Add Track) > Drum Sequencer. Long-tap the track header > Load sample > My Samples > Kick.wav.",
+    "Tap + (Add Track) > Drum Sequencer. Long-tap the track header > Load sample > My Samples > Hat.wav.",
+    "Tap + (Add Track) > DirectWave (the sample player) and load 808.wav.",
+    "Tap the steps that are lit in the grid above. One square is one step; a bar is 16.",
+    "Long-tap that track's icon > Import MIDI Tracks > My MIDI > 808.mid. Double-tap the clip to see it in the Piano roll (drawn below)."
+   ],
+   "rolls": [
+    {
+     "label": "808.mid",
+     "from_bar": 1,
+     "bars": 8,
+     "notes": [
+      [
+       0,
+       40,
+       36
+      ],
+      [
+       48,
+       40,
+       33
+      ],
+      [
+       96,
+       32,
+       29
+      ]
+     ],
+     "names": {
+      "29": "F1",
+      "33": "A1",
+      "36": "C2"
+     }
+    }
+   ]
   },
   {
    "id": "ch10-check",
@@ -5079,7 +6994,8 @@
     }
    ],
    "table": [],
-   "notes": "From an app, expect a small effect: the beat is a cue, not a treatment."
+   "notes": "From an app, expect a small effect: the beat is a cue, not a treatment.",
+   "fl": []
   },
   {
    "id": "ch11-cover",
@@ -5110,7 +7026,11 @@
     }
    ],
    "table": [],
-   "notes": "Beat 11 (S354, his ask 11-26). storyteller side: quiet to heavy, a story arc. the reference side: the underwater filter that opens, the bounce. Files: Music/PL Kits/_school/Beat 11 - E minor to G major 88/."
+   "notes": "Beat 11 (S354, his ask 11-26). storyteller side: quiet to heavy, a story arc. the reference side: the underwater filter that opens, the bounce. Files: Music/PL Kits/_school/Beat 11 - E minor to G major 88/.",
+   "fl": [
+    "Put this beat's files where FL sees them: the sounds (.wav, .sf2) in My Samples, the .mid files in My MIDI. Then close FL completely and open it again, or they will not show.",
+    "New song: Home > SONGS > New. Set the tempo to 88: tap TMP and drag the BPM dial (or +1 / -1)."
+   ]
   },
   {
    "id": "ch11-low",
@@ -5133,7 +7053,151 @@
     }
    ],
    "table": [],
-   "notes": "Low: the bottom of the scale is quiet and closed."
+   "notes": "Low: the bottom of the scale is quiet and closed.",
+   "fl": [
+    "Tap + (Add Track) > DirectWave (the sample player) and load Keys.wav.",
+    "Long-tap that track's icon > Import MIDI Tracks > My MIDI > keys chords.mid. Double-tap the clip to see it in the Piano roll (drawn below).",
+    "Underwater: in the same Rack tap (+) Add Module > Filter, and sweep the cutoff down until the highs are gone."
+   ],
+   "rolls": [
+    {
+     "label": "keys chords.mid",
+     "from_bar": 1,
+     "bars": 8,
+     "notes": [
+      [
+       0,
+       16,
+       52
+      ],
+      [
+       0,
+       16,
+       55
+      ],
+      [
+       0,
+       16,
+       59
+      ],
+      [
+       16,
+       16,
+       48
+      ],
+      [
+       16,
+       16,
+       52
+      ],
+      [
+       16,
+       16,
+       55
+      ],
+      [
+       32,
+       16,
+       45
+      ],
+      [
+       32,
+       16,
+       48
+      ],
+      [
+       32,
+       16,
+       52
+      ],
+      [
+       48,
+       16,
+       47
+      ],
+      [
+       48,
+       16,
+       50
+      ],
+      [
+       48,
+       16,
+       54
+      ],
+      [
+       64,
+       16,
+       52
+      ],
+      [
+       64,
+       16,
+       55
+      ],
+      [
+       64,
+       16,
+       59
+      ],
+      [
+       80,
+       16,
+       48
+      ],
+      [
+       80,
+       16,
+       52
+      ],
+      [
+       80,
+       16,
+       55
+      ],
+      [
+       96,
+       16,
+       45
+      ],
+      [
+       96,
+       16,
+       48
+      ],
+      [
+       96,
+       16,
+       52
+      ],
+      [
+       112,
+       16,
+       47
+      ],
+      [
+       112,
+       16,
+       50
+      ],
+      [
+       112,
+       16,
+       54
+      ]
+     ],
+     "names": {
+      "45": "A2",
+      "47": "B2",
+      "48": "C3",
+      "50": "D3",
+      "52": "E3",
+      "54": "F#3",
+      "55": "G3",
+      "59": "B3"
+     }
+    }
+   ]
   },
   {
    "id": "ch11-stuck",
@@ -5201,7 +7265,12 @@
     }
    ],
    "table": [],
-   "notes": "At the bottom the lever is control: one steady thing."
+   "notes": "At the bottom the lever is control: one steady thing.",
+   "fl": [
+    "Tap + (Add Track) > Drum Sequencer. Long-tap the track header > Load sample > My Samples > Kick.wav.",
+    "Tap + (Add Track) > Drum Sequencer. Long-tap the track header > Load sample > My Samples > Hat.wav.",
+    "Tap the steps that are lit in the grid above. One square is one step; a bar is 16."
+   ]
   },
   {
    "id": "ch11-steady",
@@ -5224,7 +7293,10 @@
     }
    ],
    "table": [],
-   "notes": "Stuck to Steady is the turn from unpleasant to pleasant (Duet job 70)."
+   "notes": "Stuck to Steady is the turn from unpleasant to pleasant (Duet job 70).",
+   "fl": [
+    "Open it up: on that track's Filter, sweep the cutoff back up so the highs return."
+   ]
   },
   {
    "id": "ch11-rising",
@@ -5336,7 +7408,110 @@
     }
    ],
    "table": [],
-   "notes": "Rising adds energy, nothing else."
+   "notes": "Rising adds energy, nothing else.",
+   "fl": [
+    "Tap + (Add Track) > Drum Sequencer. Long-tap the track header > Load sample > My Samples > Clap.wav.",
+    "Tap + (Add Track) > Drum Sequencer. Long-tap the track header > Load sample > My Samples > Snare.wav.",
+    "Tap + (Add Track) > DirectWave (the sample player) and load Strings.wav; then in its Piano roll tap the notes this page names.",
+    "Tap + (Add Track) > DirectWave (the sample player) and load 808.wav.",
+    "Tap the steps that are lit in the grid above. One square is one step; a bar is 16.",
+    "Long-tap that track's icon > Import MIDI Tracks > My MIDI > 808.mid. Double-tap the clip to see it in the Piano roll (drawn below)."
+   ],
+   "rolls": [
+    {
+     "label": "808.mid",
+     "from_bar": 25,
+     "bars": 8,
+     "notes": [
+      [
+       0,
+       6,
+       31
+      ],
+      [
+       10,
+       6,
+       31
+      ],
+      [
+       16,
+       6,
+       26
+      ],
+      [
+       26,
+       6,
+       26
+      ],
+      [
+       32,
+       6,
+       28
+      ],
+      [
+       42,
+       6,
+       28
+      ],
+      [
+       48,
+       6,
+       24
+      ],
+      [
+       58,
+       6,
+       24
+      ],
+      [
+       64,
+       6,
+       31
+      ],
+      [
+       74,
+       6,
+       31
+      ],
+      [
+       80,
+       6,
+       26
+      ],
+      [
+       90,
+       6,
+       26
+      ],
+      [
+       96,
+       6,
+       28
+      ],
+      [
+       106,
+       6,
+       28
+      ],
+      [
+       112,
+       6,
+       24
+      ],
+      [
+       122,
+       6,
+       24
+      ]
+     ],
+     "names": {
+      "24": "C1",
+      "26": "D1",
+      "28": "E1",
+      "31": "G1"
+     }
+    }
+   ]
   },
   {
    "id": "ch11-check",
@@ -5359,7 +7534,8 @@
     }
    ],
    "table": [],
-   "notes": "Small steps beat big jumps."
+   "notes": "Small steps beat big jumps.",
+   "fl": []
   },
   {
    "id": "ch12-cover",
@@ -5390,7 +7566,11 @@
     }
    ],
    "table": [],
-   "notes": "Beat 12 (S354, his ask 11-26). storyteller side: dark minor, the guitar at the centre, quiet to full. Files: Music/PL Kits/_school/Beat 12 - D minor 140 (70 feel)/."
+   "notes": "Beat 12 (S354, his ask 11-26). storyteller side: dark minor, the guitar at the centre, quiet to full. Files: Music/PL Kits/_school/Beat 12 - D minor 140 (70 feel)/.",
+   "fl": [
+    "Put this beat's files where FL sees them: the sounds (.wav, .sf2) in My Samples, the .mid files in My MIDI. Then close FL completely and open it again, or they will not show.",
+    "New song: Home > SONGS > New. Set the tempo to 140: tap TMP and drag the BPM dial (or +1 / -1)."
+   ]
   },
   {
    "id": "ch12-check",
@@ -5413,7 +7593,10 @@
     }
    ],
    "table": [],
-   "notes": "The Frequency Lab's coin flip, as a stage."
+   "notes": "The Frequency Lab's coin flip, as a stage.",
+   "fl": [
+    "Tap + (Add Track) > Audio Clip and pick Tone 200.wav from My Samples; place it on the bars this page names."
+   ]
   },
   {
    "id": "ch12-tones",
@@ -5436,7 +7619,10 @@
     }
    ],
    "table": [],
-   "notes": "The 1982 Gateway report gives 4 Hz. Studies of beats like this are mostly inconsistent."
+   "notes": "The 1982 Gateway report gives 4 Hz. Studies of beats like this are mostly inconsistent.",
+   "fl": [
+    "Tap + (Add Track) > Audio Clip and pick Tone 204.wav from My Samples; place it on the bars this page names."
+   ]
   },
   {
    "id": "ch12-pad",
@@ -5459,7 +7645,87 @@
     }
    ],
    "table": [],
-   "notes": ""
+   "notes": "",
+   "fl": [
+    "Tap + (Add Track) > DirectWave (the sample player) and load Pad.wav.",
+    "Long-tap that track's icon > Import MIDI Tracks > My MIDI > pad chords.mid. Double-tap the clip to see it in the Piano roll (drawn below).",
+    "Reverb: select the track, open the Rack (right of the Playlist), tap (+) Add Module > Reverb, raise the wet."
+   ],
+   "rolls": [
+    {
+     "label": "pad chords.mid",
+     "from_bar": 5,
+     "bars": 8,
+     "notes": [
+      [
+       0,
+       32,
+       46
+      ],
+      [
+       0,
+       32,
+       50
+      ],
+      [
+       0,
+       32,
+       53
+      ],
+      [
+       32,
+       32,
+       46
+      ],
+      [
+       32,
+       32,
+       50
+      ],
+      [
+       32,
+       32,
+       53
+      ],
+      [
+       64,
+       32,
+       50
+      ],
+      [
+       64,
+       32,
+       53
+      ],
+      [
+       64,
+       32,
+       57
+      ],
+      [
+       96,
+       32,
+       50
+      ],
+      [
+       96,
+       32,
+       53
+      ],
+      [
+       96,
+       32,
+       57
+      ]
+     ],
+     "names": {
+      "46": "A#2",
+      "50": "D3",
+      "53": "F3",
+      "57": "A3"
+     }
+    }
+   ]
   },
   {
    "id": "ch12-guitar",
@@ -5482,7 +7748,10 @@
     }
    ],
    "table": [],
-   "notes": "the reference's guitar at the centre."
+   "notes": "the reference's guitar at the centre.",
+   "fl": [
+    "Tap + (Add Track) > Audio Clip and pick Guitar.wav from My Samples; place it on the bars this page names."
+   ]
   },
   {
    "id": "ch12-heart",
@@ -5528,7 +7797,183 @@
     }
    ],
    "table": [],
-   "notes": ""
+   "notes": "",
+   "fl": [
+    "Tap + (Add Track) > DirectWave (the sample player) and load Heartbeat.wav.",
+    "Long-tap that track's icon > Import MIDI Tracks > My MIDI > heartbeat.mid. Double-tap the clip to see it in the Piano roll (drawn below)."
+   ],
+   "rolls": [
+    {
+     "label": "heartbeat.mid",
+     "from_bar": 17,
+     "bars": 8,
+     "notes": [
+      [
+       0,
+       1,
+       36
+      ],
+      [
+       2,
+       1,
+       36
+      ],
+      [
+       8,
+       1,
+       36
+      ],
+      [
+       10,
+       1,
+       36
+      ],
+      [
+       16,
+       1,
+       36
+      ],
+      [
+       18,
+       1,
+       36
+      ],
+      [
+       24,
+       1,
+       36
+      ],
+      [
+       26,
+       1,
+       36
+      ],
+      [
+       32,
+       1,
+       36
+      ],
+      [
+       34,
+       1,
+       36
+      ],
+      [
+       40,
+       1,
+       36
+      ],
+      [
+       42,
+       1,
+       36
+      ],
+      [
+       48,
+       1,
+       36
+      ],
+      [
+       50,
+       1,
+       36
+      ],
+      [
+       56,
+       1,
+       36
+      ],
+      [
+       58,
+       1,
+       36
+      ],
+      [
+       64,
+       1,
+       36
+      ],
+      [
+       66,
+       1,
+       36
+      ],
+      [
+       72,
+       1,
+       36
+      ],
+      [
+       74,
+       1,
+       36
+      ],
+      [
+       80,
+       1,
+       36
+      ],
+      [
+       82,
+       1,
+       36
+      ],
+      [
+       88,
+       1,
+       36
+      ],
+      [
+       90,
+       1,
+       36
+      ],
+      [
+       96,
+       1,
+       36
+      ],
+      [
+       98,
+       1,
+       36
+      ],
+      [
+       104,
+       1,
+       36
+      ],
+      [
+       106,
+       1,
+       36
+      ],
+      [
+       112,
+       1,
+       36
+      ],
+      [
+       114,
+       1,
+       36
+      ],
+      [
+       120,
+       1,
+       36
+      ],
+      [
+       122,
+       1,
+       36
+      ]
+     ],
+     "names": {
+      "36": "C2"
+     }
+    }
+   ]
   },
   {
    "id": "ch12-sit",
@@ -5551,7 +7996,278 @@
     }
    ],
    "table": [],
-   "notes": ""
+   "notes": "",
+   "fl": []
+  },
+  {
+   "id": "ch2-playlist",
+   "eyebrow": "Arrange",
+   "title": "Lay it out in the Playlist",
+   "chips": [],
+   "grids": [],
+   "blocks": [
+    {
+     "head": "",
+     "text": "The song, bar by bar. Every sound gets its own track; place each one where it plays."
+    }
+   ],
+   "table": [],
+   "notes": "",
+   "playlist": true,
+   "fl": [
+    "In the Playlist each sound is its own track. Tap a clip > Copy, then long-tap the bar where it should start and paste.",
+    "Repeat until every track matches the picture below:",
+    "Keys: bars 1-20",
+    "Clap + Snare: bars 5-20",
+    "Kick: bars 5-20",
+    "Hats: bars 5-20",
+    "808: bars 5-20",
+    "Hook: bars 13-20",
+    "Play it from bar 1. The parts come in exactly where the gold starts."
+   ]
+  },
+  {
+   "id": "ch3-playlist",
+   "eyebrow": "Arrange",
+   "title": "Lay it out in the Playlist",
+   "chips": [],
+   "grids": [],
+   "blocks": [
+    {
+     "head": "",
+     "text": "The song, bar by bar. Every sound gets its own track; place each one where it plays."
+    }
+   ],
+   "table": [],
+   "notes": "",
+   "playlist": true,
+   "fl": [
+    "In the Playlist each sound is its own track. Tap a clip > Copy, then long-tap the bar where it should start and paste.",
+    "Repeat until every track matches the picture below:",
+    "Guitar: bars 1-24",
+    "Strings: bars 1-24",
+    "Clap + Snare: bars 9-24",
+    "Kick: bars 9-24",
+    "Hats: bars 9-24",
+    "808: bars 9-24",
+    "Play it from bar 1. The parts come in exactly where the gold starts."
+   ]
+  },
+  {
+   "id": "ch4-playlist",
+   "eyebrow": "Arrange",
+   "title": "Lay it out in the Playlist",
+   "chips": [],
+   "grids": [],
+   "blocks": [
+    {
+     "head": "",
+     "text": "The song, bar by bar. Every sound gets its own track; place each one where it plays."
+    }
+   ],
+   "table": [],
+   "notes": "",
+   "playlist": true,
+   "fl": [
+    "In the Playlist each sound is its own track. Tap a clip > Copy, then long-tap the bar where it should start and paste.",
+    "Repeat until every track matches the picture below:",
+    "Sample: bars 1-20",
+    "Snare: bars 5-20",
+    "Clap: bars 5-20",
+    "Kick: bars 5-20",
+    "Hats: bars 13-20",
+    "Play it from bar 1. The parts come in exactly where the gold starts."
+   ]
+  },
+  {
+   "id": "ch5-playlist",
+   "eyebrow": "Arrange",
+   "title": "Lay it out in the Playlist",
+   "chips": [],
+   "grids": [],
+   "blocks": [
+    {
+     "head": "",
+     "text": "The song, bar by bar. Every sound gets its own track; place each one where it plays."
+    }
+   ],
+   "table": [],
+   "notes": "",
+   "playlist": true,
+   "fl": [
+    "In the Playlist each sound is its own track. Tap a clip > Copy, then long-tap the bar where it should start and paste.",
+    "Repeat until every track matches the picture below:",
+    "Arp: bars 1-24",
+    "Strings: bars 5-20",
+    "Clap + Snare: bars 5-20",
+    "Kick: bars 5-20",
+    "Hats: bars 5-20",
+    "808: bars 5-20",
+    "Faster hats: bars 13-20",
+    "Play it from bar 1. The parts come in exactly where the gold starts."
+   ]
+  },
+  {
+   "id": "ch6-playlist",
+   "eyebrow": "Arrange",
+   "title": "Lay it out in the Playlist",
+   "chips": [],
+   "grids": [],
+   "blocks": [
+    {
+     "head": "",
+     "text": "The song, bar by bar. Every sound gets its own track; place each one where it plays."
+    }
+   ],
+   "table": [],
+   "notes": "",
+   "playlist": true,
+   "fl": [
+    "In the Playlist each sound is its own track. Tap a clip > Copy, then long-tap the bar where it should start and paste.",
+    "Repeat until every track matches the picture below:",
+    "Keys: bars 1-20",
+    "Bass: bars 1-20",
+    "Kick: bars 5-12, 17-20",
+    "Snare: bars 5-12, 17-20",
+    "Open hat: bars 5-12, 17-20",
+    "Play it from bar 1. The parts come in exactly where the gold starts."
+   ]
+  },
+  {
+   "id": "ch8-playlist",
+   "eyebrow": "Arrange",
+   "title": "Lay it out in the Playlist",
+   "chips": [],
+   "grids": [],
+   "blocks": [
+    {
+     "head": "",
+     "text": "The song, bar by bar. Every sound gets its own track; place each one where it plays."
+    }
+   ],
+   "table": [],
+   "notes": "",
+   "playlist": true,
+   "fl": [
+    "In the Playlist each sound is its own track. Tap a clip > Copy, then long-tap the bar where it should start and paste.",
+    "Repeat until every track matches the picture below:",
+    "Guitar: bars 1-28",
+    "Kick: bars 5-28",
+    "Snare: bars 5-28",
+    "Hats: bars 5-12, 21-28",
+    "808: bars 5-12, 21-28",
+    "Snap: bars 13-20",
+    "Clap: bars 21-28",
+    "Open hat: bars 21-28",
+    "Play it from bar 1. The parts come in exactly where the gold starts."
+   ]
+  },
+  {
+   "id": "ch9-playlist",
+   "eyebrow": "Arrange",
+   "title": "Lay it out in the Playlist",
+   "chips": [],
+   "grids": [],
+   "blocks": [
+    {
+     "head": "",
+     "text": "The song, bar by bar. Every sound gets its own track; place each one where it plays."
+    }
+   ],
+   "table": [],
+   "notes": "",
+   "playlist": true,
+   "fl": [
+    "In the Playlist each sound is its own track. Tap a clip > Copy, then long-tap the bar where it should start and paste.",
+    "Repeat until every track matches the picture below:",
+    "Guitar: bars 1-32",
+    "Stomp: bars 5-20, 25-32",
+    "Clap: bars 5-32",
+    "Shaker: bars 13-20, 25-32",
+    "808: bars 13-20, 25-32",
+    "Play it from bar 1. The parts come in exactly where the gold starts."
+   ]
+  },
+  {
+   "id": "ch10-playlist",
+   "eyebrow": "Arrange",
+   "title": "Lay it out in the Playlist",
+   "chips": [],
+   "grids": [],
+   "blocks": [
+    {
+     "head": "",
+     "text": "The song, bar by bar. Every sound gets its own track; place each one where it plays."
+    }
+   ],
+   "table": [],
+   "notes": "",
+   "playlist": true,
+   "fl": [
+    "In the Playlist each sound is its own track. Tap a clip > Copy, then long-tap the bar where it should start and paste.",
+    "Repeat until every track matches the picture below:",
+    "Pad: bars 1-24",
+    "Bells: bars 1-24",
+    "Snare: bars 1-24",
+    "Clap: bars 1-24",
+    "Kick: bars 1-24",
+    "Hats: bars 1-24",
+    "808: bars 1-24",
+    "Play it from bar 1. The parts come in exactly where the gold starts."
+   ]
+  },
+  {
+   "id": "ch11-playlist",
+   "eyebrow": "Arrange",
+   "title": "Lay it out in the Playlist",
+   "chips": [],
+   "grids": [],
+   "blocks": [
+    {
+     "head": "",
+     "text": "The song, bar by bar. Every sound gets its own track; place each one where it plays."
+    }
+   ],
+   "table": [],
+   "notes": "",
+   "playlist": true,
+   "fl": [
+    "In the Playlist each sound is its own track. Tap a clip > Copy, then long-tap the bar where it should start and paste.",
+    "Repeat until every track matches the picture below:",
+    "Keys: bars 1-32",
+    "Kick: bars 9-32",
+    "Hats: bars 9-32",
+    "Snare: bars 25-32",
+    "Clap: bars 25-32",
+    "Strings: bars 25-32",
+    "808: bars 25-32",
+    "Play it from bar 1. The parts come in exactly where the gold starts."
+   ]
+  },
+  {
+   "id": "ch12-playlist",
+   "eyebrow": "Arrange",
+   "title": "Lay it out in the Playlist",
+   "chips": [],
+   "grids": [],
+   "blocks": [
+    {
+     "head": "",
+     "text": "The song, bar by bar. Every sound gets its own track; place each one where it plays."
+    }
+   ],
+   "table": [],
+   "notes": "",
+   "playlist": true,
+   "fl": [
+    "In the Playlist each sound is its own track. Tap a clip > Copy, then long-tap the bar where it should start and paste.",
+    "Repeat until every track matches the picture below:",
+    "Tones: bars 1-32",
+    "Pad: bars 5-32",
+    "Guitar: bars 9-32",
+    "Heartbeat: bars 17-32",
+    "Play it from bar 1. The parts come in exactly where the gold starts."
+   ]
   }
  ]
 }
