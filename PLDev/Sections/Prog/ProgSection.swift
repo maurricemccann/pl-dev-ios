@@ -56,6 +56,8 @@ private struct ProgFile: Decodable { let v: Int; let tracks: [ProgTrack] }
 
 struct ProgView: View {
     @Bindable var state: ProgModel
+    // screens.yml only (-simProgTerm 1): opens the first lesson with commands, terminal showing
+    @State private var simOpen = UserDefaults.standard.bool(forKey: "simProgTerm")
     var body: some View {
         List { Group {
             if let e = state.loadError { ContentUnavailableView("No lessons", systemImage: "terminal", description: Text(e)) }
@@ -73,6 +75,9 @@ struct ProgView: View {
             }
         }.listRowBackground(PLRowGround()) }
         .navigationTitle("PL Prog")
+        .navigationDestination(isPresented: $simOpen) {
+            if let l = state.tracks.flatMap(\.lessons).first(where: { !$0.run.isEmpty }) { ProgLessonView(state: state, lesson: l).osScreen() }
+        }
     }
 }
 
@@ -100,7 +105,7 @@ struct ProgLessonView: View {
     @Bindable var state: ProgModel
     let lesson: ProgLesson
     @State private var copied = 0
-    @State private var terminal = false
+    @State private var terminal = UserDefaults.standard.bool(forKey: "simProgTerm")
     @State private var term = ProgTerm.shared
     @State private var cardPack: PackKey?   // a lesson first marked done earns a card pack (his ask 11-27)
 

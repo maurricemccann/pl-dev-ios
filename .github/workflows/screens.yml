@@ -73,7 +73,7 @@ jobs:
           for l in $LINKS; do
             n=$(printf "%02d" $i)-$(echo "$l" | tr '/' '-')
             tmo xcrun simctl terminate "$DEV" "$BID" || true
-            if [ "$l" = "today" ]; then tmo xcrun simctl launch "$DEV" "$BID" -simConfig "$CFG" -simHomePage 0; elif [ "$l" = "pulse" ]; then tmo xcrun simctl launch "$DEV" "$BID" -simConfig "$CFG" -simHomePage 2; else tmo xcrun simctl launch "$DEV" "$BID" -simConfig "$CFG" -simLink "pldev://$l"; fi; sleep ${{ inputs.wait }}
+            if [ "$l" = "today" ]; then tmo xcrun simctl launch "$DEV" "$BID" -simConfig "$CFG" -simHomePage 0; elif [ "$l" = "progterm" ]; then tmo xcrun simctl launch "$DEV" "$BID" -simConfig "$CFG" -simProgTerm 1 -simLink "pldev://section/prog"; elif [ "$l" = "pulse" ]; then tmo xcrun simctl launch "$DEV" "$BID" -simConfig "$CFG" -simHomePage 2; else tmo xcrun simctl launch "$DEV" "$BID" -simConfig "$CFG" -simLink "pldev://$l"; fi; sleep ${{ inputs.wait }}
             # his fix 11-22: one shot caught the launch frame (blank rust, OI-059); four shots a few seconds apart catch the screen once it draws
             for k in 1 2 3 4; do tmo xcrun simctl io "$DEV" screenshot "shots/$n-$k.png"; sleep 3; done; echo "shot $n x4"
             i=$((i+1))
