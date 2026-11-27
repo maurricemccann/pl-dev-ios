@@ -38,7 +38,9 @@ struct SchoolTrack: Decodable, Identifiable, Hashable {
     let slides: [String]
     let clips: [String: [String]]          // step id -> [audio id, spoken name]
     let color: String?                     // whose traits the beat studies: "blue" | "red" | "both"
+    let form: [FormPart]?                  // S354: the song's layout for the playlist (pl-r1-school tools/forms.json)
 }
+struct FormPart: Decodable, Hashable { let name: String; let bars: Int; let parts: [String] }
 
 /// The track's dot: system blue, red, or half of each for "both". Nothing drawn for any other value.
 struct TrackDot: View {
@@ -240,7 +242,24 @@ struct TrackView: View {
 
     var body: some View {
         TabView(selection: $page) {
-            ScrollView { VStack(alignment: .leading, spacing: 16) { packButton; PadsPage(rows: state.padRows(track)) }.padding() }.tag(0)
+            // S354 (his ask "show the whole thing like FL Studio"): sideways = FL's channel rack; both ways = the song's layout
+            GeometryReader { geo in
+                ScrollView {
+                    VStack(alignment: .leading, spacing: 16) {
+                        packButton
+                        if geo.size.width > geo.size.height {
+                            RackView(rows: state.padRows(track))
+                        } else {
+                            Label("Turn the phone sideways for the channel rack", systemImage: "rotate.right")
+                                .font(Font.pl(.footnote)).foregroundStyle(.secondary)
+                            PadsPage(rows: state.padRows(track))
+                        }
+                        if let f = track.form, !f.isEmpty { PlaylistView(form: f) }
+                    }
+                    .padding()
+                }
+            }
+            .tag(0)
             ForEach(Array(track.slides.enumerated()), id: \.offset) { i, sid in
                 ScrollView { if let l = state.lesson(sid) { StepPage(lesson: l).padding() } }.tag(i + 1)
             }
@@ -256,8 +275,8 @@ struct TrackView: View {
             }
             .presentationDetents([.medium, .large])
         }
-        .onAppear { page = state.page(track); UIApplication.shared.isIdleTimerDisabled = true }
-        .onDisappear { state.player.stop(); UIApplication.shared.isIdleTimerDisabled = false }
+        .onAppear { page = state.page(track); UIApplication.shared.isIdleTimerDisabled = true; PLOrientation.allow(.allButUpsideDown) }
+        .onDisappear { state.player.stop(); UIApplication.shared.isIdleTimerDisabled = false; PLOrientation.allow(.portrait) }   // turns like a Paint canvas, upright again on the way out
         .onChange(of: page) { _, p in state.setPage(track, p); state.player.stop() }
         .sensoryFeedback(PLHaptic.select, trigger: page)
     }
@@ -367,6 +386,79 @@ struct PadsPage: View {
             }
         }
         .frame(maxWidth: .infinity, alignment: .leading)
+    }
+}
+
+/// FL's channel rack (S354): one row per instrument, all 16 steps in a line, a beat line every 4. Shown with the phone sideways.
+struct RackView: View {
+    let rows: [PadRow]
+    var body: some View {
+        VStack(alignment: .leading, spacing: 6) {
+            Text("CHANNEL RACK · EVERY ROW, 16 STEPS").font(Font.pl(.caption)).foregroundStyle(Color.accentColor)
+            if rows.isEmpty { Text("No pad rows in this track.").foregroundStyle(.secondary) }
+            ForEach(Array(rows.enumerated()), id: \.offset) { _, r in
+                HStack(spacing: 3) {
+                    Text(r.label).font(Font.pl(size: 12)).lineLimit(1).frame(width: 140, alignment: .leading)
+                    ForEach(0..<16, id: \.self) { i in
+                        if i > 0 && i % 4 == 0 { Rectangle().fill(Color.accentColor.opacity(0.55)).frame(width: 2, height: 26) }
+                        RoundedRectangle(cornerRadius: 4, style: .continuous)
+                            .fill(i < r.steps.count && r.steps[i] ? (Color(hex: r.color) ?? .accentColor) : Color.secondary.opacity((i / 4) % 2 == 0 ? 0.22 : 0.12))
+                            .frame(height: 26)
+                    }
+                }
+                .accessibilityElement(children: .ignore)
+                .accessibilityLabel("\(r.label): steps \(r.steps.enumerated().filter { $0.element }.map { String($0.offset + 1) }.joined(separator: ", "))")
+            }
+            HStack(spacing: 3) {
+                Color.clear.frame(width: 140, height: 1)
+                ForEach(0..<16, id: \.self) { i in
+                    if i > 0 && i % 4 == 0 { Color.clear.frame(width: 2, height: 1) }
+                    Text(i % 4 == 0 ? "\(i + 1)" : "").font(Font.pl(size: 11).monospacedDigit()).foregroundStyle(.secondary).frame(maxWidth: .infinity, alignment: .leading)
+                }
+            }
+        }
+    }
+}
+
+/// FL's playlist (S354): the whole song left to right, one row per part, filled where that part plays.
+struct PlaylistView: View {
+    let form: [FormPart]
+    private var parts: [String] { form.flatMap(\.parts).reduce(into: [String]()) { if !$0.contains($1) { $0.append($1) } } }
+    private var total: Int { form.reduce(0) { $0 + $1.bars } }
+    private func start(_ i: Int) -> Int { form.prefix(i).reduce(1) { $0 + $1.bars } }
+
+    var body: some View {
+        let unit = max(10.0, 520.0 / Double(max(total, 1)))   // width of one bar
+        VStack(alignment: .leading, spacing: 6) {
+            Text("THE SONG · \(total) BARS · LEFT TO RIGHT").font(Font.pl(.caption)).foregroundStyle(Color.accentColor)
+            ScrollView(.horizontal, showsIndicators: false) {
+                VStack(alignment: .leading, spacing: 4) {
+                    HStack(spacing: 0) {
+                        Color.clear.frame(width: 96, height: 1)
+                        ForEach(form.indices, id: \.self) { i in
+                            VStack(alignment: .leading, spacing: 0) {
+                                Text(form[i].name).font(Font.pl(size: 11, weight: .bold)).lineLimit(1)
+                                Text("bar \(start(i))").font(Font.pl(size: 10).monospacedDigit()).foregroundStyle(.secondary)
+                            }
+                            .frame(width: CGFloat(Double(form[i].bars) * unit), alignment: .leading)
+                        }
+                    }
+                    ForEach(parts, id: \.self) { p in
+                        HStack(spacing: 0) {
+                            Text(p).font(Font.pl(size: 12)).lineLimit(1).frame(width: 96, alignment: .leading)
+                            ForEach(form.indices, id: \.self) { i in
+                                RoundedRectangle(cornerRadius: 3, style: .continuous)
+                                    .fill(form[i].parts.contains(p) ? Color.accentColor : Color.secondary.opacity(0.1))
+                                    .frame(width: max(2, CGFloat(Double(form[i].bars) * unit) - 2), height: 18)
+                                    .padding(.trailing, 2)
+                            }
+                        }
+                        .accessibilityElement(children: .ignore)
+                        .accessibilityLabel("\(p): plays in \(form.filter { $0.parts.contains(p) }.map(\.name).joined(separator: ", "))")
+                    }
+                }
+            }
+        }
     }
 }
 

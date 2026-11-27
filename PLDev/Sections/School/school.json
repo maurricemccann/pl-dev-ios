@@ -64,7 +64,27 @@
      "b1-s5",
      "stage 5, plus piano"
     ]
-   }
+   },
+   "form": [
+    {
+     "name": "before the drop",
+     "bars": 4,
+     "parts": [
+      "Keys"
+     ]
+    },
+    {
+     "name": "drop",
+     "bars": 4,
+     "parts": [
+      "Keys",
+      "Clap + Snare",
+      "Kick",
+      "Hats",
+      "808"
+     ]
+    }
+   ]
   },
   {
    "id": "b2",
@@ -105,7 +125,39 @@
      "b2-s4",
      "stage 4, the hook opens"
     ]
-   }
+   },
+   "form": [
+    {
+     "name": "intro",
+     "bars": 4,
+     "parts": [
+      "Keys"
+     ]
+    },
+    {
+     "name": "verse",
+     "bars": 8,
+     "parts": [
+      "Keys",
+      "Snare",
+      "Kick",
+      "Hats",
+      "808"
+     ]
+    },
+    {
+     "name": "hook",
+     "bars": 8,
+     "parts": [
+      "Keys",
+      "Snare",
+      "Kick",
+      "Hats",
+      "808",
+      "Hook"
+     ]
+    }
+   ]
   },
   {
    "id": "b3",
@@ -135,7 +187,37 @@
      "b3-s2",
      "stage 2, the drop"
     ]
-   }
+   },
+   "form": [
+    {
+     "name": "guitar alone",
+     "bars": 8,
+     "parts": [
+      "Guitar",
+      "Strings"
+     ]
+    },
+    {
+     "name": "drop",
+     "bars": 8,
+     "parts": [
+      "Guitar",
+      "Strings",
+      "Drums",
+      "808"
+     ]
+    },
+    {
+     "name": "long form",
+     "bars": 8,
+     "parts": [
+      "Guitar",
+      "Strings",
+      "Drums",
+      "808"
+     ]
+    }
+   ]
   },
   {
    "id": "b4",
@@ -179,7 +261,37 @@
      "b4-s6",
      "stage 6, plus the kick"
     ]
-   }
+   },
+   "form": [
+    {
+     "name": "sample",
+     "bars": 4,
+     "parts": [
+      "Sample"
+     ]
+    },
+    {
+     "name": "beat",
+     "bars": 8,
+     "parts": [
+      "Sample",
+      "Snare",
+      "Clap",
+      "Kick"
+     ]
+    },
+    {
+     "name": "with hats",
+     "bars": 8,
+     "parts": [
+      "Sample",
+      "Snare",
+      "Clap",
+      "Kick",
+      "Hats"
+     ]
+    }
+   ]
   },
   {
    "id": "b5",
@@ -228,7 +340,48 @@
      "b5-s7",
      "stage 7, the hook"
     ]
-   }
+   },
+   "form": [
+    {
+     "name": "arp",
+     "bars": 4,
+     "parts": [
+      "Arp"
+     ]
+    },
+    {
+     "name": "verse",
+     "bars": 8,
+     "parts": [
+      "Arp",
+      "Strings",
+      "Snare",
+      "Kick",
+      "Hats",
+      "808"
+     ]
+    },
+    {
+     "name": "hook",
+     "bars": 8,
+     "parts": [
+      "Arp",
+      "Strings",
+      "Snare",
+      "Kick",
+      "Hats",
+      "808",
+      "Hook"
+     ]
+    },
+    {
+     "name": "arp",
+     "bars": 4,
+     "parts": [
+      "Arp"
+     ]
+    }
+   ]
   },
   {
    "id": "b6",
@@ -267,7 +420,47 @@
      "b6-s5",
      "stage 5, offbeat snare and open hat"
     ]
-   }
+   },
+   "form": [
+    {
+     "name": "keys",
+     "bars": 4,
+     "parts": [
+      "Keys",
+      "Bass"
+     ]
+    },
+    {
+     "name": "beat",
+     "bars": 8,
+     "parts": [
+      "Keys",
+      "Bass",
+      "Kick",
+      "Snare",
+      "Open hat"
+     ]
+    },
+    {
+     "name": "drop",
+     "bars": 4,
+     "parts": [
+      "Keys",
+      "Bass"
+     ]
+    },
+    {
+     "name": "beat",
+     "bars": 4,
+     "parts": [
+      "Keys",
+      "Bass",
+      "Kick",
+      "Snare",
+      "Open hat"
+     ]
+    }
+   ]
   },
   {
    "id": "b7",
@@ -297,7 +490,67 @@
      "b7-s3",
      "stage 3, the hook"
     ]
-   }
+   },
+   "form": [
+    {
+     "name": "intro",
+     "bars": 8,
+     "parts": [
+      "Guitar"
+     ]
+    },
+    {
+     "name": "verse",
+     "bars": 16,
+     "parts": [
+      "Guitar",
+      "Soft drums"
+     ]
+    },
+    {
+     "name": "hook",
+     "bars": 8,
+     "parts": [
+      "Guitar",
+      "Drums",
+      "808"
+     ]
+    },
+    {
+     "name": "verse 2",
+     "bars": 16,
+     "parts": [
+      "Guitar",
+      "Soft drums",
+      "Hats"
+     ]
+    },
+    {
+     "name": "hook",
+     "bars": 8,
+     "parts": [
+      "Guitar",
+      "Drums",
+      "808"
+     ]
+    },
+    {
+     "name": "bridge",
+     "bars": 4,
+     "parts": [
+      "Guitar"
+     ]
+    },
+    {
+     "name": "outro",
+     "bars": 4,
+     "parts": [
+      "Guitar",
+      "Soft drums",
+      "808"
+     ]
+    }
+   ]
   },
   {
    "id": "b8",
@@ -332,7 +585,48 @@
      "b8-s4",
      "stage 4, heavier"
     ]
-   }
+   },
+   "form": [
+    {
+     "name": "intro 100",
+     "bars": 4,
+     "parts": [
+      "Guitar"
+     ]
+    },
+    {
+     "name": "rap 100",
+     "bars": 8,
+     "parts": [
+      "Guitar",
+      "Kick",
+      "Snare",
+      "Hats",
+      "808"
+     ]
+    },
+    {
+     "name": "sung 88",
+     "bars": 8,
+     "parts": [
+      "Guitar",
+      "Snare + Snap"
+     ]
+    },
+    {
+     "name": "heavier 104",
+     "bars": 8,
+     "parts": [
+      "Guitar",
+      "Kick",
+      "Snare",
+      "Clap",
+      "Hats",
+      "Open hat",
+      "808"
+     ]
+    }
+   ]
   },
   {
    "id": "b9",
@@ -367,7 +661,55 @@
      "b9-s4",
      "stage 4, all in"
     ]
-   }
+   },
+   "form": [
+    {
+     "name": "guitar",
+     "bars": 4,
+     "parts": [
+      "Guitar"
+     ]
+    },
+    {
+     "name": "groove",
+     "bars": 8,
+     "parts": [
+      "Guitar",
+      "Stomp",
+      "Clap"
+     ]
+    },
+    {
+     "name": "full",
+     "bars": 8,
+     "parts": [
+      "Guitar",
+      "Stomp",
+      "Clap",
+      "Shaker",
+      "808"
+     ]
+    },
+    {
+     "name": "break",
+     "bars": 4,
+     "parts": [
+      "Guitar",
+      "Clap"
+     ]
+    },
+    {
+     "name": "full",
+     "bars": 8,
+     "parts": [
+      "Guitar",
+      "Stomp",
+      "Clap",
+      "Shaker",
+      "808"
+     ]
+    }
+   ]
   },
   {
    "id": "b10",
@@ -401,7 +743,22 @@
      "b10-s4",
      "stage 4, all in"
     ]
-   }
+   },
+   "form": [
+    {
+     "name": "8 breaths",
+     "bars": 24,
+     "parts": [
+      "Pad",
+      "Bells",
+      "Snare",
+      "Clap",
+      "Kick",
+      "Hats",
+      "808"
+     ]
+    }
+   ]
   },
   {
    "id": "b11",
@@ -435,7 +792,47 @@
      "b11-s4",
      "stage 4, rising"
     ]
-   }
+   },
+   "form": [
+    {
+     "name": "Low",
+     "bars": 8,
+     "parts": [
+      "Keys"
+     ]
+    },
+    {
+     "name": "Stuck",
+     "bars": 8,
+     "parts": [
+      "Keys",
+      "Kick",
+      "Hats"
+     ]
+    },
+    {
+     "name": "Steady",
+     "bars": 8,
+     "parts": [
+      "Keys",
+      "Kick",
+      "Hats"
+     ]
+    },
+    {
+     "name": "Rising",
+     "bars": 8,
+     "parts": [
+      "Keys",
+      "Kick",
+      "Hats",
+      "Snare",
+      "Clap",
+      "Strings",
+      "808"
+     ]
+    }
+   ]
   },
   {
    "id": "b12",
@@ -474,7 +871,43 @@
      "b12-s5",
      "stage 5, all in"
     ]
-   }
+   },
+   "form": [
+    {
+     "name": "tones",
+     "bars": 4,
+     "parts": [
+      "Tones"
+     ]
+    },
+    {
+     "name": "pad",
+     "bars": 4,
+     "parts": [
+      "Tones",
+      "Pad"
+     ]
+    },
+    {
+     "name": "guitar",
+     "bars": 8,
+     "parts": [
+      "Tones",
+      "Pad",
+      "Guitar"
+     ]
+    },
+    {
+     "name": "heartbeat",
+     "bars": 16,
+     "parts": [
+      "Tones",
+      "Pad",
+      "Guitar",
+      "Heartbeat"
+     ]
+    }
+   ]
   }
  ],
  "his": [
