@@ -200,6 +200,25 @@ for n in range(3650):
             if r < need:
                 misses.append(f"{day} {band}: {fg} on {bg} {r:.2f} < {need}")
 
+# the card under text must be near opaque over the curves (his 424 screenshot): the surface opacity each card style draws
+# at the Daily look's see-through (Theme.swift PLSurface.styled), at least 0.85 for every band
+m = re.search(r"t\.through = ([0-9.]+)", scale)
+if not m:
+    fail("cannot find the Daily look's t.through in RisingScale.preset()")
+through = float(m[1])
+backing = {"frosted": max(0, 0.5 - through) * 1.8, "clear": max(0, 0.5 - through) * 1.8,
+           "solid": 1 - through * 0.6, "outline": (1 - through) * 0.8}
+for name in ("heavy", "hot", "low", "stuck", "steady", "rising", "lit"):
+    blk = block(steps, f"private static let {name} = RisingStep(", "oklch:")
+    cm = re.search(r"card: \.(\w+)", blk)
+    style = cm[1] if cm else "frosted"
+    o = backing.get(style)
+    if o is None:
+        fail(f"{name}: card style {style} has no known surface opacity")
+    print(f"card    {name:7} {style:8} surface opacity {o:.2f}")
+    if o < 0.85:
+        misses.append(f"{name}: card surface opacity {o:.2f} < 0.85 ({style})")
+
 for (band, fg, bg), r in sorted(worst.items()):
     print(f"lowest {band:7} {fg:6} on {bg:7} {r:5.2f}")
 if misses:

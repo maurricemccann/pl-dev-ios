@@ -1,5 +1,6 @@
 import SwiftUI
 import UIKit
+import CoreImage
 
 // THE 24 THEMES (his ask 11-24, S353·7b1e: "redesign a few, that means the whole thing ... each theme should have a different
 // wallpaper, or in the settings I should be able to choose ... A lot of these themes looked the same").
@@ -390,6 +391,9 @@ struct ThemeGround: View {
         let clash = !plain && (TileLook.luminance(p.groundColor) > 0.5) == (scheme == .dark)
         let parts = (spec ?? wall).split(separator: "|", maxSplits: 1).map(String.init)
         let kind = parts.first ?? "curves", arg = parts.count == 2 ? parts[1] : ""
+        // the Daily look's curves sit close to the ground (his 424 screenshot: full-contrast lines made the text unreadable;
+        // Wilkins: high-contrast line patterns behind text cause visual stress)
+        let daily = themeId == RisingScale.id
         // Color.clear takes exactly the offered size, so a filled picture cannot stretch the screen or catch a neighbour's tap
         Color.clear.overlay {
             ZStack {
@@ -399,6 +403,11 @@ struct ThemeGround: View {
                         switch kind {
                         case "code": CodeGround(name: arg, key: p.keyColor, accent: p.accentColor, ink: p.textColor, ground: p.groundColor)
                         case "mask", "invert", "color": ThemeWall(spec: kind + "|" + arg, key: ink, strength: strength)
+                        case "tile":
+                            if let tile {
+                                CurvesTile(stencil: tile, ink: ink, drift: !still && daily)
+                                    .opacity(strength <= 0 ? 0 : min(1, 0.15 + strength * 1.7))
+                            }
                         case "kit":
                             if let tile {
                                 Image(uiImage: tile).renderingMode(.template).resizable(resizingMode: .tile).foregroundStyle(ink).opacity(min(1, 0.1 + strength))
@@ -410,7 +419,7 @@ struct ThemeGround: View {
                             }
                         }
                     }
-                    .opacity(clash ? 0.12 : quiet ? (kind == "code" ? 0.7 : 0.3) : 1)
+                    .opacity((clash ? 0.12 : quiet ? (kind == "code" ? 0.7 : 0.3) : 1) * (daily ? 0.3 : 1))
                 }
             }
         }
@@ -418,7 +427,10 @@ struct ThemeGround: View {
         .allowsHitTesting(false)
         .ignoresSafeArea()
         .accessibilityHidden(true)
-        .task(id: kind + arg + String(repeatSize)) { if kind == "kit" { tile = await KitPattern.load(arg, size: repeatSize) } }
+        .task(id: kind + arg + String(repeatSize)) {
+            if kind == "kit" { tile = await KitPattern.load(arg, size: repeatSize) }
+            else if kind == "tile" { tile = await PatternStencil.load(arg, size: repeatSize) }
+        }
     }
 }
 
@@ -456,6 +468,34 @@ enum KitPattern {
         }
         guard let data, let cg = UIImage(data: data)?.cgImage, size > 0 else { return nil }
         return UIImage(cgImage: cg, scale: CGFloat(cg.width) / CGFloat(size), orientation: .up).withRenderingMode(.alwaysTemplate)
+    }
+}
+
+/// One of his tagged tiled patterns as a stencil for CurvesTile (the Daily look's wall per band, his note 11-26: "we have a few
+/// different wallpapers"). "mode|address": kit|patterns/x.png from the Design Kit, or mask|art:file / invert|art:file from the
+/// archive, whose bright (mask) or dark (invert) lines become the alpha, one repeat `size` points wide.
+enum PatternStencil {
+    @MainActor private static var cache: [String: UIImage] = [:]
+
+    @MainActor static func load(_ arg: String, size: Double) async -> UIImage? {
+        let key = arg + "@" + String(Int(size))
+        if let hit = cache[key] { return hit }
+        let parts = arg.split(separator: "|", maxSplits: 1).map(String.init)
+        guard parts.count == 2, size > 0 else { return nil }
+        var out: UIImage?
+        if parts[0] == "kit" {
+            out = await KitPattern.load(parts[1], size: size)
+        } else {
+            let address = parts[1].hasPrefix("art:") ? ThemeFeed.r2 + String(parts[1].dropFirst(4)) : parts[1]
+            if let img = await ThemeWall.load(address), let ci = CIImage(image: img) {
+                let lines = (parts[0] == "invert" ? ci.applyingFilter("CIColorInvert") : ci).applyingFilter("CIMaskToAlpha")
+                if let cg = CIContext().createCGImage(lines, from: lines.extent) {
+                    out = UIImage(cgImage: cg, scale: CGFloat(cg.width) / CGFloat(size), orientation: .up).withRenderingMode(.alwaysTemplate)
+                }
+            }
+        }
+        if let out { cache[key] = out }
+        return out
     }
 }
 

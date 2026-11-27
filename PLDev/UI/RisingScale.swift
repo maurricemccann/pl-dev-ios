@@ -442,6 +442,7 @@ enum RisingAsk {
                               wall: step?.wall ?? pool[Int(f[3] * Double(pool.count))])
         t.calm = (step?.calm ?? false) || UserDefaults.standard.bool(forKey: "pldev.rising.drained")
         t.tint = 0.4
+        t.through = 0.01   // cards and tiles near opaque (surface at 0.88) so text never sits on the curves (his 424 screenshot)
         if let step {
             t.textScale = step.textScale; t.pace = step.pace; t.columns = step.columns
             t.repeatSize = step.repeatSize; t.curves = step.curves
@@ -834,7 +835,8 @@ struct RisingPanel: View {
                     default: rising.refine(about: option)
                     }
                     asked += 1
-                } label: { Text(option).frame(maxWidth: .infinity, minHeight: 44, alignment: .leading).contentShape(Rectangle()) }
+                } label: { Text(option).frame(maxWidth: .infinity, minHeight: 36, alignment: .leading).contentShape(Rectangle()) }
+                .buttonStyle(.bordered).tint(PLTone.accent).padding(.vertical, 2)
             }
             Button("Skip the questions") { asked = RisingAsk.questions.count }.plFont(.footnote).frame(minHeight: 44)
         }

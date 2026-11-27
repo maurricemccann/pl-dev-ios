@@ -150,6 +150,7 @@ struct SectionTile: View {
                 }
             }
             Text(entry.manifest.title)
+                .shadow(color: .black.opacity(0.75), radius: 3)   // reads over his curves (his 424 screenshot)
                 .plFont(.caption)
                 .foregroundStyle(Color.primary.opacity(ready ? 1 : 0.7))
                 .lineLimit(1)
