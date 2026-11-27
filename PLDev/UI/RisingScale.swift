@@ -835,7 +835,7 @@ struct RisingPanel: View {
                     default: rising.refine(about: option)
                     }
                     asked += 1
-                } label: { Text(option).frame(maxWidth: .infinity, minHeight: 36, alignment: .leading).contentShape(Rectangle()) }
+                } label: { Text(option).frame(maxWidth: .infinity, minHeight: 44, alignment: .leading).contentShape(Rectangle()) }
                 .buttonStyle(.bordered).tint(PLTone.accent).padding(.vertical, 2)
             }
             Button("Skip the questions") { asked = RisingAsk.questions.count }.plFont(.footnote).frame(minHeight: 44)
