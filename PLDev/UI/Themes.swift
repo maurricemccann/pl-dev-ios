@@ -374,6 +374,7 @@ struct ThemeGround: View {
     @AppStorage("pldev.tileStrength") private var strength = 0.5
     @AppStorage("pldev.styleRepeat") private var repeatSize = 300.0
     @AppStorage("pldev.themeId") private var themeId = ""
+    @AppStorage("pldev.rising.moving") private var moving = true     // read here so a change redraws the wall
     @Environment(\.accessibilityReduceMotion) private var still
     @State private var tile: UIImage?
 
@@ -386,14 +387,17 @@ struct ThemeGround: View {
         let p = kit.palette
         let ground = PLCarry.tone(.ground, scheme, p.groundColor)
         let plain = !PLStyle.themed && quiet   // no theme worn: the section ground as it was (light = Apple's grey, washed)
-        let ink = plain ? (scheme == .dark ? p.textColor : p.groundColor) : p.keyColor
+        let daily = themeId == RisingScale.id
+        // the tapped band's own line colour and contrast (Duet job 72); other days and themes keep the key colour and strength
+        let bandLine = daily ? RisingScale.lineHex().flatMap { Color(hex: $0) } : nil
+        let ink = bandLine ?? (plain ? (scheme == .dark ? p.textColor : p.groundColor) : p.keyColor)
+        let speed = still || !daily || !moving ? 0 : (RisingScale.driftSpeed() ?? 3)
         // a screen pinned to the other appearance (the practice is dark only) takes the deep ground and only a trace of the art
         let clash = !plain && (TileLook.luminance(p.groundColor) > 0.5) == (scheme == .dark)
         let parts = (spec ?? wall).split(separator: "|", maxSplits: 1).map(String.init)
         let kind = parts.first ?? "curves", arg = parts.count == 2 ? parts[1] : ""
         // the Daily look's curves sit close to the ground (his 424 screenshot: full-contrast lines made the text unreadable;
         // Wilkins: high-contrast line patterns behind text cause visual stress)
-        let daily = themeId == RisingScale.id
         // Color.clear takes exactly the offered size, so a filled picture cannot stretch the screen or catch a neighbour's tap
         Color.clear.overlay {
             ZStack {
@@ -405,8 +409,8 @@ struct ThemeGround: View {
                         case "mask", "invert", "color": ThemeWall(spec: kind + "|" + arg, key: ink, strength: strength)
                         case "tile":
                             if let tile {
-                                CurvesTile(stencil: tile, ink: ink, drift: !still && daily)
-                                    .opacity(strength <= 0 ? 0 : min(1, 0.15 + strength * 1.7))
+                                CurvesTile(stencil: tile, ink: ink, speed: speed)
+                                    .opacity(bandLine != nil ? 1 : strength <= 0 ? 0 : min(1, 0.15 + strength * 1.7))
                             }
                         case "kit":
                             if let tile {
@@ -414,12 +418,13 @@ struct ThemeGround: View {
                             }
                         default:
                             if let s = Wallpaper.stencil {
-                                CurvesTile(stencil: s, ink: ink, drift: !still && themeId == RisingScale.id)
-                                    .opacity(strength <= 0 ? 0 : min(1, 0.15 + strength * 1.7))
+                                CurvesTile(stencil: s, ink: ink, speed: speed)
+                                    .opacity(bandLine != nil ? 1 : strength <= 0 ? 0 : min(1, 0.15 + strength * 1.7))
                             }
                         }
                     }
-                    .opacity((clash ? 0.12 : quiet ? (kind == "code" ? 0.7 : 0.3) : 1) * (daily ? 0.3 : 1))
+                    // a band line already carries its exact contrast; anything else is quietened as before
+                    .opacity(clash ? 0.12 : bandLine != nil ? 1 : (quiet ? (kind == "code" ? 0.7 : 0.3) : 1) * (daily ? 0.3 : 1))
                 }
             }
         }
@@ -437,10 +442,10 @@ struct ThemeGround: View {
 /// His curve tile. While the Daily look is worn it drifts slowly upward (his ruling 11-26: "Your curves, alive"): slow and cool
 /// low on the scale, quicker toward Lit, at the theme's pace. One repeat spare on every side, so the drift never shows an edge.
 private struct CurvesTile: View {
-    let stencil: UIImage, ink: Color, drift: Bool
+    let stencil: UIImage, ink: Color, speed: Double   // points a second upward; 0 = still
 
     var body: some View {
-        if drift {
+        if speed > 0 {
             TimelineView(.animation(minimumInterval: 1.0 / 20)) { ctx in tiled(ctx.date.timeIntervalSinceReferenceDate) }
         } else {
             tiled(0)
@@ -449,10 +454,9 @@ private struct CurvesTile: View {
 
     private func tiled(_ t: Double) -> some View {
         let r = max(1, stencil.size.width)   // one repeat, in points
-        let speed = 6 / max(0.5, PLStyle.pace)   // points a second
         return Image(uiImage: stencil).renderingMode(.template).resizable(resizingMode: .tile).foregroundStyle(ink)
             .padding(-r)
-            .offset(x: sin(t / 23) * r * 0.08, y: -(t * speed).truncatingRemainder(dividingBy: r))
+            .offset(y: -(t * speed).truncatingRemainder(dividingBy: r))   // straight up only (job 72: no sideways sway, no parallax)
     }
 }
 

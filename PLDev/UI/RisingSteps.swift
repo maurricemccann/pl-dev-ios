@@ -16,7 +16,7 @@ struct RisingStep {
     /// The rest of the look by band (his list 11-26 4:00 PM): panel and tile shape, type, text and tile size, the curves' tiling,
     /// motion pace (slower is cooler and calmer), Home's tiles that raise the scale first, and Hawkins's label.
     var card = PLThemePreset.Card.frosted, look = "glass", titleFace = "v1", textFace = "jost"
-    var textScale = 1.0, columns = 3, repeatSize = 300.0, curves = 0.5, pace = 1.0
+    var textScale = 1.0, columns = 3, curves = 0.5, pace = 1.0
     var lifts: [String] = []
     var hawkins = ""
     /// The accent's chroma (Duet job 71, section 1: chroma carries energy, so it rises up the bands); nil = the ground's.
@@ -36,58 +36,82 @@ struct RisingStep {
         }
     }
 
-    /// Each band's wall: one of his tagged tiled patterns, drifting (CurvesTile) close to the ground. Provisional (G) until Duet job 72
-    /// (curves and the nervous system): open, flowing, sparse low on the scale; interlocking and gold higher up. Change it here.
+    /// Each band's wall: one of his tagged tiled patterns, drifting (CurvesTile) close to the ground. Duet job 72 (curves and the
+    /// nervous system, 11-26), section 8: the quietest, largest, stillest patterns low on the scale; contrast, density and drift rise
+    /// with the band. Never the black-white ink-marker 1239 (job 72: not at native contrast behind anything).
     static let walls: [Band: String] = [
         .heavy: "tile|invert|art:abstract-pattern_organic-flowing_monochrome_digital_5457.png",
-        .hot: "tile|invert|art:abstract-pattern_organic-flowing_monochrome_digital_5457.png",
-        .low: "tile|mask|art:abstract-pattern_organic-curves_monochrome_digital_970.png",
-        .stuck: "curves",
-        .steady: "tile|invert|art:abstract-pattern_organic-interlocking_monochrome_digital-ink_5373.png",
-        .rising: "tile|kit|patterns/pl_tile.png",
-        .lit: "tile|mask|art:abstract-pattern_organic-flowing_warm-pink_digital_4693.png"]
+        .hot: "tile|mask|art:abstract-pattern_organic-curves_monochrome_digital_970.png",
+        .low: "tile|mask|art:abstract-pattern_organic-flowing_warm-pink_digital_4693.png",
+        .stuck: "tile|kit|patterns/ar-curve-tile.png",
+        .steady: "tile|kit|patterns/pl_tile.png",
+        .rising: "tile|invert|art:abstract-pattern_organic-interlocking_red-warm_digital_2437.png",
+        .lit: "curves"]
+
+    /// The wall's numbers by band (Duet job 72, sections 4 to 8), each as [smoother, as is, richer] (job 72: only about half of
+    /// people like the middle, so he picks his end in the check-in menu). repeatPt = points between lines on screen (on his phone
+    /// at 30 cm, 3 cycles a degree, the glare peak, is a 10.5 pt repeat; 48 pt and up sits below the sensitive band); contrast =
+    /// Michelson of line against ground (20% or less where text sits, 30% never); drift = points a second, always upward (vection
+    /// needed about 150 pt a second; Hot stays still, motion raises arousal). lineFrac = the tile's measured line repeat as a share
+    /// of its width, so the drawn repeat is repeatPt / lineFrac (measured 11-26 from the files, median centre-to-centre of line
+    /// runs; box-counting D of the line edges):
+    ///   5457 flowing  0.0195 (78 px of 4000; line 29 px; D 1.32)   970 curves  0.1705 (90 of 528; line 26; D 1.36)
+    ///   4693 flowing  0.0695 (278 of 4000; line 94; D 1.11)        2437 red-warm, dark lines 0.0488 (195 of 4000; line 94; D 1.15)
+    ///   ar-curve-tile 0.0684 (70 of 1024; line 23; D 1.41)         pl_tile 0.0664 (34 of 512; line 11; D 1.52)
+    ///   psyground     0.0684 (35 of 512; line 11; D 1.51)
+    static let pattern: [Band: (lineFrac: Double, repeatPt: [Double], contrast: [Double], drift: [Double])] = [
+        .heavy: (0.0195, [64, 56, 48], [0.08, 0.09, 0.10], [1, 1.5, 2]),
+        .hot: (0.1705, [64, 56, 48], [0.06, 0.07, 0.08], [0, 0, 0]),
+        .low: (0.0695, [48, 40, 32], [0.10, 0.11, 0.12], [2, 2.5, 3]),
+        .stuck: (0.0684, [32, 28, 24], [0.10, 0.12, 0.14], [2.5, 3, 3.5]),
+        .steady: (0.0664, [32, 28, 24], [0.12, 0.135, 0.15], [3, 3.5, 4]),
+        .rising: (0.0488, [28, 24, 24], [0.13, 0.15, 0.17], [4, 4.5, 5]),
+        .lit: (0.0684, [24, 20, 16], [0.15, 0.18, 0.19], [4, 5, 6])]
+
+    /// 0 smoother, 1 as is, 2 richer (the check-in menu's "Pattern").
+    static func patternLevel() -> Int { min(2, max(0, UserDefaults.standard.integer(forKey: "pldev.rising.pattern") + 1)) }
 
     // Buddy's lines are working drafts for him to rewrite; the feed's `buddy` block (keys heavy ... lit) replaces them over the air.
     private static let heavy = RisingStep(hue: 50, chroma: 0.024, light: 0.17, turn: -2, radius: 1.5, space: 1.2, tile: "circle", calm: true,
         wall: Self.walls[.heavy], title: "One small thing", face: "calm", side: 112,
         lines: ["Heavy is allowed. One small thing, then rest."],
         card: .solid, look: "flat", titleFace: "bundle:Literata-Regular", textFace: "bundle:Literata-Regular",
-        textScale: 1.12, columns: 2, repeatSize: 560, curves: 0.2, pace: 1.6,
+        textScale: 1.12, columns: 2, curves: 0.2, pace: 1.6,
         lifts: ["gate", "practice", "companion", "paint"], hawkins: "Grief, 75", pop: 0.05,
         oklch: [[0.17, 0.012, 50], [0.22, 0.016, 50], [0.86, 0.012, 60], [0.68, 0.012, 60], [0.74, 0.050, 48]])
     private static let hot = RisingStep(hue: 45, chroma: 0.020, light: 0.18, turn: 190, radius: 1.5, space: 1.2, tile: "circle", calm: true,
         wall: Self.walls[.hot], title: "Cool it first", face: "calm", side: 112,
         lines: ["Anger means something matters. Cool it first, then decide."],
         card: .solid, look: "flat", titleFace: "bundle:Literata-Regular", textFace: "bundle:Literata-Regular",
-        textScale: 1.08, columns: 2, repeatSize: 600, curves: 0.2, pace: 1.8,
+        textScale: 1.08, columns: 2, curves: 0.2, pace: 1.8,
         lifts: ["gate", "practice", "paint", "companion"], hawkins: "Anger, 150", pop: 0.035,
         oklch: [[0.18, 0.010, 45], [0.23, 0.008, 60], [0.87, 0.008, 240], [0.69, 0.008, 240], [0.75, 0.035, 235]])
     private static let low = RisingStep(hue: 235, chroma: 0.040, light: 0.19, turn: -25, radius: 1.5, space: 1.1, tile: "squircle", calm: true,
         wall: Self.walls[.low], title: "Let it loosen", face: "calm", side: 144,
         lines: ["Worry is a forecast, not a fact. Walk ten minutes, then look again."],
         titleFace: "v1", textFace: "bundle:Literata-Regular",
-        textScale: 1.05, repeatSize: 520, curves: 0.35, pace: 1.3,
+        textScale: 1.05, curves: 0.35, pace: 1.3,
         lifts: ["practice", "gate", "paint", "companion", "library"], hawkins: "Fear, 100", pop: 0.05,
         oklch: [[0.19, 0.032, 235], [0.24, 0.038, 225], [0.88, 0.015, 220], [0.70, 0.015, 220], [0.76, 0.050, 210]])
     private static let stuck = RisingStep(hue: 195, chroma: 0.044, light: 0.20, turn: -25, radius: 1, space: 1, tile: "squircle", calm: false,
         wall: Self.walls[.stuck], title: "One step", face: "happy", side: 144,
         lines: ["Stuck asks for one small move. Pick the first step and stop there.",
                 "Boredom is a quiet doorway. Picture one room of the life you want, down to the light."],
-        card: .solid, look: "flat", repeatSize: 480,
+        card: .solid, look: "flat",
         lifts: ["paint", "practice", "composer", "school", "capture"], hawkins: "Neutrality, 250", pop: 0.06,
         oklch: [[0.20, 0.036, 195], [0.25, 0.042, 185], [0.89, 0.015, 180], [0.71, 0.015, 180], [0.76, 0.060, 170]])
     private static let steady = RisingStep(hue: 155, chroma: 0.050, light: 0.21, turn: -65, radius: 1, space: 1, tile: "squircle", calm: false,
         wall: Self.walls[.steady], title: "Add a little", face: "happy", side: 144,
         lines: ["Steady is a good base. Add one thing that moves the work forward.",
                 "Hope is a real step up. Write one line about the version of you who has plenty."],
-        titleFace: "bundle:AvenirNext-Bold", textFace: "bundle:AvenirNext-Regular", repeatSize: 460, pace: 0.9,
+        titleFace: "bundle:AvenirNext-Bold", textFace: "bundle:AvenirNext-Regular", pace: 0.9,
         lifts: ["paint", "practice", "capture", "composer", "shop", "school"], hawkins: "Willingness, 310", pop: 0.08,
         oklch: [[0.21, 0.042, 155], [0.26, 0.048, 150], [0.90, 0.020, 110], [0.72, 0.020, 110], [0.76, 0.080, 90]])
     private static let rising = RisingStep(hue: 80, chroma: 0.060, light: 0.23, turn: 2, radius: 1, space: 1, tile: "squircle", calm: false,
         wall: Self.walls[.rising], title: "Make something", face: "excited", side: 144,
         lines: ["This is the practice working. Put it into one thing you make tonight.",
                 "Luxury living is a way of standing in the world. You are standing in it now."],
-        card: .clear, titleFace: "bundle:Futura-Bold", textFace: "bundle:Futura-Medium", repeatSize: 440, curves: 0.7, pace: 0.8,
+        card: .clear, titleFace: "bundle:Futura-Bold", textFace: "bundle:Futura-Medium", curves: 0.7, pace: 0.8,
         lifts: ["paint", "capture", "composer", "shop", "curate", "congregation"], hawkins: "Love, 500", pop: 0.11,
         oklch: [[0.23, 0.048, 75], [0.29, 0.058, 75], [0.92, 0.030, 85], [0.74, 0.030, 85], [0.80, 0.110, 82]])
     private static let lit = RisingStep(hue: 60, chroma: 0.090, light: 0.25, turn: 20, radius: 1, space: 1, tile: "squircle", calm: false,
@@ -95,7 +119,7 @@ struct RisingStep {
         lines: ["Remember this. Leave yourself a note for a harder night.",
                 "Good nights add up. Keep this one as a marker for the next."],
         card: .clear, look: "aurora", titleFace: "bundle:Futura-Bold", textFace: "bundle:Futura-Medium",
-        textScale: 0.97, repeatSize: 420, curves: 0.85, pace: 0.75,
+        textScale: 0.97, curves: 0.85, pace: 0.75,
         lifts: ["paint", "capture", "shop", "curate", "congregation", "composer"], hawkins: "Joy, 540", pop: 0.14,
         oklch: [[0.25, 0.064, 60], [0.32, 0.076, 65], [0.94, 0.035, 85], [0.76, 0.035, 85], [0.84, 0.140, 80]])
 }

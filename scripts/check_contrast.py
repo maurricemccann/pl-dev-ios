@@ -219,6 +219,34 @@ for name in ("heavy", "hot", "low", "stuck", "steady", "rising", "lit"):
     if o < 0.85:
         misses.append(f"{name}: card surface opacity {o:.2f} < 0.85 ({style})")
 
+# the wall's lines (Duet job 72, sections 4 and 9): each band's line is the ground's hue and chroma, lighter by the band's
+# Michelson contrast, L * ((1 + c) / (1 - c)) ** (1/3) as RisingScale.lineHex() draws it. Every level must sit at or under 20%
+# (every wall sits behind text), never over 30%; Heavy and Hot keep their line repeat at 48 pt or more (below the sensitive band).
+pm = re.search(r"static let pattern: \[Band: .*?\] = \[(.*?)\]\n", steps, re.S)
+if not pm:
+    fail("cannot find RisingStep.pattern in RisingSteps.swift")
+if "1239" in block(steps, "static let walls", "static let pattern"):
+    misses.append("walls: the ink-marker 1239 tile is in a band (job 72: never at native contrast)")
+lh = re.search(r"g\[0\] \* pow\(\(1 \+ c\) / \(1 - c\), 1\.0 / 3\), g\[1\], g\[2\]", scale)
+if not lh:
+    fail("RisingScale.lineHex() no longer draws the line the way this check reads it")
+for name, frac, rep, con, drift in re.findall(r"\.(\w+): \(([\d.]+), \[([\d., ]+)\], \[([\d., ]+)\], \[([\d., ]+)\]\)", pm[1]):
+    g = bands[name]["oklch"][0]
+    yg = lum(hexcolor(*g))
+    for level, c in zip(("smoother", "as is", "richer"), [float(x) for x in con.split(",")]):
+        yl = lum(hexcolor(g[0] * ((1 + c) / (1 - c)) ** (1 / 3), g[1], g[2]))
+        mc = (yl - yg) / (yl + yg)
+        print(f"wall    {name:7} {level:8} target {c:.3f} drawn {mc:.3f}")
+        if mc > 0.20:
+            misses.append(f"{name} {level}: wall line contrast {mc:.3f} > 0.20 behind text")
+        if mc > 0.30:
+            misses.append(f"{name} {level}: wall line contrast {mc:.3f} > 0.30 hard ceiling")
+    reps = [float(x) for x in rep.split(",")]
+    if name in ("heavy", "hot") and min(reps) < 48:
+        misses.append(f"{name}: line repeat {min(reps)} pt < 48 (inside the glare band)")
+    if any(float(x) > 6 for x in drift.split(",")) or (name == "hot" and any(float(x) for x in drift.split(","))):
+        misses.append(f"{name}: drift over 6 pt a second, or Hot not still")
+
 for (band, fg, bg), r in sorted(worst.items()):
     print(f"lowest {band:7} {fg:6} on {bg:7} {r:5.2f}")
 if misses:

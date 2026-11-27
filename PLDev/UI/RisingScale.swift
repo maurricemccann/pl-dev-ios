@@ -246,6 +246,16 @@ enum RisingAsk {
         if p[2] == 1 { return "the 1st" }
         return Self.pacific.component(.weekday, from: day) == 2 ? "Monday" : nil
     }
+    /// The wallpaper's drift (WCAG 2.2.2: moving content gets a way to stop it). Reduce Motion stops it too.
+    var movingBackground: Bool {
+        get { d.object(forKey: "pldev.rising.moving") as? Bool ?? true }
+        set { d.set(newValue, forKey: "pldev.rising.moving") }
+    }
+    /// -1 smoother, 0 as is, 1 richer: the wall's density, contrast and drift one step either way (Duet job 72).
+    var patternPick: Int {
+        get { d.integer(forKey: "pldev.rising.pattern") }
+        set { d.set(newValue, forKey: "pldev.rising.pattern"); if wearsDaily { Task { await wearIfDue(force: true) } } }
+    }
     var dims: Bool {
         get { d.object(forKey: "pldev.rising.dim") as? Bool ?? true }
         set { d.set(newValue, forKey: "pldev.rising.dim") }
@@ -404,6 +414,20 @@ enum RisingAsk {
         }
     }
 
+    /// The wall's line colour for the tapped band (Duet job 72, section 6): the ground's own hue and chroma, lighter by the band's
+    /// Michelson contrast. OKLab L is close to the cube root of luminance, so L scales by ((1 + c) / (1 - c))^(1/3).
+    nonisolated static func lineHex() -> String? {
+        guard let band = lookBand(), let p = RisingStep.pattern[band], let g = RisingStep.of(band).oklch.first, g.count == 3 else { return nil }
+        let c = p.contrast[RisingStep.patternLevel()]
+        return hex(g[0] * pow((1 + c) / (1 - c), 1.0 / 3), g[1], g[2])
+    }
+
+    /// Upward drift in points a second for the tapped band (job 72, section 5); 0 = still. nil = no tap today.
+    nonisolated static func driftSpeed() -> Double? {
+        guard let band = lookBand(), let p = RisingStep.pattern[band] else { return nil }
+        return (UserDefaults.standard.object(forKey: "pldev.rising.moving") as? Bool ?? true) ? p.drift[RisingStep.patternLevel()] : 0
+    }
+
     /// The step colour from one band's accent to the next, mixed in OKLab so warm-to-cool passes through grey, not magenta.
     nonisolated static func stepHex(from: Band?, to: Band) -> String? {
         let b = RisingStep.of(to).oklch, a = from.map { RisingStep.of($0).oklch } ?? b
@@ -445,7 +469,8 @@ enum RisingAsk {
         t.through = 0.01   // cards and tiles near opaque (surface at 0.88) so text never sits on the curves (his 424 screenshot)
         if let step {
             t.textScale = step.textScale; t.pace = step.pace; t.columns = step.columns
-            t.repeatSize = step.repeatSize; t.curves = step.curves
+            t.curves = step.curves
+            if let band = lookBand(), let p = RisingStep.pattern[band] { t.repeatSize = p.repeatPt[RisingStep.patternLevel()] / p.lineFrac }
         }
         return t
     }
@@ -862,6 +887,10 @@ struct RisingPanel: View {
             Toggle("Home follows my mood", isOn: Binding(get: { rising.homeFollows }, set: { rising.homeFollows = $0 }))
             Toggle("Dim the app 4 AM to 3 PM", isOn: Binding(get: { rising.dims }, set: { rising.dims = $0 }))
             Toggle("Band sounds", isOn: Binding(get: { rising.bandSounds }, set: { rising.bandSounds = $0 }))
+            Toggle("Moving background", isOn: Binding(get: { rising.movingBackground }, set: { rising.movingBackground = $0 }))
+            Picker("Pattern", selection: Binding(get: { rising.patternPick }, set: { rising.patternPick = $0 })) {
+                Text("Smoother").tag(-1); Text("As is").tag(0); Text("Richer").tag(1)
+            }
             ShareLink("Export my check-ins", item: RisingScale.file)
             Button("Erase my check-ins", role: .destructive) { confirmErase = true }
         } label: {
