@@ -254,7 +254,7 @@ struct TrackView: View {
                                 .font(Font.pl(.footnote)).foregroundStyle(.secondary)
                             PadsPage(rows: state.padRows(track))
                         }
-                        if let f = track.form, !f.isEmpty { PlaylistView(form: f) }
+                        if let f = track.form, !f.isEmpty { PianoRollParts(form: f, padLabels: state.padRows(track).map(\.label)); PlaylistView(form: f) }
                     }
                     .padding()
                 }
@@ -415,6 +415,40 @@ struct RackView: View {
                     if i > 0 && i % 4 == 0 { Color.clear.frame(width: 2, height: 1) }
                     Text(i % 4 == 0 ? "\(i + 1)" : "").font(Font.pl(size: 11).monospacedDigit()).foregroundStyle(.secondary).frame(maxWidth: .infinity, alignment: .leading)
                 }
+            }
+        }
+    }
+}
+
+/// The song's parts that are not step pads (S354, his read 11-27: "you said keys at the bottom then it's not at the top"):
+/// keys, guitar, pads, samples and 808 lines are played as notes in FL's piano roll, so the rack has no row for them.
+/// Listed here with the file to load, so every row of the song layout has a match above it.
+struct PianoRollParts: View {
+    let form: [FormPart]
+    let padLabels: [String]
+    private static let melodic: Set<String> = ["keys", "guitar", "pad", "sample", "arp", "strings", "bass", "hook", "tones", "bells"]
+    private var parts: [String] {
+        let pads = Set(padLabels.map { $0.lowercased().split(whereSeparator: { " ·,".contains($0) }).first.map(String.init) ?? "" })
+        return form.flatMap(\.parts).reduce(into: [String]()) { out, p in
+            let name = p.components(separatedBy: " · ")[0].lowercased()
+            let isMelodic = Self.melodic.contains(name) || (name == "808" && !pads.contains("808"))
+            if isMelodic && !out.contains(p) { out.append(p) }
+        }
+    }
+    var body: some View {
+        if !parts.isEmpty {
+            VStack(alignment: .leading, spacing: 6) {
+                Text("PLAYED IN THE PIANO ROLL, NOT ON PADS").font(Font.pl(.caption)).foregroundStyle(Color.accentColor)
+                ForEach(parts, id: \.self) { p in
+                    let bits = p.components(separatedBy: " · ")
+                    HStack(alignment: .firstTextBaseline, spacing: 8) {
+                        Text(bits[0]).font(Font.pl(.subheadline).weight(.semibold))
+                        Text(bits.count > 1 ? bits[1] : "").font(Font.pl(.footnote)).foregroundStyle(.secondary)
+                    }
+                    .accessibilityElement(children: .combine)
+                }
+                Text("Load the sound, then import its MIDI (or play the notes yourself) in the piano roll.")
+                    .font(Font.pl(.footnote)).foregroundStyle(.secondary)
             }
         }
     }
