@@ -28,6 +28,7 @@ struct PLDevApp: App {
     var body: some Scene {
         WindowGroup {
             RootView(model: AppModel.shared)
+                .overlay { NightDim() }   // the 4 AM to 3 PM dim before his daytime sleep (Duet job 71)
                 .toolbar {   // every keyboard gets a way out, typed in or not (his report 11-14)
                     ToolbarItemGroup(placement: .keyboard) {
                         Spacer()

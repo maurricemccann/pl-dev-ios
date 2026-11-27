@@ -19,6 +19,8 @@ struct RisingStep {
     var textScale = 1.0, columns = 3, repeatSize = 300.0, curves = 0.5, pace = 1.0
     var lifts: [String] = []
     var hawkins = ""
+    /// The accent's chroma (Duet job 71, section 1: chroma carries energy, so it rises up the bands); nil = the ground's.
+    var pop: Double? = nil
 
     static func of(_ b: Band) -> RisingStep {
         switch b {
@@ -33,49 +35,49 @@ struct RisingStep {
     }
 
     // Buddy's lines are working drafts for him to rewrite; the feed's `buddy` block (keys heavy ... lit) replaces them over the air.
-    private static let heavy = RisingStep(hue: 65, chroma: 0.045, light: 0.23, turn: 12, radius: 1.5, space: 1.2, tile: "circle", calm: true,
+    private static let heavy = RisingStep(hue: 50, chroma: 0.024, light: 0.17, turn: -2, radius: 1.5, space: 1.2, tile: "circle", calm: true,
         wall: "code|rise-lamp", title: "One small thing", face: "calm", side: 112,
         lines: ["Heavy is allowed. One small thing, then rest."],
         card: .solid, look: "flat", titleFace: "bundle:Literata-Regular", textFace: "bundle:Literata-Regular",
         textScale: 1.12, columns: 2, repeatSize: 420, curves: 0.2, pace: 1.6,
-        lifts: ["gate", "practice", "companion", "paint"], hawkins: "Grief, 75")
-    private static let hot = RisingStep(hue: 240, chroma: 0.03, light: 0.21, turn: -15, radius: 1.5, space: 1.2, tile: "circle", calm: true,
+        lifts: ["gate", "practice", "companion", "paint"], hawkins: "Grief, 75", pop: 0.05)
+    private static let hot = RisingStep(hue: 45, chroma: 0.020, light: 0.18, turn: 190, radius: 1.5, space: 1.2, tile: "circle", calm: true,
         wall: "code|rise-water", title: "Cool it first", face: "calm", side: 112,
         lines: ["Anger means something matters. Cool it first, then decide."],
         card: .solid, look: "flat", titleFace: "bundle:Literata-Regular", textFace: "bundle:Literata-Regular",
         textScale: 1.08, columns: 2, repeatSize: 400, curves: 0.2, pace: 1.6,
-        lifts: ["gate", "practice", "paint", "companion"], hawkins: "Anger, 150")
-    private static let low = RisingStep(hue: 220, chroma: 0.05, light: 0.21, turn: -25, radius: 1.5, space: 1.1, tile: "squircle", calm: true,
+        lifts: ["gate", "practice", "paint", "companion"], hawkins: "Anger, 150", pop: 0.035)
+    private static let low = RisingStep(hue: 235, chroma: 0.040, light: 0.19, turn: -25, radius: 1.5, space: 1.1, tile: "squircle", calm: true,
         wall: "code|rise-path", title: "Let it loosen", face: "calm", side: 144,
         lines: ["Worry is a forecast, not a fact. Walk ten minutes, then look again."],
         titleFace: "v1", textFace: "bundle:Literata-Regular",
         textScale: 1.05, repeatSize: 360, curves: 0.35, pace: 1.3,
-        lifts: ["practice", "gate", "paint", "companion", "library"], hawkins: "Fear, 100")
-    private static let stuck = RisingStep(hue: 170, chroma: 0.065, light: 0.20, turn: -25, radius: 1, space: 1, tile: "squircle", calm: false,
+        lifts: ["practice", "gate", "paint", "companion", "library"], hawkins: "Fear, 100", pop: 0.05)
+    private static let stuck = RisingStep(hue: 195, chroma: 0.044, light: 0.20, turn: -25, radius: 1, space: 1, tile: "squircle", calm: false,
         wall: "code|rise-table", title: "One step", face: "happy", side: 144,
         lines: ["Stuck asks for one small move. Pick the first step and stop there.",
                 "Boredom is a quiet doorway. Picture one room of the life you want, down to the light."],
         card: .outline, look: "flat",
-        lifts: ["paint", "practice", "composer", "school", "capture"], hawkins: "Neutrality, 250")
-    private static let steady = RisingStep(hue: 140, chroma: 0.08, light: 0.22, turn: -55, radius: 1, space: 1, tile: "squircle", calm: false,
+        lifts: ["paint", "practice", "composer", "school", "capture"], hawkins: "Neutrality, 250", pop: 0.06)
+    private static let steady = RisingStep(hue: 155, chroma: 0.050, light: 0.21, turn: -65, radius: 1, space: 1, tile: "squircle", calm: false,
         wall: "code|rise-window", title: "Add a little", face: "happy", side: 144,
         lines: ["Steady is a good base. Add one thing that moves the work forward.",
                 "Hope is a real step up. Write one line about the version of you who has plenty."],
         titleFace: "bundle:AvenirNext-Bold", textFace: "bundle:AvenirNext-Regular", pace: 0.9,
-        lifts: ["paint", "practice", "capture", "composer", "shop", "school"], hawkins: "Willingness, 310")
-    private static let rising = RisingStep(hue: 80, chroma: 0.13, light: 0.22, turn: 12, radius: 1, space: 1, tile: "squircle", calm: false,
+        lifts: ["paint", "practice", "capture", "composer", "shop", "school"], hawkins: "Willingness, 310", pop: 0.08)
+    private static let rising = RisingStep(hue: 80, chroma: 0.060, light: 0.23, turn: 2, radius: 1, space: 1, tile: "squircle", calm: false,
         wall: "curves", title: "Make something", face: "excited", side: 144,
         lines: ["This is the practice working. Put it into one thing you make tonight.",
                 "Luxury living is a way of standing in the world. You are standing in it now."],
         card: .clear, titleFace: "bundle:Futura-Bold", textFace: "bundle:Futura-Medium", repeatSize: 240, curves: 0.7, pace: 0.8,
-        lifts: ["paint", "capture", "composer", "shop", "curate", "congregation"], hawkins: "Love, 500")
-    private static let lit = RisingStep(hue: nil, chroma: 0.15, light: 0.19, turn: 40, radius: 1, space: 1, tile: "squircle", calm: false,
+        lifts: ["paint", "capture", "composer", "shop", "curate", "congregation"], hawkins: "Love, 500", pop: 0.11)
+    private static let lit = RisingStep(hue: 60, chroma: 0.090, light: 0.25, turn: 20, radius: 1, space: 1, tile: "squircle", calm: false,
         wall: nil, title: "Keep this", face: "excited", side: 144,
         lines: ["Remember this. Leave yourself a note for a harder night.",
                 "Good nights add up. Keep this one as a marker for the next."],
         card: .clear, look: "aurora", titleFace: "bundle:Futura-Bold", textFace: "bundle:Futura-Medium",
         textScale: 0.97, repeatSize: 200, curves: 0.85, pace: 0.75,
-        lifts: ["paint", "capture", "shop", "curate", "congregation", "composer"], hawkins: "Joy, 540")
+        lifts: ["paint", "capture", "shop", "curate", "congregation", "composer"], hawkins: "Joy, 540", pop: 0.14)
 }
 
 /// The grounds for the lower five answers, drawn in code in the palette's own colours.
@@ -179,8 +181,12 @@ struct RisingAction: View {
         VStack(alignment: .leading, spacing: 6) {
             if rising.current?.did == true {
                 Label("Done. That counts.", systemImage: "checkmark.circle.fill").frame(minHeight: 44)
-                // calm first, then one step up, never a jump (his sources' disagreement, resolved 11-26: both, in order)
-                if let up = Band(rawValue: band.rawValue + 1) {
+                // end on the best moment (peak-end, Duet job 71): the night's high point, never what was missed
+                if let best = rising.bestTonight { Text("Tonight's best moment so far: " + best + ".").plFont(.footnote) }
+                // calm is a full target at Heavy and Steady (job 71); elsewhere calm first, then one step up, never a jump
+                if band == .heavy || band == .steady {
+                    Text("Calm counts as a step up on its own.").plFont(.footnote).foregroundStyle(.secondary)
+                } else if let up = Band(rawValue: band.rawValue + 1) {
                     Text("When it settles, aim one step up: " + RisingStep.of(up).title.lowercased() + ".").plFont(.footnote).foregroundStyle(.secondary)
                 }
                 // once cooled, decide now what to do about it later
@@ -209,7 +215,7 @@ struct RisingAction: View {
             }
         case .hot:
             if breathing {
-                BreathRing(rounds: box ? 4 : 13, box: box, done: { finish(box ? "Box breathing, 4 by 4" : "Cool down, 2 minutes") }, stop: { breathing = false })
+                BreathRing(rounds: box ? 4 : 12, box: box, inS: box ? 0 : 3, outS: box ? 0 : 7, done: { finish(box ? "Box breathing, 4 by 4" : "Cool down, 2 minutes") }, stop: { breathing = false })
             } else if timerUntil != nil {
                 timer
             } else {
@@ -217,19 +223,27 @@ struct RisingAction: View {
                 button("Box breathing, 4 by 4", "square") { box = true; breathing = true }
                 button("Timeout, 10 minutes", "timer") { startTimer("Timeout, 10 minutes", "Come back when you're ready.") }
                 button("Cold water on your hands", "drop") { finish("Cold water on your hands") }
+                practice("Notice the thought", "text.bubble", RisingAction.defuse, "Noticed it")
+                practice("Call it excitement", "bolt", RisingAction.excited, "Called it")
             }
         case .low:
-            if timerUntil != nil { timer } else {
+            if breathing { BreathRing(rounds: 12, inS: 4, outS: 6, done: { finish("Breathe slow, 2 minutes") }, stop: { breathing = false }) }
+            else if timerUntil != nil { timer } else {
+                button("Breathe slow, 2 minutes", "wind") { breathing = true }
                 button("Walk 10 minutes, past trees", "figure.walk") { startTimer("Walk 10 minutes, past trees", "Look again.") }
                 practice("Listen", "ear", RisingAction.stayThenReplace, "Listened, then replaced")
                 practice("Can I wonder", "sparkles", "Ask: can I wonder how it would feel if this went right? Wonder only. No need to believe it yet.", "Wondered")
                 values
+                practice("Talk to yourself as you", "person.wave.2", RisingAction.selfTalk, "Said it")
+                practice("Call it excitement", "bolt", RisingAction.excited, "Called it")
             }
         case .stuck:
             if writing { RisingPlan(fields: ["The first step is"]) { finish("Do the first step") } } else {
                 button("Do the first step", "arrow.right.circle") { writing = true }
                 practice("Can I wonder", "sparkles", "Ask: can I wonder how it would feel if this went right? Wonder only. No need to believe it yet.", "Wondered")
                 button("Make something with no goal", "scribble") { finish("Make something with no goal") }
+                practice("Notice the thought", "text.bubble", RisingAction.defuse, "Noticed it")
+                practice("Talk to yourself as you", "person.wave.2", RisingAction.selfTalk, "Said it")
             }
         case .steady:
             if writing { RisingPlan(fields: ["I want", "The best of it", "In the way", "If that happens, I will"]) { finish("Plan one move") } }
@@ -237,19 +251,30 @@ struct RisingAction: View {
                 button("Plan one move", "map") { writing = true }
                 button("Brisk walk with music", "figure.walk") { finish("Brisk walk with music") }
                 nightScene
+                practice("Savour 20 seconds", "sparkles", RisingAction.savour, "Savoured")
+                if rising.aweDue { practice("Awe minute", "sun.horizon", RisingAction.awe, "Saw it") }
             }
         case .rising:
             button("Made it and showed one person", "paintbrush") { finish("Made it and showed one person") }
             TextField("A note for your low self", text: $rising.note, axis: .vertical).textFieldStyle(.roundedBorder)
             nightScene
+            practice("Savour 20 seconds", "sparkles", RisingAction.savour, "Savoured")
+            if rising.aweDue { practice("Awe minute", "sun.horizon", RisingAction.awe, "Saw it") }
         case .lit:
             TextField("A note for a heavy night", text: $rising.note, axis: .vertical).textFieldStyle(.roundedBorder)
             button("Keep it", "bookmark") { finish("Keep it") }
             nightScene
+            practice("Savour 20 seconds", "sparkles", RisingAction.savour, "Savoured")
         }
     }
 
     /// Stay with the feeling first, then replace it (his sources disagreed; his ruling 11-26: both, in that order).
+    // Duet job 71, sections 3, 7 and 8: the quick methods that hold up, in our words.
+    static let savour = "Name one good moment tonight. Replay it for 20 seconds: where you were, what you saw, what you felt. A small thing counts."
+    static let awe = "Look up at the sky, or at something vast, old or intricate, for one minute. Find one thing you had not seen before."
+    static let defuse = "Say the thought as: I'm having the thought that... Say it once more, slower. It is a thought, not an order."
+    static let selfTalk = "Write one line to yourself as you, not I: You can handle this because..."
+    static let excited = "Nerves before something big? Say it out loud: I feel excited. Not calm, excited. The energy is the same."
     static let stayThenReplace = "One minute. Where is it in your body? What is it trying to tell you? Only listen. Then breathe in one feeling you would rather have, and let it take the space."
 
     /// One of his notebook practices: the button opens a short instruction and its own "done".
@@ -374,18 +399,20 @@ private struct RisingPlan: View {
     }
 }
 
-/// Two breaths in, one long breath out (2 s, 1 s, 6 s), or a box (4 s each side), with a tap as each breath out starts.
+/// Two breaths in, one long breath out (2 s, 1 s, 6 s), a box (4 s each side), or a slow pacer (inS in, outS out; about
+/// 6 a minute with the longer breath out, Duet job 71), with a tap as each breath out starts. It grows 12% at most.
 private struct BreathRing: View {
     let rounds: Int
     let box: Bool   // 4 in, 4 hold, 4 out, 4 hold
+    let inS: Double, outS: Double   // 0 = not the pacer
     let done: () -> Void, stop: () -> Void
     @Environment(\.accessibilityReduceMotion) private var reduce
     @State private var word = "In"
-    @State private var size: CGFloat = 0.5
+    @State private var size: CGFloat = 0.88
     @State private var out = 0
 
-    init(rounds: Int, box: Bool = false, done: @escaping () -> Void, stop: @escaping () -> Void) {
-        self.rounds = rounds; self.box = box; self.done = done; self.stop = stop
+    init(rounds: Int, box: Bool = false, inS: Double = 0, outS: Double = 0, done: @escaping () -> Void, stop: @escaping () -> Void) {
+        self.rounds = rounds; self.box = box; self.inS = inS; self.outS = outS; self.done = done; self.stop = stop
     }
 
     var body: some View {
@@ -393,7 +420,7 @@ private struct BreathRing: View {
             ZStack {
                 Circle().stroke(PLTone.accent, lineWidth: 3)
                     .scaleEffect(reduce ? 1 : size)
-                    .opacity(reduce ? Double(size) : 1)
+                    .opacity(reduce ? 0.75 + Double(size - 0.88) / 0.12 * 0.25 : 1)
                 Text(word).plFont(.callout, emphasized: true)
             }
             .frame(width: 150, height: 150)
@@ -407,13 +434,17 @@ private struct BreathRing: View {
                     if !(await step("In", 1, 4)) { return }
                     if !(await step("Hold", 1, 4)) { return }
                     out += 1
-                    if !(await step("Out", 0.45, 4)) { return }
-                    if !(await step("Hold", 0.45, 4)) { return }
+                    if !(await step("Out", 0.88, 4)) { return }
+                    if !(await step("Hold", 0.88, 4)) { return }
+                } else if inS > 0 {
+                    if !(await step("In", 1, inS)) { return }
+                    out += 1
+                    if !(await step("Out", 0.88, outS)) { return }
                 } else {
-                    if !(await step("In", 0.85, 2)) { return }
+                    if !(await step("In", 0.97, 2)) { return }
                     if !(await step("More", 1, 1)) { return }
                     out += 1
-                    if !(await step("Out", 0.45, 6)) { return }
+                    if !(await step("Out", 0.92, 6)) { return }
                 }
             }
             done()

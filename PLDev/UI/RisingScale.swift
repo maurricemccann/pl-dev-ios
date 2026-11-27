@@ -61,13 +61,12 @@ enum RisingAsk {
 
     /// One small thing a day that makes a person good to be near. From Stuck up; the feed's `buddy.magnet` replaces the list.
     static func magnet(_ date: Date = .now) -> String {
-        let own = ["Ask someone one follow-up question and listen to the answer.",
-                   "Tell one person something you appreciate about them.",
-                   "Walk in expecting to be liked. People usually like you more than you think.",
-                   "Say yes to one short talk you would normally skip.",
-                   "Finish one thing you said you would do.",
-                   "Show one piece of your work without explaining it away.",
-                   "Picture it done, then name the obstacle and your move."]
+        // Duet job 71, section 4: the five warmth steps with evidence. Done or skip; nothing is counted against him.
+        let own = ["One follow-up: in your next conversation, ask one question about what they just said.",
+                   "One thank-you: two lines to someone, what they did and why it mattered. Send it or keep it.",
+                   "One kind act, any size, for anyone.",
+                   "Expect warmth: people usually like you more than you think. Pick one warm opener.",
+                   "One tiny step: say hello to someone new, show one work in progress, or tidy one thing."]
         let list = ThemeFeed.list(ThemeFeed.feed?.buddy?["magnet"]) ?? own
         let day = Calendar.current.ordinality(of: .day, in: .era, for: date.addingTimeInterval(-15 * 3600)) ?? 0
         return list.isEmpty ? "" : list[day % list.count]
@@ -197,7 +196,8 @@ enum RisingAsk {
         }
     }
 
-    /// Each move he marked done, against his next tap inside 90 minutes (the 15-minute re-ask): did it go up. Counted from 7 pairs.
+    /// Each move he marked done, against his next tap inside 90 minutes (the 15-minute re-ask): did it go up. Shown from 10 pairs
+    /// (an early signal), a pattern from 20 (Duet job 71, section 6: fewer pairs than that is noise).
     var lifts: [(move: String, up: Int, of: Int)] {
         var t: [String: (up: Int, of: Int)] = [:]
         for (a, b) in zip(log, log.dropFirst()) {
@@ -207,12 +207,35 @@ enum RisingAsk {
             let v = t[move] ?? (up: 0, of: 0)
             t[move] = (up: v.up + (b.band > a.band ? 1 : 0), of: v.of + 1)
         }
-        return t.filter { $0.value.of >= 7 }
+        return t.filter { $0.value.of >= 10 }
             .map { (move: $0.key, up: $0.value.up, of: $0.value.of) }
             .sorted { $0.up * $1.of > $1.up * $0.of }
     }
     /// "Walk: you went up 6 of 8 times."
-    var liftLine: String? { lifts.first.map { "\($0.move): you went up \($0.up) of \($0.of) times." } }
+    var liftLine: String? {
+        lifts.first.map { "\($0.move): you went up \($0.up) of \($0.of) times, " + ($0.of >= 20 ? "a pattern" : "an early signal")
+            + ". Part of any lift is expecting it, and that still counts." }
+    }
+
+    /// The night's high point so far, for the end of every session (peak-end).
+    var bestTonight: String? {
+        log.suffix(40).filter { Self.shiftDay($0.at) == Self.shiftDay(.now) }.map(\.band).max().map(\.title)
+    }
+    /// Nights he tapped at all: a count that only grows.
+    var nightsShown: Int { Set(log.map { Self.shiftDay($0.at) }).count }
+    /// The awe minute comes back once a week.
+    var aweDue: Bool { !log.contains { $0.move == "Awe minute" && ($0.doneAt ?? .distantPast) > Date().addingTimeInterval(-7 * 86400) } }
+    /// Mondays and the 1st are fresh starts (Duet job 71), by his shift day.
+    var freshStart: String? {
+        let p = Self.shiftDay(.now).split(separator: "-").compactMap { Int($0) }
+        guard p.count == 3, let day = Self.pacific.date(from: DateComponents(year: p[0], month: p[1], day: p[2], hour: 12)) else { return nil }
+        if p[2] == 1 { return "the 1st" }
+        return Self.pacific.component(.weekday, from: day) == 2 ? "Monday" : nil
+    }
+    var dims: Bool {
+        get { d.object(forKey: "pldev.rising.dim") as? Bool ?? true }
+        set { d.set(newValue, forKey: "pldev.rising.dim") }
+    }
 
     /// The word he picks most for a band, shown first while the rest fade in.
     func topWord(_ band: Band) -> String? {
@@ -332,7 +355,7 @@ enum RisingAsk {
         let c = step?.chroma ?? 0.05 + f[1] * 0.07
         let light = step?.light ?? 0.19
         return HousePalette(name: "th-daily", ground: hex(light, c * 0.5, h), text: hex(0.94, 0.015, h),
-                            key: hex(0.70, c * 1.2, h), accent: hex(0.82, c, h + (step?.turn ?? 40)),
+                            key: hex(0.70, c * 1.2, h), accent: hex(0.82, step?.pop ?? c, h + (step?.turn ?? 40)),
                             surface: hex(light + 0.06, c * 0.5, h))
     }
 
@@ -555,6 +578,7 @@ struct RisingPanel: View {
     @State private var confirmErase = false
     @State private var asked = 0
     @State private var showBody = false
+    @State private var intention = UserDefaults.standard.string(forKey: "pldev.rising.intention") ?? ""
 
     var body: some View {
         VStack(alignment: .leading, spacing: 0) {
@@ -595,9 +619,20 @@ struct RisingPanel: View {
                     Button("Done") { rising.showWords = false }.frame(minWidth: 44, minHeight: 44)
                 }
                 tags(tap)
+                Text("Nights you showed up: \(rising.nightsShown)").plFont(.caption2).foregroundStyle(.secondary).padding(.top, 4)
+                if tap.band > .heavy, let fresh = rising.freshStart {
+                    Text("Fresh start, " + fresh + ". One intention for this week, if you want one.").plFont(.footnote).padding(.top, 4)
+                    TextField("This week I will", text: $intention, axis: .vertical).textFieldStyle(.roundedBorder)
+                        .onSubmit { UserDefaults.standard.set(intention, forKey: "pldev.rising.intention") }
+                        .onChange(of: intention) { UserDefaults.standard.set(intention, forKey: "pldev.rising.intention") }
+                }
                 if rising.wearsDaily { rateLook }
                 if tap.band >= .stuck {
-                    if tap.band < .rising { Text("Today's magnet move: " + RisingAsk.magnet()).plFont(.footnote).foregroundStyle(.secondary).padding(.top, 4) }
+                    if tap.band == .steady { Text("Today's magnet move: " + RisingAsk.magnet()).plFont(.footnote).foregroundStyle(.secondary).padding(.top, 4) }
+                    if tap.band >= .steady {
+                        Text("What you keep in mind changes what you notice, how hard you work and how you treat people.")
+                            .plFont(.footnote).foregroundStyle(.secondary).padding(.top, 4)
+                    }
                     weekBars
                 }
                 }
@@ -738,12 +773,31 @@ struct RisingPanel: View {
             Toggle("Buddy pops up", isOn: Binding(get: { rising.buddyOn }, set: { rising.buddyOn = $0 }))
             Toggle("No notices 6 AM to 3 PM", isOn: Binding(get: { rising.quietDay }, set: { rising.quietDay = $0 }))
             Toggle("Home follows my mood", isOn: Binding(get: { rising.homeFollows }, set: { rising.homeFollows = $0 }))
+            Toggle("Dim the app 4 AM to 3 PM", isOn: Binding(get: { rising.dims }, set: { rising.dims = $0 }))
             ShareLink("Export my check-ins", item: RisingScale.file)
             Button("Erase my check-ins", role: .destructive) { confirmErase = true }
         } label: {
             Image(systemName: "ellipsis.circle").frame(width: 44, height: 44)
         }
         .accessibilityLabel("Check-in settings")
+    }
+}
+
+/// Dark grounds are not enough before his daytime sleep: brightness is what moves the body clock (Duet job 71, section 1), so
+/// the whole app dims about 30% from 4 AM until 3 PM Pacific. A toggle in the check-in menu turns it off.
+struct NightDim: View {
+    @AppStorage("pldev.rising.dim") private var on = true
+    private static let la: Calendar = {
+        var c = Calendar(identifier: .gregorian); c.timeZone = TimeZone(identifier: "America/Los_Angeles") ?? .current; return c
+    }()
+
+    var body: some View {
+        TimelineView(.everyMinute) { ctx in
+            Color.black.opacity(on && (4..<15).contains(Self.la.component(.hour, from: ctx.date)) ? 0.3 : 0)
+        }
+        .ignoresSafeArea()
+        .allowsHitTesting(false)
+        .accessibilityHidden(true)
     }
 }
 
