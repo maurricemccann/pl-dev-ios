@@ -420,44 +420,75 @@ struct RackView: View {
     }
 }
 
-/// FL's playlist (S354): the whole song left to right, one row per part, filled where that part plays.
+/// FL's playlist (S354; labels redone on his read 11-27, "I think what it is, is the labeling"): a bar ruler on top, one cell
+/// per bar in every row, each part named over its own bars with its span, and each row saying which bars it plays.
 struct PlaylistView: View {
     let form: [FormPart]
     private var parts: [String] { form.flatMap(\.parts).reduce(into: [String]()) { if !$0.contains($1) { $0.append($1) } } }
     private var total: Int { form.reduce(0) { $0 + $1.bars } }
     private func start(_ i: Int) -> Int { form.prefix(i).reduce(1) { $0 + $1.bars } }
+    /// Bar n (1-based) belongs to which part of the song.
+    private func section(of bar: Int) -> FormPart? {
+        var b = 1
+        for f in form { if bar < b + f.bars { return f }; b += f.bars }
+        return nil
+    }
+    /// "bars 5-8" or "bars 1-4, 9-12" for one row.
+    private func span(_ part: String) -> String {
+        var runs: [(Int, Int)] = []
+        for bar in 1...max(total, 1) where section(of: bar)?.parts.contains(part) == true {
+            if let last = runs.last, last.1 == bar - 1 { runs[runs.count - 1].1 = bar } else { runs.append((bar, bar)) }
+        }
+        let txt = runs.map { $0.0 == $0.1 ? "\($0.0)" : "\($0.0)-\($0.1)" }.joined(separator: ", ")
+        return runs.isEmpty ? "" : (runs.count == 1 && runs[0].0 == runs[0].1 ? "bar " : "bars ") + txt
+    }
 
     var body: some View {
-        let unit = max(10.0, 520.0 / Double(max(total, 1)))   // width of one bar
+        let cell = total <= 16 ? 30.0 : (total <= 32 ? 18.0 : 11.0)          // width of one bar
+        let every = total <= 16 ? 1 : 4                                       // which bar numbers to print
+        let label = 120.0
         VStack(alignment: .leading, spacing: 6) {
             Text("WHO PLAYS WHEN · \(total) BARS").font(Font.pl(.caption)).foregroundStyle(Color.accentColor)
-            // his question 11-27 "what's this": the view did not say what it was
-            Text("Like FL's Playlist: time runs left to right, one row per sound. Gold means that sound plays in that part.")
+            Text("Like FL's Playlist: time runs left to right, one square per bar. Gold means that sound plays in that bar.")
                 .font(Font.pl(.footnote)).foregroundStyle(.secondary)
             ScrollView(.horizontal, showsIndicators: false) {
-                VStack(alignment: .leading, spacing: 4) {
-                    HStack(spacing: 0) {
-                        Color.clear.frame(width: 96, height: 1)
+                VStack(alignment: .leading, spacing: 3) {
+                    HStack(spacing: 0) {                                       // the bar ruler
+                        Text("bar").font(Font.pl(size: 10)).foregroundStyle(.secondary).frame(width: label, alignment: .leading)
+                        ForEach(1...max(total, 1), id: \.self) { b in
+                            Text((b - 1) % every == 0 ? "\(b)" : "").font(Font.pl(size: 10).monospacedDigit()).foregroundStyle(.secondary)
+                                .frame(width: cell, alignment: .leading)
+                        }
+                    }
+                    HStack(spacing: 0) {                                       // each part of the song over its own bars
+                        Color.clear.frame(width: label, height: 1)
                         ForEach(form.indices, id: \.self) { i in
-                            VStack(alignment: .leading, spacing: 0) {
+                            let b0 = start(i), b1 = start(i) + form[i].bars - 1
+                            VStack(alignment: .leading, spacing: 1) {
                                 Text(form[i].name).font(Font.pl(size: 11, weight: .bold)).lineLimit(1)
-                                Text("bar \(start(i))").font(Font.pl(size: 10).monospacedDigit()).foregroundStyle(.secondary)
+                                Text(b0 == b1 ? "bar \(b0)" : "bars \(b0)-\(b1)").font(Font.pl(size: 10).monospacedDigit()).foregroundStyle(.secondary)
                             }
-                            .frame(width: CGFloat(Double(form[i].bars) * unit), alignment: .leading)
+                            .padding(.leading, 4)
+                            .frame(width: CGFloat(Double(form[i].bars) * cell), alignment: .leading)
+                            .overlay(alignment: .leading) { Rectangle().fill(Color.accentColor.opacity(0.6)).frame(width: 2) }
                         }
                     }
                     ForEach(parts, id: \.self) { p in
                         HStack(spacing: 0) {
-                            Text(p).font(Font.pl(size: 12)).lineLimit(1).frame(width: 96, alignment: .leading)
-                            ForEach(form.indices, id: \.self) { i in
-                                RoundedRectangle(cornerRadius: 3, style: .continuous)
-                                    .fill(form[i].parts.contains(p) ? Color.accentColor : Color.secondary.opacity(0.1))
-                                    .frame(width: max(2, CGFloat(Double(form[i].bars) * unit) - 2), height: 18)
-                                    .padding(.trailing, 2)
+                            VStack(alignment: .leading, spacing: 0) {
+                                Text(p).font(Font.pl(size: 12)).lineLimit(1)
+                                Text(span(p)).font(Font.pl(size: 9.5).monospacedDigit()).foregroundStyle(.secondary).lineLimit(1)
+                            }
+                            .frame(width: label, alignment: .leading)
+                            ForEach(1...max(total, 1), id: \.self) { b in
+                                RoundedRectangle(cornerRadius: 2, style: .continuous)
+                                    .fill(section(of: b)?.parts.contains(p) == true ? Color.accentColor : Color.secondary.opacity((b - 1) / 4 % 2 == 0 ? 0.16 : 0.09))
+                                    .frame(width: max(2, cell - 2), height: 20)
+                                    .frame(width: cell, alignment: .leading)
                             }
                         }
                         .accessibilityElement(children: .ignore)
-                        .accessibilityLabel("\(p): plays in \(form.filter { $0.parts.contains(p) }.map(\.name).joined(separator: ", "))")
+                        .accessibilityLabel("\(p): \(span(p))")
                     }
                 }
             }
