@@ -226,6 +226,8 @@ struct PackScreen: View {
             if p.new, let h = hero(p), let piece = h.piece, let tier = h.tier {
                 web = await PracticeCards.packPage(piece: piece, tier: tier, name: BinderSection.shelf(key), date: String(p.earned_at.prefix(10)), earned: true, model: model)
             }
+            let build = Bundle.main.object(forInfoDictionaryKey: "CFBundleVersion") as? String ?? "?"
+            model.debug.note(web == nil && p.new ? "pack error" : "pack", "\(key) build \(build) new \(p.new) tier \(hero(p)?.tier ?? "none") \(web == nil ? "old pack" : "web pack")")
             pack = p; buddy.react(key.hasPrefix("gold-") ? .gold : .pack)
         } catch { failure = "Could not reach the practice. Your pack is kept; open it when you are back online." }
     }

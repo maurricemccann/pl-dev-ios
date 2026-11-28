@@ -41,10 +41,18 @@ enum PracticeCards {
 
     /// The pack page (`/pack/`) for one card: `binder` opens it in its slab to turn; `earned` starts sealed and rips to it (S356·c41f).
     @MainActor static func packPage(piece: String, tier: String, name: String, date: String, earned: Bool, model: AppModel) async -> URL? {
-        try? await LibraryData.shared.load(model: model)
-        guard let it = LibraryData.shared.items.first(where: { $0.vault_id == piece }) else { return nil }
+        // his report 11-28: a lesson opened the old pack. A failed or stale index read is retried once, and every miss is logged.
+        var found: LibraryItem?
+        for force in [false, true] where found == nil {
+            do { try await LibraryData.shared.load(model: model, force: force) }
+            catch { model.debug.note("pack error", "library index not read (force \(force)): \(error.localizedDescription)") }
+            found = LibraryData.shared.items.first(where: { $0.vault_id == piece })
+        }
+        guard let it = found else { model.debug.note("pack error", "\(piece) not in the library index (\(LibraryData.shared.items.count) items)"); return nil }
         let m = LibraryData.shared.media(it, model: model)
-        guard let still = m.still, var c = URLComponents(string: LibraryData.shared.base(model) + "/pack/") else { return nil }
+        guard let still = m.still, var c = URLComponents(string: LibraryData.shared.base(model) + "/pack/") else {
+            model.debug.note("pack error", "\(piece): no picture or no gallery address"); return nil
+        }
         c.queryItems = [URLQueryItem(name: earned ? "earned" : "binder", value: "1"), URLQueryItem(name: "img", value: still.path(percentEncoded: false)),
                         URLQueryItem(name: "name", value: name), URLQueryItem(name: "tier", value: tier), URLQueryItem(name: "date", value: date)]
         if let v = m.video { c.queryItems?.append(URLQueryItem(name: "video", value: v.path(percentEncoded: false))) }
