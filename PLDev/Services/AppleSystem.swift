@@ -120,6 +120,12 @@ import FoundationModels
                   prompt: "Games played and best scores:\n" + facts.joined(separator: "\n") + "\nThe three truths: Prepared for luxury. You are in control of your reality. What persists in the mind becomes your reality.\nWrite the one sentence.")
     }
 
+    /// PL Prog Ask offline (S356): the phone's own model answers a lesson question when the practice server cannot. Nil when it is off.
+    static func progAnswer(question: String, lesson: String) async -> String? {
+        await ask(instructions: "You teach Linux and first programming to someone who has never programmed. Plain words, explain any technical word, one step at a time, each command on its own line exactly as typed, and say what they should see. If you are not sure, say so. Under 150 words.",
+                  prompt: "The lesson:\n\(lesson.prefix(3000))\n\nThe question: \(question)")
+    }
+
     /// GlyphBot offline: an answer written only from what the phone already holds (past Oracle answers and their passages).
     /// Nil when the phone has no Apple Intelligence or holds nothing relevant, so the caller keeps its own fallback.
     static func glyphAnswer(question: String, turns: [GlyphTurn]) async -> String? {

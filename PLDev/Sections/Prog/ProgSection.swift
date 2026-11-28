@@ -9,7 +9,7 @@ import UserNotifications
     static let manifest = SectionManifest(id: "prog", title: "PL Prog", symbol: "terminal")
     static let state = ProgModel()
 
-    static func makeRoot(model: AppModel) -> AnyView { AnyView(ProgView(state: state)) }
+    static func makeRoot(model: AppModel) -> AnyView { AnyView(ProgView(state: state, model: model)) }
     static func probes(model: AppModel) -> [ProbeModel.Item] { [] }
     static func settingsRows(model: AppModel) -> AnyView? { nil }
     static func notificationCategories() -> Set<UNNotificationCategory> { [] }
@@ -56,12 +56,13 @@ private struct ProgFile: Decodable { let v: Int; let tracks: [ProgTrack] }
 
 struct ProgView: View {
     @Bindable var state: ProgModel
+    let model: AppModel
     var body: some View {
         List { Group {
             if let e = state.loadError { ContentUnavailableView("No lessons", systemImage: "terminal", description: Text(e)) }
             Section {
                 ForEach(state.tracks) { t in
-                    NavigationLink { ProgTrackView(state: state, track: t).osScreen() } label: {
+                    NavigationLink { ProgTrackView(state: state, model: model, track: t).osScreen() } label: {
                         VStack(alignment: .leading, spacing: 3) {
                             Text(t.title).font(Font.pl(.headline))
                             Text("\(t.sub) · \(state.count(t)) of \(t.lessons.count) done").font(Font.pl(.subheadline)).foregroundStyle(.secondary)
@@ -78,11 +79,12 @@ struct ProgView: View {
 
 struct ProgTrackView: View {
     @Bindable var state: ProgModel
+    let model: AppModel
     let track: ProgTrack
     var body: some View {
         List { Group {
             ForEach(track.lessons) { l in
-                NavigationLink { ProgLessonView(state: state, lesson: l).osScreen() } label: {
+                NavigationLink { ProgLessonView(state: state, model: model, lesson: l).osScreen() } label: {
                     HStack(spacing: 10) {
                         Image(systemName: state.done.contains(l.id) ? "checkmark.circle.fill" : "circle")
                             .foregroundStyle(state.done.contains(l.id) ? Color.accentColor : .secondary)
@@ -98,10 +100,12 @@ struct ProgTrackView: View {
 
 struct ProgLessonView: View {
     @Bindable var state: ProgModel
+    let model: AppModel
     let lesson: ProgLesson
     @State private var copied = 0
     @State private var terminal = false
     @State private var term = ProgTerm.shared
+    @State private var asking = false   // the Ask sheet (S356)
     @State private var cardPack: PackKey?   // a lesson first marked done earns a card pack (his ask 11-27)
 
     var body: some View {
@@ -116,10 +120,12 @@ struct ProgLessonView: View {
         }
         .plScreenTitle(lesson.title)
         .toolbar {
+            Button { asking = true } label: { Label("Ask", systemImage: "questionmark.bubble") }
             Button { terminal.toggle() } label: { Label(terminal ? "Hide terminal" : "Terminal", systemImage: "terminal") }
         }
         .sensoryFeedback(PLHaptic.select, trigger: copied)
         .earnsPack($cardPack)
+        .sheet(isPresented: $asking) { ProgAskSheet(model: model, lesson: lesson) }
     }
 
     private var lessonBody: some View {
