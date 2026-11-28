@@ -11,6 +11,7 @@ struct PackCard: Decodable, Sendable, Identifiable, Equatable {
     let kind: String
     let piece: String?
     let game: String?
+    let tier: String?   // the finish the server dealt (11-28); nil on packs opened before
     var id: String { kind + (piece ?? game ?? "") }
 }
 
@@ -182,6 +183,7 @@ struct PackScreen: View {
     @State private var pack: PracticePack?
     @State private var failure: String?
     @State private var buddy = BuddyModel()
+    @State private var web: URL?   // a new pack with a tiered art card opens the real pack page, sealed, on that card (S356·c41f)
 
     var body: some View {
         ZStack {
@@ -194,7 +196,13 @@ struct PackScreen: View {
                     Spacer()
                     BuddyHead(model: buddy, side: 64)
                 }
-                if let pack {
+                if let pack, let web {
+                    SlabWeb(url: web).clipShape(RoundedRectangle(cornerRadius: 14 * PLStyle.radius))
+                        .accessibilityLabel("Your pack. Swipe across the top to rip it open")
+                    let rest = pack.cards.filter { $0 != hero(pack) }
+                    if !rest.isEmpty { PackOpening(model: model, cards: rest, animate: false).frame(height: 150) }
+                    Button("Done") { close() }.buttonStyle(CandleButton())
+                } else if let pack {
                     PackOpening(model: model, cards: pack.cards, animate: pack.new)
                     Button("Done") { close() }.buttonStyle(CandleButton())
                 } else if let failure {
@@ -213,9 +221,17 @@ struct PackScreen: View {
 
     private func load() async {
         failure = nil
-        do { pack = try await Packs.open(key, model: model); buddy.react(key.hasPrefix("gold-") ? .gold : .pack) }
-        catch { failure = "Could not reach the practice. Your pack is kept; open it when you are back online." }
+        do {
+            let p = try await Packs.open(key, model: model)
+            if p.new, let h = hero(p), let piece = h.piece, let tier = h.tier {
+                web = await PracticeCards.packPage(piece: piece, tier: tier, name: BinderSection.shelf(key), date: String(p.earned_at.prefix(10)), earned: true, model: model)
+            }
+            pack = p; buddy.react(key.hasPrefix("gold-") ? .gold : .pack)
+        } catch { failure = "Could not reach the practice. Your pack is kept; open it when you are back online." }
     }
+
+    /// The card the web pack rips to: the first art card the server gave a tier.
+    private func hero(_ p: PracticePack) -> PackCard? { p.cards.first { $0.kind == "art" && $0.tier != nil } }
 }
 
 /// The pack as it stands on the test page (his word 11-16: "Publish what you have for now ... to pl dev the iOS app"): the live 3D pack,

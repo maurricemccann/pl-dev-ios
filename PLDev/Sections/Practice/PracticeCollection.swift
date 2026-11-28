@@ -9,6 +9,7 @@ struct PracticeEarned: Decodable, Sendable, Identifiable, Equatable {
     let piece: String
     let earned_at: String
     let from: String?   // the pack key that dealt it, or "evening" (PL Binder groups by it)
+    let tier: String?   // common / legendary / exclusive, dealt by the server since 11-28; older cards have none
     var id: String { earned_at + piece }   // several cards can share a day now
 }
 
@@ -36,6 +37,18 @@ enum PracticeCards {
         try? await LibraryData.shared.load(model: model)
         guard let it = LibraryData.shared.items.first(where: { $0.vault_id == piece }) else { return nil }
         return LibraryData.shared.media(it, model: model).still
+    }
+
+    /// The pack page (`/pack/`) for one card: `binder` opens it in its slab to turn; `earned` starts sealed and rips to it (S356·c41f).
+    @MainActor static func packPage(piece: String, tier: String, name: String, date: String, earned: Bool, model: AppModel) async -> URL? {
+        try? await LibraryData.shared.load(model: model)
+        guard let it = LibraryData.shared.items.first(where: { $0.vault_id == piece }) else { return nil }
+        let m = LibraryData.shared.media(it, model: model)
+        guard let still = m.still, var c = URLComponents(string: LibraryData.shared.base(model) + "/pack/") else { return nil }
+        c.queryItems = [URLQueryItem(name: earned ? "earned" : "binder", value: "1"), URLQueryItem(name: "img", value: still.path(percentEncoded: false)),
+                        URLQueryItem(name: "name", value: name), URLQueryItem(name: "tier", value: tier), URLQueryItem(name: "date", value: date)]
+        if let v = m.video { c.queryItems?.append(URLQueryItem(name: "video", value: v.path(percentEncoded: false))) }
+        return c.url
     }
 }
 

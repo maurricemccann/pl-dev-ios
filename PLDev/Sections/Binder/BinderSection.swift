@@ -105,27 +105,26 @@ struct BinderSlab: View {
         .task { await build() }
     }
 
-    /// Evening cards are graded Obsidian, lesson cards Champagne, a gold unit's card Prism: the grade says how it was earned.
+    /// The tier the server dealt; a card from before 11-28 has none and keeps the old look (evening Obsidian, gold unit Prism, lesson Champagne).
     private var tier: String {
+        if let t = card.tier { return t }
         let f = card.from ?? ""
         return f == "evening" ? "common" : f.hasPrefix("gold-") ? "exclusive" : "legendary"
     }
 
     private func build() async {
-        let base = LibraryData.shared.base(model)
-        guard let still = await PracticeCards.still(for: card.piece, model: model), var c = URLComponents(string: base + "/pack/") else { failed = true; return }
-        c.queryItems = [URLQueryItem(name: "binder", value: "1"), URLQueryItem(name: "img", value: still.path(percentEncoded: false)),
-                        URLQueryItem(name: "name", value: (card.from ?? "practice").replacingOccurrences(of: "-", with: " ")),
-                        URLQueryItem(name: "tier", value: tier), URLQueryItem(name: "date", value: card.date)]
-        url = c.url
+        url = await PracticeCards.packPage(piece: card.piece, tier: tier, name: (card.from ?? "practice").replacingOccurrences(of: "-", with: " "),
+                                           date: card.date, earned: false, model: model)
         failed = url == nil
     }
 }
 
-private struct SlabWeb: UIViewRepresentable {
+struct SlabWeb: UIViewRepresentable {
     let url: URL
     func makeUIView(context: Context) -> WKWebView {
-        let web = WKWebView(frame: .zero)
+        let config = WKWebViewConfiguration()
+        config.allowsInlineMediaPlayback = true   // a Champagne card's video plays in its window
+        let web = WKWebView(frame: .zero, configuration: config)
         web.isOpaque = false
         web.backgroundColor = .black
         web.scrollView.isScrollEnabled = false
