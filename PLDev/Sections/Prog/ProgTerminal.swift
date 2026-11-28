@@ -1,6 +1,6 @@
 import NIOCore
-import NIOPosix
 import NIOSSH
+import NIOTransportServices
 import SwiftTerm
 import SwiftUI
 
@@ -9,9 +9,10 @@ import SwiftUI
 // the phone (password in the Keychain); nothing of his is in this repo. The host key is trusted once and then held to.
 
 private enum ProgSSHError: LocalizedError {
-    case timedOut, closed, hostKeyChanged
+    case timedOut, closed, hostKeyChanged, unreachable
     var errorDescription: String? {
         switch self {
+        case .unreachable: "Can\u{2019}t reach that address. Is Tailscale on, and the computer awake?"
         case .timedOut: "No answer in 15 seconds. Is the computer on and reachable?"
         case .closed: "The connection closed. Check the user name and password."
         case .hostKeyChanged: "This computer\u{2019}s identity changed since last time. Forget it only if you reinstalled it."
@@ -142,7 +143,8 @@ private final class ProgShell: ChannelDuplexHandler, @unchecked Sendable {
     nonisolated private static func open(host: String, port: Int, user: String, password: String, key: ProgHostKey, cols: Int, rows: Int,
                                          output: @escaping @Sendable ([UInt8]) -> Void,
                                          ended: @escaping @Sendable () -> Void) async throws -> (Channel, Channel) {
-        let bootstrap = ClientBootstrap(group: MultiThreadedEventLoopGroup.singleton)
+        // Apple's own networking (Network.framework): plain sockets timed out on his iPhone over cellular + Tailscale (11-27)
+        let bootstrap = NIOTSConnectionBootstrap(group: NIOTSEventLoopGroup.singleton)
             .connectTimeout(.seconds(10))
             .channelInitializer { channel in
                 channel.eventLoop.makeCompletedFuture {
@@ -152,7 +154,8 @@ private final class ProgShell: ChannelDuplexHandler, @unchecked Sendable {
                     try channel.pipeline.syncOperations.addHandler(ssh)
                 }
             }
-        let connection = try await bootstrap.connect(host: host, port: port).get()
+        let connection: Channel
+        do { connection = try await bootstrap.connect(host: host, port: port).get() } catch { throw ProgSSHError.unreachable }
         do {
             let shell: Channel = try await connection.eventLoop.flatSubmit { () -> EventLoopFuture<Channel> in
                 let promise = connection.eventLoop.makePromise(of: Channel.self)
